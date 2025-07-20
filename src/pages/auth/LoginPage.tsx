@@ -1,165 +1,122 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
-  Typography,
   TextField,
   Button,
-  Checkbox,
-  FormControlLabel,
-  Link,
-  Alert,
+  Typography,
+  Container,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
-
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
+import {
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from '@mui/icons-material';
+import { useAuthStore } from '../../stores/useAuthStore';
 
 const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    defaultValues: {
-      email: '',
-      password: '',
-      rememberMe: false,
-    },
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const { login } = useAuthStore();
 
-  const onSubmit = (data: LoginFormData) => {
-    console.log('Login data:', data);
-    // Handle login logic here
-    navigate('/dashboard');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Mock login - in real app, this would be an API call
+    const mockUser = {
+      id: '1',
+      name: 'Admin User',
+      email: formData.email,
+      role: 'admin',
+      avatar: 'AU',
+    };
+    const mockToken = 'mock-jwt-token';
+    login(mockUser, mockToken);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        p: 2,
-      }}
-    >
-      <Paper
-        elevation={8}
+    <Container component="main" maxWidth="xs">
+      <Box
         sx={{
-          p: 4,
-          width: '100%',
-          maxWidth: 400,
-          borderRadius: 2,
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}
       >
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Box
-            component="img"
-            src="/project_logo.png"
-            alt="Logo"
-            sx={{
-              width: 80,
-              height: 80,
-              mb: 2,
-            }}
-          />
-          <Typography variant="h4" component="h1" gutterBottom>
-            Welcome Back
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Sign in to your account
-          </Typography>
-        </Box>
-
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <Controller
-            name="email"
-            control={control}
-            rules={{
-              required: 'Email is required',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address',
-              },
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Email"
-                type="email"
-                fullWidth
-                margin="normal"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="password"
-            control={control}
-            rules={{
-              required: 'Password is required',
-              minLength: {
-                value: 6,
-                message: 'Password must be at least 6 characters',
-              },
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Password"
-                type="password"
-                fullWidth
-                margin="normal"
-                error={!!errors.password}
-                helperText={errors.password?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="rememberMe"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={field.value}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                  />
-                }
-                label="Remember me"
-                sx={{ mt: 1 }}
-              />
-            )}
-          />
-
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            size="large"
-            sx={{ mt: 3, mb: 2 }}
-          >
+        <Paper
+          elevation={3}
+          sx={{
+            padding: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          <Typography component="h1" variant="h5" sx={{ mb: 3, color: 'primary.main' }}>
             Sign In
-          </Button>
-
-          <Box sx={{ textAlign: 'center' }}>
-            <Link href="#" variant="body2">
-              Forgot password?
-            </Link>
+          </Typography>
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Email Address"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={formData.email}
+              onChange={handleChange}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              autoComplete="current-password"
+              value={formData.password}
+              onChange={handleChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Sign In
+            </Button>
           </Box>
-        </form>
-      </Paper>
-    </Box>
+        </Paper>
+      </Box>
+    </Container>
   );
 };
 

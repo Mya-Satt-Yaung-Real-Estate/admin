@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   Card,

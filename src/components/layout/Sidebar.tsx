@@ -4,7 +4,6 @@ import {
   Drawer,
   Toolbar,
   List,
-  Divider,
   IconButton,
   useTheme,
 } from '@mui/material';
@@ -19,7 +18,6 @@ import {
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
 import { MenuItem } from '@/types';
-import { MENU_ITEMS } from '../../constants/menuItems';
 
 interface SidebarProps {
   menuItems: MenuItem[];

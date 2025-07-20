@@ -22,7 +22,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from 'recharts';
-import PageHeader from '@/components/layout/PageHeader';
+import PageHeader from '../../components/layout/PageHeader';
 
 const AnalyticsPage: React.FC = () => {
   // Sample data for charts

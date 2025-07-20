@@ -4,7 +4,7 @@ import { User, AuthStore } from '@/types';
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // State
       user: null,
       token: null,

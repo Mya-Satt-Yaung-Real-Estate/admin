@@ -4,7 +4,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Box,
 } from '@mui/material';
 import { SidebarItemProps } from '@/types';
 

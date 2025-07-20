@@ -1,33 +1,40 @@
-import React from 'react';
-import { RouterProvider } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { router } from './routes';
 import theme from './styles/theme';
+import AdminLayout from './components/layout/AdminLayout';
+import LoginPage from './pages/auth/LoginPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
+import UserManagementPage from './pages/users/UserManagementPage';
+import AnalyticsPage from './pages/analytics/AnalyticsPage';
+import SettingsPage from './pages/settings/SettingsPage';
+import { useAuthStore } from './stores/useAuthStore';
 import './index.css';
 
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function App() {
+  const { isAuthenticated } = useAuthStore();
+
   return (
-    <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <RouterProvider router={router} />
+          <Router>
+            <Routes>
+              <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
+              <Route path="/" element={isAuthenticated ? <AdminLayout><DashboardPage /></AdminLayout> : <Navigate to="/login" replace />} />
+              <Route path="/users" element={isAuthenticated ? <AdminLayout><UserManagementPage /></AdminLayout> : <Navigate to="/login" replace />} />
+              <Route path="/analytics" element={isAuthenticated ? <AdminLayout><AnalyticsPage /></AdminLayout> : <Navigate to="/login" replace />} />
+              <Route path="/settings" element={isAuthenticated ? <AdminLayout><SettingsPage /></AdminLayout> : <Navigate to="/login" replace />} />
+            </Routes>
+          </Router>
         </ThemeProvider>
-      </QueryClientProvider>
-    </HelmetProvider>
+      </HelmetProvider>
+    </QueryClientProvider>
   );
 }
 
