@@ -152,6 +152,185 @@ const LoginPage: React.FC = () => {
         },
       }}
     >
+      {/* Success Star Burst Animation */}
+      {showSuccess && [...Array(15)].map((_, index) => (
+        <Box
+          key={`success-star-burst-${index}`}
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: Math.random() * 20 + 15,
+            height: Math.random() * 20 + 15,
+            zIndex: 1002,
+            animation: `successStarBurst ${Math.random() * 2 + 1.5}s ease-out forwards`,
+            animationDelay: `${index * 0.1}s`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              background: [
+                'linear-gradient(45deg, transparent 40%, #FFD700 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #FFA500 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #FF6B6B 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #4ECDC4 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #45B7D1 50%, transparent 60%)',
+              ][Math.floor(Math.random() * 5)],
+              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+              filter: 'drop-shadow(0 0 10px currentColor)',
+            },
+            '@keyframes successStarBurst': {
+              '0%': {
+                transform: 'translate(-50%, -50%) scale(0) rotate(0deg)',
+                opacity: 0,
+              },
+              '20%': {
+                transform: `translate(-50%, -50%) translate(${Math.random() * 200 - 100}px, ${Math.random() * 200 - 100}px) scale(1.5) rotate(${Math.random() * 360}deg)`,
+                opacity: 1,
+              },
+              '100%': {
+                transform: `translate(-50%, -50%) translate(${Math.random() * 400 - 200}px, ${Math.random() * 400 - 200}px) scale(0) rotate(${Math.random() * 720}deg)`,
+                opacity: 0,
+              },
+            },
+          }}
+        />
+      ))}
+
+      {/* Success Star Trail Effect */}
+      {showSuccess && [...Array(8)].map((_, index) => (
+        <Box
+          key={`success-star-trail-${index}`}
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: Math.random() * 8 + 4,
+            height: Math.random() * 8 + 4,
+            zIndex: 1001,
+            animation: `successStarTrail ${Math.random() * 3 + 2}s ease-out forwards`,
+            animationDelay: `${index * 0.2}s`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              background: '#FFD700',
+              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+              filter: 'drop-shadow(0 0 8px #FFD700)',
+            },
+            '@keyframes successStarTrail': {
+              '0%': {
+                transform: 'translate(-50%, -50%) scale(0) rotate(0deg)',
+                opacity: 0,
+              },
+              '30%': {
+                transform: `translate(-50%, -50%) translate(${Math.random() * 150 - 75}px, ${Math.random() * 150 - 75}px) scale(1.2) rotate(${Math.random() * 360}deg)`,
+                opacity: 0.8,
+              },
+              '70%': {
+                transform: `translate(-50%, -50%) translate(${Math.random() * 300 - 150}px, ${Math.random() * 300 - 150}px) scale(0.8) rotate(${Math.random() * 720}deg)`,
+                opacity: 0.4,
+              },
+              '100%': {
+                transform: `translate(-50%, -50%) translate(${Math.random() * 400 - 200}px, ${Math.random() * 400 - 200}px) scale(0) rotate(${Math.random() * 1080}deg)`,
+                opacity: 0,
+              },
+            },
+          }}
+        />
+      ))}
+
+      {/* Success Star Ring Expansion */}
+      {showSuccess && [...Array(6)].map((_, index) => (
+        <Box
+          key={`success-star-ring-${index}`}
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 0,
+            height: 0,
+            zIndex: 1000,
+            animation: `successStarRing ${2 + index * 0.3}s ease-out forwards`,
+            animationDelay: `${index * 0.1}s`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              border: `2px solid ${['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1', '#9B59B6'][index]}`,
+              borderRadius: '50%',
+              filter: 'drop-shadow(0 0 15px currentColor)',
+            },
+            '@keyframes successStarRing': {
+              '0%': {
+                width: 0,
+                height: 0,
+                opacity: 1,
+                transform: 'translate(-50%, -50%)',
+              },
+              '100%': {
+                width: `${200 + index * 50}px`,
+                height: `${200 + index * 50}px`,
+                opacity: 0,
+                transform: 'translate(-50%, -50%)',
+              },
+            },
+          }}
+        />
+      ))}
+
+      {/* Success Star Particles Floating Up */}
+      {showSuccess && [...Array(40)].map((_, index) => (
+        <Box
+          key={`success-star-particle-${index}`}
+          sx={{
+            position: 'absolute',
+            bottom: '-20px',
+            left: `${Math.random() * 100}%`,
+            width: Math.random() * 6 + 3,
+            height: Math.random() * 6 + 3,
+            zIndex: 1003,
+            animation: `successStarFloatUp ${Math.random() * 4 + 3}s ease-out forwards`,
+            animationDelay: `${Math.random() * 2}s`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              background: [
+                'linear-gradient(45deg, transparent 40%, #FFD700 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #FFA500 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #FF6B6B 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, #4ECDC4 50%, transparent 60%)',
+              ][Math.floor(Math.random() * 4)],
+              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+              filter: 'drop-shadow(0 0 5px currentColor)',
+            },
+            '@keyframes successStarFloatUp': {
+              '0%': {
+                transform: 'translateY(0) scale(0) rotate(0deg)',
+                opacity: 0,
+              },
+              '20%': {
+                transform: 'translateY(-20vh) scale(1) rotate(72deg)',
+                opacity: 1,
+              },
+              '80%': {
+                transform: 'translateY(-80vh) scale(0.8) rotate(360deg)',
+                opacity: 0.6,
+              },
+              '100%': {
+                transform: 'translateY(-120vh) scale(0) rotate(720deg)',
+                opacity: 0,
+              },
+            },
+          }}
+        />
+      ))}
+
       {/* Success Confetti */}
       {showSuccess && [...Array(80)].map((_, index) => (
         <Box
@@ -434,41 +613,151 @@ const LoginPage: React.FC = () => {
         />
       ))}
 
-      {/* Dynamic Theme Particles */}
-      {[...Array(20)].map((_, index) => (
+      {/* Chinese-Inspired Star Particles */}
+      {[...Array(25)].map((_, index) => (
         <Box
-          key={`dynamic-particle-${index}`}
+          key={`chinese-star-${index}`}
+          sx={{
+            position: 'absolute',
+            width: Math.random() * 6 + 3,
+            height: Math.random() * 6 + 3,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            zIndex: 1,
+            animation: `chineseStarFloat ${Math.random() * 20 + 30}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 15}s`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              background: [
+                'linear-gradient(45deg, transparent 40%, rgba(59, 136, 128, 0.6) 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, rgba(74, 154, 145, 0.5) 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, rgba(47, 107, 100, 0.4) 50%, transparent 60%)',
+                'linear-gradient(45deg, transparent 40%, rgba(16, 185, 129, 0.3) 50%, transparent 60%)',
+              ][Math.floor(Math.random() * 4)],
+              clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+              animation: `starTwinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 2}s`,
+            },
+            '@keyframes chineseStarFloat': {
+              '0%, 100%': {
+                transform: 'translate(0, 0) rotate(0deg) scale(1)',
+                opacity: 0.3,
+              },
+              '25%': {
+                transform: 'translate(20px, -15px) rotate(90deg) scale(1.1)',
+                opacity: 0.6,
+              },
+              '50%': {
+                transform: 'translate(-10px, 25px) rotate(180deg) scale(0.9)',
+                opacity: 0.4,
+              },
+              '75%': {
+                transform: 'translate(-15px, -10px) rotate(270deg) scale(1.05)',
+                opacity: 0.7,
+              },
+            },
+            '@keyframes starTwinkle': {
+              '0%, 100%': {
+                opacity: 0.3,
+                transform: 'scale(1) rotate(0deg)',
+              },
+              '50%': {
+                opacity: 0.8,
+                transform: 'scale(1.2) rotate(180deg)',
+              },
+            },
+          }}
+        />
+      ))}
+
+      {/* Chinese-Inspired Floating Elements */}
+      {[...Array(12)].map((_, index) => (
+        <Box
+          key={`chinese-element-${index}`}
           sx={{
             position: 'absolute',
             width: Math.random() * 8 + 4,
             height: Math.random() * 8 + 4,
-            background: `linear-gradient(45deg, #3B8880, #4A9A91)`,
-            borderRadius: '50%',
-            opacity: 0.6,
-            animation: `dynamicParticle ${Math.random() * 10 + 15}s linear infinite`,
-            animationDelay: `${Math.random() * 10}s`,
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            '@keyframes dynamicParticle': {
-              '0%': {
-                transform: 'translateY(100vh) rotate(0deg) scale(0)',
-                opacity: 0,
+            zIndex: 1,
+            animation: `chineseElementFloat ${Math.random() * 25 + 35}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 20}s`,
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              background: [
+                'radial-gradient(circle, rgba(59, 136, 128, 0.4) 0%, transparent 70%)',
+                'radial-gradient(circle, rgba(74, 154, 145, 0.3) 0%, transparent 70%)',
+                'radial-gradient(circle, rgba(47, 107, 100, 0.2) 0%, transparent 70%)',
+              ][Math.floor(Math.random() * 3)],
+              borderRadius: Math.random() > 0.5 ? '50%' : '0%',
+              animation: `elementGlow ${Math.random() * 4 + 3}s ease-in-out infinite`,
+              animationDelay: `${Math.random() * 3}s`,
+            },
+            '@keyframes chineseElementFloat': {
+              '0%, 100%': {
+                transform: 'translate(0, 0) rotate(0deg) scale(1)',
+                opacity: 0.2,
               },
-              '10%': { 
-                opacity: 0.6,
-                transform: 'translateY(90vh) rotate(36deg) scale(1)',
+              '33%': {
+                transform: 'translate(30px, -20px) rotate(120deg) scale(1.15)',
+                opacity: 0.5,
+              },
+              '66%': {
+                transform: 'translate(-20px, 30px) rotate(240deg) scale(0.85)',
+                opacity: 0.3,
+              },
+            },
+            '@keyframes elementGlow': {
+              '0%, 100%': {
+                opacity: 0.2,
+                transform: 'scale(1)',
               },
               '50%': {
-                transform: 'translateY(50vh) rotate(180deg) scale(1.5)',
-                opacity: 0.8,
-              },
-              '90%': { 
                 opacity: 0.6,
-                transform: 'translateY(-10vh) rotate(324deg) scale(1)',
+                transform: 'scale(1.3)',
               },
-              '100%': {
-                transform: 'translateY(-20vh) rotate(360deg) scale(0)',
-                opacity: 0,
+            },
+          }}
+        />
+      ))}
+
+      {/* Chinese-Inspired Mist Veils */}
+      {[...Array(3)].map((_, index) => (
+        <Box
+          key={`chinese-mist-${index}`}
+          sx={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            top: 0,
+            left: 0,
+            zIndex: 0,
+            background: `radial-gradient(ellipse at ${20 + index * 30}% ${30 + index * 20}%, rgba(59, 136, 128, 0.03) 0%, transparent 50%)`,
+            animation: `chineseMistFlow ${Math.random() * 40 + 50}s ease-in-out infinite`,
+            animationDelay: `${Math.random() * 30}s`,
+            '@keyframes chineseMistFlow': {
+              '0%, 100%': {
+                transform: 'translate(0, 0) scale(1)',
+                opacity: 0.03,
+              },
+              '25%': {
+                transform: 'translate(-20px, -15px) scale(1.1)',
+                opacity: 0.05,
+              },
+              '50%': {
+                transform: 'translate(15px, -25px) scale(0.9)',
+                opacity: 0.04,
+              },
+              '75%': {
+                transform: 'translate(-10px, 20px) scale(1.05)',
+                opacity: 0.06,
               },
             },
           }}
