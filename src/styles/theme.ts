@@ -3,9 +3,11 @@ import { createTheme } from '@mui/material/styles';
 declare module '@mui/material/styles' {
   interface Palette {
     neutral: Palette['primary'];
+    brand: Palette['primary'];
   }
   interface PaletteOptions {
     neutral?: PaletteOptions['primary'];
+    brand?: PaletteOptions['primary'];
   }
 }
 
@@ -21,15 +23,21 @@ const theme = createTheme({
   },
   palette: {
     primary: {
-      main: '#3B82F6', // Blue accent
-      light: '#60A5FA',
-      dark: '#2563EB',
+      main: '#3B8880', // Brand color
+      light: '#4A9A91', // Lighter variation
+      dark: '#2F6B64', // Darker variation
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#8B5CF6', // Purple for avatars
-      light: '#A78BFA',
-      dark: '#7C3AED',
+      main: '#F59E0B', // Warm amber accent
+      light: '#FBBF24',
+      dark: '#D97706',
+      contrastText: '#ffffff',
+    },
+    brand: {
+      main: '#3B8880', // Brand color for specific use cases
+      light: '#4A9A91',
+      dark: '#2F6B64',
       contrastText: '#ffffff',
     },
     neutral: {
@@ -137,6 +145,26 @@ const theme = createTheme({
             boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
           },
         },
+        containedPrimary: {
+          backgroundColor: '#3B8880',
+          '&:hover': {
+            backgroundColor: '#2F6B64',
+          },
+        },
+        outlinedPrimary: {
+          borderColor: '#3B8880',
+          color: '#3B8880',
+          '&:hover': {
+            backgroundColor: 'rgba(59, 136, 128, 0.04)',
+            borderColor: '#2F6B64',
+          },
+        },
+        textPrimary: {
+          color: '#3B8880',
+          '&:hover': {
+            backgroundColor: 'rgba(59, 136, 128, 0.04)',
+          },
+        },
       },
     },
     MuiTableCell: {
@@ -157,6 +185,50 @@ const theme = createTheme({
         root: {
           '&:hover': {
             backgroundColor: '#F8FAFC',
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+        },
+        colorPrimary: {
+          backgroundColor: '#3B8880',
+          color: '#ffffff',
+          '&:hover': {
+            backgroundColor: '#2F6B64',
+          },
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#E2E8F0',
+          borderRadius: 4,
+        },
+        barColorPrimary: {
+          backgroundColor: '#3B8880',
+        },
+      },
+    },
+    MuiCircularProgress: {
+      styleOverrides: {
+        colorPrimary: {
+          color: '#3B8880',
+        },
+      },
+    },
+    MuiSwitch: {
+      styleOverrides: {
+        switchBase: {
+          '&.Mui-checked': {
+            color: '#3B8880',
+            '& + .MuiSwitch-track': {
+              backgroundColor: '#3B8880',
+            },
           },
         },
       },

@@ -7,31 +7,44 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // MUI Primary colors
-        primary: {
-          50: '#e3f2fd',
-          100: '#bbdefb',
-          200: '#90caf9',
-          300: '#64b5f6',
-          400: '#42a5f5',
-          500: '#1976d2', // main
-          600: '#1e88e5',
-          700: '#1565c0', // dark
-          800: '#1565c0',
-          900: '#0d47a1',
+        // Brand colors
+        brand: {
+          50: '#f0f9f8',
+          100: '#dcf2f0',
+          200: '#bce6e2',
+          300: '#8dd3cc',
+          400: '#5bb8ae',
+          500: '#3B8880', // main brand color
+          600: '#2F6B64', // dark
+          700: '#275a54',
+          800: '#234a45',
+          900: '#1f3e3a',
         },
-        // MUI Secondary colors
+        // MUI Primary colors (now using brand color)
+        primary: {
+          50: '#f0f9f8',
+          100: '#dcf2f0',
+          200: '#bce6e2',
+          300: '#8dd3cc',
+          400: '#5bb8ae',
+          500: '#3B8880', // main
+          600: '#2F6B64', // dark
+          700: '#275a54',
+          800: '#234a45',
+          900: '#1f3e3a',
+        },
+        // MUI Secondary colors (warm amber)
         secondary: {
-          50: '#fce4ec',
-          100: '#f8bbd9',
-          200: '#f48fb1',
-          300: '#f06292',
-          400: '#ec407a',
-          500: '#dc004e', // main
-          600: '#e91e63',
-          700: '#9a0036', // dark
-          800: '#c2185b',
-          900: '#880e4f',
+          50: '#fffbeb',
+          100: '#fef3c7',
+          200: '#fde68a',
+          300: '#fcd34d',
+          400: '#fbbf24',
+          500: '#F59E0B', // main
+          600: '#D97706', // dark
+          700: '#b45309',
+          800: '#92400e',
+          900: '#78350f',
         },
         // MUI Neutral colors
         neutral: {
@@ -80,6 +93,15 @@ module.exports = {
       boxShadow: {
         'mui': '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         'mui-lg': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        'brand': '0 1px 3px 0 rgb(59 136 128 / 0.1), 0 1px 2px -1px rgb(59 136 128 / 0.1)',
+        'brand-lg': '0 4px 6px -1px rgb(59 136 128 / 0.1), 0 2px 4px -2px rgb(59 136 128 / 0.1)',
+      },
+      backgroundColor: {
+        'brand-light': 'rgba(59, 136, 128, 0.04)',
+        'brand-lighter': 'rgba(59, 136, 128, 0.08)',
+      },
+      borderColor: {
+        'brand-light': 'rgba(59, 136, 128, 0.2)',
       },
     },
   },

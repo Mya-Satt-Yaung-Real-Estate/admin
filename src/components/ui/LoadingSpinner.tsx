@@ -4,7 +4,7 @@ import { LoadingSpinnerProps } from '@/types';
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
   size = 40, 
-  color = 'primary' 
+  color = 'primary' // Now uses brand color by default
 }) => {
   return (
     <Box

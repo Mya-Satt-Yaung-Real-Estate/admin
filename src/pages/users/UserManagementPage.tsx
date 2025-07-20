@@ -153,9 +153,9 @@ const UserManagementPage: React.FC = () => {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'Admin':
-        return 'error';
+        return 'primary'; // Brand color for admin
       case 'Manager':
-        return 'warning';
+        return 'secondary'; // Warm amber for manager
       case 'User':
         return 'info';
       default:
@@ -168,6 +168,7 @@ const UserManagementPage: React.FC = () => {
       <PageHeader
         title="User Management"
         breadcrumbs="Dashboard / User Management"
+        subtitle="Manage system users, roles, and permissions"
         actionButton={{
           text: 'Add User',
           icon: <AddIcon />,
@@ -259,21 +260,36 @@ const UserManagementPage: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleViewUser(user)}
-                          sx={{ color: 'primary.main' }}
+                          sx={{ 
+                            color: 'primary.main',
+                            '&:hover': {
+                              backgroundColor: 'rgba(59, 136, 128, 0.04)',
+                            }
+                          }}
                         >
                           <ViewIcon />
                         </IconButton>
                         <IconButton
                           size="small"
                           onClick={() => handleEditUser(user)}
-                          sx={{ color: 'warning.main' }}
+                          sx={{ 
+                            color: 'secondary.main',
+                            '&:hover': {
+                              backgroundColor: 'rgba(245, 158, 11, 0.04)',
+                            }
+                          }}
                         >
                           <EditIcon />
                         </IconButton>
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteUser(user)}
-                          sx={{ color: 'error.main' }}
+                          sx={{ 
+                            color: 'error.main',
+                            '&:hover': {
+                              backgroundColor: 'rgba(239, 68, 68, 0.04)',
+                            }
+                          }}
                         >
                           <DeleteIcon />
                         </IconButton>
@@ -297,7 +313,7 @@ const UserManagementPage: React.FC = () => {
 
       {/* User Details Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>User Details</DialogTitle>
+        <DialogTitle sx={{ color: 'primary.main', fontWeight: 600 }}>User Details</DialogTitle>
         <DialogContent>
           {selectedUser && (
             <Box sx={{ pt: 2 }}>
@@ -306,7 +322,7 @@ const UserManagementPage: React.FC = () => {
                   {selectedUser.avatar}
                 </Avatar>
                 <Box>
-                  <Typography variant="h6">{selectedUser.name}</Typography>
+                  <Typography variant="h6" sx={{ color: 'primary.main' }}>{selectedUser.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
                     {selectedUser.email}
                   </Typography>
