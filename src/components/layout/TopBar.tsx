@@ -1,95 +1,78 @@
 import React from 'react';
 import {
-  Box,
+  AppBar,
+  Toolbar,
   Typography,
   IconButton,
-  Avatar,
-  useTheme
+  useTheme,
 } from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Code as CodeIcon
-} from '@mui/icons-material';
+import { Menu as MenuIcon } from '@mui/icons-material';
 
-interface TopBarProps {
-  onToggleSidebar?: () => void;
-  isSidebarOpen?: boolean;
+interface MenuItem {
+  text: string;
+  path: string;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ onToggleSidebar, isSidebarOpen }) => {
+interface TopBarProps {
+  menuItems: MenuItem[];
+  currentPath: string;
+  drawerWidth: number;
+  isCollapsed: boolean;
+  isMobile: boolean;
+  onToggleSidebar: () => void;
+}
+
+const TopBar: React.FC<TopBarProps> = ({
+  menuItems,
+  currentPath,
+  drawerWidth,
+  isCollapsed,
+  isMobile,
+  onToggleSidebar,
+}) => {
   const theme = useTheme();
+  const currentDrawerWidth = isMobile ? drawerWidth : (isCollapsed ? 64 : drawerWidth);
+  
+  const currentPageTitle = menuItems.find(item => item.path === currentPath)?.text || 'Dashboard';
 
   return (
-    <Box 
-      sx={{ 
-        backgroundColor: '#374151',
-        color: '#ffffff',
-        px: { xs: 2, sm: 3, md: 4 },
-        py: 2,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid #4B5563',
-        position: 'sticky',
-        top: 0,
-        zIndex: theme.zIndex.appBar,
-        marginLeft: 0,
-        width: '100%'
+    <AppBar
+      position="fixed"
+      sx={{
+        width: { md: `calc(100% - ${currentDrawerWidth}px)` },
+        ml: { md: `${currentDrawerWidth}px` },
+        backgroundColor: 'white',
+        color: 'text.primary',
+        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+        transition: theme.transitions.create(['width', 'margin'], {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
       }}
     >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Toolbar>
         <IconButton
+          color="inherit"
+          aria-label="toggle sidebar"
+          edge="start"
           onClick={onToggleSidebar}
-          sx={{
-            color: '#10B981',
-            '&:hover': {
-              backgroundColor: 'rgba(16, 185, 129, 0.1)'
-            },
-            transition: 'all 0.2s ease-in-out'
-          }}
+          sx={{ mr: 2 }}
         >
           <MenuIcon />
         </IconButton>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CodeIcon sx={{ color: '#10B981', fontSize: '1.25rem' }} />
-          <Box>
-            <Typography 
-              variant="body1" 
-              sx={{ 
-                color: '#ffffff', 
-                fontWeight: 700,
-                fontSize: '0.875rem',
-                lineHeight: 1
-              }}
-            >
-              Team Admin Panel
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: '#9CA3AF',
-                fontSize: '0.75rem'
-              }}
-            >
-              Superuser
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-      
-      <Avatar 
-        sx={{ 
-          bgcolor: 'secondary.main',
-          width: 32,
-          height: 32,
-          fontSize: '0.75rem',
-          fontWeight: 600
-        }}
-      >
-        SA
-      </Avatar>
-    </Box>
+        <Typography 
+          variant="h6" 
+          noWrap 
+          component="div"
+          sx={{
+            fontWeight: 600,
+            color: 'text.primary',
+          }}
+        >
+          {currentPageTitle}
+        </Typography>
+      </Toolbar>
+    </AppBar>
   );
 };
 

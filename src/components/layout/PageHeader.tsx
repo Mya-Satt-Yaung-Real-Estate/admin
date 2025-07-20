@@ -6,12 +6,7 @@ import {
   Link,
 } from '@mui/material';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
-
-interface PageHeaderProps {
-  title: string;
-  breadcrumbs?: string;
-  subtitle?: string;
-}
+import { PageHeaderProps } from '@/types';
 
 const PageHeader: React.FC<PageHeaderProps> = ({ 
   title, 
