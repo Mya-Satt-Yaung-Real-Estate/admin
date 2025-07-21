@@ -15,13 +15,7 @@ import {
   Avatar,
   Typography,
   InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tooltip,
-  Card,
-  CardContent,
   Grid,
   Badge,
   useTheme,
@@ -37,94 +31,52 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 
-interface User {
+interface AdminUser {
   id: number;
   name: string;
   email: string;
-  role: 'Normal User' | 'Company User';
-  status: 'active' | 'inactive' | 'pending';
+  role: string;
+  status: 'active' | 'inactive';
   avatar: string;
   lastLogin: string;
   createdAt: string;
-  phone?: string;
 }
 
-const mockUsers: User[] = [
+const mockAdmins: AdminUser[] = [
   {
     id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Normal User',
+    name: 'Alice Admin',
+    email: 'alice.admin@example.com',
+    role: 'Super Admin',
     status: 'active',
-    avatar: 'JD',
-    lastLogin: '2024-01-15 10:30',
-    createdAt: '2023-06-15',
-    phone: '+1 (555) 123-4567'
+    avatar: 'AA',
+    lastLogin: '2024-01-15 09:00',
+    createdAt: '2023-01-01',
   },
   {
     id: 2,
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'JS',
-    lastLogin: '2024-01-14 15:45',
-    createdAt: '2023-08-20',
-    phone: '+1 (555) 234-5678'
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike.johnson@example.com',
-    role: 'Company User',
+    name: 'Bob Manager',
+    email: 'bob.manager@example.com',
+    role: 'Admin',
     status: 'inactive',
-    avatar: 'MJ',
-    lastLogin: '2024-01-10 09:15',
-    createdAt: '2023-09-10',
-    phone: '+1 (555) 345-6789'
+    avatar: 'BM',
+    lastLogin: '2024-01-10 14:30',
+    createdAt: '2023-03-12',
   },
-  {
-    id: 4,
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@example.com',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: 'SW',
-    lastLogin: 'Never',
-    createdAt: '2024-01-12',
-    phone: '+1 (555) 456-7890'
-  },
-  {
-    id: 5,
-    name: 'David Brown',
-    email: 'david.brown@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'DB',
-    lastLogin: '2024-01-13 14:20',
-    createdAt: '2023-11-05',
-    phone: '+1 (555) 567-8901'
-  }
 ];
 
-const UserListPage: React.FC = () => {
+const AdminListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
 
-  const filteredUsers = mockUsers.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (user.phone && user.phone.includes(searchTerm));
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    return matchesSearch && matchesStatus && matchesRole;
-  });
+  const filteredAdmins = mockAdmins.filter(admin =>
+    admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    admin.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -135,121 +87,35 @@ const UserListPage: React.FC = () => {
     setPage(0);
   };
 
-  const handleViewUser = (userId: number) => {
-    navigate(`/users/${userId}`);
+  const handleViewAdmin = (adminId: number) => {
+    navigate(`/admins/${adminId}`);
   };
 
-  const handleEditUser = (userId: number) => {
-    navigate(`/users/${userId}/edit`);
+  const handleEditAdmin = (adminId: number) => {
+    navigate(`/admins/${adminId}/edit`);
   };
 
-  const handleDeleteUser = (user: User) => {
-    // Handle delete user logic
-    console.log('Delete user:', user);
+  const handleDeleteAdmin = (admin: AdminUser) => {
+    // Handle delete admin logic
+    console.log('Delete admin:', admin);
   };
 
-  const handleAddUser = () => {
-    navigate('/users/create');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'error';
-      case 'pending':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'Normal User':
-        return 'primary';
-      case 'Company User':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusCount = (status: string) => {
-    return mockUsers.filter(user => user.status === status).length;
-  };
-
-  const getRoleCount = (role: string) => {
-    return mockUsers.filter(user => user.role === role).length;
+  const handleAddAdmin = () => {
+    navigate('/admins/create');
   };
 
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
-        title="User Management"
-        breadcrumbs="Dashboard / User Management"
-        subtitle="Manage real estate users and company users"
+        title="Admin User Management"
+        breadcrumbs="Dashboard / Admin Users"
+        subtitle="Manage admin users and permissions"
         actionButton={{
-          text: 'Add User',
+          text: 'Add Admin',
           icon: <AddIcon />,
-          onClick: handleAddUser
+          onClick: handleAddAdmin
         }}
       />
-
-      {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Users
-              </Typography>
-              <Typography variant="h4">
-                {mockUsers.length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Normal Users
-              </Typography>
-              <Typography variant="h4" color="primary">
-                {getRoleCount('Normal User')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Company Users
-              </Typography>
-              <Typography variant="h4" color="secondary">
-                {getRoleCount('Company User')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Active Users
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {getStatusCount('active')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Filters */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box
           sx={{
@@ -261,7 +127,7 @@ const UserListPage: React.FC = () => {
           }}
         >
           <TextField
-            placeholder="Search users by name, email, or phone..."
+            placeholder="Search admins by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -273,41 +139,14 @@ const UserListPage: React.FC = () => {
             }}
             sx={{ minWidth: { xs: 180, sm: 300 }, flexGrow: 1 }}
           />
-          <FormControl sx={{ minWidth: { xs: 180, sm: 120 } }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: { xs: 180, sm: 120 } }}>
-            <InputLabel>Role</InputLabel>
-            <Select
-              value={roleFilter}
-              label="Role"
-              onChange={(e) => setRoleFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Roles</MenuItem>
-              <MenuItem value="Normal User">Normal User</MenuItem>
-              <MenuItem value="Company User">Company User</MenuItem>
-            </Select>
-          </FormControl>
         </Box>
       </Paper>
-
-      {/* User List/Table */}
       {isMobile ? (
         <Grid container spacing={2}>
-          {filteredUsers
+          {filteredAdmins
             .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            .map((user) => (
-              <Grid item xs={12} key={user.id}>
+            .map((admin) => (
+              <Grid item xs={12} key={admin.id}>
                 <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Badge
                     overlap="circular"
@@ -318,64 +157,59 @@ const UserListPage: React.FC = () => {
                           width: 8,
                           height: 8,
                           borderRadius: '50%',
-                          backgroundColor: user.status === 'active' ? '#4caf50' : user.status === 'inactive' ? '#f44336' : '#ff9800'
+                          backgroundColor: admin.status === 'active' ? '#4caf50' : '#f44336'
                         }}
                       />
                     }
                   >
                     <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-                      {user.avatar}
+                      {admin.avatar}
                     </Avatar>
                   </Badge>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle1" fontWeight={600}>
-                      {user.name}
+                      {admin.name}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      {user.email}
+                      {admin.email}
                     </Typography>
-                    {user.phone && (
-                      <Typography variant="body2" color="textSecondary">
-                        {user.phone}
-                      </Typography>
-                    )}
                     <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Chip
-                        label={user.role}
-                        color={getRoleColor(user.role)}
+                        label={admin.role}
+                        color={admin.role === 'Super Admin' ? 'primary' : 'secondary'}
                         size="small"
                         variant="outlined"
                       />
                       <Chip
-                        label={user.status}
-                        color={getStatusColor(user.status)}
+                        label={admin.status}
+                        color={admin.status === 'active' ? 'success' : 'error'}
                         size="small"
                       />
                     </Box>
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Tooltip title="View User">
+                    <Tooltip title="View Admin">
                       <IconButton
                         size="small"
-                        onClick={() => handleViewUser(user.id)}
+                        onClick={() => handleViewAdmin(admin.id)}
                         color="primary"
                       >
                         <ViewIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Edit User">
+                    <Tooltip title="Edit Admin">
                       <IconButton
                         size="small"
-                        onClick={() => handleEditUser(user.id)}
+                        onClick={() => handleEditAdmin(admin.id)}
                         color="secondary"
                       >
                         <EditIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete User">
+                    <Tooltip title="Delete Admin">
                       <IconButton
                         size="small"
-                        onClick={() => handleDeleteUser(user)}
+                        onClick={() => handleDeleteAdmin(admin)}
                         color="error"
                       >
                         <DeleteIcon />
@@ -389,7 +223,7 @@ const UserListPage: React.FC = () => {
             <TablePagination
               rowsPerPageOptions={[5, 10, 25]}
               component="div"
-              count={filteredUsers.length}
+              count={filteredAdmins.length}
               rowsPerPage={rowsPerPage}
               page={page}
               onPageChange={handleChangePage}
@@ -403,7 +237,7 @@ const UserListPage: React.FC = () => {
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>User</TableCell>
+                  <TableCell>Admin</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Last Login</TableCell>
@@ -412,10 +246,10 @@ const UserListPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredUsers
+                {filteredAdmins
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((user) => (
-                    <TableRow hover key={user.id}>
+                  .map((admin) => (
+                    <TableRow hover key={admin.id}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Badge
@@ -427,79 +261,74 @@ const UserListPage: React.FC = () => {
                                   width: 8,
                                   height: 8,
                                   borderRadius: '50%',
-                                  backgroundColor: user.status === 'active' ? '#4caf50' : user.status === 'inactive' ? '#f44336' : '#ff9800'
+                                  backgroundColor: admin.status === 'active' ? '#4caf50' : '#f44336'
                                 }}
                               />
                             }
                           >
                             <Avatar sx={{ bgcolor: 'primary.main' }}>
-                              {user.avatar}
+                              {admin.avatar}
                             </Avatar>
                           </Badge>
                           <Box>
                             <Typography variant="subtitle2" fontWeight="600">
-                              {user.name}
+                              {admin.name}
                             </Typography>
                             <Typography variant="body2" color="textSecondary">
-                              {user.email}
+                              {admin.email}
                             </Typography>
-                            {user.phone && (
-                              <Typography variant="body2" color="textSecondary">
-                                {user.phone}
-                              </Typography>
-                            )}
                           </Box>
                         </Box>
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={user.role}
-                          color={getRoleColor(user.role)}
+                          label={admin.role}
+                          color={admin.role === 'Super Admin' ? 'primary' : 'secondary'}
                           size="small"
                           variant="outlined"
                         />
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={user.status}
-                          color={getStatusColor(user.status)}
+                          label={admin.status}
+                          color={admin.status === 'active' ? 'success' : 'error'}
                           size="small"
                         />
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
                         <Typography variant="body2" color="textSecondary">
-                          {user.lastLogin}
+                          {admin.lastLogin}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                         <Typography variant="body2" color="textSecondary">
-                          {user.createdAt}
+                          {admin.createdAt}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="View User">
+                          <Tooltip title="View Admin">
                             <IconButton
                               size="small"
-                              onClick={() => handleViewUser(user.id)}
+                              onClick={() => handleViewAdmin(admin.id)}
                               color="primary"
                             >
                               <ViewIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Edit User">
+                          <Tooltip title="Edit Admin">
                             <IconButton
                               size="small"
-                              onClick={() => handleEditUser(user.id)}
+                              onClick={() => handleEditAdmin(admin.id)}
                               color="secondary"
                             >
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Delete User">
+                          <Tooltip title="Delete Admin">
                             <IconButton
                               size="small"
-                              onClick={() => handleDeleteUser(user)}
+                              onClick={() => handleDeleteAdmin(admin)}
                               color="error"
                             >
                               <DeleteIcon />
@@ -515,7 +344,7 @@ const UserListPage: React.FC = () => {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25]}
             component="div"
-            count={filteredUsers.length}
+            count={filteredAdmins.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -527,4 +356,4 @@ const UserListPage: React.FC = () => {
   );
 };
 
-export default UserListPage; 
+export default AdminListPage; 

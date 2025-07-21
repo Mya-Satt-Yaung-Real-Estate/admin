@@ -14,6 +14,18 @@ const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const AdminListPage = lazy(() => import('@/pages/admins/AdminListPage'));
+const AdminCreatePage = lazy(() => import('@/pages/admins/AdminCreatePage'));
+const AdminDetailPage = lazy(() => import('@/pages/admins/AdminDetailPage'));
+const AdminEditPage = lazy(() => import('@/pages/admins/AdminEditPage'));
+const RoleListPage = lazy(() => import('@/pages/roles/RoleListPage'));
+const RoleCreatePage = lazy(() => import('@/pages/roles/RoleCreatePage'));
+const RoleDetailPage = lazy(() => import('@/pages/roles/RoleDetailPage'));
+const RoleEditPage = lazy(() => import('@/pages/roles/RoleEditPage'));
+const PermissionListPage = lazy(() => import('@/pages/permissions/PermissionListPage'));
+const PermissionCreatePage = lazy(() => import('@/pages/permissions/PermissionCreatePage'));
+const PermissionDetailPage = lazy(() => import('@/pages/permissions/PermissionDetailPage'));
+const PermissionEditPage = lazy(() => import('@/pages/permissions/PermissionEditPage'));
 
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
@@ -90,6 +102,54 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <PublicRoute><LoginPage /></PublicRoute>,
+  },
+  {
+    path: '/admins',
+    element: <ProtectedRoute><AdminListPage /></ProtectedRoute>,
+  },
+  {
+    path: '/admins/create',
+    element: <ProtectedRoute><AdminCreatePage /></ProtectedRoute>,
+  },
+  {
+    path: '/admins/:id',
+    element: <ProtectedRoute><AdminDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: '/admins/:id/edit',
+    element: <ProtectedRoute><AdminEditPage /></ProtectedRoute>,
+  },
+  {
+    path: '/roles',
+    element: <ProtectedRoute><RoleListPage /></ProtectedRoute>,
+  },
+  {
+    path: '/roles/create',
+    element: <ProtectedRoute><RoleCreatePage /></ProtectedRoute>,
+  },
+  {
+    path: '/roles/:id',
+    element: <ProtectedRoute><RoleDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: '/roles/:id/edit',
+    element: <ProtectedRoute><RoleEditPage /></ProtectedRoute>,
+  },
+  {
+    path: '/permissions',
+    element: <ProtectedRoute><PermissionListPage /></ProtectedRoute>,
+  },
+  {
+    path: '/permissions/create',
+    element: <ProtectedRoute><PermissionCreatePage /></ProtectedRoute>,
+  },
+  {
+    path: '/permissions/:id',
+    element: <ProtectedRoute><PermissionDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: '/permissions/:id/edit',
+    element: <ProtectedRoute><PermissionEditPage /></ProtectedRoute>,
   },
   {
     path: '*',

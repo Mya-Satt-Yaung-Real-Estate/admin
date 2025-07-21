@@ -7,11 +7,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
-
-interface MenuItem {
-  text: string;
-  path: string;
-}
+import { MenuItem } from '@/types/layout';
 
 interface TopBarProps {
   menuItems: MenuItem[];
@@ -33,7 +29,23 @@ const TopBar: React.FC<TopBarProps> = ({
   const theme = useTheme();
   const currentDrawerWidth = isMobile ? drawerWidth : (isCollapsed ? 64 : drawerWidth);
   
-  const currentPageTitle = menuItems.find(item => item.path === currentPath)?.text || 'Dashboard';
+  // Find the current page title, handling both direct paths and nested paths
+  const findCurrentPageTitle = (items: MenuItem[]): string => {
+    for (const item of items) {
+      if (item.path === currentPath) {
+        return item.text;
+      }
+      if (item.children) {
+        const childTitle = findCurrentPageTitle(item.children);
+        if (childTitle) {
+          return childTitle;
+        }
+      }
+    }
+    return 'Dashboard';
+  };
+
+  const currentPageTitle = findCurrentPageTitle(menuItems);
 
   return (
     <AppBar

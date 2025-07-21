@@ -23,10 +23,11 @@ export interface PageHeaderProps {
 export interface SidebarItemProps {
   text: string;
   icon: React.ReactNode;
-  path: string;
+  path?: string;
   isSelected: boolean;
   isCollapsed: boolean;
   onClick: (path: string) => void;
+  sx?: any;
 }
 
 export interface SidebarProps {
@@ -54,7 +55,8 @@ export interface TopBarProps {
 export interface MenuItem {
   text: string;
   iconName: string;
-  path: string;
+  path?: string;
+  children?: MenuItem[];
 }
 
 // Layout Constants

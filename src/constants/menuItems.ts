@@ -19,4 +19,25 @@ export const MENU_ITEMS = [
     iconName: 'Settings',
     path: '/settings',
   },
+  {
+    text: 'Admins',
+    iconName: 'People',
+    children: [
+      {
+        text: 'Admin Users',
+        iconName: 'People',
+        path: '/admins',
+      },
+      {
+        text: 'Roles',
+        iconName: 'People',
+        path: '/roles',
+      },
+      {
+        text: 'Permissions',
+        iconName: 'People',
+        path: '/permissions',
+      },
+    ],
+  },
 ]; 

@@ -42,13 +42,12 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: 'Normal User' | 'Company User';
   status: 'active' | 'inactive' | 'pending';
   avatar: string;
   lastLogin: string;
   createdAt: string;
   phone?: string;
-  department?: string;
   location?: string;
   bio?: string;
 }
@@ -80,80 +79,67 @@ const mockUsers: User[] = [
     id: 1,
     name: 'John Doe',
     email: 'john.doe@example.com',
-    role: 'Admin',
+    role: 'Normal User',
     status: 'active',
     avatar: 'JD',
     lastLogin: '2024-01-15 10:30',
     createdAt: '2023-06-15',
     phone: '+1 (555) 123-4567',
-    department: 'IT',
     location: 'New York, NY',
-    bio: 'Senior IT Administrator with 8+ years of experience in system administration and user management.'
+    bio: 'Real estate enthusiast looking for investment opportunities in the city.'
   },
   {
     id: 2,
     name: 'Jane Smith',
     email: 'jane.smith@example.com',
-    role: 'User',
+    role: 'Company User',
     status: 'active',
     avatar: 'JS',
     lastLogin: '2024-01-14 15:45',
     createdAt: '2023-08-20',
     phone: '+1 (555) 234-5678',
-    department: 'Marketing',
     location: 'Los Angeles, CA',
-    bio: 'Marketing Specialist focused on digital campaigns and brand development.'
+    bio: 'Real estate agent specializing in luxury properties and commercial real estate.'
   },
   {
     id: 3,
     name: 'Mike Johnson',
     email: 'mike.johnson@example.com',
-    role: 'Manager',
+    role: 'Company User',
     status: 'inactive',
     avatar: 'MJ',
     lastLogin: '2024-01-10 09:15',
     createdAt: '2023-09-10',
     phone: '+1 (555) 345-6789',
-    department: 'Sales',
     location: 'Chicago, IL',
-    bio: 'Sales Manager with expertise in B2B sales and team leadership.'
+    bio: 'Property owner and real estate investor with portfolio across multiple states.'
   },
   {
     id: 4,
     name: 'Sarah Wilson',
     email: 'sarah.wilson@example.com',
-    role: 'User',
+    role: 'Normal User',
     status: 'pending',
     avatar: 'SW',
     lastLogin: 'Never',
     createdAt: '2024-01-12',
     phone: '+1 (555) 456-7890',
-    department: 'HR',
-    location: 'Austin, TX',
-    bio: 'HR Coordinator specializing in recruitment and employee relations.'
+    location: 'Miami, FL',
+    bio: 'First-time homebuyer looking for family-friendly neighborhoods.'
   },
   {
     id: 5,
     name: 'David Brown',
     email: 'david.brown@example.com',
-    role: 'User',
+    role: 'Normal User',
     status: 'active',
     avatar: 'DB',
     lastLogin: '2024-01-13 14:20',
     createdAt: '2023-11-05',
     phone: '+1 (555) 567-8901',
-    department: 'Finance',
     location: 'Seattle, WA',
-    bio: 'Financial Analyst with strong background in budgeting and financial planning.'
+    bio: 'Tech professional seeking modern apartments in downtown area.'
   }
-];
-
-const mockActivityLog = [
-  { id: 1, action: 'Login', timestamp: '2024-01-15 10:30', ip: '192.168.1.100' },
-  { id: 2, action: 'Password Changed', timestamp: '2024-01-14 15:45', ip: '192.168.1.100' },
-  { id: 3, action: 'Profile Updated', timestamp: '2024-01-13 14:20', ip: '192.168.1.100' },
-  { id: 4, action: 'Login', timestamp: '2024-01-12 09:15', ip: '192.168.1.100' },
-  { id: 5, action: 'Login', timestamp: '2024-01-11 16:30', ip: '192.168.1.100' },
 ];
 
 const UserDetailPage: React.FC = () => {
@@ -163,9 +149,10 @@ const UserDetailPage: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
-    const userId = parseInt(id || '1');
-    const foundUser = mockUsers.find(u => u.id === userId);
-    setUser(foundUser || null);
+    if (id) {
+      const foundUser = mockUsers.find(u => u.id === parseInt(id));
+      setUser(foundUser || null);
+    }
   }, [id]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -187,12 +174,10 @@ const UserDetailPage: React.FC = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case 'Admin':
+      case 'Normal User':
         return 'primary';
-      case 'Manager':
+      case 'Company User':
         return 'secondary';
-      case 'User':
-        return 'info';
       default:
         return 'default';
     }
@@ -210,8 +195,8 @@ const UserDetailPage: React.FC = () => {
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title="User Details"
-        breadcrumbs={`Dashboard / Users / ${user.name}`}
-        subtitle="View detailed information about this user"
+        breadcrumbs="Dashboard / User Management / User Details"
+        subtitle={`Viewing details for ${user.name}`}
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,
@@ -232,16 +217,15 @@ const UserDetailPage: React.FC = () => {
                     width: 12,
                     height: 12,
                     borderRadius: '50%',
-                    backgroundColor: user.status === 'active' ? '#4caf50' : 
-                                    user.status === 'inactive' ? '#f44336' : '#ff9800'
+                    backgroundColor: user.status === 'active' ? '#4caf50' : user.status === 'inactive' ? '#f44336' : '#ff9800'
                   }}
                 />
               }
             >
               <Avatar
-                sx={{ 
-                  width: 120, 
-                  height: 120, 
+                sx={{
+                  width: 120,
+                  height: 120,
                   bgcolor: 'primary.main',
                   fontSize: '2.5rem',
                   mx: 'auto',
@@ -263,74 +247,33 @@ const UserDetailPage: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 2 }}>
               <Chip
                 label={user.role}
-                color={getRoleColor(user.role) as any}
+                color={getRoleColor(user.role)}
                 size="small"
                 variant="outlined"
               />
               <Chip
                 label={user.status}
-                color={getStatusColor(user.status) as any}
+                color={getStatusColor(user.status)}
                 size="small"
               />
             </Box>
             
             <Divider sx={{ my: 2 }} />
             
-            <List dense>
-              <ListItem>
-                <ListItemIcon>
-                  <BusinessIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Department" 
-                  secondary={user.department || 'N/A'} 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <LocationIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Location" 
-                  secondary={user.location || 'N/A'} 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <CalendarIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Member Since" 
-                  secondary={user.createdAt} 
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <AccessTimeIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Last Login" 
-                  secondary={user.lastLogin} 
-                />
-              </ListItem>
-            </List>
-            
-            <Box sx={{ mt: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<EditIcon />}
-                onClick={() => navigate(`/users/${user.id}/edit`)}
-                fullWidth
-              >
-                Edit User
-              </Button>
-            </Box>
+            <Button
+              variant="contained"
+              startIcon={<EditIcon />}
+              onClick={() => navigate(`/users/${user.id}/edit`)}
+              fullWidth
+            >
+              Edit User
+            </Button>
           </Paper>
         </Grid>
 
-        {/* User Details Tabs */}
+        {/* User Details */}
         <Grid item xs={12} md={8}>
-          <Paper>
+          <Paper sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs value={tabValue} onChange={handleTabChange}>
                 <Tab label="Overview" />
@@ -343,66 +286,88 @@ const UserDetailPage: React.FC = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <Typography variant="h6" gutterBottom>
-                    About
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {user.bio || 'No bio available for this user.'}
+                    Contact Information
                   </Typography>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        Contact Information
-                      </Typography>
-                      <List dense>
-                        <ListItem>
-                          <ListItemIcon>
-                            <EmailIcon />
-                          </ListItemIcon>
-                          <ListItemText primary="Email" secondary={user.email} />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon>
-                            <PhoneIcon />
-                          </ListItemIcon>
-                          <ListItemText primary="Phone" secondary={user.phone || 'N/A'} />
-                        </ListItem>
-                      </List>
-                    </CardContent>
-                  </Card>
+                  <List>
+                    <ListItem>
+                      <ListItemIcon>
+                        <EmailIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Email"
+                        secondary={user.email}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <PhoneIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Phone"
+                        secondary={user.phone || 'Not provided'}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <LocationIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Location"
+                        secondary={user.location || 'Not provided'}
+                      />
+                    </ListItem>
+                  </List>
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom>
-                        Account Information
-                      </Typography>
-                      <List dense>
-                        <ListItem>
-                          <ListItemIcon>
-                            <SecurityIcon />
-                          </ListItemIcon>
-                          <ListItemText primary="Role" secondary={user.role} />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon>
-                            <BusinessIcon />
-                          </ListItemIcon>
-                          <ListItemText primary="Department" secondary={user.department || 'N/A'} />
-                        </ListItem>
-                        <ListItem>
-                          <ListItemIcon>
-                            <AccessTimeIcon />
-                          </ListItemIcon>
-                          <ListItemText primary="Status" secondary={user.status} />
-                        </ListItem>
-                      </List>
-                    </CardContent>
-                  </Card>
+                  <List>
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Role"
+                        secondary={user.role}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <SecurityIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Status"
+                        secondary={user.status}
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <CalendarIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Member Since"
+                        secondary={user.createdAt}
+                      />
+                    </ListItem>
+                  </List>
                 </Grid>
+
+                {user.bio && (
+                  <Grid item xs={12}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          Bio
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          {user.bio}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                )}
               </Grid>
             </TabPanel>
 
@@ -410,23 +375,39 @@ const UserDetailPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Recent Activity
               </Typography>
+              
               <TableContainer>
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell>Action</TableCell>
-                      <TableCell>Timestamp</TableCell>
-                      <TableCell>IP Address</TableCell>
+                      <TableCell>Activity</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Status</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {mockActivityLog.map((activity) => (
-                      <TableRow key={activity.id}>
-                        <TableCell>{activity.action}</TableCell>
-                        <TableCell>{activity.timestamp}</TableCell>
-                        <TableCell>{activity.ip}</TableCell>
-                      </TableRow>
-                    ))}
+                    <TableRow>
+                      <TableCell>Last Login</TableCell>
+                      <TableCell>{user.lastLogin}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.status === 'active' ? 'Online' : 'Offline'}
+                          color={user.status === 'active' ? 'success' : 'default'}
+                          size="small"
+                        />
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>Account Created</TableCell>
+                      <TableCell>{user.createdAt}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label="Completed"
+                          color="success"
+                          size="small"
+                        />
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -436,9 +417,27 @@ const UserDetailPage: React.FC = () => {
               <Typography variant="h6" gutterBottom>
                 Account Settings
               </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Account settings and preferences will be displayed here.
-              </Typography>
+              
+              <List>
+                <ListItem>
+                  <ListItemIcon>
+                    <AccessTimeIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Account Status"
+                    secondary={user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'Pending'}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <SecurityIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="User Type"
+                    secondary={user.role === 'Normal User' ? 'Real Estate Seeker' : 'Real Estate Professional'}
+                  />
+                </ListItem>
+              </List>
             </TabPanel>
           </Paper>
         </Grid>
