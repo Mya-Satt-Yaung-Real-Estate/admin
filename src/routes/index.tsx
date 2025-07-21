@@ -14,6 +14,10 @@ const AnalyticsPage = lazy(() => import('@/pages/analytics/AnalyticsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+const AdminListPage = lazy(() => import('@/pages/admins/AdminListPage'));
+const AdminCreatePage = lazy(() => import('@/pages/admins/AdminCreatePage'));
+const AdminDetailPage = lazy(() => import('@/pages/admins/AdminDetailPage'));
+const AdminEditPage = lazy(() => import('@/pages/admins/AdminEditPage'));
 
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
@@ -90,6 +94,22 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <PublicRoute><LoginPage /></PublicRoute>,
+  },
+  {
+    path: '/admins',
+    element: <ProtectedRoute><AdminListPage /></ProtectedRoute>,
+  },
+  {
+    path: '/admins/create',
+    element: <ProtectedRoute><AdminCreatePage /></ProtectedRoute>,
+  },
+  {
+    path: '/admins/:id',
+    element: <ProtectedRoute><AdminDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: '/admins/:id/edit',
+    element: <ProtectedRoute><AdminEditPage /></ProtectedRoute>,
   },
   {
     path: '*',
