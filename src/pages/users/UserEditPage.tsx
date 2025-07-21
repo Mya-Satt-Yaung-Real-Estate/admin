@@ -12,19 +12,15 @@ import {
   Grid,
   Avatar,
   Divider,
-  Alert,
-  Card,
-  CardContent,
   Switch,
   FormControlLabel,
   Chip,
 } from '@mui/material';
 import {
+  ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  ArrowBack as ArrowBackIcon,
   Delete as DeleteIcon,
-  Security as SecurityIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';

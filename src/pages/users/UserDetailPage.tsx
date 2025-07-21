@@ -25,8 +25,8 @@ import {
   TableRow,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
+  Edit as EditIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
   Business as BusinessIcon,
@@ -34,9 +34,6 @@ import {
   AccessTime as AccessTimeIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
-  Person as PersonIcon,
-  History as HistoryIcon,
-  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';

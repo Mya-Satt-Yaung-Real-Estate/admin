@@ -11,8 +11,6 @@ import {
   MenuItem,
   Grid,
   Avatar,
-  IconButton,
-  Divider,
   Alert,
   Stepper,
   Step,
@@ -23,7 +21,6 @@ import {
 import {
   Save as SaveIcon,
   Cancel as CancelIcon,
-  PhotoCamera as PhotoCameraIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
