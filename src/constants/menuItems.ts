@@ -10,11 +10,6 @@ export const MENU_ITEMS = [
     path: '/users',
   },
   {
-    text: 'Admin Users',
-    iconName: 'People',
-    path: '/admins',
-  },
-  {
     text: 'Analytics',
     iconName: 'Assessment',
     path: '/analytics',
@@ -23,5 +18,26 @@ export const MENU_ITEMS = [
     text: 'Settings',
     iconName: 'Settings',
     path: '/settings',
+  },
+  {
+    text: 'Admin Management',
+    iconName: 'People',
+    children: [
+      {
+        text: 'Admin Users',
+        iconName: 'People',
+        path: '/admins',
+      },
+      {
+        text: 'Roles',
+        iconName: 'People',
+        path: '/roles',
+      },
+      {
+        text: 'Permissions',
+        iconName: 'People',
+        path: '/permissions',
+      },
+    ],
   },
 ]; 

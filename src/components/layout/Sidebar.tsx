@@ -6,6 +6,7 @@ import {
   List,
   IconButton,
   useTheme,
+  Divider,
 } from '@mui/material';
 import {
   ChevronLeft as ChevronLeftIcon,
@@ -60,6 +61,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const theme = useTheme();
   const currentDrawerWidth = isMobile ? drawerWidth : (isCollapsed ? 64 : drawerWidth);
 
+  // Find the index of the Analytics item
+  const analyticsIdx = menuItems.findIndex(item => item.text === 'Analytics');
+  // Everything before and including Analytics
+  const mainMenu = menuItems.slice(0, analyticsIdx + 1);
+  // Everything after Analytics (Settings and Admin Management)
+  const secondaryMenu = menuItems.slice(analyticsIdx + 1);
+
   const sidebarContent = (
     <Box sx={{ 
       marginLeft: 0, 
@@ -102,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         px: 1,
       }}>
         <List sx={{ p: 0 }}>
-          {menuItems.map((item) => (
+          {mainMenu.map((item) => (
             <SidebarItem
               key={item.text}
               text={item.text}
@@ -111,6 +119,26 @@ const Sidebar: React.FC<SidebarProps> = ({
               isSelected={currentPath === item.path}
               isCollapsed={isCollapsed}
               onClick={onNavigate}
+              childrenItems={item.children}
+              currentPath={currentPath}
+            />
+          ))}
+        </List>
+        {secondaryMenu.length > 0 && (
+          <Divider sx={{ my: 1, borderColor: 'divider' }} />
+        )}
+        <List sx={{ p: 0 }}>
+          {secondaryMenu.map((item) => (
+            <SidebarItem
+              key={item.text}
+              text={item.text}
+              icon={getIconComponent(item.iconName)}
+              path={item.path}
+              isSelected={currentPath === item.path}
+              isCollapsed={isCollapsed}
+              onClick={onNavigate}
+              childrenItems={item.children}
+              currentPath={currentPath}
             />
           ))}
         </List>
