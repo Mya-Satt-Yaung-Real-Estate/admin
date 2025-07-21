@@ -15,12 +15,9 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Card,
-  CardContent,
 } from '@mui/material';
 import {
   Save as SaveIcon,
-  Cancel as CancelIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -31,8 +28,7 @@ interface UserFormData {
   lastName: string;
   email: string;
   phone: string;
-  role: string;
-  department: string;
+  role: 'Normal User' | 'Company User';
   status: 'active' | 'inactive' | 'pending';
   avatar: string;
   password: string;
@@ -47,17 +43,16 @@ const UserCreatePage: React.FC = () => {
     lastName: '',
     email: '',
     phone: '',
-    role: 'User',
-    department: '',
+    role: 'Normal User',
     status: 'pending',
     avatar: '',
     password: '',
     confirmPassword: '',
   });
-  const [errors, setErrors] = useState<Partial<UserFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof UserFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const steps = ['Basic Information', 'Role & Department', 'Account Settings'];
+  const steps = ['Basic Information', 'Role & Status', 'Account Settings'];
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
     setFormData(prev => ({
@@ -75,7 +70,7 @@ const UserCreatePage: React.FC = () => {
   };
 
   const validateStep = (step: number): boolean => {
-    const newErrors: Partial<UserFormData> = {};
+    const newErrors: Partial<Record<keyof UserFormData, string>> = {};
 
     switch (step) {
       case 0:
@@ -98,15 +93,12 @@ const UserCreatePage: React.FC = () => {
         if (!formData.role) {
           newErrors.role = 'Role is required';
         }
-        if (!formData.department.trim()) {
-          newErrors.department = 'Department is required';
-        }
         break;
       case 2:
         if (!formData.password) {
           newErrors.password = 'Password is required';
-        } else if (formData.password.length < 8) {
-          newErrors.password = 'Password must be at least 8 characters';
+        } else if (formData.password.length < 6) {
+          newErrors.password = 'Password must be at least 6 characters';
         }
         if (!formData.confirmPassword) {
           newErrors.confirmPassword = 'Please confirm your password';
@@ -122,12 +114,12 @@ const UserCreatePage: React.FC = () => {
 
   const handleNext = () => {
     if (validateStep(activeStep)) {
-      setActiveStep(prev => prev + 1);
+      setActiveStep((prevActiveStep) => prevActiveStep + 1);
     }
   };
 
   const handleBack = () => {
-    setActiveStep(prev => prev - 1);
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
   const handleSubmit = async () => {
@@ -203,27 +195,22 @@ const UserCreatePage: React.FC = () => {
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar
-                  sx={{ 
-                    width: 80, 
-                    height: 80, 
+                  sx={{
+                    width: 64,
+                    height: 64,
                     bgcolor: 'primary.main',
-                    fontSize: '1.5rem'
+                    fontSize: '1.5rem',
                   }}
                 >
-                  {formData.avatar || 'NA'}
+                  {formData.avatar || 'U'}
                 </Avatar>
-                <Box>
-                  <Button
-                    variant="outlined"
-                    onClick={generateAvatar}
-                    disabled={!formData.firstName || !formData.lastName}
-                  >
-                    Generate Avatar
-                  </Button>
-                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                    Avatar will be generated from user initials
-                  </Typography>
-                </Box>
+                <Button
+                  variant="outlined"
+                  onClick={generateAvatar}
+                  disabled={!formData.firstName || !formData.lastName}
+                >
+                  Generate Avatar
+                </Button>
               </Box>
             </Grid>
           </Grid>
@@ -232,37 +219,20 @@ const UserCreatePage: React.FC = () => {
         return (
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required error={!!errors.role}>
+              <FormControl fullWidth required>
                 <InputLabel>Role</InputLabel>
                 <Select
                   value={formData.role}
                   label="Role"
                   onChange={(e) => handleInputChange('role', e.target.value)}
+                  error={!!errors.role}
                 >
-                  <MenuItem value="User">User</MenuItem>
-                  <MenuItem value="Manager">Manager</MenuItem>
-                  <MenuItem value="Admin">Admin</MenuItem>
+                  <MenuItem value="Normal User">Normal User (Real Estate Seeker)</MenuItem>
+                  <MenuItem value="Company User">Company User (Agency/Owner)</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required error={!!errors.department}>
-                <InputLabel>Department</InputLabel>
-                <Select
-                  value={formData.department}
-                  label="Department"
-                  onChange={(e) => handleInputChange('department', e.target.value)}
-                >
-                  <MenuItem value="IT">IT</MenuItem>
-                  <MenuItem value="Marketing">Marketing</MenuItem>
-                  <MenuItem value="Sales">Sales</MenuItem>
-                  <MenuItem value="HR">HR</MenuItem>
-                  <MenuItem value="Finance">Finance</MenuItem>
-                  <MenuItem value="Operations">Operations</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -276,17 +246,22 @@ const UserCreatePage: React.FC = () => {
                 </Select>
               </FormControl>
             </Grid>
+            <Grid item xs={12}>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Normal User:</strong> Real estate seekers who can browse properties and contact agents.
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>Company User:</strong> Real estate agencies, property owners, and agents who can list properties.
+                </Typography>
+              </Alert>
+            </Grid>
           </Grid>
         );
       case 2:
         return (
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                Set up the user's account credentials. The user will receive an email to activate their account.
-              </Alert>
-            </Grid>
-            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Password"
@@ -294,11 +269,11 @@ const UserCreatePage: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 error={!!errors.password}
-                helperText={errors.password || 'Minimum 8 characters'}
+                helperText={errors.password}
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Confirm Password"
@@ -311,37 +286,11 @@ const UserCreatePage: React.FC = () => {
               />
             </Grid>
             <Grid item xs={12}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Account Summary
-                  </Typography>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="textSecondary">
-                        Name: {formData.firstName} {formData.lastName}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Email: {formData.email}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Phone: {formData.phone}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="body2" color="textSecondary">
-                        Role: {formData.role}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Department: {formData.department}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        Status: {formData.status}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
+              <Alert severity="warning">
+                <Typography variant="body2">
+                  Password must be at least 6 characters long. The user will be able to change their password after first login.
+                </Typography>
+              </Alert>
             </Grid>
           </Grid>
         );
@@ -354,7 +303,7 @@ const UserCreatePage: React.FC = () => {
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title="Create New User"
-        breadcrumbs="Dashboard / Users / Create"
+        breadcrumbs="Dashboard / User Management / Create User"
         subtitle="Add a new user to the system"
         actionButton={{
           text: 'Back to Users',
@@ -363,7 +312,7 @@ const UserCreatePage: React.FC = () => {
         }}
       />
 
-      <Paper sx={{ p: 4, mb: 3 }}>
+      <Paper sx={{ p: 3 }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -385,14 +334,6 @@ const UserCreatePage: React.FC = () => {
             Back
           </Button>
           <Box>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/users')}
-              startIcon={<CancelIcon />}
-              sx={{ mr: 2 }}
-            >
-              Cancel
-            </Button>
             {activeStep === steps.length - 1 ? (
               <Button
                 variant="contained"
@@ -406,6 +347,8 @@ const UserCreatePage: React.FC = () => {
               <Button
                 variant="contained"
                 onClick={handleNext}
+                startIcon={<ArrowBackIcon />}
+                sx={{ transform: 'rotate(180deg)' }}
               >
                 Next
               </Button>
