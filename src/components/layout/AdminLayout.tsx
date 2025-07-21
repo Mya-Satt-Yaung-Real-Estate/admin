@@ -1,14 +1,12 @@
 import React from 'react';
-import { Box, useTheme, useMediaQuery } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLayout } from '../../hooks/useLayout';
-import { MENU_ITEMS, DRAWER_WIDTH } from '../../constants/menuItems';
+import { MENU_ITEMS } from '../../constants/menuItems';
+import { DRAWER_WIDTH } from '@/types';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
-
-interface AdminLayoutProps {
-  children: React.ReactNode;
-}
+import { AdminLayoutProps } from '@/types';
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const theme = useTheme();

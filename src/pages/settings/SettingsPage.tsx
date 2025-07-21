@@ -3,20 +3,15 @@ import {
   Box,
   Paper,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  Switch,
-  FormControlLabel,
-  TextField,
-  Button,
-  Divider,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
+  Switch,
+  Button,
+  TextField,
+  FormControlLabel,
 } from '@mui/material';
-import PageHeader from '@/components/layout/PageHeader';
+import PageHeader from '../../components/layout/PageHeader';
 
 const SettingsPage: React.FC = () => {
   return (

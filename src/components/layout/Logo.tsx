@@ -38,7 +38,7 @@ const Logo: React.FC<LogoProps> = ({
           variant="h6" 
           sx={{ 
             fontWeight: 700, 
-            color: 'text.primary',
+            color: 'primary.main', // Now uses brand color
             fontSize: size === 'small' ? '1rem' : size === 'large' ? '1.5rem' : '1.25rem'
           }}
         >

@@ -13,6 +13,11 @@ export interface PageHeaderProps {
   title: string;
   breadcrumbs?: string;
   subtitle?: string;
+  actionButton?: {
+    text: string;
+    icon: React.ReactNode;
+    onClick: () => void;
+  };
 }
 
 export interface SidebarItemProps {

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   Box,
-  Grid,
   Paper,
   Typography,
   Card,
@@ -27,7 +26,7 @@ const DashboardPage: React.FC = () => {
       title: 'Total Users',
       value: '1,234',
       icon: <PeopleIcon />,
-      color: 'primary.main',
+      color: 'primary.main', // Brand color
       change: '+12%',
       changeType: 'positive'
     },
@@ -35,7 +34,7 @@ const DashboardPage: React.FC = () => {
       title: 'Active Sessions',
       value: '567',
       icon: <TrendingUpIcon />,
-      color: 'success.main',
+      color: 'secondary.main', // Warm amber
       change: '+8%',
       changeType: 'positive'
     },
@@ -69,19 +68,29 @@ const DashboardPage: React.FC = () => {
       <PageHeader
         title="Dashboard"
         breadcrumbs="Dashboard"
+        subtitle="Welcome back! Here's what's happening with your system today."
       />
 
       {/* Stats Cards */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 4 }}>
         {stats.map((stat, index) => (
-          <Card key={index}>
+          <Card 
+            key={index}
+            sx={{
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(59, 136, 128, 0.15)',
+              }
+            }}
+          >
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
                   <Typography color="text.secondary" gutterBottom variant="body2">
                     {stat.title}
                   </Typography>
-                  <Typography variant="h4" component="div" sx={{ fontWeight: 700 }}>
+                  <Typography variant="h4" component="div" sx={{ fontWeight: 700, color: 'primary.main' }}>
                     {stat.value}
                   </Typography>
                   <Chip
@@ -104,7 +113,7 @@ const DashboardPage: React.FC = () => {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
         {/* Quick Stats */}
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 600 }}>
             Quick Stats
           </Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
@@ -117,7 +126,7 @@ const DashboardPage: React.FC = () => {
               </Typography>
             </Box>
             <Box sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h4" color="success.main" sx={{ fontWeight: 700 }}>
+              <Typography variant="h4" color="secondary.main" sx={{ fontWeight: 700 }}>
                 567
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -125,7 +134,7 @@ const DashboardPage: React.FC = () => {
               </Typography>
             </Box>
             <Box sx={{ textAlign: 'center', p: 2 }}>
-              <Typography variant="h4" color="info.main" sx={{ fontWeight: 700 }}>
+              <Typography variant="h4" color="primary.light" sx={{ fontWeight: 700 }}>
                 89
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -145,7 +154,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Recent Activities */}
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 600 }}>
             Recent Activities
           </Typography>
           <List sx={{ p: 0 }}>
@@ -155,7 +164,7 @@ const DashboardPage: React.FC = () => {
                   <Avatar sx={{ 
                     bgcolor: activity.status === 'success' ? 'success.main' :
                              activity.status === 'error' ? 'error.main' :
-                             activity.status === 'warning' ? 'warning.main' : 'info.main',
+                             activity.status === 'warning' ? 'warning.main' : 'primary.main',
                     width: 32,
                     height: 32
                   }}>
