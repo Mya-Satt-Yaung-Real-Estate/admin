@@ -20,7 +20,7 @@ export const MENU_ITEMS = [
     path: '/settings',
   },
   {
-    text: 'Admin Management',
+    text: 'Admins',
     iconName: 'People',
     children: [
       {
