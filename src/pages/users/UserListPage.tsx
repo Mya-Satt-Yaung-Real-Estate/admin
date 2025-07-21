@@ -25,6 +25,8 @@ import {
   CardContent,
   Grid,
   Badge,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -32,7 +34,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  FilterList as FilterIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
 } from '@mui/icons-material';
@@ -117,6 +118,8 @@ const mockUsers: User[] = [
 
 const UserListPage: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -255,7 +258,15 @@ const UserListPage: React.FC = () => {
 
       {/* Filters */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            alignItems: { xs: 'stretch', sm: 'center' },
+            flexDirection: { xs: 'column', sm: 'row' },
+          }}
+        >
           <TextField
             placeholder="Search users by name, email, or phone..."
             value={searchTerm}
@@ -267,9 +278,9 @@ const UserListPage: React.FC = () => {
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: 300, flexGrow: 1 }}
+            sx={{ minWidth: { xs: 180, sm: 300 }, flexGrow: 1 }}
           />
-          <FormControl sx={{ minWidth: 150 }}>
+          <FormControl sx={{ minWidth: { xs: 120, sm: 150 } }}>
             <InputLabel>Status</InputLabel>
             <Select
               value={statusFilter}
@@ -282,7 +293,7 @@ const UserListPage: React.FC = () => {
               <MenuItem value="pending">Pending</MenuItem>
             </Select>
           </FormControl>
-          <FormControl sx={{ minWidth: 150 }}>
+          <FormControl sx={{ minWidth: { xs: 120, sm: 150 } }}>
             <InputLabel>Role</InputLabel>
             <Select
               value={roleFilter}
@@ -303,150 +314,250 @@ const UserListPage: React.FC = () => {
               setStatusFilter('all');
               setRoleFilter('all');
             }}
+            sx={{ minWidth: { xs: 100, sm: 'auto' } }}
           >
             Reset
           </Button>
           <Button
             variant="outlined"
             startIcon={<DownloadIcon />}
+            sx={{ minWidth: { xs: 100, sm: 'auto' } }}
           >
             Export
           </Button>
         </Box>
       </Paper>
 
-      {/* Users Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <TableContainer>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Department</TableCell>
-                <TableCell>Last Login</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredUsers
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((user) => (
-                  <TableRow hover key={user.id}>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Badge
-                          overlap="circular"
-                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                          badgeContent={
-                            <Box
-                              sx={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                backgroundColor: user.status === 'active' ? '#4caf50' : 
-                                                user.status === 'inactive' ? '#f44336' : '#ff9800'
-                              }}
-                            />
-                          }
-                        >
-                          <Avatar sx={{ bgcolor: 'primary.main' }}>
-                            {user.avatar}
-                          </Avatar>
-                        </Badge>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight="600">
-                            {user.name}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            {user.email}
-                          </Typography>
-                          {user.phone && (
-                            <Typography variant="caption" color="textSecondary">
-                              {user.phone}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
+      {/* Responsive User List/Table */}
+      {isMobile ? (
+        <Grid container spacing={2}>
+          {filteredUsers
+            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            .map((user) => (
+              <Grid item xs={12} key={user.id}>
+                <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Badge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: user.status === 'active' ? '#4caf50' : 
+                                          user.status === 'inactive' ? '#f44336' : '#ff9800'
+                        }}
+                      />
+                    }
+                  >
+                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
+                      {user.avatar}
+                    </Avatar>
+                  </Badge>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {user.name}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {user.email}
+                    </Typography>
+                    {user.phone && (
+                      <Typography variant="caption" color="textSecondary">
+                        {user.phone}
+                      </Typography>
+                    )}
+                    <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Chip
                         label={user.role}
                         color={getRoleColor(user.role) as any}
                         size="small"
                         variant="outlined"
                       />
-                    </TableCell>
-                    <TableCell>
                       <Chip
                         label={user.status}
                         color={getStatusColor(user.status) as any}
                         size="small"
                       />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {user.department || 'N/A'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="textSecondary">
-                        {user.lastLogin}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" color="textSecondary">
-                        {user.createdAt}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                        <Tooltip title="View User">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewUser(user.id)}
-                            color="primary"
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Tooltip title="View User">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleViewUser(user.id)}
+                        color="primary"
+                      >
+                        <ViewIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit User">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditUser(user.id)}
+                        color="secondary"
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete User">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteUser(user)}
+                        color="error"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Paper>
+              </Grid>
+            ))}
+          <Grid item xs={12}>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredUsers.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+          </Grid>
+        </Grid>
+      ) : (
+        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+          <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Department</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Last Login</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Created</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredUsers
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((user) => (
+                    <TableRow hover key={user.id}>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Badge
+                            overlap="circular"
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                            badgeContent={
+                              <Box
+                                sx={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: '50%',
+                                  backgroundColor: user.status === 'active' ? '#4caf50' : 
+                                                  user.status === 'inactive' ? '#f44336' : '#ff9800'
+                                }}
+                              />
+                            }
                           >
-                            <ViewIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit User">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditUser(user.id)}
-                            color="secondary"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete User">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteUser(user)}
-                            color="error"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={filteredUsers.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-      </Paper>
+                            <Avatar sx={{ bgcolor: 'primary.main' }}>
+                              {user.avatar}
+                            </Avatar>
+                          </Badge>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight="600">
+                              {user.name}
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {user.email}
+                            </Typography>
+                            {user.phone && (
+                              <Typography variant="caption" color="textSecondary">
+                                {user.phone}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.role}
+                          color={getRoleColor(user.role) as any}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={user.status}
+                          color={getStatusColor(user.status) as any}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                        <Typography variant="body2">
+                          {user.department || 'N/A'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                        <Typography variant="body2" color="textSecondary">
+                          {user.lastLogin}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                        <Typography variant="body2" color="textSecondary">
+                          {user.createdAt}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                          <Tooltip title="View User">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewUser(user.id)}
+                              color="primary"
+                            >
+                              <ViewIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Edit User">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditUser(user.id)}
+                              color="secondary"
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete User">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteUser(user)}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={filteredUsers.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
+        </Paper>
+      )}
     </Box>
   );
 };
