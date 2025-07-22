@@ -1,19 +1,5 @@
 import { Permission } from '../types/permission';
-
-export const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'inactive':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-export const getStatusCount = (permissions: Permission[], status: string) => {
-  return permissions.filter(permission => permission.status === status).length;
-};
+import { getStatusColor, getStatusCount } from '../constants/status';
 
 export const filterPermissions = (
   permissions: Permission[],
@@ -62,4 +48,7 @@ export const groupPermissionsByModule = (permissions: Permission[]) => {
   });
   
   return grouped;
-}; 
+};
+
+// Re-export status utilities for convenience
+export { getStatusColor, getStatusCount }; 
