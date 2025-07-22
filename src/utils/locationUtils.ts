@@ -1,17 +1,7 @@
 import { Region, Township } from '../types/location';
+import { getStatusColor } from '../constants/status';
 
-export const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'inactive':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-export const getStatusCount = (items: (Region | Township)[], status: string) => {
+export const getStatusCount = (items: (Region | Township)[], status: string): number => {
   return items.filter(item => item.status === status).length;
 };
 
@@ -46,4 +36,7 @@ export const getBreadcrumbs = (selectedRegion: Region | null) => {
     return 'Dashboard / Location Management';
   }
   return `Dashboard / Location Management / ${selectedRegion.name}`;
-}; 
+};
+
+// Re-export status utilities for convenience
+export { getStatusColor }; 

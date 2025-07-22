@@ -1,115 +1,303 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TextField,
   IconButton,
   Chip,
-  Avatar,
   Typography,
-  InputAdornment,
   Tooltip,
-  Grid,
+  Avatar,
   Badge,
   useTheme,
   useMediaQuery,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Card,
-  CardContent,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Alert,
+  Paper,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
+  AdminPanelSettings as AdminIcon,
+  Security as SecurityIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { StandardTable, TableColumn } from '../../components/common/StandardTable';
+import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
+import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
+import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
+import { MobilePagination } from '../../components/common/MobilePagination';
+import { usePagination } from '../../hooks/usePagination';
+import { useFilters } from '../../hooks/useFilters';
+import { getStatusColor, getStatusLabel } from '../../constants/status';
+import { formatRelativeTime } from '../../constants/dateFormats';
+import { FilterState } from '../../constants/filters';
 import { Admin } from '../../types/admin';
 import { mockAdmins } from '../../data/mockAdmins';
 import { getActiveRoles } from '../../data/mockRoles';
-import {
-  getStatusColor,
-  getStatusCount,
-  filterAdmins,
-  formatLastLogin,
-  getFullName,
-} from '../../utils/adminUtils';
+
+interface AdminFilters extends FilterState {
+  searchTerm: string;
+  statusFilter: string;
+  roleFilter: string;
+}
 
 const AdminListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // State management
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
+  // Use standardized hooks
+  const { filters, setFilter } = useFilters<AdminFilters>({
+    statusFilter: 'all',
+    roleFilter: 'all',
+  });
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
-  // Filter admins
-  const filteredAdmins = filterAdmins(mockAdmins, searchTerm, statusFilter, roleFilter);
+  // Get roles for filtering
+  const roles = getActiveRoles();
 
-  // Event handlers
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+  // Filter admins using standardized logic
+  const filteredAdmins = useMemo(() => {
+    return mockAdmins.filter(admin => {
+      const matchesSearch = 
+        admin.username.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        admin.email.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        `${admin.firstName} ${admin.lastName}`.toLowerCase().includes(filters.searchTerm.toLowerCase());
+      const matchesStatus = filters.statusFilter === 'all' || admin.status === filters.statusFilter;
+      const matchesRole = filters.roleFilter === 'all' || admin.roleId.toString() === filters.roleFilter;
+      return matchesSearch && matchesStatus && matchesRole;
+    });
+  }, [filters]);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  // Paginate data
+  const paginatedAdmins = useMemo(() => {
+    return filteredAdmins.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  }, [filteredAdmins, page, rowsPerPage]);
 
-  const handleViewAdmin = (adminId: number) => {
-    navigate(`/admins/${adminId}`);
-  };
+  // Statistics cards
+  const statsCards: StatCard[] = useMemo(() => [
+    {
+      title: 'Total Admins',
+      value: mockAdmins.length,
+      color: 'primary',
+      icon: <AdminIcon />,
+    },
+    {
+      title: 'Active Admins',
+      value: mockAdmins.filter(admin => admin.status === 'active').length,
+      color: 'success',
+      icon: <AdminIcon />,
+    },
+    {
+      title: 'Super Admins',
+      value: mockAdmins.filter(admin => admin.roleId === 1).length,
+      color: 'warning',
+      icon: <SecurityIcon />,
+    },
+    {
+      title: 'Regular Admins',
+      value: mockAdmins.filter(admin => admin.roleId !== 1).length,
+      color: 'info',
+      icon: <AdminIcon />,
+    },
+  ], []);
 
-  const handleEditAdmin = (adminId: number) => {
-    navigate(`/admins/${adminId}/edit`);
-  };
+  // Filter fields configuration
+  const filterFields: FilterField[] = [
+    {
+      key: 'searchTerm',
+      type: 'search',
+      label: 'Search',
+      placeholder: 'Search admins by name, username, or email...',
+    },
+    {
+      key: 'statusFilter',
+      type: 'select',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'All Status' },
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+    {
+      key: 'roleFilter',
+      type: 'select',
+      label: 'Role',
+      options: [
+        { value: 'all', label: 'All Roles' },
+        ...roles.map(role => ({ value: role.id.toString(), label: role.name })),
+      ],
+    },
+  ];
 
-  const handleDeleteAdmin = (admin: Admin) => {
-    setAdminToDelete(admin);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    console.log('Deleting admin:', adminToDelete);
-    setDeleteDialogOpen(false);
-    setAdminToDelete(null);
-  };
-
-  const handleAddAdmin = () => {
-    navigate('/admins/create');
-  };
-
+  // Helper functions
   const getRoleName = (roleId: number) => {
-    const role = getActiveRoles().find(r => r.id === roleId);
-    return role?.name || 'Unknown Role';
+    const role = roles.find(r => r.id === roleId);
+    return role ? role.name : 'Unknown Role';
   };
 
   const getInitials = (admin: Admin) => {
     return `${admin.firstName.charAt(0)}${admin.lastName.charAt(0)}`;
+  };
+
+  // Table columns configuration
+  const columns: TableColumn<Admin>[] = [
+    {
+      id: 'admin',
+      label: 'Admin',
+      render: (_, admin) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            badgeContent={
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: admin.status === 'active' ? '#4caf50' : '#f44336'
+                }}
+              />
+            }
+          >
+            <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+              <Typography variant="body2" fontSize="0.75rem">
+                {getInitials(admin)}
+              </Typography>
+            </Avatar>
+          </Badge>
+          <Box>
+            <Typography variant="subtitle2" fontWeight="600">
+              {`${admin.firstName} ${admin.lastName}`}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {admin.email}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      id: 'username',
+      label: 'Username',
+      render: (_, admin) => (
+        <Typography variant="body2" fontWeight="500">
+          {admin.username}
+        </Typography>
+      ),
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      render: (_, admin) => (
+        <Chip
+          label={getRoleName(admin.roleId)}
+          size="small"
+          color={admin.roleId === 1 ? 'warning' : 'primary'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      render: (_, admin) => (
+        <Chip
+          label={getStatusLabel(admin.status)}
+          color={getStatusColor(admin.status)}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: 'lastLogin',
+      label: 'Last Login',
+      render: (_, admin) => (
+        <Typography variant="body2" color="textSecondary">
+          {admin.lastLogin ? formatRelativeTime(admin.lastLogin) : 'Never'}
+        </Typography>
+      ),
+      hidden: isMobile,
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (_, admin) => (
+        <Typography variant="body2" color="textSecondary">
+          {admin.createdAt}
+        </Typography>
+      ),
+      hidden: isMobile,
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'center',
+      render: (_, admin) => (
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <Tooltip title="View Details">
+            <IconButton
+              size="small"
+              onClick={() => navigate(`/admins/${admin.id}`)}
+              color="primary"
+            >
+              <ViewIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit">
+            <IconButton
+              size="small"
+              onClick={() => navigate(`/admins/${admin.id}/edit`)}
+              color="secondary"
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              onClick={() => handleDeleteAdmin(admin)}
+              color="error"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
+    },
+  ];
+
+  // Helper function to create mobile card actions
+  const createMobileCardActions = (admin: Admin): MobileCardAction[] => [
+    {
+      icon: <ViewIcon />,
+      tooltip: 'View Details',
+      color: 'primary',
+      onClick: () => navigate(`/admins/${admin.id}`),
+    },
+    {
+      icon: <EditIcon />,
+      tooltip: 'Edit',
+      color: 'secondary',
+      onClick: () => navigate(`/admins/${admin.id}/edit`),
+    },
+    {
+      icon: <DeleteIcon />,
+      tooltip: 'Delete',
+      color: 'error',
+      onClick: () => handleDeleteAdmin(admin),
+    },
+  ];
+
+  // Event handlers
+  const handleDeleteAdmin = (admin: Admin) => {
+    console.log('Delete admin:', admin);
+  };
+
+  const handleAddAdmin = () => {
+    navigate('/admins/create');
   };
 
   return (
@@ -126,339 +314,77 @@ const AdminListPage: React.FC = () => {
       />
 
       {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Admins
-              </Typography>
-              <Typography variant="h4">
-                {mockAdmins.length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Active Admins
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {getStatusCount(mockAdmins, 'active')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Inactive Admins
-              </Typography>
-              <Typography variant="h4" color="error.main">
-                {getStatusCount(mockAdmins, 'inactive')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Roles
-              </Typography>
-              <Typography variant="h4" color="primary">
-                {getActiveRoles().length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <StatisticsCards cards={statsCards} />
 
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            flexWrap: 'wrap',
-            alignItems: { xs: 'stretch', sm: 'center' },
-            flexDirection: { xs: 'column', sm: 'row' },
-          }}
-        >
-          <TextField
-            placeholder="Search admins by name, email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ 
-              minWidth: { xs: 250, sm: 350 }, 
-              maxWidth: { sm: 450 },
-              flexGrow: 1 
-            }}
-          />
-          <FormControl sx={{ minWidth: { xs: 200, sm: 150 } }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: { xs: 200, sm: 150 } }}>
-            <InputLabel>Role</InputLabel>
-            <Select
-              value={roleFilter}
-              label="Role"
-              onChange={(e) => setRoleFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Roles</MenuItem>
-              {getActiveRoles().map((role) => (
-                <MenuItem key={role.id} value={role.id.toString()}>
-                  {role.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Paper>
+      <StandardFilters
+        filters={filters}
+        onFilterChange={(key, value) => setFilter(key as keyof AdminFilters, value)}
+        fields={filterFields}
+      />
 
-      {/* Admin List/Table */}
+      {/* Mobile Card Layout */}
       {isMobile ? (
-        <Grid container spacing={2}>
-          {filteredAdmins
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            .map((admin) => (
-              <Grid item xs={12} key={admin.id}>
-                <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Badge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: admin.status === 'active' ? '#4caf50' : '#f44336'
-                        }}
-                      />
-                    }
-                  >
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-                      {admin.avatar ? (
-                        <img src={admin.avatar} alt={getFullName(admin)} />
-                      ) : (
-                        <Typography variant="body2">{getInitials(admin)}</Typography>
-                      )}
-                    </Avatar>
-                  </Badge>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {getFullName(admin)}
+        <Box>
+          {paginatedAdmins.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Paper>
+          ) : (
+            <Box>
+              {paginatedAdmins.map((admin) => (
+                <MobileCard
+                  key={admin.id}
+                  title={`${admin.firstName} ${admin.lastName}`}
+                  subtitle={admin.email}
+                  description={`@${admin.username}`}
+                  avatarText={getInitials(admin)}
+                  avatarColor="primary.main"
+                  status={{
+                    label: getStatusLabel(admin.status),
+                    color: getStatusColor(admin.status) === 'success' ? 'success' : 
+                           getStatusColor(admin.status) === 'error' ? 'error' : 
+                           getStatusColor(admin.status) === 'warning' ? 'warning' : 'default',
+                  }}
+                  chips={[
+                    {
+                      label: getRoleName(admin.roleId),
+                      color: admin.roleId === 1 ? 'warning' : 'primary',
+                      variant: 'outlined',
+                    },
+                  ]}
+                  actions={createMobileCardActions(admin)}
+                  children={
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                      Last login: {admin.lastLogin ? formatRelativeTime(admin.lastLogin) : 'Never'}
                     </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {admin.email}
-                    </Typography>
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <Chip
-                        label={admin.status}
-                        color={getStatusColor(admin.status)}
-                        size="small"
-                      />
-                      <Chip
-                        label={getRoleName(admin.roleId)}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </Box>
-                    <Typography variant="caption" color="textSecondary">
-                      Last login: {formatLastLogin(admin.lastLogin)}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Tooltip title="View Details">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewAdmin(admin.id)}
-                        color="primary"
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditAdmin(admin.id)}
-                        color="secondary"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteAdmin(admin)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          <Grid item xs={12}>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={filteredAdmins.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </Grid>
-        </Grid>
-      ) : (
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Admin</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Last Login</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Created</TableCell>
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredAdmins
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((admin) => (
-                    <TableRow hover key={admin.id}>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-                            {admin.avatar ? (
-                              <img src={admin.avatar} alt={getFullName(admin)} />
-                            ) : (
-                              <Typography variant="body2" fontSize="0.75rem">
-                                {getInitials(admin)}
-                              </Typography>
-                            )}
-                          </Avatar>
-                          <Typography variant="subtitle2" fontWeight="600">
-                            {getFullName(admin)}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">{admin.email}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="textSecondary">
-                          {getRoleName(admin.roleId)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={admin.status}
-                          color={getStatusColor(admin.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="textSecondary">
-                          {formatLastLogin(admin.lastLogin)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                        <Typography variant="body2" color="textSecondary">
-                          {admin.createdAt}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="View Details">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleViewAdmin(admin.id)}
-                              color="primary"
-                            >
-                              <ViewIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEditAdmin(admin.id)}
-                              color="secondary"
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteAdmin(admin)}
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredAdmins.length}
-            rowsPerPage={rowsPerPage}
+                  }
+                />
+              ))}
+            </Box>
+          )}
+          <MobilePagination
             page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredAdmins.length}
             onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
           />
-        </Paper>
+        </Box>
+      ) : (
+        /* Desktop Table Layout */
+        <StandardTable
+          columns={columns}
+          data={paginatedAdmins}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={filteredAdmins.length}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          getRowKey={(admin) => admin.id}
+        />
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Are you sure you want to delete "{adminToDelete ? getFullName(adminToDelete) : ''}"? This action cannot be undone.
-          </Alert>
-          <Typography variant="body2" color="textSecondary">
-            This will permanently remove the admin user and all associated data.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

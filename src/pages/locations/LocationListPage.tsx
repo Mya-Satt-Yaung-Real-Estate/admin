@@ -1,150 +1,351 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TextField,
   IconButton,
   Chip,
   Typography,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tooltip,
-  Card,
-  CardContent,
-  Grid,
-  Badge,
-  Avatar,
   useTheme,
   useMediaQuery,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Alert,
   Breadcrumbs,
   Link,
+  Paper,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility as ViewIcon,
   LocationOn as LocationIcon,
   Home as HomeIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { StandardTable, TableColumn } from '../../components/common/StandardTable';
+import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
+import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
+import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
+import { MobilePagination } from '../../components/common/MobilePagination';
+import { usePagination } from '../../hooks/usePagination';
+import { useFilters } from '../../hooks/useFilters';
+import { getStatusColor, getStatusLabel } from '../../constants/status';
+import { formatDate } from '../../constants/dateFormats';
+import { FilterState } from '../../constants/filters';
 import { Region, Township } from '../../types/location';
 import { mockRegions, getAllTownships } from '../../data/mockLocations';
-import {
-  getStatusColor,
-  getStatusCount,
-  filterLocations,
-  getPageTitle,
-  getPageSubtitle,
-  getBreadcrumbs,
-} from '../../utils/locationUtils';
+
+interface LocationFilters extends FilterState {
+  searchTerm: string;
+  statusFilter: string;
+}
 
 const LocationListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // State management
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Region | Township | null>(null);
+  // Use standardized hooks
+  const { filters, setFilter } = useFilters<LocationFilters>({
+    statusFilter: 'all',
+  });
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
+
+  // State for navigation
+  const [selectedRegion, setSelectedRegion] = React.useState<Region | null>(null);
 
   // Get all townships from all regions
   const allTownships = getAllTownships();
 
   // Filter data based on current view
-  const getFilteredData = () => {
-    if (!selectedRegion) {
-      return filterLocations(mockRegions, searchTerm, statusFilter);
-    } else {
-      return filterLocations(selectedRegion.townships, searchTerm, statusFilter);
-    }
-  };
+  const filteredData = useMemo(() => {
+    const data = selectedRegion ? selectedRegion.townships : mockRegions;
+    return data.filter(item => {
+      const matchesSearch = 
+        item.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (selectedRegion ? '' : (item as Region).description?.toLowerCase().includes(filters.searchTerm.toLowerCase()) || '');
+      const matchesStatus = filters.statusFilter === 'all' || item.status === filters.statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [filters, selectedRegion]);
 
-  const filteredData = getFilteredData();
+  // Paginate data
+  const paginatedData = useMemo(() => {
+    return filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  }, [filteredData, page, rowsPerPage]);
+
+  // Statistics cards
+  const statsCards: StatCard[] = useMemo(() => {
+    if (selectedRegion) {
+      return [
+        {
+          title: 'Total Townships',
+          value: selectedRegion.townships.length,
+          color: 'primary',
+          icon: <HomeIcon />,
+        },
+        {
+          title: 'Active Townships',
+          value: selectedRegion.townships.filter(t => t.status === 'active').length,
+          color: 'success',
+          icon: <HomeIcon />,
+        },
+        {
+          title: 'Inactive Townships',
+          value: selectedRegion.townships.filter(t => t.status === 'inactive').length,
+          color: 'error',
+          icon: <HomeIcon />,
+        },
+        {
+          title: 'Region Status',
+          value: selectedRegion.status,
+          color: selectedRegion.status === 'active' ? 'success' : 'error',
+          icon: <LocationIcon />,
+        },
+      ];
+    } else {
+      return [
+        {
+          title: 'Total Regions',
+          value: mockRegions.length,
+          color: 'primary',
+          icon: <LocationIcon />,
+        },
+        {
+          title: 'Active Regions',
+          value: mockRegions.filter(r => r.status === 'active').length,
+          color: 'success',
+          icon: <LocationIcon />,
+        },
+        {
+          title: 'Total Townships',
+          value: allTownships.length,
+          color: 'info',
+          icon: <HomeIcon />,
+        },
+        {
+          title: 'Active Townships',
+          value: allTownships.filter(t => t.status === 'active').length,
+          color: 'secondary',
+          icon: <HomeIcon />,
+        },
+      ];
+    }
+  }, [selectedRegion, allTownships]);
+
+  // Filter fields configuration
+  const filterFields: FilterField[] = [
+    {
+      key: 'searchTerm',
+      type: 'search',
+      label: 'Search',
+      placeholder: selectedRegion 
+        ? 'Search townships...' 
+        : 'Search regions...',
+    },
+    {
+      key: 'statusFilter',
+      type: 'select',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'All Status' },
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+      ],
+    },
+  ];
+
+  // Table columns configuration
+  const columns: TableColumn<Region | Township>[] = [
+    {
+      id: 'name',
+      label: selectedRegion ? 'Township' : 'Region',
+      render: (_, item) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: selectedRegion ? 'secondary.main' : 'primary.main',
+              color: 'white',
+            }}
+          >
+            {selectedRegion ? <HomeIcon fontSize="small" /> : <LocationIcon fontSize="small" />}
+          </Box>
+          <Box>
+            <Typography variant="subtitle2" fontWeight="600">
+              {item.name}
+            </Typography>
+            {!selectedRegion && (item as Region).description && (
+              <Typography variant="body2" color="textSecondary">
+                {(item as Region).description}
+              </Typography>
+            )}
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      render: (_, item) => (
+        <Chip
+          label={getStatusLabel(item.status)}
+          color={getStatusColor(item.status)}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: 'details',
+      label: selectedRegion ? 'Description' : 'Townships',
+      render: (_, item) => {
+        if (selectedRegion) {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              {(item as Township).description || 'No description'}
+            </Typography>
+          );
+        } else {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              {(item as Region).townships?.length || 0} townships
+            </Typography>
+          );
+        }
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (_, item) => (
+        <Typography variant="body2" color="textSecondary">
+          {formatDate(item.createdAt, 'display')}
+        </Typography>
+      ),
+      hidden: isMobile,
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'center',
+      render: (_, item) => (
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          {!selectedRegion && (
+            <Tooltip title="View Townships">
+              <IconButton
+                size="small"
+                onClick={() => handleRegionClick(item as Region)}
+                color="primary"
+              >
+                <ViewIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="Edit">
+            <IconButton
+              size="small"
+              onClick={() => handleEditItem(item)}
+              color="secondary"
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              onClick={() => handleDeleteItem(item)}
+              color="error"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
+    },
+  ];
 
   // Event handlers
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
   const handleRegionClick = (region: Region) => {
     setSelectedRegion(region);
-    setPage(0);
-    setSearchTerm('');
-    setStatusFilter('all');
+    setFilter('searchTerm', '');
+    setFilter('statusFilter', 'all');
   };
 
   const handleBackToRegions = () => {
     setSelectedRegion(null);
-    setPage(0);
-    setSearchTerm('');
-    setStatusFilter('all');
+    setFilter('searchTerm', '');
+    setFilter('statusFilter', 'all');
   };
 
   const handleEditItem = (item: Region | Township) => {
-    if (!selectedRegion) {
-      navigate(`/locations/regions/${item.id}/edit`);
-    } else {
+    if (selectedRegion) {
       navigate(`/locations/townships/${item.id}/edit`);
+    } else {
+      navigate(`/locations/regions/${item.id}/edit`);
     }
   };
 
   const handleDeleteItem = (item: Region | Township) => {
-    setItemToDelete(item);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    console.log('Deleting:', itemToDelete);
-    setDeleteDialogOpen(false);
-    setItemToDelete(null);
+    console.log('Delete item:', item);
   };
 
   const handleAddItem = () => {
-    if (!selectedRegion) {
-      navigate('/locations/regions/create');
-    } else {
+    if (selectedRegion) {
       navigate('/locations/townships/create');
+    } else {
+      navigate('/locations/regions/create');
     }
   };
 
-  // Statistics calculations
-  const getCurrentItems = () => selectedRegion ? selectedRegion.townships : mockRegions;
-  const currentItems = getCurrentItems();
+  // Helper function to create mobile card actions
+  const createMobileCardActions = (item: Region | Township): MobileCardAction[] => {
+    const actions: MobileCardAction[] = [
+      {
+        icon: <EditIcon />,
+        tooltip: 'Edit',
+        color: 'secondary',
+        onClick: () => handleEditItem(item),
+      },
+      {
+        icon: <DeleteIcon />,
+        tooltip: 'Delete',
+        color: 'error',
+        onClick: () => handleDeleteItem(item),
+      },
+    ];
+
+    if (!selectedRegion) {
+      actions.unshift({
+        icon: <ViewIcon />,
+        tooltip: 'View Townships',
+        color: 'primary',
+        onClick: () => handleRegionClick(item as Region),
+      });
+    }
+
+    return actions;
+  };
 
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
-        title={getPageTitle(selectedRegion)}
-        breadcrumbs={getBreadcrumbs(selectedRegion)}
-        subtitle={getPageSubtitle(selectedRegion)}
+        title={selectedRegion ? `Townships in ${selectedRegion.name}` : 'Location Management'}
+        breadcrumbs={
+          selectedRegion 
+            ? `Dashboard / Location Management / ${selectedRegion.name}`
+            : 'Dashboard / Location Management'
+        }
+        subtitle={
+          selectedRegion 
+            ? `Manage townships in ${selectedRegion.name} region`
+            : 'Manage regions and townships'
+        }
         actionButton={{
           text: selectedRegion ? 'Add Township' : 'Add Region',
           icon: <AddIcon />,
@@ -154,352 +355,88 @@ const LocationListPage: React.FC = () => {
 
       {/* Breadcrumb Navigation */}
       {selectedRegion && (
-        <Paper sx={{ p: 2, mb: 3 }}>
+        <Box sx={{ mb: 2 }}>
           <Breadcrumbs aria-label="breadcrumb">
             <Link
               component="button"
-              variant="body1"
+              variant="body2"
               onClick={handleBackToRegions}
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                textDecoration: 'none',
-                color: 'primary.main',
-                '&:hover': { textDecoration: 'underline' }
-              }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
             >
-              <HomeIcon sx={{ mr: 0.5 }} fontSize="small" />
-              Regions
+              <ArrowBackIcon fontSize="small" />
+              Back to Regions
             </Link>
-            <Typography color="text.primary">{selectedRegion.name}</Typography>
           </Breadcrumbs>
-        </Paper>
+        </Box>
       )}
 
       {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total {selectedRegion ? 'Townships' : 'Regions'}
-              </Typography>
-              <Typography variant="h4">
-                {currentItems.length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Active {selectedRegion ? 'Townships' : 'Regions'}
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {getStatusCount(currentItems, 'active')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Inactive {selectedRegion ? 'Townships' : 'Regions'}
-              </Typography>
-              <Typography variant="h4" color="error.main">
-                {getStatusCount(currentItems, 'inactive')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                {selectedRegion ? 'Region Status' : 'Total Townships'}
-              </Typography>
-              <Typography variant="h4" color="primary">
-                {selectedRegion ? (
-                  <Chip 
-                    label={selectedRegion.status} 
-                    color={getStatusColor(selectedRegion.status)} 
-                    size="small" 
-                  />
-                ) : (
-                  allTownships.length
-                )}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <StatisticsCards cards={statsCards} />
 
-      {/* Filters - Show for both regions and townships views */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            flexWrap: 'wrap',
-            alignItems: { xs: 'stretch', sm: 'center' },
-            flexDirection: { xs: 'column', sm: 'row' },
-          }}
-        >
-          <TextField
-            placeholder={`Search ${selectedRegion ? 'townships' : 'regions'} by name...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ 
-              minWidth: { xs: 250, sm: 350 }, 
-              maxWidth: { sm: 450 },
-              flexGrow: 1 
-            }}
-          />
-          <FormControl sx={{ minWidth: { xs: 200, sm: 150 } }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </Paper>
+      {/* Filters */}
+      <StandardFilters
+        filters={filters}
+        onFilterChange={(key, value) => setFilter(key as keyof LocationFilters, value)}
+        fields={filterFields}
+      />
 
-      {/* Location List/Table */}
+      {/* Mobile Card Layout */}
       {isMobile ? (
-        <Grid container spacing={2}>
-          {filteredData
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            .map((item) => (
-              <Grid item xs={12} key={item.id}>
-                <Paper 
-                  sx={{ 
-                    p: 2, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: 2,
-                    cursor: !selectedRegion ? 'pointer' : 'default',
-                    '&:hover': !selectedRegion ? {
-                      backgroundColor: 'action.hover',
-                      transition: 'background-color 0.2s'
-                    } : {}
+        <Box>
+          {paginatedData.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Paper>
+          ) : (
+            <Box>
+              {paginatedData.map((item) => (
+                <MobileCard
+                  key={item.id}
+                  title={item.name}
+                  subtitle={!selectedRegion ? (item as Region).description : undefined}
+                  description={selectedRegion ? (item as Township).description : undefined}
+                  avatar={selectedRegion ? <HomeIcon /> : <LocationIcon />}
+                  avatarColor={selectedRegion ? 'secondary.main' : 'primary.main'}
+                  status={{
+                    label: getStatusLabel(item.status),
+                    color: getStatusColor(item.status) === 'success' ? 'success' : 
+                           getStatusColor(item.status) === 'error' ? 'error' : 
+                           getStatusColor(item.status) === 'warning' ? 'warning' : 'default',
                   }}
+                  chips={
+                    !selectedRegion 
+                      ? [{ label: `${(item as Region).townships?.length || 0} townships` }]
+                      : []
+                  }
+                  actions={createMobileCardActions(item)}
                   onClick={!selectedRegion ? () => handleRegionClick(item as Region) : undefined}
-                >
-                  <Badge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: item.status === 'active' ? '#4caf50' : '#f44336'
-                        }}
-                      />
-                    }
-                  >
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-                      <LocationIcon />
-                    </Avatar>
-                  </Badge>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {item.name}
-                    </Typography>
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <Chip
-                        label={item.status}
-                        color={getStatusColor(item.status)}
-                        size="small"
-                      />
-                      {!selectedRegion && (
-                        <Chip
-                          label={`${(item as Region).townships.length} townships`}
-                          size="small"
-                          variant="outlined"
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Tooltip title="Edit">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditItem(item);
-                        }}
-                        color="secondary"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteItem(item);
-                        }}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          <Grid item xs={12}>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={filteredData.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </Grid>
-        </Grid>
-      ) : (
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>{selectedRegion ? 'Township' : 'Region'}</TableCell>
-                  <TableCell>Status</TableCell>
-                  {!selectedRegion && <TableCell>Townships Count</TableCell>}
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Created</TableCell>
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredData
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((item) => (
-                    <TableRow 
-                      hover 
-                      key={item.id}
-                      sx={{ 
-                        cursor: !selectedRegion ? 'pointer' : 'default',
-                        '&:hover': !selectedRegion ? {
-                          backgroundColor: 'action.hover',
-                        } : {}
-                      }}
-                      onClick={!selectedRegion ? () => handleRegionClick(item as Region) : undefined}
-                    >
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-                            <LocationIcon />
-                          </Avatar>
-                          <Typography variant="subtitle2" fontWeight="600">
-                            {item.name}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.status}
-                          color={getStatusColor(item.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      {!selectedRegion && (
-                        <TableCell>
-                          <Typography variant="body2" color="textSecondary">
-                            {(item as Region).townships.length} townships
-                          </Typography>
-                        </TableCell>
-                      )}
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                        <Typography variant="body2" color="textSecondary">
-                          {item.createdAt}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditItem(item);
-                              }}
-                              color="secondary"
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteItem(item);
-                              }}
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredData.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            Are you sure you want to delete "{itemToDelete?.name}"? This action cannot be undone.
-          </Alert>
-          {!selectedRegion && itemToDelete && (
-            <Typography variant="body2" color="textSecondary">
-              This will also delete all townships in this region.
-            </Typography>
+                  clickable={!selectedRegion}
+                />
+              ))}
+            </Box>
           )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <MobilePagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredData.length}
+            onPageChange={handleChangePage}
+          />
+        </Box>
+      ) : (
+        /* Desktop Table Layout */
+        <StandardTable
+          columns={columns}
+          data={paginatedData}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={filteredData.length}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          getRowKey={(item) => item.id}
+        />
+      )}
     </Box>
   );
 };
