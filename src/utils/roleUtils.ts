@@ -1,19 +1,5 @@
 import { Role } from '../types/role';
-
-export const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'inactive':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-export const getStatusCount = (roles: Role[], status: string) => {
-  return roles.filter(role => role.status === status).length;
-};
+import { getStatusColor, getStatusCount } from '../constants/status';
 
 export const filterRoles = (
   roles: Role[],
@@ -50,4 +36,7 @@ export const getRoleStats = (roles: Role[]) => {
     inactiveRoles,
     totalAdmins
   };
-}; 
+};
+
+// Re-export status utilities for convenience
+export { getStatusColor, getStatusCount }; 

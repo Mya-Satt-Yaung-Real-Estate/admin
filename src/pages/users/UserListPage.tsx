@@ -1,41 +1,33 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-  TextField,
   IconButton,
   Chip,
-  Avatar,
   Typography,
-  InputAdornment,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Tooltip,
-  Card,
-  CardContent,
-  Grid,
+  Avatar,
   Badge,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
+  People as PeopleIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { StandardTable, TableColumn } from '../../components/common/StandardTable';
+import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
+import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
+import { usePagination } from '../../hooks/usePagination';
+import { useFilters } from '../../hooks/useFilters';
+import { getStatusColor, getStatusLabel } from '../../constants/status';
+import { formatRelativeTime } from '../../constants/dateFormats';
+import { FilterState } from '../../constants/filters';
 
 interface User {
   id: number;
@@ -49,6 +41,12 @@ interface User {
   phone?: string;
 }
 
+interface UserFilters extends FilterState {
+  searchTerm: string;
+  statusFilter: string;
+  roleFilter: string;
+}
+
 const mockUsers: User[] = [
   {
     id: 1,
@@ -57,8 +55,8 @@ const mockUsers: User[] = [
     role: 'Normal User',
     status: 'active',
     avatar: 'JD',
-    lastLogin: '2024-01-15 10:30',
-    createdAt: '2023-06-15',
+    lastLogin: '2024-01-15 09:30',
+    createdAt: '2023-01-15',
     phone: '+1 (555) 123-4567'
   },
   {
@@ -68,41 +66,261 @@ const mockUsers: User[] = [
     role: 'Company User',
     status: 'active',
     avatar: 'JS',
-    lastLogin: '2024-01-14 15:45',
-    createdAt: '2023-08-20',
+    lastLogin: '2024-01-14 16:45',
+    createdAt: '2023-02-20',
     phone: '+1 (555) 234-5678'
   },
   {
     id: 3,
-    name: 'Mike Johnson',
-    email: 'mike.johnson@example.com',
-    role: 'Company User',
+    name: 'Bob Johnson',
+    email: 'bob.johnson@example.com',
+    role: 'Normal User',
     status: 'inactive',
-    avatar: 'MJ',
-    lastLogin: '2024-01-10 09:15',
-    createdAt: '2023-09-10',
+    avatar: 'BJ',
+    lastLogin: '2024-01-10 11:20',
+    createdAt: '2023-03-10',
     phone: '+1 (555) 345-6789'
   },
   {
     id: 4,
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@example.com',
-    role: 'Normal User',
+    name: 'Alice Brown',
+    email: 'alice.brown@example.com',
+    role: 'Company User',
     status: 'pending',
-    avatar: 'SW',
-    lastLogin: 'Never',
-    createdAt: '2024-01-12',
+    avatar: 'AB',
+    lastLogin: '2024-01-12 14:15',
+    createdAt: '2023-04-05',
     phone: '+1 (555) 456-7890'
   },
   {
     id: 5,
-    name: 'David Brown',
-    email: 'david.brown@example.com',
+    name: 'Charlie Wilson',
+    email: 'charlie.wilson@example.com',
     role: 'Normal User',
     status: 'active',
-    avatar: 'DB',
-    lastLogin: '2024-01-13 14:20',
-    createdAt: '2023-11-05',
+    avatar: 'CW',
+    lastLogin: '2024-01-13 10:30',
+    createdAt: '2023-05-12',
+    phone: '+1 (555) 567-8901'
+  },
+  {
+    id: 6,
+    name: 'Diana Davis',
+    email: 'diana.davis@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'DD',
+    lastLogin: '2024-01-14 13:45',
+    createdAt: '2023-06-18',
+    phone: '+1 (555) 678-9012'
+  },
+  {
+    id: 7,
+    name: 'Edward Miller',
+    email: 'edward.miller@example.com',
+    role: 'Normal User',
+    status: 'inactive',
+    avatar: 'EM',
+    lastLogin: '2024-01-08 09:15',
+    createdAt: '2023-07-22',
+    phone: '+1 (555) 789-0123'
+  },
+  {
+    id: 8,
+    name: 'Fiona Garcia',
+    email: 'fiona.garcia@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'FG',
+    lastLogin: '2024-01-15 08:20',
+    createdAt: '2023-08-30',
+    phone: '+1 (555) 890-1234'
+  },
+  {
+    id: 9,
+    name: 'George Martinez',
+    email: 'george.martinez@example.com',
+    role: 'Normal User',
+    status: 'pending',
+    avatar: 'GM',
+    lastLogin: '2024-01-11 15:40',
+    createdAt: '2023-09-14',
+    phone: '+1 (555) 901-2345'
+  },
+  {
+    id: 10,
+    name: 'Helen Taylor',
+    email: 'helen.taylor@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'HT',
+    lastLogin: '2024-01-13 12:10',
+    createdAt: '2023-10-08',
+    phone: '+1 (555) 012-3456'
+  },
+  {
+    id: 11,
+    name: 'Ivan Anderson',
+    email: 'ivan.anderson@example.com',
+    role: 'Normal User',
+    status: 'active',
+    avatar: 'IA',
+    lastLogin: '2024-01-14 17:25',
+    createdAt: '2023-11-20',
+    phone: '+1 (555) 123-4567'
+  },
+  {
+    id: 12,
+    name: 'Julia Thomas',
+    email: 'julia.thomas@example.com',
+    role: 'Company User',
+    status: 'inactive',
+    avatar: 'JT',
+    lastLogin: '2024-01-09 14:50',
+    createdAt: '2023-12-03',
+    phone: '+1 (555) 234-5678'
+  },
+  {
+    id: 13,
+    name: 'Kevin Jackson',
+    email: 'kevin.jackson@example.com',
+    role: 'Normal User',
+    status: 'active',
+    avatar: 'KJ',
+    lastLogin: '2024-01-15 11:35',
+    createdAt: '2023-12-15',
+    phone: '+1 (555) 345-6789'
+  },
+  {
+    id: 14,
+    name: 'Laura White',
+    email: 'laura.white@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'LW',
+    lastLogin: '2024-01-14 16:20',
+    createdAt: '2023-12-25',
+    phone: '+1 (555) 456-7890'
+  },
+  {
+    id: 15,
+    name: 'Michael Harris',
+    email: 'michael.harris@example.com',
+    role: 'Normal User',
+    status: 'pending',
+    avatar: 'MH',
+    lastLogin: '2024-01-12 10:45',
+    createdAt: '2024-01-02',
+    phone: '+1 (555) 567-8901'
+  },
+  {
+    id: 16,
+    name: 'Nancy Clark',
+    email: 'nancy.clark@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'NC',
+    lastLogin: '2024-01-13 13:30',
+    createdAt: '2024-01-05',
+    phone: '+1 (555) 678-9012'
+  },
+  {
+    id: 17,
+    name: 'Oscar Lewis',
+    email: 'oscar.lewis@example.com',
+    role: 'Normal User',
+    status: 'active',
+    avatar: 'OL',
+    lastLogin: '2024-01-14 09:15',
+    createdAt: '2024-01-08',
+    phone: '+1 (555) 789-0123'
+  },
+  {
+    id: 18,
+    name: 'Patricia Hall',
+    email: 'patricia.hall@example.com',
+    role: 'Company User',
+    status: 'inactive',
+    avatar: 'PH',
+    lastLogin: '2024-01-10 15:20',
+    createdAt: '2024-01-10',
+    phone: '+1 (555) 890-1234'
+  },
+  {
+    id: 19,
+    name: 'Quentin Young',
+    email: 'quentin.young@example.com',
+    role: 'Normal User',
+    status: 'active',
+    avatar: 'QY',
+    lastLogin: '2024-01-15 14:40',
+    createdAt: '2024-01-12',
+    phone: '+1 (555) 901-2345'
+  },
+  {
+    id: 20,
+    name: 'Rachel King',
+    email: 'rachel.king@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'RK',
+    lastLogin: '2024-01-13 11:25',
+    createdAt: '2024-01-14',
+    phone: '+1 (555) 012-3456'
+  },
+  {
+    id: 21,
+    name: 'Samuel Wright',
+    email: 'samuel.wright@example.com',
+    role: 'Normal User',
+    status: 'pending',
+    avatar: 'SW',
+    lastLogin: '2024-01-11 16:50',
+    createdAt: '2024-01-15',
+    phone: '+1 (555) 123-4567'
+  },
+  {
+    id: 22,
+    name: 'Tina Lopez',
+    email: 'tina.lopez@example.com',
+    role: 'Company User',
+    status: 'active',
+    avatar: 'TL',
+    lastLogin: '2024-01-14 12:35',
+    createdAt: '2024-01-16',
+    phone: '+1 (555) 234-5678'
+  },
+  {
+    id: 23,
+    name: 'Ulysses Scott',
+    email: 'ulysses.scott@example.com',
+    role: 'Normal User',
+    status: 'active',
+    avatar: 'US',
+    lastLogin: '2024-01-15 08:45',
+    createdAt: '2024-01-17',
+    phone: '+1 (555) 345-6789'
+  },
+  {
+    id: 24,
+    name: 'Victoria Green',
+    email: 'victoria.green@example.com',
+    role: 'Company User',
+    status: 'inactive',
+    avatar: 'VG',
+    lastLogin: '2024-01-09 13:15',
+    createdAt: '2024-01-18',
+    phone: '+1 (555) 456-7890'
+  },
+  {
+    id: 25,
+    name: 'Walter Baker',
+    email: 'walter.baker@example.com',
+    role: 'Normal User',
+    status: 'active',
+    avatar: 'WB',
+    lastLogin: '2024-01-14 17:30',
+    createdAt: '2024-01-19',
     phone: '+1 (555) 567-8901'
   }
 ];
@@ -111,77 +329,217 @@ const UserListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-
-  const filteredUsers = mockUsers.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (user.phone && user.phone.includes(searchTerm));
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    return matchesSearch && matchesStatus && matchesRole;
+  
+  // Use standardized hooks
+  const { filters, setFilter } = useFilters<UserFilters>({
+    statusFilter: 'all',
+    roleFilter: 'all',
   });
+  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
+  // Filter users using standardized logic
+  const filteredUsers = useMemo(() => {
+    return mockUsers.filter(user => {
+      const matchesSearch = 
+        user.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (user.phone && user.phone.includes(filters.searchTerm));
+      const matchesStatus = filters.statusFilter === 'all' || user.status === filters.statusFilter;
+      const matchesRole = filters.roleFilter === 'all' || user.role === filters.roleFilter;
+      return matchesSearch && matchesStatus && matchesRole;
+    });
+  }, [filters]);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  // Paginate data
+  const paginatedUsers = useMemo(() => {
+    return filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  }, [filteredUsers, page, rowsPerPage]);
 
-  const handleViewUser = (userId: number) => {
-    navigate(`/users/${userId}`);
-  };
+  // Statistics cards
+  const statsCards: StatCard[] = useMemo(() => [
+    {
+      title: 'Total Users',
+      value: mockUsers.length,
+      color: 'primary',
+      icon: <PeopleIcon />,
+    },
+    {
+      title: 'Active Users',
+      value: mockUsers.filter(user => user.status === 'active').length,
+      color: 'success',
+      icon: <PeopleIcon />,
+    },
+    {
+      title: 'Normal Users',
+      value: mockUsers.filter(user => user.role === 'Normal User').length,
+      color: 'info',
+      icon: <PeopleIcon />,
+    },
+    {
+      title: 'Company Users',
+      value: mockUsers.filter(user => user.role === 'Company User').length,
+      color: 'secondary',
+      icon: <BusinessIcon />,
+    },
+  ], []);
 
-  const handleEditUser = (userId: number) => {
-    navigate(`/users/${userId}/edit`);
-  };
+  // Filter fields configuration
+  const filterFields: FilterField[] = [
+    {
+      key: 'searchTerm',
+      type: 'search',
+      label: 'Search',
+      placeholder: 'Search users by name, email, or phone...',
+    },
+    {
+      key: 'statusFilter',
+      type: 'select',
+      label: 'Status',
+      options: [
+        { value: 'all', label: 'All Status' },
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'pending', label: 'Pending' },
+      ],
+    },
+    {
+      key: 'roleFilter',
+      type: 'select',
+      label: 'Role',
+      options: [
+        { value: 'all', label: 'All Roles' },
+        { value: 'Normal User', label: 'Normal User' },
+        { value: 'Company User', label: 'Company User' },
+      ],
+    },
+  ];
 
+  // Table columns configuration
+  const columns: TableColumn<User>[] = [
+    {
+      id: 'user',
+      label: 'User',
+      render: (_, user) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            badgeContent={
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  backgroundColor: user.status === 'active' ? '#4caf50' : '#f44336'
+                }}
+              />
+            }
+          >
+            <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+              <Typography variant="body2" fontSize="0.75rem">
+                {user.avatar}
+              </Typography>
+            </Avatar>
+          </Badge>
+          <Box>
+            <Typography variant="subtitle2" fontWeight="600">
+              {user.name}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {user.email}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      render: (_, user) => (
+        <Chip
+          label={user.role}
+          size="small"
+          color={user.role === 'Normal User' ? 'primary' : 'secondary'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      render: (_, user) => (
+        <Chip
+          label={getStatusLabel(user.status)}
+          color={getStatusColor(user.status)}
+          size="small"
+        />
+      ),
+    },
+    {
+      id: 'lastLogin',
+      label: 'Last Login',
+      render: (_, user) => (
+        <Typography variant="body2" color="textSecondary">
+          {formatRelativeTime(user.lastLogin)}
+        </Typography>
+      ),
+      hidden: isMobile,
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      render: (_, user) => (
+        <Typography variant="body2" color="textSecondary">
+          {user.createdAt}
+        </Typography>
+      ),
+      hidden: isMobile,
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'center',
+      render: (_, user) => (
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <Tooltip title="View Details">
+            <IconButton
+              size="small"
+              onClick={() => navigate(`/users/${user.id}`)}
+              color="primary"
+            >
+              <ViewIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Edit">
+            <IconButton
+              size="small"
+              onClick={() => navigate(`/users/${user.id}/edit`)}
+              color="secondary"
+            >
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              onClick={() => handleDeleteUser(user)}
+              color="error"
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      ),
+    },
+  ];
+
+  // Event handlers
   const handleDeleteUser = (user: User) => {
-    // Handle delete user logic
     console.log('Delete user:', user);
   };
 
   const handleAddUser = () => {
     navigate('/users/create');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'error';
-      case 'pending':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'Normal User':
-        return 'primary';
-      case 'Company User':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusCount = (status: string) => {
-    return mockUsers.filter(user => user.status === status).length;
-  };
-
-  const getRoleCount = (role: string) => {
-    return mockUsers.filter(user => user.role === role).length;
   };
 
   return (
@@ -198,331 +556,26 @@ const UserListPage: React.FC = () => {
       />
 
       {/* Statistics Cards */}
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Users
-              </Typography>
-              <Typography variant="h4">
-                {mockUsers.length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Normal Users
-              </Typography>
-              <Typography variant="h4" color="primary">
-                {getRoleCount('Normal User')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Company Users
-              </Typography>
-              <Typography variant="h4" color="secondary">
-                {getRoleCount('Company User')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Active Users
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {getStatusCount('active')}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <StatisticsCards cards={statsCards} />
 
       {/* Filters */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 2,
-            flexWrap: 'wrap',
-            alignItems: { xs: 'stretch', sm: 'center' },
-            flexDirection: { xs: 'column', sm: 'row' },
-          }}
-        >
-          <TextField
-            placeholder="Search users by name, email, or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ minWidth: { xs: 180, sm: 300 }, flexGrow: 1 }}
-          />
-          <FormControl sx={{ minWidth: { xs: 180, sm: 120 } }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={statusFilter}
-              label="Status"
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-              <MenuItem value="pending">Pending</MenuItem>
-            </Select>
-          </FormControl>
-          <FormControl sx={{ minWidth: { xs: 180, sm: 120 } }}>
-            <InputLabel>Role</InputLabel>
-            <Select
-              value={roleFilter}
-              label="Role"
-              onChange={(e) => setRoleFilter(e.target.value)}
-            >
-              <MenuItem value="all">All Roles</MenuItem>
-              <MenuItem value="Normal User">Normal User</MenuItem>
-              <MenuItem value="Company User">Company User</MenuItem>
-            </Select>
-          </FormControl>
-        </Box>
-      </Paper>
+      <StandardFilters
+        filters={filters}
+        onFilterChange={(key, value) => setFilter(key as keyof UserFilters, value)}
+        fields={filterFields}
+      />
 
-      {/* User List/Table */}
-      {isMobile ? (
-        <Grid container spacing={2}>
-          {filteredUsers
-            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-            .map((user) => (
-              <Grid item xs={12} key={user.id}>
-                <Paper sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Badge
-                    overlap="circular"
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    badgeContent={
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: user.status === 'active' ? '#4caf50' : user.status === 'inactive' ? '#f44336' : '#ff9800'
-                        }}
-                      />
-                    }
-                  >
-                    <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-                      {user.avatar}
-                    </Avatar>
-                  </Badge>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {user.name}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      {user.email}
-                    </Typography>
-                    {user.phone && (
-                      <Typography variant="body2" color="textSecondary">
-                        {user.phone}
-                      </Typography>
-                    )}
-                    <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <Chip
-                        label={user.role}
-                        color={getRoleColor(user.role)}
-                        size="small"
-                        variant="outlined"
-                      />
-                      <Chip
-                        label={user.status}
-                        color={getStatusColor(user.status)}
-                        size="small"
-                      />
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Tooltip title="View User">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleViewUser(user.id)}
-                        color="primary"
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Edit User">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditUser(user.id)}
-                        color="secondary"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete User">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteUser(user)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </Paper>
-              </Grid>
-            ))}
-          <Grid item xs={12}>
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25]}
-              component="div"
-              count={filteredUsers.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </Grid>
-        </Grid>
-      ) : (
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>User</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Last Login</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Created</TableCell>
-                  <TableCell align="center">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredUsers
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((user) => (
-                    <TableRow hover key={user.id}>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Badge
-                            overlap="circular"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            badgeContent={
-                              <Box
-                                sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: user.status === 'active' ? '#4caf50' : user.status === 'inactive' ? '#f44336' : '#ff9800'
-                                }}
-                              />
-                            }
-                          >
-                            <Avatar sx={{ bgcolor: 'primary.main' }}>
-                              {user.avatar}
-                            </Avatar>
-                          </Badge>
-                          <Box>
-                            <Typography variant="subtitle2" fontWeight="600">
-                              {user.name}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                              {user.email}
-                            </Typography>
-                            {user.phone && (
-                              <Typography variant="body2" color="textSecondary">
-                                {user.phone}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={user.role}
-                          color={getRoleColor(user.role)}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={user.status}
-                          color={getStatusColor(user.status)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                        <Typography variant="body2" color="textSecondary">
-                          {user.lastLogin}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                        <Typography variant="body2" color="textSecondary">
-                          {user.createdAt}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="View User">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleViewUser(user.id)}
-                              color="primary"
-                            >
-                              <ViewIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit User">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEditUser(user.id)}
-                              color="secondary"
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete User">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteUser(user)}
-                              color="error"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredUsers.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </Paper>
-      )}
+      {/* User Table */}
+      <StandardTable
+        columns={columns}
+        data={paginatedUsers}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalCount={filteredUsers.length}
+        onPageChange={handleChangePage}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        getRowKey={(user) => user.id}
+      />
     </Box>
   );
 };

@@ -1,19 +1,6 @@
 import { Admin } from '../types/admin';
-
-export const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'inactive':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-export const getStatusCount = (admins: Admin[], status: string) => {
-  return admins.filter(admin => admin.status === status).length;
-};
+import { getStatusColor, getStatusCount } from '../constants/status';
+import { formatRelativeTime } from '../constants/dateFormats';
 
 export const filterAdmins = (
   admins: Admin[],
@@ -36,20 +23,16 @@ export const filterAdmins = (
 
 export const formatLastLogin = (lastLogin?: string) => {
   if (!lastLogin) return 'Never';
-  
-  const date = new Date(lastLogin);
-  const now = new Date();
-  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-  
-  if (diffInHours < 1) return 'Just now';
-  if (diffInHours < 24) return `${diffInHours} hours ago`;
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays} days ago`;
-  
-  return date.toLocaleDateString();
+  return formatRelativeTime(lastLogin);
 };
 
 export const getFullName = (admin: Admin) => {
   return `${admin.firstName} ${admin.lastName}`;
-}; 
+};
+
+export const getInitials = (admin: Admin) => {
+  return `${admin.firstName.charAt(0)}${admin.lastName.charAt(0)}`;
+};
+
+// Re-export status utilities for convenience
+export { getStatusColor, getStatusCount }; 

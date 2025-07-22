@@ -4,8 +4,6 @@ import {
   Grid,
   Paper,
   Typography,
-  Card,
-  CardContent,
 } from '@mui/material';
 import {
   BarChart,
@@ -22,7 +20,14 @@ import {
   Cell,
   ResponsiveContainer,
 } from 'recharts';
+import {
+  People as PeopleIcon,
+  TrendingUp as TrendingUpIcon,
+  Assessment as AssessmentIcon,
+  Notifications as NotificationsIcon,
+} from '@mui/icons-material';
 import PageHeader from '../../components/layout/PageHeader';
+import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 
 const AnalyticsPage: React.FC = () => {
   // Sample data for charts
@@ -50,73 +55,48 @@ const AnalyticsPage: React.FC = () => {
     { name: 'New Users', value: 200, color: '#ffc658' },
   ];
 
+  const statsCards: StatCard[] = [
+    {
+      title: 'Total Users',
+      value: '1,234',
+      color: 'primary',
+      icon: <PeopleIcon />,
+    },
+    {
+      title: 'Active Users',
+      value: '892',
+      color: 'success',
+      icon: <PeopleIcon />,
+    },
+    {
+      title: 'Revenue',
+      value: '$12,345',
+      color: 'secondary',
+      icon: <TrendingUpIcon />,
+    },
+    {
+      title: 'Growth Rate',
+      value: '+15%',
+      color: 'info',
+      icon: <AssessmentIcon />,
+    },
+  ];
+
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title="Analytics"
         breadcrumbs="Dashboard / Analytics"
+        subtitle="Comprehensive analytics and insights for your system"
       />
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Users
-              </Typography>
-              <Typography variant="h4">1,234</Typography>
-              <Typography variant="body2" color="textSecondary">
-                +12% from last month
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Active Users
-              </Typography>
-              <Typography variant="h4">892</Typography>
-              <Typography variant="body2" color="textSecondary">
-                +8% from last month
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Revenue
-              </Typography>
-              <Typography variant="h4">$12,345</Typography>
-              <Typography variant="body2" color="textSecondary">
-                +15% from last month
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Conversion Rate
-              </Typography>
-              <Typography variant="h4">3.2%</Typography>
-              <Typography variant="body2" color="textSecondary">
-                +0.5% from last month
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      {/* Statistics Cards */}
+      <StatisticsCards cards={statsCards} />
 
-      {/* Charts */}
-      <Grid container spacing={3}>
+      {/* Charts Grid */}
+      <Grid container spacing={3} sx={{ mt: 2 }}>
         {/* Bar Chart */}
-        <Grid item xs={12} lg={8}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               User Growth & Revenue
@@ -135,8 +115,28 @@ const AnalyticsPage: React.FC = () => {
           </Paper>
         </Grid>
 
+        {/* Line Chart */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              User Activity Trends
+            </Typography>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={lineData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="active" stroke="#8884d8" />
+                <Line type="monotone" dataKey="inactive" stroke="#82ca9d" />
+              </LineChart>
+            </ResponsiveContainer>
+          </Paper>
+        </Grid>
+
         {/* Pie Chart */}
-        <Grid item xs={12} lg={4}>
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               User Distribution
@@ -163,23 +163,46 @@ const AnalyticsPage: React.FC = () => {
           </Paper>
         </Grid>
 
-        {/* Line Chart */}
-        <Grid item xs={12}>
+        {/* Summary Stats */}
+        <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              User Activity Trends
+              Key Metrics
             </Typography>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={lineData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="active" stroke="#8884d8" />
-                <Line type="monotone" dataKey="inactive" stroke="#82ca9d" />
-              </LineChart>
-            </ResponsiveContainer>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="textSecondary">
+                  Monthly Active Users
+                </Typography>
+                <Typography variant="h6" fontWeight="600">
+                  892
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="textSecondary">
+                  New Registrations
+                </Typography>
+                <Typography variant="h6" fontWeight="600">
+                  156
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="textSecondary">
+                  Conversion Rate
+                </Typography>
+                <Typography variant="h6" fontWeight="600">
+                  12.5%
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="body2" color="textSecondary">
+                  Average Session Duration
+                </Typography>
+                <Typography variant="h6" fontWeight="600">
+                  24m 32s
+                </Typography>
+              </Box>
+            </Box>
           </Paper>
         </Grid>
       </Grid>
