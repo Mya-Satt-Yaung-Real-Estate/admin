@@ -26,6 +26,11 @@ const PermissionListPage = lazy(() => import('@/pages/permissions/PermissionList
 const PermissionCreatePage = lazy(() => import('@/pages/permissions/PermissionCreatePage'));
 const PermissionDetailPage = lazy(() => import('@/pages/permissions/PermissionDetailPage'));
 const PermissionEditPage = lazy(() => import('@/pages/permissions/PermissionEditPage'));
+const LocationListPage = lazy(() => import('@/pages/locations/LocationListPage'));
+const RegionCreatePage = lazy(() => import('@/pages/locations/RegionCreatePage'));
+const TownshipCreatePage = lazy(() => import('@/pages/locations/TownshipCreatePage'));
+const RegionEditPage = lazy(() => import('@/pages/locations/RegionEditPage'));
+const TownshipEditPage = lazy(() => import('@/pages/locations/TownshipEditPage'));
 
 // Loading component for lazy-loaded routes
 const PageLoader = () => (
@@ -150,6 +155,26 @@ export const router = createBrowserRouter([
   {
     path: '/permissions/:id/edit',
     element: <ProtectedRoute><PermissionEditPage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations',
+    element: <ProtectedRoute><LocationListPage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations/regions/create',
+    element: <ProtectedRoute><RegionCreatePage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations/townships/create',
+    element: <ProtectedRoute><TownshipCreatePage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations/regions/:id/edit',
+    element: <ProtectedRoute><RegionEditPage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations/townships/:id/edit',
+    element: <ProtectedRoute><TownshipEditPage /></ProtectedRoute>,
   },
   {
     path: '*',

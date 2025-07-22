@@ -10,6 +10,11 @@ export const MENU_ITEMS = [
     path: '/users',
   },
   {
+    text: 'Location',
+    iconName: 'LocationOn',
+    path: '/locations',
+  },
+  {
     text: 'Analytics',
     iconName: 'Assessment',
     path: '/analytics',
