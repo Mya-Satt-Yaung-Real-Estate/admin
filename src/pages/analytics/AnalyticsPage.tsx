@@ -24,7 +24,6 @@ import {
   People as PeopleIcon,
   TrendingUp as TrendingUpIcon,
   Assessment as AssessmentIcon,
-  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';

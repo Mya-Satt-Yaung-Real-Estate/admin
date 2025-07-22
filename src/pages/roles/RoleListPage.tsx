@@ -8,7 +8,6 @@ import {
   useTheme,
   useMediaQuery,
   Paper,
-  Avatar,
 } from '@mui/material';
 import {
   Add as AddIcon,
