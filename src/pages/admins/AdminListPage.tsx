@@ -20,6 +20,18 @@ import {
   Badge,
   useTheme,
   useMediaQuery,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Card,
+  CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -30,54 +42,35 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-
-interface AdminUser {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-  status: 'active' | 'inactive';
-  avatar: string;
-  lastLogin: string;
-  createdAt: string;
-}
-
-const mockAdmins: AdminUser[] = [
-  {
-    id: 1,
-    name: 'Alice Admin',
-    email: 'alice.admin@example.com',
-    role: 'Super Admin',
-    status: 'active',
-    avatar: 'AA',
-    lastLogin: '2024-01-15 09:00',
-    createdAt: '2023-01-01',
-  },
-  {
-    id: 2,
-    name: 'Bob Manager',
-    email: 'bob.manager@example.com',
-    role: 'Admin',
-    status: 'inactive',
-    avatar: 'BM',
-    lastLogin: '2024-01-10 14:30',
-    createdAt: '2023-03-12',
-  },
-];
+import { Admin } from '../../types/admin';
+import { mockAdmins } from '../../data/mockAdmins';
+import { getActiveRoles } from '../../data/mockRoles';
+import {
+  getStatusColor,
+  getStatusCount,
+  filterAdmins,
+  formatLastLogin,
+  getFullName,
+} from '../../utils/adminUtils';
 
 const AdminListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // State management
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [adminToDelete, setAdminToDelete] = useState<Admin | null>(null);
 
-  const filteredAdmins = mockAdmins.filter(admin =>
-    admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admin.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter admins
+  const filteredAdmins = filterAdmins(mockAdmins, searchTerm, statusFilter, roleFilter);
 
+  // Event handlers
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -95,27 +88,96 @@ const AdminListPage: React.FC = () => {
     navigate(`/admins/${adminId}/edit`);
   };
 
-  const handleDeleteAdmin = (admin: AdminUser) => {
-    // Handle delete admin logic
-    console.log('Delete admin:', admin);
+  const handleDeleteAdmin = (admin: Admin) => {
+    setAdminToDelete(admin);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    console.log('Deleting admin:', adminToDelete);
+    setDeleteDialogOpen(false);
+    setAdminToDelete(null);
   };
 
   const handleAddAdmin = () => {
     navigate('/admins/create');
   };
 
+  const getRoleName = (roleId: number) => {
+    const role = getActiveRoles().find(r => r.id === roleId);
+    return role?.name || 'Unknown Role';
+  };
+
+  const getInitials = (admin: Admin) => {
+    return `${admin.firstName.charAt(0)}${admin.lastName.charAt(0)}`;
+  };
+
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
-        title="Admin User Management"
-        breadcrumbs="Dashboard / Admin Users"
-        subtitle="Manage admin users and permissions"
+        title="Admin Management"
+        breadcrumbs="Dashboard / Admin Management"
+        subtitle="Manage system administrators and their roles"
         actionButton={{
           text: 'Add Admin',
           icon: <AddIcon />,
           onClick: handleAddAdmin
         }}
       />
+
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Total Admins
+              </Typography>
+              <Typography variant="h4">
+                {mockAdmins.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Active Admins
+              </Typography>
+              <Typography variant="h4" color="success.main">
+                {getStatusCount(mockAdmins, 'active')}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Inactive Admins
+              </Typography>
+              <Typography variant="h4" color="error.main">
+                {getStatusCount(mockAdmins, 'inactive')}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Total Roles
+              </Typography>
+              <Typography variant="h4" color="primary">
+                {getActiveRoles().length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Filters */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box
           sx={{
@@ -127,7 +189,7 @@ const AdminListPage: React.FC = () => {
           }}
         >
           <TextField
-            placeholder="Search admins by name or email..."
+            placeholder="Search admins by name, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             InputProps={{
@@ -137,10 +199,43 @@ const AdminListPage: React.FC = () => {
                 </InputAdornment>
               ),
             }}
-            sx={{ minWidth: { xs: 180, sm: 300 }, flexGrow: 1 }}
+            sx={{ 
+              minWidth: { xs: 250, sm: 350 }, 
+              maxWidth: { sm: 450 },
+              flexGrow: 1 
+            }}
           />
+          <FormControl sx={{ minWidth: { xs: 200, sm: 150 } }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={statusFilter}
+              label="Status"
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="all">All Status</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: { xs: 200, sm: 150 } }}>
+            <InputLabel>Role</InputLabel>
+            <Select
+              value={roleFilter}
+              label="Role"
+              onChange={(e) => setRoleFilter(e.target.value)}
+            >
+              <MenuItem value="all">All Roles</MenuItem>
+              {getActiveRoles().map((role) => (
+                <MenuItem key={role.id} value={role.id.toString()}>
+                  {role.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
       </Paper>
+
+      {/* Admin List/Table */}
       {isMobile ? (
         <Grid container spacing={2}>
           {filteredAdmins
@@ -163,32 +258,38 @@ const AdminListPage: React.FC = () => {
                     }
                   >
                     <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
-                      {admin.avatar}
+                      {admin.avatar ? (
+                        <img src={admin.avatar} alt={getFullName(admin)} />
+                      ) : (
+                        <Typography variant="body2">{getInitials(admin)}</Typography>
+                      )}
                     </Avatar>
                   </Badge>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle1" fontWeight={600}>
-                      {admin.name}
+                      {getFullName(admin)}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       {admin.email}
                     </Typography>
                     <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
                       <Chip
-                        label={admin.role}
-                        color={admin.role === 'Super Admin' ? 'primary' : 'secondary'}
+                        label={admin.status}
+                        color={getStatusColor(admin.status)}
+                        size="small"
+                      />
+                      <Chip
+                        label={getRoleName(admin.roleId)}
                         size="small"
                         variant="outlined"
                       />
-                      <Chip
-                        label={admin.status}
-                        color={admin.status === 'active' ? 'success' : 'error'}
-                        size="small"
-                      />
                     </Box>
+                    <Typography variant="caption" color="textSecondary">
+                      Last login: {formatLastLogin(admin.lastLogin)}
+                    </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Tooltip title="View Admin">
+                    <Tooltip title="View Details">
                       <IconButton
                         size="small"
                         onClick={() => handleViewAdmin(admin.id)}
@@ -197,7 +298,7 @@ const AdminListPage: React.FC = () => {
                         <ViewIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Edit Admin">
+                    <Tooltip title="Edit">
                       <IconButton
                         size="small"
                         onClick={() => handleEditAdmin(admin.id)}
@@ -206,7 +307,7 @@ const AdminListPage: React.FC = () => {
                         <EditIcon />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete Admin">
+                    <Tooltip title="Delete">
                       <IconButton
                         size="small"
                         onClick={() => handleDeleteAdmin(admin)}
@@ -238,9 +339,10 @@ const AdminListPage: React.FC = () => {
               <TableHead>
                 <TableRow>
                   <TableCell>Admin</TableCell>
+                  <TableCell>Email</TableCell>
                   <TableCell>Role</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Last Login</TableCell>
+                  <TableCell>Last Login</TableCell>
                   <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>Created</TableCell>
                   <TableCell align="center">Actions</TableCell>
                 </TableRow>
@@ -252,52 +354,38 @@ const AdminListPage: React.FC = () => {
                     <TableRow hover key={admin.id}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Badge
-                            overlap="circular"
-                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                            badgeContent={
-                              <Box
-                                sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: '50%',
-                                  backgroundColor: admin.status === 'active' ? '#4caf50' : '#f44336'
-                                }}
-                              />
-                            }
-                          >
-                            <Avatar sx={{ bgcolor: 'primary.main' }}>
-                              {admin.avatar}
-                            </Avatar>
-                          </Badge>
-                          <Box>
-                            <Typography variant="subtitle2" fontWeight="600">
-                              {admin.name}
-                            </Typography>
-                            <Typography variant="body2" color="textSecondary">
-                              {admin.email}
-                            </Typography>
-                          </Box>
+                          <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
+                            {admin.avatar ? (
+                              <img src={admin.avatar} alt={getFullName(admin)} />
+                            ) : (
+                              <Typography variant="body2" fontSize="0.75rem">
+                                {getInitials(admin)}
+                              </Typography>
+                            )}
+                          </Avatar>
+                          <Typography variant="subtitle2" fontWeight="600">
+                            {getFullName(admin)}
+                          </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={admin.role}
-                          color={admin.role === 'Super Admin' ? 'primary' : 'secondary'}
-                          size="small"
-                          variant="outlined"
-                        />
+                        <Typography variant="body2">{admin.email}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="textSecondary">
+                          {getRoleName(admin.roleId)}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Chip
                           label={admin.status}
-                          color={admin.status === 'active' ? 'success' : 'error'}
+                          color={getStatusColor(admin.status)}
                           size="small"
                         />
                       </TableCell>
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                      <TableCell>
                         <Typography variant="body2" color="textSecondary">
-                          {admin.lastLogin}
+                          {formatLastLogin(admin.lastLogin)}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
@@ -307,7 +395,7 @@ const AdminListPage: React.FC = () => {
                       </TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                          <Tooltip title="View Admin">
+                          <Tooltip title="View Details">
                             <IconButton
                               size="small"
                               onClick={() => handleViewAdmin(admin.id)}
@@ -316,7 +404,7 @@ const AdminListPage: React.FC = () => {
                               <ViewIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Edit Admin">
+                          <Tooltip title="Edit">
                             <IconButton
                               size="small"
                               onClick={() => handleEditAdmin(admin.id)}
@@ -325,7 +413,7 @@ const AdminListPage: React.FC = () => {
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Delete Admin">
+                          <Tooltip title="Delete">
                             <IconButton
                               size="small"
                               onClick={() => handleDeleteAdmin(admin)}
@@ -352,6 +440,25 @@ const AdminListPage: React.FC = () => {
           />
         </Paper>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Are you sure you want to delete "{adminToDelete ? getFullName(adminToDelete) : ''}"? This action cannot be undone.
+          </Alert>
+          <Typography variant="body2" color="textSecondary">
+            This will permanently remove the admin user and all associated data.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
