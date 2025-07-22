@@ -9,6 +9,7 @@ import {
   Badge,
   useTheme,
   useMediaQuery,
+  Paper,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -23,6 +24,8 @@ import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
+import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
+import { MobilePagination } from '../../components/common/MobilePagination';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { getStatusColor, getStatusLabel } from '../../constants/status';
@@ -533,6 +536,28 @@ const UserListPage: React.FC = () => {
     },
   ];
 
+  // Helper function to create mobile card actions
+  const createMobileCardActions = (user: User): MobileCardAction[] => [
+    {
+      icon: <ViewIcon />,
+      tooltip: 'View Details',
+      color: 'primary',
+      onClick: () => navigate(`/users/${user.id}`),
+    },
+    {
+      icon: <EditIcon />,
+      tooltip: 'Edit',
+      color: 'secondary',
+      onClick: () => navigate(`/users/${user.id}/edit`),
+    },
+    {
+      icon: <DeleteIcon />,
+      tooltip: 'Delete',
+      color: 'error',
+      onClick: () => handleDeleteUser(user),
+    },
+  ];
+
   // Event handlers
   const handleDeleteUser = (user: User) => {
     console.log('Delete user:', user);
@@ -565,17 +590,68 @@ const UserListPage: React.FC = () => {
         fields={filterFields}
       />
 
-      {/* User Table */}
-      <StandardTable
-        columns={columns}
-        data={paginatedUsers}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalCount={filteredUsers.length}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        getRowKey={(user) => user.id}
-      />
+      {/* Mobile Card Layout */}
+      {isMobile ? (
+        <Box>
+          {paginatedUsers.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Paper>
+          ) : (
+            <Box>
+              {paginatedUsers.map((user) => (
+                <MobileCard
+                  key={user.id}
+                  title={user.name}
+                  subtitle={user.email}
+                  description={user.phone}
+                  avatarText={user.avatar}
+                  avatarColor="primary.main"
+                  status={{
+                    label: getStatusLabel(user.status),
+                    color: getStatusColor(user.status) === 'success' ? 'success' : 
+                           getStatusColor(user.status) === 'error' ? 'error' : 
+                           getStatusColor(user.status) === 'warning' ? 'warning' : 'default',
+                  }}
+                  chips={[
+                    {
+                      label: user.role,
+                      color: user.role === 'Normal User' ? 'primary' : 'secondary',
+                      variant: 'outlined',
+                    },
+                  ]}
+                  actions={createMobileCardActions(user)}
+                  children={
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                      Last login: {formatRelativeTime(user.lastLogin)}
+                    </Typography>
+                  }
+                />
+              ))}
+            </Box>
+          )}
+          <MobilePagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredUsers.length}
+            onPageChange={handleChangePage}
+          />
+        </Box>
+      ) : (
+        /* Desktop Table Layout */
+        <StandardTable
+          columns={columns}
+          data={paginatedUsers}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={filteredUsers.length}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          getRowKey={(user) => user.id}
+        />
+      )}
     </Box>
   );
 };

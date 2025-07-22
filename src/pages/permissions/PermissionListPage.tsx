@@ -6,6 +6,8 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
+  Paper,
+  Chip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -19,6 +21,8 @@ import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
+import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
+import { MobilePagination } from '../../components/common/MobilePagination';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { formatDate } from '../../constants/dateFormats';
@@ -29,6 +33,7 @@ interface Permission {
   name: string;
   description: string;
   createdAt: string;
+  category?: 'manage' | 'view' | 'edit' | 'other';
 }
 
 interface PermissionFilters extends FilterState {
@@ -36,16 +41,21 @@ interface PermissionFilters extends FilterState {
 }
 
 const mockPermissions: Permission[] = [
-  { id: 1, name: 'manage users', description: 'Can manage users', createdAt: '2023-01-01' },
-  { id: 2, name: 'manage roles', description: 'Can manage roles', createdAt: '2023-03-12' },
-  { id: 3, name: 'edit content', description: 'Can edit content', createdAt: '2023-05-20' },
-  { id: 4, name: 'view analytics', description: 'Can view analytics', createdAt: '2023-06-15' },
-  { id: 5, name: 'manage settings', description: 'Can manage settings', createdAt: '2023-07-22' },
-  { id: 6, name: 'export data', description: 'Can export data', createdAt: '2023-08-10' },
-  { id: 7, name: 'manage permissions', description: 'Can manage permissions', createdAt: '2023-09-05' },
-  { id: 8, name: 'view reports', description: 'Can view reports', createdAt: '2023-10-18' },
-  { id: 9, name: 'manage locations', description: 'Can manage locations', createdAt: '2023-11-30' },
-  { id: 10, name: 'approve content', description: 'Can approve content', createdAt: '2023-12-12' },
+  { id: 1, name: 'manage users', description: 'Can manage users', createdAt: '2023-01-01', category: 'manage' },
+  { id: 2, name: 'manage roles', description: 'Can manage roles', createdAt: '2023-03-12', category: 'manage' },
+  { id: 3, name: 'edit content', description: 'Can edit content', createdAt: '2023-05-20', category: 'edit' },
+  { id: 4, name: 'view analytics', description: 'Can view analytics', createdAt: '2023-06-15', category: 'view' },
+  { id: 5, name: 'manage settings', description: 'Can manage settings', createdAt: '2023-07-22', category: 'manage' },
+  { id: 6, name: 'export data', description: 'Can export data', createdAt: '2023-08-10', category: 'other' },
+  { id: 7, name: 'manage permissions', description: 'Can manage permissions', createdAt: '2023-09-05', category: 'manage' },
+  { id: 8, name: 'view reports', description: 'Can view reports', createdAt: '2023-10-18', category: 'view' },
+  { id: 9, name: 'manage locations', description: 'Can manage locations', createdAt: '2023-11-30', category: 'manage' },
+  { id: 10, name: 'approve content', description: 'Can approve content', createdAt: '2023-12-12', category: 'edit' },
+  { id: 11, name: 'view users', description: 'Can view user information', createdAt: '2023-12-15', category: 'view' },
+  { id: 12, name: 'delete content', description: 'Can delete content', createdAt: '2023-12-20', category: 'edit' },
+  { id: 13, name: 'manage admins', description: 'Can manage administrators', createdAt: '2023-12-25', category: 'manage' },
+  { id: 14, name: 'view settings', description: 'Can view system settings', createdAt: '2023-12-30', category: 'view' },
+  { id: 15, name: 'create content', description: 'Can create new content', createdAt: '2024-01-01', category: 'edit' },
 ];
 
 const PermissionListPage: React.FC = () => {
@@ -80,19 +90,19 @@ const PermissionListPage: React.FC = () => {
     },
     {
       title: 'Manage Permissions',
-      value: mockPermissions.filter(p => p.name.includes('manage')).length,
+      value: mockPermissions.filter(p => p.category === 'manage').length,
       color: 'warning',
       icon: <SecurityIcon />,
     },
     {
       title: 'View Permissions',
-      value: mockPermissions.filter(p => p.name.includes('view')).length,
+      value: mockPermissions.filter(p => p.category === 'view').length,
       color: 'info',
       icon: <SecurityIcon />,
     },
     {
       title: 'Edit Permissions',
-      value: mockPermissions.filter(p => p.name.includes('edit')).length,
+      value: mockPermissions.filter(p => p.category === 'edit').length,
       color: 'success',
       icon: <SecurityIcon />,
     },
@@ -108,15 +118,46 @@ const PermissionListPage: React.FC = () => {
     },
   ];
 
+  // Helper function to get category color
+  const getCategoryColor = (category?: string) => {
+    switch (category) {
+      case 'manage': return 'warning';
+      case 'view': return 'info';
+      case 'edit': return 'primary';
+      default: return 'default';
+    }
+  };
+
+  // Helper function to get category label
+  const getCategoryLabel = (category?: string) => {
+    switch (category) {
+      case 'manage': return 'Manage';
+      case 'view': return 'View';
+      case 'edit': return 'Edit';
+      default: return 'Other';
+    }
+  };
+
   // Table columns configuration
   const columns: TableColumn<Permission>[] = [
     {
       id: 'name',
       label: 'Permission Name',
       render: (_, permission) => (
-        <Typography variant="subtitle2" fontWeight="600">
-          {permission.name}
-        </Typography>
+        <Box>
+          <Typography variant="subtitle2" fontWeight="600">
+            {permission.name}
+          </Typography>
+          {permission.category && (
+            <Chip
+              label={getCategoryLabel(permission.category)}
+              size="small"
+              color={getCategoryColor(permission.category)}
+              variant="outlined"
+              sx={{ mt: 0.5 }}
+            />
+          )}
+        </Box>
       ),
     },
     {
@@ -176,6 +217,28 @@ const PermissionListPage: React.FC = () => {
     },
   ];
 
+  // Helper function to create mobile card actions
+  const createMobileCardActions = (permission: Permission): MobileCardAction[] => [
+    {
+      icon: <ViewIcon />,
+      tooltip: 'View Details',
+      color: 'primary',
+      onClick: () => navigate(`/permissions/${permission.id}`),
+    },
+    {
+      icon: <EditIcon />,
+      tooltip: 'Edit',
+      color: 'secondary',
+      onClick: () => navigate(`/permissions/${permission.id}/edit`),
+    },
+    {
+      icon: <DeleteIcon />,
+      tooltip: 'Delete',
+      color: 'error',
+      onClick: () => handleDeletePermission(permission),
+    },
+  ];
+
   // Event handlers
   const handleDeletePermission = (permission: Permission) => {
     console.log('Delete permission:', permission);
@@ -208,17 +271,63 @@ const PermissionListPage: React.FC = () => {
         fields={filterFields}
       />
 
-      {/* Permission Table */}
-      <StandardTable
-        columns={columns}
-        data={paginatedPermissions}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalCount={filteredPermissions.length}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        getRowKey={(permission) => permission.id}
-      />
+      {/* Mobile Card Layout */}
+      {isMobile ? (
+        <Box>
+          {paginatedPermissions.length === 0 ? (
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="body1" color="textSecondary">
+                No data available
+              </Typography>
+            </Paper>
+          ) : (
+            <Box>
+              {paginatedPermissions.map((permission) => (
+                <MobileCard
+                  key={permission.id}
+                  title={permission.name}
+                  description={permission.description}
+                  avatar={<SecurityIcon />}
+                  avatarColor="primary.main"
+                  chips={
+                    permission.category ? [
+                      {
+                        label: getCategoryLabel(permission.category),
+                        color: getCategoryColor(permission.category),
+                        variant: 'outlined',
+                      },
+                    ] : []
+                  }
+                  actions={createMobileCardActions(permission)}
+                  children={
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                      Created: {formatDate(permission.createdAt, 'display')}
+                    </Typography>
+                  }
+                />
+              ))}
+            </Box>
+          )}
+          <MobilePagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredPermissions.length}
+            onPageChange={handleChangePage}
+          />
+        </Box>
+      ) : (
+        /* Desktop Table Layout */
+        <StandardTable
+          columns={columns}
+          data={paginatedPermissions}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={filteredPermissions.length}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          getRowKey={(permission) => permission.id}
+        />
+      )}
     </Box>
   );
 };
