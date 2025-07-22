@@ -1,85 +1,116 @@
-import { Admin } from '../types/admin';
+import { Admin, AdminRole, EntityStatus } from '../types';
 
 export const mockAdmins: Admin[] = [
   {
     id: 1,
-    username: 'admin',
-    email: 'admin@example.com',
-    firstName: 'System',
-    lastName: 'Administrator',
-    roleId: 1,
+    name: 'Super Admin',
+    email: 'superadmin@example.com',
+    role: 'super_admin',
     status: 'active',
+    avatar: 'SA',
+    lastLogin: '2024-01-15 10:30',
     createdAt: '2023-01-01',
-    lastLogin: '2024-01-15T10:30:00Z',
-    avatar: '/avatars/admin.jpg'
+    updatedAt: '2024-01-15',
+    permissions: ['manage users', 'manage roles', 'manage permissions', 'manage admins', 'view analytics'],
+    phone: '+1 (555) 111-1111',
+    department: 'IT',
   },
   {
     id: 2,
-    username: 'manager',
-    email: 'manager@example.com',
-    firstName: 'John',
-    lastName: 'Manager',
-    roleId: 2,
+    name: 'John Admin',
+    email: 'john.admin@example.com',
+    role: 'admin',
     status: 'active',
-    createdAt: '2023-02-15',
-    lastLogin: '2024-01-14T15:45:00Z',
-    avatar: '/avatars/manager.jpg'
+    avatar: 'JA',
+    lastLogin: '2024-01-14 15:45',
+    createdAt: '2023-03-12',
+    updatedAt: '2024-01-14',
+    permissions: ['manage users', 'view analytics'],
+    phone: '+1 (555) 222-2222',
+    department: 'Operations',
   },
   {
     id: 3,
-    username: 'supervisor',
-    email: 'supervisor@example.com',
-    firstName: 'Sarah',
-    lastName: 'Supervisor',
-    roleId: 3,
+    name: 'Sarah Moderator',
+    email: 'sarah.moderator@example.com',
+    role: 'moderator',
     status: 'active',
-    createdAt: '2023-03-20',
-    lastLogin: '2024-01-13T09:15:00Z',
-    avatar: '/avatars/supervisor.jpg'
+    avatar: 'SM',
+    lastLogin: '2024-01-13 12:20',
+    createdAt: '2023-05-20',
+    updatedAt: '2024-01-13',
+    permissions: ['moderate content', 'view reports'],
+    phone: '+1 (555) 333-3333',
+    department: 'Content',
   },
   {
     id: 4,
-    username: 'operator',
-    email: 'operator@example.com',
-    firstName: 'Mike',
-    lastName: 'Operator',
-    roleId: 4,
-    status: 'active',
-    createdAt: '2023-04-10',
-    lastLogin: '2024-01-12T14:20:00Z',
-    avatar: '/avatars/operator.jpg'
+    name: 'Mike Manager',
+    email: 'mike.manager@example.com',
+    role: 'admin',
+    status: 'inactive',
+    avatar: 'MM',
+    lastLogin: '2024-01-10 09:15',
+    createdAt: '2023-06-15',
+    updatedAt: '2024-01-10',
+    permissions: ['manage content', 'approve content', 'view reports'],
+    phone: '+1 (555) 444-4444',
+    department: 'Marketing',
   },
   {
     id: 5,
-    username: 'viewer',
-    email: 'viewer@example.com',
-    firstName: 'Lisa',
-    lastName: 'Viewer',
-    roleId: 5,
+    name: 'Lisa Support',
+    email: 'lisa.support@example.com',
+    role: 'moderator',
     status: 'active',
-    createdAt: '2023-05-05',
-    lastLogin: '2024-01-11T11:30:00Z',
-    avatar: '/avatars/viewer.jpg'
+    avatar: 'LS',
+    lastLogin: '2024-01-14 16:30',
+    createdAt: '2023-07-22',
+    updatedAt: '2024-01-14',
+    permissions: ['view users', 'view reports'],
+    phone: '+1 (555) 555-5555',
+    department: 'Support',
   },
-  {
-    id: 6,
-    username: 'inactive_admin',
-    email: 'inactive@example.com',
-    firstName: 'Inactive',
-    lastName: 'Admin',
-    roleId: 2,
-    status: 'inactive',
-    createdAt: '2023-06-01',
-    lastLogin: '2023-12-01T08:00:00Z',
-    avatar: '/avatars/inactive.jpg'
-  }
 ];
 
-// Helper function to get admin by ID
-export const getAdminById = (id: number) => mockAdmins.find(admin => admin.id === id);
+// Helper functions
+export const getActiveAdmins = (): Admin[] => {
+  return mockAdmins.filter(admin => admin.status === 'active');
+};
 
-// Helper function to get active admins only
-export const getActiveAdmins = () => mockAdmins.filter(admin => admin.status === 'active');
+export const getInactiveAdmins = (): Admin[] => {
+  return mockAdmins.filter(admin => admin.status === 'inactive');
+};
 
-// Helper function to get admins by role
-export const getAdminsByRole = (roleId: number) => mockAdmins.filter(admin => admin.roleId === roleId); 
+export const getAdminsByRole = (role: AdminRole): Admin[] => {
+  return mockAdmins.filter(admin => admin.role === role);
+};
+
+export const getAdminsByStatus = (status: EntityStatus): Admin[] => {
+  return mockAdmins.filter(admin => admin.status === status);
+};
+
+export const searchAdmins = (searchTerm: string): Admin[] => {
+  const term = searchTerm.toLowerCase();
+  return mockAdmins.filter(admin =>
+    admin.name.toLowerCase().includes(term) ||
+    admin.email.toLowerCase().includes(term) ||
+    admin.department?.toLowerCase().includes(term) ||
+    admin.permissions.some(permission => permission.toLowerCase().includes(term))
+  );
+};
+
+export const getAdminById = (id: number): Admin | undefined => {
+  return mockAdmins.find(admin => admin.id === id);
+};
+
+export const getAdminStats = () => {
+  return {
+    totalAdmins: mockAdmins.length,
+    activeAdmins: getActiveAdmins().length,
+    inactiveAdmins: getInactiveAdmins().length,
+    superAdmins: getAdminsByRole('super_admin').length,
+    admins: getAdminsByRole('admin').length,
+    moderators: getAdminsByRole('moderator').length,
+  };
+}; 

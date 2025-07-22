@@ -31,9 +31,8 @@ import { useFilters } from '../../hooks/useFilters';
 import { getStatusColor, getStatusLabel } from '../../constants/status';
 import { formatRelativeTime } from '../../constants/dateFormats';
 import { FilterState } from '../../constants/filters';
-import { Admin } from '../../types/admin';
-import { mockAdmins } from '../../data/mockAdmins';
-import { getActiveRoles } from '../../data/mockRoles';
+import { Admin, AdminRole } from '../../types/admin';
+import { mockAdmins, getAdminStats } from '../../data/mockAdmins';
 
 interface AdminFilters extends FilterState {
   searchTerm: string;
@@ -53,18 +52,16 @@ const AdminListPage: React.FC = () => {
   });
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
-  // Get roles for filtering
-  const roles = getActiveRoles();
-
   // Filter admins using standardized logic
   const filteredAdmins = useMemo(() => {
     return mockAdmins.filter(admin => {
       const matchesSearch = 
-        admin.username.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        admin.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         admin.email.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        `${admin.firstName} ${admin.lastName}`.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        admin.department?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        admin.permissions.some(permission => permission.toLowerCase().includes(filters.searchTerm.toLowerCase()));
       const matchesStatus = filters.statusFilter === 'all' || admin.status === filters.statusFilter;
-      const matchesRole = filters.roleFilter === 'all' || admin.roleId.toString() === filters.roleFilter;
+      const matchesRole = filters.roleFilter === 'all' || admin.role === filters.roleFilter;
       return matchesSearch && matchesStatus && matchesRole;
     });
   }, [filters]);
@@ -74,33 +71,36 @@ const AdminListPage: React.FC = () => {
     return filteredAdmins.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [filteredAdmins, page, rowsPerPage]);
 
+  // Get admin statistics
+  const adminStats = getAdminStats();
+
   // Statistics cards
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Admins',
-      value: mockAdmins.length,
+      value: adminStats.totalAdmins,
       color: 'primary',
       icon: <AdminIcon />,
     },
     {
       title: 'Active Admins',
-      value: mockAdmins.filter(admin => admin.status === 'active').length,
+      value: adminStats.activeAdmins,
       color: 'success',
       icon: <AdminIcon />,
     },
     {
       title: 'Super Admins',
-      value: mockAdmins.filter(admin => admin.roleId === 1).length,
+      value: adminStats.superAdmins,
       color: 'warning',
       icon: <SecurityIcon />,
     },
     {
       title: 'Regular Admins',
-      value: mockAdmins.filter(admin => admin.roleId !== 1).length,
+      value: adminStats.admins + adminStats.moderators,
       color: 'info',
       icon: <AdminIcon />,
     },
-  ], []);
+  ], [adminStats]);
 
   // Filter fields configuration
   const filterFields: FilterField[] = [
@@ -108,7 +108,7 @@ const AdminListPage: React.FC = () => {
       key: 'searchTerm',
       type: 'search',
       label: 'Search',
-      placeholder: 'Search admins by name, username, or email...',
+      placeholder: 'Search admins by name, email, or department...',
     },
     {
       key: 'statusFilter',
@@ -126,19 +126,29 @@ const AdminListPage: React.FC = () => {
       label: 'Role',
       options: [
         { value: 'all', label: 'All Roles' },
-        ...roles.map(role => ({ value: role.id.toString(), label: role.name })),
+        { value: 'super_admin', label: 'Super Administrator' },
+        { value: 'admin', label: 'Administrator' },
+        { value: 'moderator', label: 'Moderator' },
       ],
     },
   ];
 
   // Helper functions
-  const getRoleName = (roleId: number) => {
-    const role = roles.find(r => r.id === roleId);
-    return role ? role.name : 'Unknown Role';
+  const getRoleLabel = (role: AdminRole) => {
+    switch (role) {
+      case 'super_admin':
+        return 'Super Administrator';
+      case 'admin':
+        return 'Administrator';
+      case 'moderator':
+        return 'Moderator';
+      default:
+        return 'Unknown Role';
+    }
   };
 
   const getInitials = (admin: Admin) => {
-    return `${admin.firstName.charAt(0)}${admin.lastName.charAt(0)}`;
+    return admin.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
   };
 
   // Table columns configuration
@@ -170,7 +180,7 @@ const AdminListPage: React.FC = () => {
           </Badge>
           <Box>
             <Typography variant="subtitle2" fontWeight="600">
-              {`${admin.firstName} ${admin.lastName}`}
+              {admin.name}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               {admin.email}
@@ -180,24 +190,24 @@ const AdminListPage: React.FC = () => {
       ),
     },
     {
-      id: 'username',
-      label: 'Username',
-      render: (_, admin) => (
-        <Typography variant="body2" fontWeight="500">
-          {admin.username}
-        </Typography>
-      ),
-    },
-    {
       id: 'role',
       label: 'Role',
       render: (_, admin) => (
         <Chip
-          label={getRoleName(admin.roleId)}
+          label={getRoleLabel(admin.role)}
           size="small"
-          color={admin.roleId === 1 ? 'warning' : 'primary'}
+          color={admin.role === 'super_admin' ? 'warning' : 'primary'}
           variant="outlined"
         />
+      ),
+    },
+    {
+      id: 'department',
+      label: 'Department',
+      render: (_, admin) => (
+        <Typography variant="body2" color="textSecondary">
+          {admin.department || 'N/A'}
+        </Typography>
       ),
     },
     {
@@ -337,9 +347,9 @@ const AdminListPage: React.FC = () => {
               {paginatedAdmins.map((admin) => (
                 <MobileCard
                   key={admin.id}
-                  title={`${admin.firstName} ${admin.lastName}`}
+                  title={admin.name}
                   subtitle={admin.email}
-                  description={`@${admin.username}`}
+                  description={admin.department || 'No department'}
                   avatarText={getInitials(admin)}
                   avatarColor="primary.main"
                   status={{
@@ -350,8 +360,8 @@ const AdminListPage: React.FC = () => {
                   }}
                   chips={[
                     {
-                      label: getRoleName(admin.roleId),
-                      color: admin.roleId === 1 ? 'warning' : 'primary',
+                      label: getRoleLabel(admin.role),
+                      color: admin.role === 'super_admin' ? 'warning' : 'primary',
                       variant: 'outlined',
                     },
                   ]}

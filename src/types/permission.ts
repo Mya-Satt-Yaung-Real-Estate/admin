@@ -1,24 +1,35 @@
-export interface Permission {
-  id: number;
+import { BaseEntityWithNumberId, EntityStatus, SelectOption } from './index';
+
+export interface Permission extends BaseEntityWithNumberId {
   name: string;
   description: string;
-  module: string;
-  action: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  roleCount: number;
+  category: PermissionCategory;
+  status: EntityStatus;
 }
+
+export type PermissionCategory = 'manage' | 'view' | 'edit' | 'other';
 
 export interface PermissionFormData {
   name: string;
   description: string;
-  module: string;
-  action: string;
-  status: 'active' | 'inactive';
+  category: PermissionCategory;
+  status: EntityStatus;
 }
 
 export interface PermissionFilters {
   searchTerm: string;
   statusFilter: string;
-  moduleFilter: string;
-} 
+  categoryFilter: string;
+}
+
+export const PERMISSION_CATEGORY_OPTIONS: SelectOption[] = [
+  { value: 'manage', label: 'Manage' },
+  { value: 'view', label: 'View' },
+  { value: 'edit', label: 'Edit' },
+  { value: 'other', label: 'Other' },
+];
+
+export const PERMISSION_STATUS_OPTIONS: SelectOption[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+]; 

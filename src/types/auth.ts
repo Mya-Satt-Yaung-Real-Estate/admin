@@ -1,11 +1,4 @@
-// User Types
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-}
+import { User } from './user';
 
 // Authentication State Types
 export interface AuthState {

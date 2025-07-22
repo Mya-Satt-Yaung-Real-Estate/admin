@@ -17,6 +17,7 @@ import {
   Login as LoginIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { User } from '../../types';
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -57,12 +58,18 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     
     setTimeout(() => {
-      const mockUser = {
-        id: '1',
+      const mockUser: User = {
+        id: 1,
         name: 'Admin User',
         email: formData.email,
         role: 'admin',
+        status: 'active',
         avatar: 'AU',
+        lastLogin: new Date().toISOString(),
+        createdAt: '2023-01-01',
+        updatedAt: new Date().toISOString(),
+        isActive: true,
+        sendEmailNotification: true,
       };
       const mockToken = 'mock-jwt-token';
       login(mockUser, mockToken);
@@ -98,150 +105,110 @@ const LoginPage: React.FC = () => {
     >
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
           width: '100%',
           maxWidth: 400,
         }}
       >
-        {/* Logo and Title */}
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
-          <Box
-            component="img"
-            src="/project_logo.png"
-            alt="Logo"
-            sx={{
-              width: 80,
-              height: 80,
-              display: 'block',
-              mx: 'auto',
-              mb: 2,
-            }}
-          />
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              fontWeight: 700, 
-              color: '#2d3748', 
-              mb: 1,
-            }}
-          >
-            MyaSattYaung
-          </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              color: '#4a5568',
-            }}
-          >
-            通达・房地产公司
-          </Typography>
-        </Box>
-
-        {/* Login Form */}
         <Paper
-          elevation={3}
+          elevation={8}
           sx={{
-            p: 3,
-            width: '100%',
+            p: 4,
             borderRadius: 2,
             background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
           }}
         >
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label="Email Address"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleChange}
-              error={!!errors.email}
-              helperText={errors.email}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailIcon sx={{ color: 'primary.main' }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+          {/* Header */}
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom fontWeight="bold" color="primary">
+              Welcome Back
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Sign in to your account to continue
+            </Typography>
+          </Box>
 
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="password"
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              autoComplete="current-password"
-              value={formData.password}
-              onChange={handleChange}
-              error={!!errors.password}
-              helperText={errors.password}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockIcon sx={{ color: 'primary.main' }} />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
+          {/* Login Form */}
+          <form onSubmit={handleSubmit}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Email Field */}
+              <TextField
+                name="email"
+                label="Email Address"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                error={!!errors.email}
+                helperText={errors.email}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              disabled={isLoading}
-              startIcon={
-                isLoading ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <LoginIcon />
-                )
-              }
-              sx={{
-                mt: 3,
-                mb: 2,
-                py: 1.5,
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                textTransform: 'none',
-              }}
-            >
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Button>
+              {/* Password Field */}
+              <TextField
+                name="password"
+                label="Password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                error={!!errors.password}
+                helperText={errors.password}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockIcon color="action" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword(!showPassword)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                fullWidth
+                disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} /> : <LoginIcon />}
+                sx={{
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                }}
+              >
+                {isLoading ? 'Signing In...' : 'Sign In'}
+              </Button>
+            </Box>
+          </form>
+
+          {/* Demo Credentials */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="caption" color="textSecondary" display="block">
+              Demo Credentials:
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              Email: demo@yopmail.com | Password: demo123
+            </Typography>
           </Box>
         </Paper>
-
-        {/* Footer */}
-        <Typography
-          variant="body2"
-          sx={{
-            mt: 3,
-            color: '#718096',
-            textAlign: 'center',
-          }}
-        >
-          © 2024 Admin Panel. All rights reserved.
-        </Typography>
       </Box>
     </Box>
   );

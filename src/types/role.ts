@@ -1,21 +1,25 @@
-export interface Role {
-  id: number;
+import { BaseEntityWithNumberId, EntityStatus, SelectOption } from './index';
+
+export interface Role extends BaseEntityWithNumberId {
   name: string;
-  description: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  permissions: number[];
-  adminCount: number;
+  permissions: string[];
+  status: EntityStatus;
+  description?: string;
 }
 
 export interface RoleFormData {
   name: string;
-  description: string;
-  status: 'active' | 'inactive';
-  permissions: number[];
+  permissions: string[];
+  status: EntityStatus;
+  description?: string;
 }
 
 export interface RoleFilters {
   searchTerm: string;
   statusFilter: string;
-} 
+}
+
+export const ROLE_STATUS_OPTIONS: SelectOption[] = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+]; 

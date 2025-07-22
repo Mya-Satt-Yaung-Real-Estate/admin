@@ -9,7 +9,7 @@ export const filterRoles = (
   return roles.filter(role => {
     const matchesSearch = 
       role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      role.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (role.description && role.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || role.status === statusFilter;
     
@@ -17,7 +17,7 @@ export const filterRoles = (
   });
 };
 
-export const getPermissionNames = (permissionIds: number[], permissions: any[]) => {
+export const getPermissionNames = (permissionIds: string[], permissions: any[]) => {
   return permissionIds
     .map(id => permissions.find(p => p.id === id)?.name)
     .filter(Boolean)
@@ -28,13 +28,11 @@ export const getRoleStats = (roles: Role[]) => {
   const totalRoles = roles.length;
   const activeRoles = roles.filter(role => role.status === 'active').length;
   const inactiveRoles = totalRoles - activeRoles;
-  const totalAdmins = roles.reduce((sum, role) => sum + role.adminCount, 0);
   
   return {
     totalRoles,
     activeRoles,
-    inactiveRoles,
-    totalAdmins
+    inactiveRoles
   };
 };
 

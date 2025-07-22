@@ -31,6 +31,7 @@ const mockTownships: Township[] = [
     regionId: 1,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'The central business district of Yangon, featuring colonial architecture and modern developments.'
   },
   {
@@ -39,6 +40,7 @@ const mockTownships: Township[] = [
     regionId: 1,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A residential township in Yangon, known for its diplomatic missions and upscale neighborhoods.'
   },
   {
@@ -47,6 +49,7 @@ const mockTownships: Township[] = [
     regionId: 1,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A popular residential area in Yangon with good transportation links.'
   },
   {
@@ -55,6 +58,7 @@ const mockTownships: Township[] = [
     regionId: 1,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Yangon known for its markets and residential areas.'
   },
   {
@@ -63,6 +67,7 @@ const mockTownships: Township[] = [
     regionId: 2,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Mandalay, part of the historic royal city.'
   },
   {
@@ -71,6 +76,7 @@ const mockTownships: Township[] = [
     regionId: 2,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Mandalay with historical significance.'
   },
   {
@@ -79,6 +85,7 @@ const mockTownships: Township[] = [
     regionId: 2,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Mandalay known for its cultural heritage.'
   },
   {
@@ -87,6 +94,7 @@ const mockTownships: Township[] = [
     regionId: 3,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Naypyidaw, the capital territory.'
   },
   {
@@ -95,6 +103,7 @@ const mockTownships: Township[] = [
     regionId: 3,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Naypyidaw with government offices.'
   },
   {
@@ -103,6 +112,7 @@ const mockTownships: Township[] = [
     regionId: 3,
     status: 'active',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-15',
     description: 'A township in Naypyidaw featuring residential areas.'
   },
   {
@@ -111,6 +121,7 @@ const mockTownships: Township[] = [
     regionId: 4,
     status: 'inactive',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-10',
     description: 'A township in Sagaing Region, known for its historical sites.'
   },
   {
@@ -119,6 +130,7 @@ const mockTownships: Township[] = [
     regionId: 4,
     status: 'inactive',
     createdAt: '2023-01-01',
+    updatedAt: '2024-01-10',
     description: 'A township in Sagaing Region, an important commercial center.'
   }
 ];

@@ -1,168 +1,185 @@
-import { Permission } from '../types/permission';
+import { Permission, PermissionCategory, EntityStatus } from '../types';
 
 export const mockPermissions: Permission[] = [
   {
     id: 1,
-    name: 'Manage Admins',
-    description: 'Create, edit, and delete admin users',
-    module: 'Admin Management',
-    action: 'manage',
+    name: 'manage users',
+    description: 'Create, edit, and delete user accounts',
+    category: 'manage',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 2
+    updatedAt: '2024-01-15',
   },
   {
     id: 2,
-    name: 'Manage Roles',
+    name: 'manage roles',
     description: 'Create, edit, and delete user roles',
-    module: 'Role Management',
-    action: 'manage',
+    category: 'manage',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 2
+    updatedAt: '2024-01-15',
   },
   {
     id: 3,
-    name: 'View Dashboard',
-    description: 'Access to main dashboard',
-    module: 'Dashboard',
-    action: 'view',
+    name: 'manage permissions',
+    description: 'Create, edit, and delete system permissions',
+    category: 'manage',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 5
+    updatedAt: '2024-01-15',
   },
   {
     id: 4,
-    name: 'View Users',
-    description: 'View user information',
-    module: 'User Management',
-    action: 'view',
+    name: 'manage admins',
+    description: 'Create, edit, and delete admin accounts',
+    category: 'manage',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 5
+    updatedAt: '2024-01-15',
   },
   {
     id: 5,
-    name: 'Manage Users',
-    description: 'Create, edit, and delete users',
-    module: 'User Management',
-    action: 'manage',
+    name: 'view analytics',
+    description: 'Access to analytics and reporting data',
+    category: 'view',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 4
+    updatedAt: '2024-01-15',
   },
   {
     id: 6,
-    name: 'View Analytics',
-    description: 'Access to analytics and reports',
-    module: 'Analytics',
-    action: 'view',
+    name: 'edit content',
+    description: 'Edit system content and configurations',
+    category: 'edit',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 4
+    updatedAt: '2024-01-15',
   },
   {
     id: 7,
-    name: 'Manage Locations',
-    description: 'Create, edit, and delete locations',
-    module: 'Location Management',
-    action: 'manage',
+    name: 'view reports',
+    description: 'Access to system reports',
+    category: 'view',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 4
+    updatedAt: '2024-01-15',
   },
   {
     id: 8,
-    name: 'View Locations',
-    description: 'View location information',
-    module: 'Location Management',
-    action: 'view',
+    name: 'moderate content',
+    description: 'Moderate user-generated content',
+    category: 'edit',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 5
+    updatedAt: '2024-01-15',
   },
   {
     id: 9,
-    name: 'Manage Settings',
-    description: 'Modify system settings',
-    module: 'System Settings',
-    action: 'manage',
+    name: 'export data',
+    description: 'Export system data to external formats',
+    category: 'other',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 2
+    updatedAt: '2024-01-15',
   },
   {
     id: 10,
-    name: 'View Settings',
-    description: 'View system settings',
-    module: 'System Settings',
-    action: 'view',
+    name: 'manage content',
+    description: 'Create, edit, and delete system content',
+    category: 'manage',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 4
+    updatedAt: '2024-01-15',
   },
   {
     id: 11,
-    name: 'Manage Permissions',
-    description: 'Create, edit, and delete permissions',
-    module: 'Permission Management',
-    action: 'manage',
+    name: 'approve content',
+    description: 'Approve or reject content submissions',
+    category: 'edit',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 2
+    updatedAt: '2024-01-15',
   },
   {
     id: 12,
-    name: 'View Permissions',
-    description: 'View permission information',
-    module: 'Permission Management',
-    action: 'view',
+    name: 'view users',
+    description: 'View user account information',
+    category: 'view',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 2
+    updatedAt: '2024-01-15',
   },
   {
     id: 13,
-    name: 'Export Data',
-    description: 'Export data to various formats',
-    module: 'Data Export',
-    action: 'export',
+    name: 'view content',
+    description: 'View system content',
+    category: 'view',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 2
+    updatedAt: '2024-01-15',
   },
   {
     id: 14,
-    name: 'System Backup',
+    name: 'system backup',
     description: 'Create and manage system backups',
-    module: 'System Maintenance',
-    action: 'backup',
-    status: 'active',
+    category: 'other',
+    status: 'inactive',
     createdAt: '2023-01-01',
-    roleCount: 1
+    updatedAt: '2024-01-10',
   },
   {
     id: 15,
-    name: 'System Restore',
-    description: 'Restore system from backups',
-    module: 'System Maintenance',
-    action: 'restore',
+    name: 'api access',
+    description: 'Access to system API endpoints',
+    category: 'other',
     status: 'active',
     createdAt: '2023-01-01',
-    roleCount: 1
-  }
+    updatedAt: '2024-01-15',
+  },
 ];
 
-// Helper function to get permission by ID
-export const getPermissionById = (id: number) => mockPermissions.find(permission => permission.id === id);
+// Helper functions
+export const getActivePermissions = (): Permission[] => {
+  return mockPermissions.filter(permission => permission.status === 'active');
+};
 
-// Helper function to get active permissions only
-export const getActivePermissions = () => mockPermissions.filter(permission => permission.status === 'active');
+export const getInactivePermissions = (): Permission[] => {
+  return mockPermissions.filter(permission => permission.status === 'inactive');
+};
 
-// Helper function to get permissions by module
-export const getPermissionsByModule = (module: string) => 
-  mockPermissions.filter(permission => permission.module === module);
+export const getPermissionsByStatus = (status: EntityStatus): Permission[] => {
+  return mockPermissions.filter(permission => permission.status === status);
+};
 
-// Helper function to get unique modules
-export const getUniqueModules = () => 
-  [...new Set(mockPermissions.map(permission => permission.module))]; 
+export const getPermissionsByCategory = (category: PermissionCategory): Permission[] => {
+  return mockPermissions.filter(permission => permission.category === category);
+};
+
+export const searchPermissions = (searchTerm: string): Permission[] => {
+  const term = searchTerm.toLowerCase();
+  return mockPermissions.filter(permission =>
+    permission.name.toLowerCase().includes(term) ||
+    permission.description.toLowerCase().includes(term) ||
+    permission.category.toLowerCase().includes(term)
+  );
+};
+
+export const getPermissionById = (id: number): Permission | undefined => {
+  return mockPermissions.find(permission => permission.id === id);
+};
+
+export const getPermissionByName = (name: string): Permission | undefined => {
+  return mockPermissions.find(permission => permission.name === name);
+};
+
+export const getPermissionStats = () => {
+  return {
+    totalPermissions: mockPermissions.length,
+    activePermissions: getActivePermissions().length,
+    inactivePermissions: getInactivePermissions().length,
+    managePermissions: getPermissionsByCategory('manage').length,
+    viewPermissions: getPermissionsByCategory('view').length,
+    editPermissions: getPermissionsByCategory('edit').length,
+    otherPermissions: getPermissionsByCategory('other').length,
+  };
+}; 

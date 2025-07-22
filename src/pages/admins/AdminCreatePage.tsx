@@ -21,20 +21,21 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-import { AdminFormData } from '../../types/admin';
-import { getActiveRoles } from '../../data/mockRoles';
+import { AdminFormData, ADMIN_ROLE_OPTIONS, ADMIN_STATUS_OPTIONS } from '../../types/admin';
 
 const AdminCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<AdminFormData>({
-    username: '',
+    name: '',
     email: '',
-    firstName: '',
-    lastName: '',
-    roleId: 0,
+    role: 'admin',
     status: 'active',
+    avatar: '',
     password: '',
     confirmPassword: '',
+    permissions: [],
+    phone: '',
+    department: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof AdminFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,10 +52,10 @@ const AdminCreatePage: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof AdminFormData, string>> = {};
     
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.trim().length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    } else if (formData.name.trim().length < 3) {
+      newErrors.name = 'Name must be at least 3 characters';
     }
     
     if (!formData.email.trim()) {
@@ -63,16 +64,8 @@ const AdminCreatePage: React.FC = () => {
       newErrors.email = 'Please enter a valid email address';
     }
     
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-    
-    if (!formData.roleId) {
-      newErrors.roleId = 'Role is required';
+    if (!formData.role) {
+      newErrors.role = 'Role is required';
     }
     
     if (!formData.password) {
@@ -105,11 +98,14 @@ const AdminCreatePage: React.FC = () => {
   };
 
   const getInitials = () => {
-    return `${formData.firstName.charAt(0)}${formData.lastName.charAt(0)}`.toUpperCase();
+    const nameParts = formData.name.split(' ');
+    return nameParts.length >= 2 
+      ? `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase()
+      : formData.name.charAt(0).toUpperCase();
   };
 
   const getSelectedRole = () => {
-    return getActiveRoles().find(role => role.id === formData.roleId);
+    return ADMIN_ROLE_OPTIONS.find(role => role.value === formData.role);
   };
 
   return (
@@ -137,10 +133,10 @@ const AdminCreatePage: React.FC = () => {
             <TextField
               fullWidth
               label="Username"
-              value={formData.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
-              error={!!errors.username}
-              helperText={errors.username}
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              error={!!errors.name}
+              helperText={errors.name}
               required
               placeholder="e.g., admin_user"
             />
@@ -164,10 +160,12 @@ const AdminCreatePage: React.FC = () => {
             <TextField
               fullWidth
               label="First Name"
-              value={formData.firstName}
-              onChange={(e) => handleInputChange('firstName', e.target.value)}
-              error={!!errors.firstName}
-              helperText={errors.firstName}
+              value={formData.name.split(' ')[0] || ''}
+              onChange={(e) => {
+                const lastName = formData.name.split(' ').slice(1).join(' ');
+                const newName = `${e.target.value} ${lastName}`.trim();
+                handleInputChange('name', newName);
+              }}
               required
               placeholder="e.g., John"
             />
@@ -177,10 +175,12 @@ const AdminCreatePage: React.FC = () => {
             <TextField
               fullWidth
               label="Last Name"
-              value={formData.lastName}
-              onChange={(e) => handleInputChange('lastName', e.target.value)}
-              error={!!errors.lastName}
-              helperText={errors.lastName}
+              value={formData.name.split(' ').slice(1).join(' ') || ''}
+              onChange={(e) => {
+                const firstName = formData.name.split(' ')[0] || '';
+                const newName = `${firstName} ${e.target.value}`.trim();
+                handleInputChange('name', newName);
+              }}
               required
               placeholder="e.g., Doe"
             />
@@ -190,17 +190,17 @@ const AdminCreatePage: React.FC = () => {
             <FormControl fullWidth required>
               <InputLabel>Role</InputLabel>
               <Select
-                value={formData.roleId}
+                value={formData.role}
                 label="Role"
-                onChange={(e) => handleInputChange('roleId', e.target.value as number)}
-                error={!!errors.roleId}
+                onChange={(e) => handleInputChange('role', e.target.value)}
+                error={!!errors.role}
               >
-                <MenuItem value={0} disabled>
+                <MenuItem value="" disabled>
                   Select a role
                 </MenuItem>
-                {getActiveRoles().map((role) => (
-                  <MenuItem key={role.id} value={role.id}>
-                    {role.name}
+                {ADMIN_ROLE_OPTIONS.map((role) => (
+                  <MenuItem key={role.value} value={role.value}>
+                    {role.label}
                   </MenuItem>
                 ))}
               </Select>
@@ -216,8 +216,11 @@ const AdminCreatePage: React.FC = () => {
                 onChange={(e) => handleInputChange('status', e.target.value)}
                 error={!!errors.status}
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
+                {ADMIN_STATUS_OPTIONS.map((status) => (
+                  <MenuItem key={status.value} value={status.value}>
+                    {status.label}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
@@ -255,7 +258,7 @@ const AdminCreatePage: React.FC = () => {
           </Grid>
 
           {/* Preview Section */}
-          {(formData.firstName || formData.lastName) && (
+          {formData.name && (
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
                 <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
@@ -263,14 +266,14 @@ const AdminCreatePage: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="subtitle1" fontWeight={600}>
-                    {formData.firstName} {formData.lastName}
+                    {formData.name}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     {formData.email}
                   </Typography>
-                  {formData.roleId > 0 && (
+                  {formData.role && (
                     <Typography variant="body2" color="textSecondary">
-                      Role: {getSelectedRole()?.name}
+                      Role: {getSelectedRole()?.label}
                     </Typography>
                   )}
                 </Box>
