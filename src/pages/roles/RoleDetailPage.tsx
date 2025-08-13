@@ -1,24 +1,99 @@
 import React from 'react';
-import { Box, Paper, Typography, Chip, Grid, Divider, Button } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
+import { 
+  Box, 
+  Paper, 
+  Typography, 
+  Chip, 
+  Grid, 
+  Divider, 
+  Button,
+  Alert,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import { 
+  ArrowBack as ArrowBackIcon, 
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Security as SecurityIcon
+} from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-
-const mockRoles = [
-  { id: 1, name: 'Super Admin', permissions: ['manage users', 'manage roles', 'manage permissions'], createdAt: '2023-01-01' },
-  { id: 2, name: 'Admin', permissions: ['manage users'], createdAt: '2023-03-12' },
-  { id: 3, name: 'Editor', permissions: ['edit content'], createdAt: '2023-05-20' },
-];
+import { PageLoadingState, PageErrorState, DeleteConfirmationDialog } from '../../components/ui';
+import { useRole, useDeleteRole } from '../../services/queries/roles';
+import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { formatDate } from '../../constants/dateFormats';
+import { getStatusChipColor } from '../../utils/statusUtils';
+import { getStatusLabel } from '../../constants/status';
 
 const RoleDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const role = mockRoles.find(r => r.id === Number(id));
+  const { slug } = useParams<{ slug: string }>();
+  
+  // Fetch role data
+  const { data: roleResponse, isLoading, error } = useRole(slug || '');
+  const deleteRoleMutation = useDeleteRole();
 
+  // Delete confirmation hook
+  const {
+    deleteState,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    handleConfirmDelete,
+  } = useDeleteConfirmation();
+
+  // Extract role data
+  const role = roleResponse?.data;
+
+  // Handle delete role
+  const handleDeleteRole = () => {
+    if (!role) return;
+    
+    openDeleteConfirmation(
+      role.name,
+      'role',
+      () => {
+        deleteRoleMutation.mutate(role.slug, {
+          onSuccess: () => {
+            navigate('/roles');
+          },
+        });
+      }
+    );
+  };
+
+  // Loading state
+  if (isLoading) {
+    return <PageLoadingState title="Loading Role Details" />;
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <PageErrorState
+        error={error}
+        title="Error Loading Role"
+        message={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
+  // Not found state
   if (!role) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">Role not found</Typography>
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" gutterBottom>Role Not Found</Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          The role you're looking for doesn't exist or has been removed.
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/roles')}
+        >
+          Back to Roles
+        </Button>
       </Box>
     );
   }
@@ -35,31 +110,127 @@ const RoleDetailPage: React.FC = () => {
           onClick: () => navigate('/roles')
         }}
       />
+
+      {/* Delete success alert */}
+      {deleteRoleMutation.isSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Role deleted successfully!
+        </Alert>
+      )}
+
+      {/* Delete error alert */}
+      {deleteRoleMutation.isError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Failed to delete role: {deleteRoleMutation.error?.message}
+        </Alert>
+      )}
+
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        {/* Role Information */}
+        <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>{role.name}</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="subtitle2" gutterBottom>Permissions:</Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-              {role.permissions.map((perm) => (
-                <Chip key={perm} label={perm} size="small" />
-              ))}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+              <Box>
+                <Typography variant="h4" gutterBottom>
+                  {role.name}
+                </Typography>
+                <Chip
+                  label={getStatusLabel(role.is_active ? 'active' : 'inactive')}
+                  color={getStatusChipColor(role.is_active)}
+                  variant="outlined"
+                  size="small"
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Tooltip title="Edit Role">
+                  <IconButton
+                    color="primary"
+                    onClick={() => navigate(`/roles/${role.slug}/edit`)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete Role">
+                  <IconButton
+                    color="error"
+                    onClick={handleDeleteRole}
+                    disabled={deleteRoleMutation.isPending}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
-            <Typography variant="body2" color="textSecondary">Created: {role.createdAt}</Typography>
-            <Box sx={{ mt: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<EditIcon />}
-                onClick={() => navigate(`/roles/${role.id}/edit`)}
-                fullWidth
-              >
-                Edit Role
-              </Button>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Description */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Description
+              </Typography>
+              <Typography variant="body1" color="textSecondary">
+                {role.description || 'No description provided'}
+              </Typography>
+            </Box>
+
+            {/* Permissions */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Permissions ({role.permissions?.length || 0})
+              </Typography>
+              {role.permissions && role.permissions.length > 0 ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {role.permissions.map((permission) => (
+                    <Chip
+                      key={permission.id}
+                      label={permission.name}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      icon={<SecurityIcon />}
+                    />
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="textSecondary">
+                  No permissions assigned to this role
+                </Typography>
+              )}
+            </Box>
+
+            {/* Timestamps */}
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Timestamps
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="textSecondary">
+                    Created: {formatDate(role.created_at, 'display')}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2" color="textSecondary">
+                    Last Updated: {formatDate(role.updated_at, 'display')}
+                  </Typography>
+                </Grid>
+              </Grid>
             </Box>
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteState.open}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteState.itemName}
+        itemType={deleteState.itemType}
+        isLoading={deleteRoleMutation.isPending}
+        error={deleteRoleMutation.error?.message || null}
+      />
     </Box>
   );
 };

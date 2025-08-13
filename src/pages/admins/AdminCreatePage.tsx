@@ -10,18 +10,14 @@ import {
   MenuItem,
   Grid,
   Alert,
-  Chip,
-  FormHelperText,
 } from '@mui/material';
-import {
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-} from '@mui/icons-material';
+import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../components/ui';
+import { useCreateAdminUser } from '../../services/queries/adminUsers';
+import { useRoles } from '../../services/queries/roles';
 import { CreateAdminUserData } from '../../types/admin';
-import { useCreateAdminUser, useRoles } from '../../services/queries';
-import { PageLoadingState, PageErrorState } from '../../components/ui';
 
 const AdminCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -211,38 +207,15 @@ const AdminCreatePage: React.FC = () => {
             </Grid>
             
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth error={!!errors.role_ids} required>
-                <InputLabel>Roles</InputLabel>
-                <Select
-                  multiple
-                  value={formData.role_ids}
-                  onChange={(e) => handleInputChange('role_ids', e.target.value as number[])}
-                  label="Roles"
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as number[]).map((roleId) => {
-                        const role = roles.find(r => r.id === roleId);
-                        return (
-                          <Chip 
-                            key={roleId} 
-                            label={role?.name || `Role ${roleId}`} 
-                            size="small" 
-                          />
-                        );
-                      })}
-                    </Box>
-                  )}
-                >
-                  {roles.map((role) => (
-                    <MenuItem key={role.id} value={role.id}>
-                      {role.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.role_ids && (
-                  <FormHelperText>{errors.role_ids}</FormHelperText>
-                )}
-              </FormControl>
+              <EnhancedMultiSelect
+                label="Roles"
+                value={formData.role_ids}
+                onChange={(selected) => handleInputChange('role_ids', selected)}
+                options={roles}
+                error={!!errors.role_ids}
+                helperText={errors.role_ids}
+                required
+              />
             </Grid>
             
             <Grid item xs={12} md={6}>

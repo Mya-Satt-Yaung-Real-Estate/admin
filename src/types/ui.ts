@@ -4,6 +4,13 @@ export interface LoadingSpinnerProps {
   color?: 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' | 'inherit';
 }
 
+export interface LogoutDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isLoading?: boolean;
+}
+
 export interface PageLoadingStateProps {
   title?: string;
   message?: string;

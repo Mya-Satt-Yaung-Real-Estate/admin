@@ -133,11 +133,11 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute><RoleCreatePage /></ProtectedRoute>,
   },
   {
-    path: '/roles/:id',
+    path: '/roles/:slug',
     element: <ProtectedRoute><RoleDetailPage /></ProtectedRoute>,
   },
   {
-    path: '/roles/:id/edit',
+    path: '/roles/:slug/edit',
     element: <ProtectedRoute><RoleEditPage /></ProtectedRoute>,
   },
   {

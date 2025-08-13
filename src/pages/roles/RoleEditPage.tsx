@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -10,52 +10,118 @@ import {
   Select,
   MenuItem,
   Grid,
-  Chip,
+  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-
-const mockRoles = [
-  { id: 1, name: 'Super Admin', permissions: ['manage users', 'manage roles', 'manage permissions'], createdAt: '2023-01-01' },
-  { id: 2, name: 'Admin', permissions: ['manage users'], createdAt: '2023-03-12' },
-  { id: 3, name: 'Editor', permissions: ['edit content'], createdAt: '2023-05-20' },
-];
-const mockPermissions = [
-  'manage users',
-  'manage roles',
-  'manage permissions',
-  'edit content',
-  'view analytics',
-];
+import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../components/ui';
+import { useRole, useUpdateRole } from '../../services/queries/roles';
+import { usePermissions } from '../../services/queries/permissions';
+import { UpdateRoleData } from '../../types/role';
 
 const RoleEditPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const role = mockRoles.find(r => r.id === Number(id));
-  const [name, setName] = useState(role?.name || '');
-  const [permissions, setPermissions] = useState<string[]>(role?.permissions || []);
-  const [errors, setErrors] = useState<{ name?: string; permissions?: string }>();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { slug } = useParams<{ slug: string }>();
+  
+  // Fetch role and permissions data
+  const { data: roleResponse, isLoading: isLoadingRole, error: roleError } = useRole(slug || '');
+  const { data: permissionsResponse, isLoading: isLoadingPermissions, error: permissionsError } = usePermissions();
+  const updateRoleMutation = useUpdateRole();
 
-  const handleSubmit = async () => {
-    const newErrors: typeof errors = {};
-    if (!name.trim()) newErrors.name = 'Role name is required';
-    if (permissions.length === 0) newErrors.permissions = 'Select at least one permission';
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-    setIsSubmitting(true);
-    setTimeout(() => {
-      console.log('Updating role:', { name, permissions });
-      setIsSubmitting(false);
-      navigate(`/roles/${id}`);
-    }, 1500);
+  // Extract data
+  const role = roleResponse?.data;
+  const permissions = permissionsResponse?.data || [];
+
+  // Form state
+  const [formData, setFormData] = useState<UpdateRoleData>({
+    name: '',
+    description: '',
+    is_active: true,
+    permissions: [],
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Initialize form data when role is loaded
+  useEffect(() => {
+    if (role) {
+      setFormData({
+        name: role.name,
+        description: role.description || '',
+        is_active: role.is_active,
+        permissions: role.permissions?.map(p => p.id) || [],
+      });
+    }
+  }, [role]);
+
+  // Handle form field changes
+  const handleFieldChange = (field: keyof UpdateRoleData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear field error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!slug) return;
+
+    // Validate form
+    const newErrors: { [key: string]: string } = {};
+    if (!formData.name?.trim()) {
+      newErrors.name = 'Role name is required';
+    }
+    if (!formData.permissions || formData.permissions.length === 0) {
+      newErrors.permissions = 'Select at least one permission';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    // Submit form
+    updateRoleMutation.mutate(
+      { slug, data: formData },
+      {
+        onSuccess: () => {
+          navigate(`/roles/${slug}`);
+        },
+      }
+    );
+  };
+
+  // Loading state
+  if (isLoadingRole || isLoadingPermissions) {
+    return <PageLoadingState title="Loading Role Details" />;
+  }
+
+  // Error state
+  if (roleError || permissionsError) {
+    return (
+      <PageErrorState
+        error={roleError || permissionsError}
+        title="Error Loading Role"
+        message={roleError?.message || permissionsError?.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
+  // Not found state
   if (!role) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">Role not found</Typography>
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography variant="h6" gutterBottom>Role Not Found</Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          The role you're looking for doesn't exist or has been removed.
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate('/roles')}
+        >
+          Back to Roles
+        </Button>
       </Box>
     );
   }
@@ -65,70 +131,105 @@ const RoleEditPage: React.FC = () => {
       <PageHeader
         title="Edit Role"
         breadcrumbs={`Dashboard / Admin Management / Roles / ${role.name} / Edit`}
-        subtitle="Update role information"
+        subtitle="Update role information and permissions"
         actionButton={{
           text: 'Back to Role',
           icon: <ArrowBackIcon />,
-          onClick: () => navigate(`/roles/${id}`)
+          onClick: () => navigate(`/roles/${slug}`)
         }}
       />
+
+      {/* Success/Error alerts */}
+      {updateRoleMutation.isSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Role updated successfully!
+        </Alert>
+      )}
+
+      {updateRoleMutation.isError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Failed to update role: {updateRoleMutation.error?.message}
+        </Alert>
+      )}
+
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>
+          {/* Role Name */}
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
               label="Role Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              error={!!errors?.name}
-              helperText={errors?.name}
+              value={formData.name || ''}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              error={!!errors.name}
+              helperText={errors.name}
               required
             />
           </Grid>
+
+          {/* Status */}
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required error={!!errors?.permissions}>
-              <InputLabel>Permissions</InputLabel>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
               <Select
-                multiple
-                value={permissions}
-                onChange={(e) => setPermissions(e.target.value as string[])}
-                label="Permissions"
-                renderValue={(selected) => (
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {(selected as string[]).map((value) => (
-                      <Chip key={value} label={value} size="small" />
-                    ))}
-                  </Box>
-                )}
+                value={formData.is_active ? 'true' : 'false'}
+                onChange={(e) => handleFieldChange('is_active', e.target.value === 'true')}
+                label="Status"
               >
-                {mockPermissions.map((perm) => (
-                  <MenuItem key={perm} value={perm}>{perm}</MenuItem>
-                ))}
+                <MenuItem value="true">Active</MenuItem>
+                <MenuItem value="false">Inactive</MenuItem>
               </Select>
-              {errors?.permissions && (
-                <Typography variant="caption" color="error">{errors.permissions}</Typography>
-              )}
             </FormControl>
           </Grid>
+
+          {/* Description */}
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Description"
+              value={formData.description || ''}
+              onChange={(e) => handleFieldChange('description', e.target.value)}
+              multiline
+              rows={3}
+              helperText="Optional description for this role"
+            />
+          </Grid>
+
+          {/* Permissions */}
+          <Grid item xs={12}>
+            <EnhancedMultiSelect
+              label="Permissions"
+              value={formData.permissions || []}
+              onChange={(selected) => handleFieldChange('permissions', selected)}
+              options={permissions}
+              error={!!errors.permissions}
+              helperText={errors.permissions}
+              required
+            />
+          </Grid>
+
+          {/* Action Buttons */}
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+              <Button
+                variant="outlined"
+                startIcon={<CancelIcon />}
+                onClick={() => navigate(`/roles/${slug}`)}
+                disabled={updateRoleMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={handleSubmit}
+                disabled={updateRoleMutation.isPending}
+              >
+                {updateRoleMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-          <Button
-            variant="outlined"
-            onClick={() => navigate(`/roles/${id}`)}
-            startIcon={<CancelIcon />}
-            sx={{ mr: 2 }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            startIcon={<SaveIcon />}
-          >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </Box>
       </Paper>
     </Box>
   );

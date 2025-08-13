@@ -26,12 +26,14 @@ import { MobileCard, MobileCardAction } from '../../components/common/MobileCard
 import { MobilePagination } from '../../components/common/MobilePagination';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
+import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
 import { FilterState, STATUS_OPTIONS, FILTER_CONFIG } from '../../constants/filters';
 import { PAGINATION_CONFIG } from '../../constants/pagination';
 import { 
   PageLoadingState, 
   PageErrorState, 
-  PageEmptyState 
+  PageEmptyState,
+  DeleteConfirmationDialog
 } from '../../components/ui';
 import { 
   getUserInitials, 
@@ -150,7 +152,7 @@ const useListPageData = (filters: AdminUserFilters, page: number, rowsPerPage: n
 
 const createTableColumns = (
   navigate: (path: string) => void,
-  handleDelete: (adminId: string) => Promise<void>,
+  handleDelete: (adminSlug: string, adminName: string) => Promise<void>,
   currentUserId?: number,
   isDeleteLoading?: boolean
 ): TableColumn<AdminUser>[] => [
@@ -240,7 +242,7 @@ const createTableColumns = (
               <IconButton
                 size="small"
                 color="error"
-                onClick={() => handleDelete((admin.id || 0).toString())}
+                onClick={() => handleDelete(admin.slug || '', getUserDisplayName(admin.name))}
                 disabled={isDeleteLoading}
               >
                 <DeleteIcon />
@@ -256,7 +258,7 @@ const createTableColumns = (
 const createMobileCardActions = (
   admin: AdminUser,
   navigate: (path: string) => void,
-  handleDelete: (adminId: string) => Promise<void>,
+  handleDelete: (adminSlug: string, adminName: string) => Promise<void>,
   currentUserId?: number
 ): MobileCardAction[] => [
   {
@@ -273,7 +275,7 @@ const createMobileCardActions = (
     icon: <DeleteIcon />,
     tooltip: 'Delete',
     color: 'error' as const,
-    onClick: () => handleDelete((admin.id || 0).toString()),
+    onClick: () => handleDelete(admin.slug || '', getUserDisplayName(admin.name)),
   }] : []),
 ];
 
@@ -290,7 +292,16 @@ const AdminListPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user: currentUser } = useAuthStore();
-  const deleteMutation = useDeleteAdminUser();
+  // Delete admin user mutation
+  const deleteAdminMutation = useDeleteAdminUser();
+
+  // Delete confirmation hook
+  const {
+    deleteState,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    handleConfirmDelete,
+  } = useDeleteConfirmation();
   
   // Data and state
   const { filters, setFilter, resetFilters } = useFilters<AdminUserFilters>({ statusFilter: STATUS_OPTIONS.all });
@@ -313,15 +324,19 @@ const AdminListPage: React.FC = () => {
     handleChangePage(null, 0); // Reset to first page when filters change
   }, [setFilter, handleChangePage]);
 
-  const handleDelete = useCallback(async (adminId: string) => {
-    if (window.confirm('Are you sure you want to delete this admin user?')) {
-      try {
-        await deleteMutation.mutateAsync(adminId);
-      } catch (error) {
-        console.error('Failed to delete admin user:', error);
+  const handleDelete = useCallback(async (adminSlug: string, adminName: string) => {
+    openDeleteConfirmation(
+      adminName,
+      'admin user',
+      async () => {
+        try {
+          await deleteAdminMutation.mutateAsync(adminSlug);
+        } catch (error) {
+          console.error('Failed to delete admin user:', error);
+        }
       }
-    }
-  }, [deleteMutation]);
+    );
+  }, [deleteAdminMutation, openDeleteConfirmation]);
 
   const handleRetry = useCallback(() => {
     window.location.reload();
@@ -447,7 +462,7 @@ const AdminListPage: React.FC = () => {
       ) : (
         // Desktop View
         <StandardTable
-          columns={createTableColumns(navigate, handleDelete, currentUser?.id, deleteMutation.isPending)}
+          columns={createTableColumns(navigate, handleDelete, currentUser?.id, deleteAdminMutation.isPending)}
           data={paginatedData}
           page={page}
           rowsPerPage={rowsPerPage}
@@ -458,6 +473,17 @@ const AdminListPage: React.FC = () => {
           emptyMessage="No admin users found"
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteState.open}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteState.itemName}
+        itemType={deleteState.itemType}
+        isLoading={deleteAdminMutation.isPending}
+        error={deleteAdminMutation.error?.message || null}
+      />
     </Box>
   );
 };
