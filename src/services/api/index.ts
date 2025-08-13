@@ -1,9 +1,9 @@
 // Export all API functions
-export { authAPI } from './auth';
-export { adminUsersAPI } from './adminUsers';
-export { propertiesAPI } from './properties';
-export { locationsAPI } from './locations';
-
-// Export base types
-export type { ApiResponse, QueryParams } from './base';
+export * from './base';
+export * from './auth';
+export * from './adminUsers';
+export * from './properties';
+export * from './locations';
+export * from './roles';
+export * from './permissions';
 

@@ -222,7 +222,7 @@ const createTableColumns = (
           <Tooltip title="View Details">
             <IconButton
               size="small"
-              onClick={() => navigate(`/admins/${admin.id || 0}`)}
+              onClick={() => navigate(`/admins/${admin.slug || ''}`)}
             >
               <ViewIcon />
             </IconButton>
@@ -230,7 +230,7 @@ const createTableColumns = (
           <Tooltip title="Edit">
             <IconButton
               size="small"
-              onClick={() => navigate(`/admins/${admin.id || 0}/edit`)}
+              onClick={() => navigate(`/admins/${admin.slug || ''}/edit`)}
             >
               <EditIcon />
             </IconButton>
@@ -262,12 +262,12 @@ const createMobileCardActions = (
   {
     icon: <ViewIcon />,
     tooltip: 'View Details',
-    onClick: () => navigate(`/admins/${admin.id || 0}`),
+            onClick: () => navigate(`/admins/${admin.slug || ''}`),
   },
   {
     icon: <EditIcon />,
     tooltip: 'Edit',
-    onClick: () => navigate(`/admins/${admin.id || 0}/edit`),
+            onClick: () => navigate(`/admins/${admin.slug || ''}/edit`),
   },
   ...(currentUserId !== admin.id ? [{
     icon: <DeleteIcon />,

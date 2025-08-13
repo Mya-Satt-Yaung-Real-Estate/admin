@@ -117,11 +117,11 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute><AdminCreatePage /></ProtectedRoute>,
   },
   {
-    path: '/admins/:id',
+    path: '/admins/:slug',
     element: <ProtectedRoute><AdminDetailPage /></ProtectedRoute>,
   },
   {
-    path: '/admins/:id/edit',
+    path: '/admins/:slug/edit',
     element: <ProtectedRoute><AdminEditPage /></ProtectedRoute>,
   },
   {

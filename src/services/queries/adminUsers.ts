@@ -25,7 +25,10 @@ export const useAdminUsers = (params?: QueryParams) => {
 export const useAdminUser = (slug: string) => {
   return useQuery({
     queryKey: adminUserKeys.detail(slug),
-    queryFn: () => adminUsersAPI.get(slug),
+    queryFn: async () => {
+      const response = await adminUsersAPI.get(slug);
+      return { data: response.data.user };
+    },
     enabled: !!slug, // Only run if slug exists
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -36,7 +39,10 @@ export const useCreateAdminUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateAdminUserData) => adminUsersAPI.create(data),
+    mutationFn: async (data: CreateAdminUserData) => {
+      const response = await adminUsersAPI.create(data);
+      return { data: response.data.user };
+    },
     onSuccess: () => {
       // Invalidate and refetch admin users list
       queryClient.invalidateQueries({ queryKey: adminUserKeys.lists() });
@@ -49,8 +55,10 @@ export const useUpdateAdminUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: UpdateAdminUserData }) =>
-      adminUsersAPI.update(slug, data),
+    mutationFn: async ({ slug, data }: { slug: string; data: UpdateAdminUserData }) => {
+      const response = await adminUsersAPI.update(slug, data);
+      return { data: response.data.data };
+    },
     onSuccess: (data, variables) => {
       // Update the specific user in cache
       queryClient.setQueryData(
