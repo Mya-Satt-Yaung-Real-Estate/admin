@@ -567,7 +567,7 @@ All API responses follow a standardized format:
 ## Region Management
 
 ### List Regions
-**GET** `/region`
+**GET** `/regions`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -607,7 +607,7 @@ All API responses follow a standardized format:
 ```
 
 ### Create Region
-**POST** `/region`
+**POST** `/regions`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -638,14 +638,14 @@ All API responses follow a standardized format:
 ```
 
 ### Get Region
-**GET** `/region/{slug}`
+**GET** `/regions/{slug}`
 
 **Headers:** `Authorization: Bearer {token}`
 
 **Response:** Same format as create response
 
 ### Update Region
-**PUT** `/region/{slug}`
+**PUT** `/regions/{slug}`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -654,7 +654,7 @@ All API responses follow a standardized format:
 **Response:** Same format as create response
 
 ### Delete Region
-**DELETE** `/region/{slug}`
+**DELETE** `/regions/{slug}`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -670,7 +670,7 @@ All API responses follow a standardized format:
 ## Township Management
 
 ### List Townships
-**GET** `/township`
+**GET** `/townships`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -702,7 +702,7 @@ All API responses follow a standardized format:
 ```
 
 ### Create Township
-**POST** `/township`
+**POST** `/townships`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -739,14 +739,14 @@ All API responses follow a standardized format:
 ```
 
 ### Get Township
-**GET** `/township/{slug}`
+**GET** `/townships/{slug}`
 
 **Headers:** `Authorization: Bearer {token}`
 
 **Response:** Same format as create response
 
 ### Update Township
-**PUT** `/township/{slug}`
+**PUT** `/townships/{slug}`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -755,7 +755,7 @@ All API responses follow a standardized format:
 **Response:** Same format as create response
 
 ### Delete Township
-**DELETE** `/township/{slug}`
+**DELETE** `/townships/{slug}`
 
 **Headers:** `Authorization: Bearer {token}`
 

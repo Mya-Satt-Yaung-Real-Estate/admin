@@ -2,64 +2,77 @@ import React, { useState } from 'react';
 import {
   Box,
   Paper,
+  Typography,
   TextField,
   Button,
+  Grid,
+  Alert,
+  FormControlLabel,
+  Switch,
+  Divider,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Grid,
-  Divider,
 } from '@mui/material';
 import {
   Save as SaveIcon,
+  Cancel as CancelIcon,
   ArrowBack as ArrowBackIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import PageHeader from '../../components/layout/PageHeader';
-import { TownshipFormData } from '../../types/location';
 import { useCreateTownship, useRegions } from '../../services/queries/locations';
+import PageHeader from '../../components/layout/PageHeader';
+import { PageLoadingState } from '../../components/ui';
+import { CreateTownshipData } from '../../types/location';
 
 const TownshipCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<TownshipFormData>({
-    name_en: '',
-    name_mm: '',
-    region_id: 0,
-    is_active: true,
-    description: '',
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof TownshipFormData, string>>>({});
-
-  const { data: regionsData } = useRegions();
   const createTownshipMutation = useCreateTownship();
 
-  const handleInputChange = (field: keyof TownshipFormData, value: string | number | boolean) => {
-    setFormData((prev: TownshipFormData) => ({
-      ...prev,
-      [field]: value,
-    }));
+  // API Queries
+  const { data: regionsData, isLoading: regionsLoading } = useRegions();
+  const regions = regionsData?.data || [];
+
+  // Form state
+  const [formData, setFormData] = useState<CreateTownshipData>({
+    region_id: 0,
+    name_en: '',
+    name_mm: '',
+    description: '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isActive, setIsActive] = useState(true);
+
+  // Event handlers
+  const handleInputChange = (field: keyof CreateTownshipData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined,
-      }));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof TownshipFormData, string>> = {};
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.region_id) {
+      newErrors.region_id = 'Region is required';
+    }
 
     if (!formData.name_en.trim()) {
       newErrors.name_en = 'English name is required';
     }
+
     if (!formData.name_mm.trim()) {
       newErrors.name_mm = 'Myanmar name is required';
     }
-    if (!formData.region_id) {
-      newErrors.region_id = 'Region is required';
+
+    if (formData.description && formData.description.length > 500) {
+      newErrors.description = 'Description must be less than 500 characters';
     }
 
     setErrors(newErrors);
@@ -68,22 +81,109 @@ const TownshipCreatePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    
+    if (!validateForm()) {
+      return;
+    }
 
     try {
-      await createTownshipMutation.mutateAsync(formData);
+      await createTownshipMutation.mutateAsync({
+        ...formData,
+        description: formData.description || undefined,
+      });
+      
+      // Navigate to locations list on success
       navigate('/locations');
     } catch (error: any) {
-      console.error('Error creating township:', error);
+      // Handle API validation errors
+      if (error?.data?.errors) {
+        const apiErrors: Record<string, string> = {};
+        Object.entries(error.data.errors).forEach(([field, messages]) => {
+          apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
+        });
+        setErrors(apiErrors);
+      }
     }
   };
 
+  const handleCancel = () => {
+    navigate('/locations');
+  };
+
+  if (regionsLoading) {
+    return <PageLoadingState title="Loading Regions" />;
+  }
+
   return (
     <Box>
-      <PageHeader title="Create Township" />
+      <PageHeader
+        title="Create Township"
+        subtitle="Add a new township to the system"
+      />
+
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleCancel}
+        >
+          Cancel
+        </Button>
+      </Box>
+
       <Paper sx={{ p: 3 }}>
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <BusinessIcon sx={{ fontSize: 32, color: 'secondary.main', mr: 2 }} />
+          <Typography variant="h6" fontWeight={600}>
+            Township Information
+          </Typography>
+        </Box>
+
+        <Divider sx={{ mb: 3 }} />
+
+        <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
+            {/* Region Selection */}
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth error={!!errors.region_id} required>
+                <InputLabel>Region</InputLabel>
+                <Select
+                  value={formData.region_id}
+                  label="Region"
+                  onChange={(e) => handleInputChange('region_id', e.target.value as number)}
+                >
+                  {regions.map((region) => (
+                    <MenuItem key={region.id} value={region.id}>
+                      {region.name_en} ({region.name_mm})
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.region_id && (
+                  <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                    {errors.region_id}
+                  </Typography>
+                )}
+              </FormControl>
+            </Grid>
+
+            {/* Status */}
+            <Grid item xs={12} md={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Active Township"
+              />
+              <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
+                Active townships will be available for selection in other parts of the system.
+              </Typography>
+            </Grid>
+
+            {/* English Name */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -93,8 +193,11 @@ const TownshipCreatePage: React.FC = () => {
                 error={!!errors.name_en}
                 helperText={errors.name_en}
                 required
+                placeholder="Enter English name"
               />
             </Grid>
+
+            {/* Myanmar Name */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -104,57 +207,57 @@ const TownshipCreatePage: React.FC = () => {
                 error={!!errors.name_mm}
                 helperText={errors.name_mm}
                 required
+                placeholder="Enter Myanmar name"
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Region</InputLabel>
-                <Select
-                  value={formData.region_id}
-                  onChange={(e) => handleInputChange('region_id', e.target.value as number)}
-                  label="Region"
-                  error={!!errors.region_id}
-                >
-                  {regionsData?.data?.map((region) => (
-                    <MenuItem key={region.id} value={region.id}>
-                      {region.name_en}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.is_active.toString()}
-                  onChange={(e) => handleInputChange('is_active', e.target.value === 'true')}
-                  label="Status"
-                >
-                  <MenuItem value="true">Active</MenuItem>
-                  <MenuItem value="false">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+
+            {/* Description */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
+                error={!!errors.description}
+                helperText={errors.description || `${formData.description?.length || 0}/500 characters`}
                 multiline
-                rows={3}
+                rows={4}
+                placeholder="Enter township description (optional)"
+                inputProps={{ maxLength: 500 }}
               />
+            </Grid>
+
+            {/* Info Alert */}
+            <Grid item xs={12}>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Note:</strong> Townships are subdivisions of regions. Make sure to select the correct region for this township.
+                </Typography>
+              </Alert>
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 3 }} />
+          {/* Error Alert */}
+          {createTownshipMutation.error && (
+            <Alert severity="error" sx={{ mt: 3 }}>
+              {createTownshipMutation.error.message || 'Failed to create township. Please try again.'}
+            </Alert>
+          )}
 
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          {/* Success Alert */}
+          {createTownshipMutation.isSuccess && (
+            <Alert severity="success" sx={{ mt: 3 }}>
+              Township created successfully!
+            </Alert>
+          )}
+
+          {/* Action Buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
             <Button
               variant="outlined"
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate('/locations')}
+              startIcon={<CancelIcon />}
+              onClick={handleCancel}
+              disabled={createTownshipMutation.isPending}
             >
               Cancel
             </Button>
@@ -167,7 +270,7 @@ const TownshipCreatePage: React.FC = () => {
               {createTownshipMutation.isPending ? 'Creating...' : 'Create Township'}
             </Button>
           </Box>
-        </Box>
+        </form>
       </Paper>
     </Box>
   );

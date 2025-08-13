@@ -7,6 +7,8 @@ const RegionCreatePage = lazy(() => import('@/pages/locations/RegionCreatePage')
 const TownshipCreatePage = lazy(() => import('@/pages/locations/TownshipCreatePage'));
 const RegionEditPage = lazy(() => import('@/pages/locations/RegionEditPage'));
 const TownshipEditPage = lazy(() => import('@/pages/locations/TownshipEditPage'));
+const RegionDetailPage = lazy(() => import('@/pages/locations/RegionDetailPage'));
+const TownshipDetailPage = lazy(() => import('@/pages/locations/TownshipDetailPage'));
 
 export const locationRoutes: RouteObject[] = [
   {
@@ -22,11 +24,19 @@ export const locationRoutes: RouteObject[] = [
     element: <ProtectedRoute><TownshipCreatePage /></ProtectedRoute>,
   },
   {
-    path: '/locations/regions/:id/edit',
+    path: '/locations/regions/:slug',
+    element: <ProtectedRoute><RegionDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations/regions/:slug/edit',
     element: <ProtectedRoute><RegionEditPage /></ProtectedRoute>,
   },
   {
-    path: '/locations/townships/:id/edit',
+    path: '/locations/townships/:slug',
+    element: <ProtectedRoute><TownshipDetailPage /></ProtectedRoute>,
+  },
+  {
+    path: '/locations/townships/:slug/edit',
     element: <ProtectedRoute><TownshipEditPage /></ProtectedRoute>,
   },
 ];
