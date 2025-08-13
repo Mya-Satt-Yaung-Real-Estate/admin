@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   Box,
   IconButton,
@@ -7,15 +7,14 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
-  Paper,
   Avatar,
-  Button,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAdminUsers, useDeleteAdminUser } from '../../services/queries/adminUsers';
@@ -27,8 +26,20 @@ import { MobileCard, MobileCardAction } from '../../components/common/MobileCard
 import { MobilePagination } from '../../components/common/MobilePagination';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
-import { FilterState } from '../../constants/filters';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { FilterState, STATUS_OPTIONS, FILTER_CONFIG } from '../../constants/filters';
+import { PAGINATION_CONFIG } from '../../constants/pagination';
+import { 
+  PageLoadingState, 
+  PageErrorState, 
+  PageEmptyState 
+} from '../../components/ui';
+import { 
+  getUserInitials, 
+  formatLastLogin, 
+  getUserDisplayName, 
+  getUserDisplayEmail,
+  getStatusDisplay 
+} from '../../utils';
 import { AdminUser } from '../../types/admin';
 
 // ============================================================================
@@ -40,36 +51,25 @@ interface AdminUserFilters extends FilterState {
   statusFilter: string;
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-const getUserInitials = (name: string): string => {
-  if (!name || typeof name !== 'string') {
-    return '?';
-  }
-  
-  return name
-    .split(' ')
-    .map(word => word.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-};
-
-const formatLastLogin = (dateString?: string): string => {
-  if (!dateString) return 'Never';
-  
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
+interface ListPageState {
+  isLoading: boolean;
+  error: any;
+  data: AdminUser[] | undefined;
+  filteredData: AdminUser[];
+  paginatedData: AdminUser[];
+  totalCount: number;
+}
 
 // ============================================================================
-// FILTER CONFIGURATION
+// CONSTANTS & CONFIGURATION
 // ============================================================================
+
+const PAGE_CONFIG = {
+  title: 'Admin Users',
+  description: 'Manage system administrators and their permissions',
+  createButtonText: 'Add Admin',
+  createButtonPath: '/admins/create',
+} as const;
 
 const FILTER_FIELDS: FilterField[] = [
   {
@@ -82,27 +82,82 @@ const FILTER_FIELDS: FilterField[] = [
     key: 'statusFilter',
     type: 'select',
     label: 'Status',
-    options: [
-      { value: 'all', label: 'All Status' },
-      { value: 'active', label: 'Active' },
-      { value: 'inactive', label: 'Inactive' },
-    ],
+    options: [...FILTER_CONFIG.statusOptions],
   },
 ];
 
+const TABLE_CONFIG = {
+  columns: {
+    name: { label: 'Name', width: '30%' },
+    status: { label: 'Status', width: '15%' },
+    lastLogin: { label: 'Last Login', width: '20%' },
+    actions: { label: 'Actions', width: '15%', align: 'center' as const },
+  },
+} as const;
+
 // ============================================================================
-// TABLE COLUMNS CONFIGURATION
+// DATA PROCESSING HOOKS
+// ============================================================================
+
+const useListPageData = (filters: AdminUserFilters, page: number, rowsPerPage: number): ListPageState => {
+  // Data fetching
+  const { data: allAdminsData, isLoading, error } = useAdminUsers({
+    per_page: PAGINATION_CONFIG.maxRowsPerPage,
+    sort_by: 'created_at',
+    sort_direction: 'desc',
+  });
+
+  // Data processing
+  const filteredData = useMemo(() => {
+    const admins = allAdminsData?.data || [];
+    const validAdmins = admins.filter(admin => admin != null);
+    
+    return validAdmins.filter(admin => {
+      // Search filter
+      const matchesSearch = !filters.searchTerm || 
+        (admin.name || '').toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (admin.email || '').toLowerCase().includes(filters.searchTerm.toLowerCase());
+      
+      // Status filter
+      const isActive = admin.is_active === true;
+      const matchesStatus = filters.statusFilter === STATUS_OPTIONS.all || 
+        (filters.statusFilter === STATUS_OPTIONS.active && isActive) ||
+        (filters.statusFilter === STATUS_OPTIONS.inactive && !isActive);
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [allAdminsData, filters.searchTerm, filters.statusFilter]);
+
+  const paginatedData = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  }, [filteredData, page, rowsPerPage]);
+
+  return {
+    isLoading,
+    error,
+    data: allAdminsData?.data,
+    filteredData,
+    paginatedData,
+    totalCount: filteredData.length,
+  };
+};
+
+// ============================================================================
+// UI COMPONENTS
 // ============================================================================
 
 const createTableColumns = (
   navigate: (path: string) => void,
-  handleDelete: (adminId: string) => void,
+  handleDelete: (adminId: string) => Promise<void>,
   currentUserId?: number,
   isDeleteLoading?: boolean
 ): TableColumn<AdminUser>[] => [
   {
     id: 'name',
-    label: 'Name',
+    label: TABLE_CONFIG.columns.name.label,
+    width: TABLE_CONFIG.columns.name.width,
     render: (_value, admin, _index) => {
       if (!admin) return <Typography variant="body2">No data</Typography>;
       
@@ -113,10 +168,10 @@ const createTableColumns = (
           </Avatar>
           <Box>
             <Typography variant="body2" fontWeight="medium">
-              {admin.name || 'Unknown Name'}
+              {getUserDisplayName(admin.name)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {admin.email || 'No email'}
+              {getUserDisplayEmail(admin.email)}
             </Typography>
           </Box>
         </Box>
@@ -125,15 +180,16 @@ const createTableColumns = (
   },
   {
     id: 'status',
-    label: 'Status',
+    label: TABLE_CONFIG.columns.status.label,
+    width: TABLE_CONFIG.columns.status.width,
     render: (_value, admin, _index) => {
       if (!admin) return <Typography variant="body2">No data</Typography>;
       
-      const isActive = admin.is_active === true;
+      const status = getStatusDisplay(admin.is_active === true);
       return (
         <Chip
-          label={isActive ? 'Active' : 'Inactive'}
-          color={isActive ? 'success' : 'default'}
+          label={status.label}
+          color={status.color}
           size="small"
         />
       );
@@ -141,7 +197,8 @@ const createTableColumns = (
   },
   {
     id: 'last_login',
-    label: 'Last Login',
+    label: TABLE_CONFIG.columns.lastLogin.label,
+    width: TABLE_CONFIG.columns.lastLogin.width,
     render: (_value, admin, _index) => {
       if (!admin) return <Typography variant="body2">No data</Typography>;
       
@@ -154,12 +211,14 @@ const createTableColumns = (
   },
   {
     id: 'actions',
-    label: 'Actions',
+    label: TABLE_CONFIG.columns.actions.label,
+    width: TABLE_CONFIG.columns.actions.width,
+    align: TABLE_CONFIG.columns.actions.align,
     render: (_value, admin, _index) => {
       if (!admin) return <Typography variant="body2">No data</Typography>;
       
       return (
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
           <Tooltip title="View Details">
             <IconButton
               size="small"
@@ -194,14 +253,10 @@ const createTableColumns = (
   },
 ];
 
-// ============================================================================
-// MOBILE CARD ACTIONS
-// ============================================================================
-
 const createMobileCardActions = (
   admin: AdminUser,
   navigate: (path: string) => void,
-  handleDelete: (adminId: string) => void,
+  handleDelete: (adminId: string) => Promise<void>,
   currentUserId?: number
 ): MobileCardAction[] => [
   {
@@ -237,64 +292,28 @@ const AdminListPage: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const deleteMutation = useDeleteAdminUser();
   
-  // Filter and pagination hooks
-  const { filters, setFilter } = useFilters<AdminUserFilters>({
-    statusFilter: 'all',
-  });
+  // Data and state
+  const { filters, setFilter, resetFilters } = useFilters<AdminUserFilters>({ statusFilter: STATUS_OPTIONS.all });
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
-
-  // ========================================================================
-  // DATA FETCHING
-  // ========================================================================
   
-  const { data: allAdminsData, isLoading, error } = useAdminUsers({
-    per_page: 100, // API limit: cannot exceed 100
-    sort_by: 'created_at',
-    sort_direction: 'desc',
-  });
-
-  // ========================================================================
-  // DATA PROCESSING
-  // ========================================================================
-  
-  // Filter admin users
-  const filteredAdmins = useMemo(() => {
-    const admins = allAdminsData?.data || [];
-    const validAdmins = admins.filter(admin => admin != null);
-    
-    return validAdmins.filter(admin => {
-      // Search filter
-      const matchesSearch = !filters.searchTerm || 
-        (admin.name || '').toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        (admin.email || '').toLowerCase().includes(filters.searchTerm.toLowerCase());
-      
-      // Status filter
-      const isActive = admin.is_active === true;
-      const matchesStatus = filters.statusFilter === 'all' || 
-        (filters.statusFilter === 'active' && isActive) ||
-        (filters.statusFilter === 'inactive' && !isActive);
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [allAdminsData, filters.searchTerm, filters.statusFilter]);
-
-  // Paginate filtered results
-  const paginatedAdmins = useMemo(() => {
-    const startIndex = page * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    return filteredAdmins.slice(startIndex, endIndex);
-  }, [filteredAdmins, page, rowsPerPage]);
+  const { 
+    isLoading, 
+    error, 
+    filteredData, 
+    paginatedData, 
+    totalCount 
+  } = useListPageData(filters, page, rowsPerPage);
 
   // ========================================================================
   // EVENT HANDLERS
   // ========================================================================
   
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = useCallback((key: string, value: string) => {
     setFilter(key as keyof AdminUserFilters, value);
     handleChangePage(null, 0); // Reset to first page when filters change
-  };
+  }, [setFilter, handleChangePage]);
 
-  const handleDelete = async (adminId: string) => {
+  const handleDelete = useCallback(async (adminId: string) => {
     if (window.confirm('Are you sure you want to delete this admin user?')) {
       try {
         await deleteMutation.mutateAsync(adminId);
@@ -302,78 +321,67 @@ const AdminListPage: React.FC = () => {
         console.error('Failed to delete admin user:', error);
       }
     }
-  };
+  }, [deleteMutation]);
+
+  const handleRetry = useCallback(() => {
+    window.location.reload();
+  }, []);
+
+  const handleLogin = useCallback(() => {
+    navigate('/login');
+  }, [navigate]);
+
+  const handleClearFilters = useCallback(() => {
+    resetFilters();
+    handleChangePage(null, 0);
+  }, [resetFilters, handleChangePage]);
 
   // ========================================================================
-  // ERROR & LOADING STATES
+  // RENDER LOGIC
   // ========================================================================
   
+  // Error state
   if (error) {
-    const isAuthError = (error as any)?.isAuthError || 
-                       error.message?.includes('Authentication') ||
-                       error.message?.includes('login');
-    
-    if (isAuthError) {
-      return (
-        <Box sx={{ marginLeft: 0, width: '100%' }}>
-          <PageHeader title="Admin Users" />
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography color="error" sx={{ mb: 2 }}>
-              {error.message}
-            </Typography>
-            <Button 
-              variant="contained" 
-              onClick={() => navigate('/login')}
-              sx={{ mt: 2 }}
-            >
-              Go to Login
-            </Button>
-          </Paper>
-        </Box>
-      );
-    }
-
     return (
       <Box sx={{ marginLeft: 0, width: '100%' }}>
-        <PageHeader title="Admin Users" />
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
-          <Typography color="error" sx={{ mb: 2 }}>
-            Error loading admin users: {error.message}
-          </Typography>
-          <Button 
-            variant="contained" 
-            onClick={() => window.location.reload()}
-            sx={{ mt: 2 }}
-          >
-            Retry
-          </Button>
-        </Paper>
+        <PageHeader title={PAGE_CONFIG.title} />
+        <PageErrorState 
+          error={error}
+          title="Failed to Load Admin Users"
+          onRetry={handleRetry}
+          onLogin={handleLogin}
+        />
       </Box>
     );
   }
 
+  // Loading state
   if (isLoading) {
     return (
       <Box sx={{ marginLeft: 0, width: '100%' }}>
-        <PageHeader title="Admin Users" />
-        <LoadingSpinner />
+        <PageHeader title={PAGE_CONFIG.title} />
+        <PageLoadingState 
+          title="Loading Admin Users"
+          message="Please wait while we fetch the admin user data..."
+        />
       </Box>
     );
   }
 
   // ========================================================================
-  // RENDER
+  // MAIN RENDER
   // ========================================================================
   
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       {/* Header */}
       <PageHeader 
-        title="Admin Users" 
+        title={PAGE_CONFIG.title}
+        subtitle={PAGE_CONFIG.description}
         actionButton={{
-          text: 'Add Admin',
+          text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,
-          onClick: () => navigate('/admins/create')
+          onClick: () => navigate(PAGE_CONFIG.createButtonPath)
         }}
       />
 
@@ -385,25 +393,44 @@ const AdminListPage: React.FC = () => {
       />
 
       {/* Content */}
-      {isMobile ? (
+      {filteredData.length === 0 ? (
+        <PageEmptyState 
+          title="No Admin Users Found"
+          message="There are no admin users matching your current filters."
+          actionButton={{
+            text: "Clear Filters",
+            onClick: handleClearFilters,
+            icon: <ClearIcon />,
+            variant: "outlined"
+          }}
+          secondaryActionButton={{
+            text: "Add Admin User",
+            onClick: () => navigate(PAGE_CONFIG.createButtonPath),
+            icon: <AddIcon />,
+            variant: "contained"
+          }}
+        />
+      ) : isMobile ? (
         // Mobile View
         <Box sx={{ mt: 2 }}>
-          {paginatedAdmins.map((admin) => {
+          {paginatedData.map((admin) => {
             if (!admin) return null;
+            
+            const status = getStatusDisplay(admin.is_active === true);
             
             return (
               <MobileCard
                 key={admin.id || 'unknown'}
-                title={admin.name || 'Unknown Name'}
-                subtitle={admin.email || 'No email'}
+                title={getUserDisplayName(admin.name)}
+                subtitle={getUserDisplayEmail(admin.email)}
                 avatar={
                   <Avatar sx={{ bgcolor: 'primary.main' }}>
                     {getUserInitials(admin.name || 'Unknown')}
                   </Avatar>
                 }
                 status={{
-                  label: (admin.is_active === true) ? 'Active' : 'Inactive',
-                  color: (admin.is_active === true) ? 'success' : 'default',
+                  label: status.label,
+                  color: status.color,
                 }}
                 actions={createMobileCardActions(admin, navigate, handleDelete, currentUser?.id)}
               />
@@ -411,7 +438,7 @@ const AdminListPage: React.FC = () => {
           })}
           
           <MobilePagination
-            totalCount={filteredAdmins.length}
+            totalCount={totalCount}
             page={page}
             rowsPerPage={rowsPerPage}
             onPageChange={handleChangePage}
@@ -421,13 +448,14 @@ const AdminListPage: React.FC = () => {
         // Desktop View
         <StandardTable
           columns={createTableColumns(navigate, handleDelete, currentUser?.id, deleteMutation.isPending)}
-          data={paginatedAdmins}
+          data={paginatedData}
           page={page}
           rowsPerPage={rowsPerPage}
-          totalCount={filteredAdmins.length}
+          totalCount={totalCount}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           getRowKey={(admin) => admin.id || 0}
+          emptyMessage="No admin users found"
         />
       )}
     </Box>

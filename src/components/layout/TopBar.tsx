@@ -25,6 +25,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useLogout } from '@/services/queries/auth';
 import { useNavigate } from 'react-router-dom';
 import LogoutDialog from '@/components/ui/LogoutDialog';
+import { getUserInitials } from '@/utils';
 
 interface TopBarProps {
   menuItems: MenuItemType[];
@@ -114,15 +115,6 @@ const TopBar: React.FC<TopBarProps> = ({
   const handleSettings = () => {
     handleProfileMenuClose();
     navigate('/settings');
-  };
-
-  const getUserInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (

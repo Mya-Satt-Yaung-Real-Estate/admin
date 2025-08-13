@@ -15,6 +15,7 @@ import {
   Warning as WarningIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { getUserInitials } from '@/utils';
 
 interface LogoutDialogProps {
   open: boolean;
@@ -30,15 +31,6 @@ const LogoutDialog: React.FC<LogoutDialogProps> = ({
   isLoading = false,
 }) => {
   const { user } = useAuthStore();
-
-  const getUserInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   return (
     <Dialog
