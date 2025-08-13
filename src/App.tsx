@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from './styles/theme';
 import { router } from './routes';
+import { QueryProvider } from './providers/QueryProvider';
 import './index.css';
 
 function App() {
@@ -11,7 +12,9 @@ function App() {
     <HelmetProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <RouterProvider router={router} />
+        <QueryProvider>
+          <RouterProvider router={router} />
+        </QueryProvider>
       </ThemeProvider>
     </HelmetProvider>
   );

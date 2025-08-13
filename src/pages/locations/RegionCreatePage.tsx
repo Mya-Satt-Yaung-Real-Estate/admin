@@ -24,15 +24,16 @@ import { RegionFormData } from '../../types/location';
 const RegionCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<RegionFormData>({
-    name: '',
-    status: 'active',
+    name_en: '',
+    name_mm: '',
+    is_active: true,
     description: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof RegionFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: keyof RegionFormData, value: string) => {
-    setFormData(prev => ({
+  const handleInputChange = (field: keyof RegionFormData, value: string | boolean) => {
+    setFormData((prev: RegionFormData) => ({
       ...prev,
       [field]: value,
     }));
@@ -49,14 +50,11 @@ const RegionCreatePage: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof RegionFormData, string>> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Region name is required';
-    } else if (formData.name.trim().length < 3) {
-      newErrors.name = 'Region name must be at least 3 characters';
+    if (!formData.name_en.trim()) {
+      newErrors.name_en = 'English name is required';
     }
-
-    if (!formData.status) {
-      newErrors.status = 'Status is required';
+    if (!formData.name_mm.trim()) {
+      newErrors.name_mm = 'Myanmar name is required';
     }
 
     setErrors(newErrors);
@@ -102,27 +100,39 @@ const RegionCreatePage: React.FC = () => {
           <Grid item xs={12} sm={6}>
             <TextField
               fullWidth
-              label="Region Name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              error={!!errors.name}
-              helperText={errors.name}
+              label="English Name"
+              value={formData.name_en}
+              onChange={(e) => handleInputChange('name_en', e.target.value)}
+              error={!!errors.name_en}
+              helperText={errors.name_en}
               required
-              placeholder="e.g., Yangon Region"
+              placeholder="e.g., Yangon"
             />
           </Grid>
           
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
+            <TextField
+              fullWidth
+              label="Myanmar Name"
+              value={formData.name_mm}
+              onChange={(e) => handleInputChange('name_mm', e.target.value)}
+              error={!!errors.name_mm}
+              helperText={errors.name_mm}
+              required
+              placeholder="e.g., ရန်ကုန်"
+            />
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
-                value={formData.status}
+                value={formData.is_active.toString()}
                 label="Status"
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                error={!!errors.status}
+                onChange={(e) => handleInputChange('is_active', e.target.value === 'true')}
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
+                <MenuItem value="true">Active</MenuItem>
+                <MenuItem value="false">Inactive</MenuItem>
               </Select>
             </FormControl>
           </Grid>
