@@ -5,8 +5,15 @@ import { AdminUser, CreateAdminUserData, UpdateAdminUserData } from '../../types
 export const adminUsersAPI = {
   // Get list of admin users
   list: (params?: QueryParams) => {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
-    return apiRequest<AdminUser[]>(`/admin-users${queryString}`);
+    if (params) {
+      // Filter out undefined values
+      const cleanParams = Object.fromEntries(
+        Object.entries(params).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+      );
+      const queryString = new URLSearchParams(cleanParams as any).toString();
+      return apiRequest<AdminUser[]>(`/admin-users${queryString ? '?' + queryString : ''}`);
+    }
+    return apiRequest<AdminUser[]>(`/admin-users`);
   },
 
   // Create new admin user

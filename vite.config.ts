@@ -15,9 +15,9 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://msy-api.phyozaw.info',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: (path) => path.replace(/^\/api/, '/api/v1/admin'),
       },
     },
