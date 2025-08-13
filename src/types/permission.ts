@@ -1,24 +1,34 @@
+import { Role } from './index';
+
+// Permission Types based on API Documentation
 export interface Permission {
   id: number;
   name: string;
-  description: string;
+  slug: string;
   module: string;
-  action: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  roleCount: number;
+  description?: string;
+  is_active: boolean;
+  roles?: Role[];
 }
 
-export interface PermissionFormData {
+export interface CreatePermissionData {
   name: string;
-  description: string;
   module: string;
-  action: string;
-  status: 'active' | 'inactive';
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface UpdatePermissionData {
+  name?: string;
+  module?: string;
+  description?: string;
+  is_active?: boolean;
 }
 
 export interface PermissionFilters {
-  searchTerm: string;
-  statusFilter: string;
-  moduleFilter: string;
+  search?: string;
+  sort_by?: string;
+  sort_direction?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
 } 

@@ -13,6 +13,14 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    proxy: {
+      '/api': {
+        target: 'https://msy-api.phyozaw.info',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api/v1/admin'),
+      },
+    },
   },
   build: {
     outDir: 'dist',

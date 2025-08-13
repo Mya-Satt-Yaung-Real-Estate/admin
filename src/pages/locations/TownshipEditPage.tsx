@@ -20,139 +20,40 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-import { TownshipFormData, Township } from '../../types/location';
-import { getActiveRegions } from '../../data/mockLocations';
-
-// Mock townships data - in a real app, this would come from an API
-const mockTownships: Township[] = [
-  {
-    id: 1,
-    name: 'Downtown Yangon',
-    regionId: 1,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'The central business district of Yangon, featuring colonial architecture and modern developments.'
-  },
-  {
-    id: 2,
-    name: 'Bahan Township',
-    regionId: 1,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A residential township in Yangon, known for its diplomatic missions and upscale neighborhoods.'
-  },
-  {
-    id: 3,
-    name: 'Sanchaung Township',
-    regionId: 1,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A popular residential area in Yangon with good transportation links.'
-  },
-  {
-    id: 4,
-    name: 'Tamwe Township',
-    regionId: 1,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Yangon known for its markets and residential areas.'
-  },
-  {
-    id: 5,
-    name: 'Chanayethazan Township',
-    regionId: 2,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Mandalay, part of the historic royal city.'
-  },
-  {
-    id: 6,
-    name: 'Mahaaungmye Township',
-    regionId: 2,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Mandalay with historical significance.'
-  },
-  {
-    id: 7,
-    name: 'Pyigyidagun Township',
-    regionId: 2,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Mandalay known for its cultural heritage.'
-  },
-  {
-    id: 8,
-    name: 'Ottarathiri Township',
-    regionId: 3,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Naypyidaw, the capital territory.'
-  },
-  {
-    id: 9,
-    name: 'Pobbathiri Township',
-    regionId: 3,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Naypyidaw with government offices.'
-  },
-  {
-    id: 10,
-    name: 'Zabuthiri Township',
-    regionId: 3,
-    status: 'active',
-    createdAt: '2023-01-01',
-    description: 'A township in Naypyidaw featuring residential areas.'
-  },
-  {
-    id: 11,
-    name: 'Sagaing Township',
-    regionId: 4,
-    status: 'inactive',
-    createdAt: '2023-01-01',
-    description: 'A township in Sagaing Region, known for its historical sites.'
-  },
-  {
-    id: 12,
-    name: 'Monywa Township',
-    regionId: 4,
-    status: 'inactive',
-    createdAt: '2023-01-01',
-    description: 'A township in Sagaing Region, an important commercial center.'
-  }
-];
+import { TownshipFormData } from '../../types/location';
+import { useTownship, useUpdateTownship, useRegions } from '../../services/queries/locations';
 
 const TownshipEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [formData, setFormData] = useState<TownshipFormData>({
-    name: '',
-    regionId: 0,
-    status: 'active',
+    name_en: '',
+    name_mm: '',
+    region_id: 0,
+    is_active: true,
     description: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof TownshipFormData, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [township, setTownship] = useState<Township | null>(null);
+
+  const { data: townshipData, isLoading, error } = useTownship(id || '');
+  const { data: regionsData } = useRegions();
+  const updateTownshipMutation = useUpdateTownship();
 
   useEffect(() => {
-    if (id) {
-      const foundTownship = mockTownships.find(t => t.id === parseInt(id));
-      if (foundTownship) {
-        setTownship(foundTownship);
-        setFormData({
-          name: foundTownship.name,
-          regionId: foundTownship.regionId,
-          status: foundTownship.status,
-          description: foundTownship.description || '',
-        });
-      }
+    if (townshipData?.data) {
+      const township = townshipData.data;
+      setFormData({
+        name_en: township.name_en,
+        name_mm: township.name_mm,
+        region_id: township.region_id,
+        is_active: township.is_active,
+        description: township.description || '',
+      });
     }
-  }, [id]);
+  }, [townshipData]);
 
-  const handleInputChange = (field: keyof TownshipFormData, value: string | number) => {
-    setFormData(prev => ({
+  const handleInputChange = (field: keyof TownshipFormData, value: string | number | boolean) => {
+    setFormData((prev: TownshipFormData) => ({
       ...prev,
       [field]: value,
     }));
@@ -169,185 +70,162 @@ const TownshipEditPage: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof TownshipFormData, string>> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Township name is required';
-    } else if (formData.name.trim().length < 3) {
-      newErrors.name = 'Township name must be at least 3 characters';
+    if (!formData.name_en.trim()) {
+      newErrors.name_en = 'English name is required';
     }
-
-    if (!formData.regionId) {
-      newErrors.regionId = 'Region is required';
+    if (!formData.name_mm.trim()) {
+      newErrors.name_mm = 'Myanmar name is required';
     }
-
-    if (!formData.status) {
-      newErrors.status = 'Status is required';
+    if (!formData.region_id) {
+      newErrors.region_id = 'Region is required';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm() || !id) return;
 
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Updating township:', formData);
-      setIsSubmitting(false);
+    try {
+      await updateTownshipMutation.mutateAsync({
+        slug: id,
+        data: formData,
+      });
       navigate('/locations');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Error updating township:', error);
+    }
   };
 
   const handleDelete = () => {
-    console.log('Deleting township:', id);
-    navigate('/locations');
+    // TODO: Implement delete functionality
+    console.log('Delete township:', id);
   };
 
-  const getSelectedRegion = () => {
-    return getActiveRegions().find(region => region.id === formData.regionId);
-  };
-
-  if (!township) {
+  if (isLoading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">Township not found</Typography>
+      <Box>
+        <PageHeader title="Edit Township" />
+        <Paper sx={{ p: 3 }}>
+          <Typography>Loading township...</Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <PageHeader title="Edit Township" />
+        <Paper sx={{ p: 3 }}>
+          <Alert severity="error">
+            Error loading township: {error.message}
+          </Alert>
+        </Paper>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ marginLeft: 0, width: '100%' }}>
-      <PageHeader
-        title="Edit Township"
-        breadcrumbs="Dashboard / Location Management / Edit Township"
-        subtitle={`Update information for ${township.name}`}
-        actionButton={{
-          text: 'Back to Locations',
-          icon: <ArrowBackIcon />,
-          onClick: () => navigate('/locations')
-        }}
-      />
-
+    <Box>
+      <PageHeader title="Edit Township" />
       <Paper sx={{ p: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Township Information
-            </Typography>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Township Name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              error={!!errors.name}
-              helperText={errors.name}
-              required
-              placeholder="e.g., Downtown Yangon"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>Region</InputLabel>
-              <Select
-                value={formData.regionId}
-                label="Region"
-                onChange={(e) => handleInputChange('regionId', e.target.value as number)}
-                error={!!errors.regionId}
-              >
-                <MenuItem value={0} disabled>
-                  Select a region
-                </MenuItem>
-                {getActiveRegions().map((region) => (
-                  <MenuItem key={region.id} value={region.id}>
-                    {region.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.status}
-                label="Status"
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                error={!!errors.status}
-              >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              multiline
-              rows={3}
-              placeholder="Describe the township (optional)"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Alert severity="info">
-              <Typography variant="body2">
-                <strong>Current Region:</strong> {getSelectedRegion()?.name}
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                <strong>Created:</strong> {township.createdAt}
-              </Typography>
-            </Alert>
-          </Grid>
-
-          {/* Action Buttons */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', mt: 3 }}>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleDelete}
-                startIcon={<DeleteIcon />}
-              >
-                Delete Township
-              </Button>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/locations')}
-                  startIcon={<ArrowBackIcon />}
+        <Box component="form" onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="English Name"
+                value={formData.name_en}
+                onChange={(e) => handleInputChange('name_en', e.target.value)}
+                error={!!errors.name_en}
+                helperText={errors.name_en}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Myanmar Name"
+                value={formData.name_mm}
+                onChange={(e) => handleInputChange('name_mm', e.target.value)}
+                error={!!errors.name_mm}
+                helperText={errors.name_mm}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth required>
+                <InputLabel>Region</InputLabel>
+                <Select
+                  value={formData.region_id}
+                  onChange={(e) => handleInputChange('region_id', e.target.value as number)}
+                  label="Region"
+                  error={!!errors.region_id}
                 >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  startIcon={<SaveIcon />}
+                  {regionsData?.data?.map((region) => (
+                    <MenuItem key={region.id} value={region.id}>
+                      {region.name_en}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.is_active.toString()}
+                  onChange={(e) => handleInputChange('is_active', e.target.value === 'true')}
+                  label="Status"
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Box>
-            </Box>
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                multiline
+                rows={3}
+              />
+            </Grid>
           </Grid>
-        </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/locations')}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<SaveIcon />}
+              disabled={updateTownshipMutation.isPending}
+            >
+              {updateTownshipMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Box>
+        </Box>
       </Paper>
     </Box>
   );

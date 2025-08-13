@@ -20,37 +20,37 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-import { RegionFormData, Region } from '../../types/location';
-import { mockRegions } from '../../data/mockLocations';
+import { RegionFormData } from '../../types/location';
+import { useRegion, useUpdateRegion } from '../../services/queries/locations';
 
 const RegionEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [formData, setFormData] = useState<RegionFormData>({
-    name: '',
-    status: 'active',
+    name_en: '',
+    name_mm: '',
+    is_active: true,
     description: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof RegionFormData, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [region, setRegion] = useState<Region | null>(null);
+
+  const { data: regionData, isLoading, error } = useRegion(id || '');
+  const updateRegionMutation = useUpdateRegion();
 
   useEffect(() => {
-    if (id) {
-      const foundRegion = mockRegions.find(r => r.id === parseInt(id));
-      if (foundRegion) {
-        setRegion(foundRegion);
-        setFormData({
-          name: foundRegion.name,
-          status: foundRegion.status,
-          description: foundRegion.description || '',
-        });
-      }
+    if (regionData?.data) {
+      const region = regionData.data;
+      setFormData({
+        name_en: region.name_en,
+        name_mm: region.name_mm,
+        is_active: region.is_active,
+        description: region.description || '',
+      });
     }
-  }, [id]);
+  }, [regionData]);
 
-  const handleInputChange = (field: keyof RegionFormData, value: string) => {
-    setFormData(prev => ({
+  const handleInputChange = (field: keyof RegionFormData, value: string | boolean) => {
+    setFormData((prev: RegionFormData) => ({
       ...prev,
       [field]: value,
     }));
@@ -67,156 +67,142 @@ const RegionEditPage: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof RegionFormData, string>> = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Region name is required';
-    } else if (formData.name.trim().length < 3) {
-      newErrors.name = 'Region name must be at least 3 characters';
+    if (!formData.name_en.trim()) {
+      newErrors.name_en = 'English name is required';
     }
-
-    if (!formData.status) {
-      newErrors.status = 'Status is required';
+    if (!formData.name_mm.trim()) {
+      newErrors.name_mm = 'Myanmar name is required';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm() || !id) return;
 
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Updating region:', formData);
-      setIsSubmitting(false);
+    try {
+      await updateRegionMutation.mutateAsync({
+        slug: id,
+        data: formData,
+      });
       navigate('/locations');
-    }, 1500);
+    } catch (error: any) {
+      console.error('Error updating region:', error);
+    }
   };
 
   const handleDelete = () => {
-    console.log('Deleting region:', id);
-    navigate('/locations');
+    // TODO: Implement delete functionality
+    console.log('Delete region:', id);
   };
 
-  if (!region) {
+  if (isLoading) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">Region not found</Typography>
+      <Box>
+        <PageHeader title="Edit Region" />
+        <Paper sx={{ p: 3 }}>
+          <Typography>Loading region...</Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box>
+        <PageHeader title="Edit Region" />
+        <Paper sx={{ p: 3 }}>
+          <Alert severity="error">
+            Error loading region: {error.message}
+          </Alert>
+        </Paper>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ marginLeft: 0, width: '100%' }}>
-      <PageHeader
-        title="Edit Region"
-        breadcrumbs="Dashboard / Location Management / Edit Region"
-        subtitle={`Update information for ${region.name}`}
-        actionButton={{
-          text: 'Back to Locations',
-          icon: <ArrowBackIcon />,
-          onClick: () => navigate('/locations')
-        }}
-      />
-
+    <Box>
+      <PageHeader title="Edit Region" />
       <Paper sx={{ p: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Region Information
-            </Typography>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Region Name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              error={!!errors.name}
-              helperText={errors.name}
-              required
-              placeholder="e.g., Yangon Region"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.status}
-                label="Status"
-                onChange={(e) => handleInputChange('status', e.target.value)}
-                error={!!errors.status}
-              >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              multiline
-              rows={3}
-              placeholder="Describe the region (optional)"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Alert severity="info">
-              <Typography variant="body2">
-                <strong>Note:</strong> Changing the region status will affect all townships within this region.
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Created: {region.createdAt}
-              </Typography>
-            </Alert>
-          </Grid>
-
-          {/* Action Buttons */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', mt: 3 }}>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleDelete}
-                startIcon={<DeleteIcon />}
-              >
-                Delete Region
-              </Button>
-              
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate('/locations')}
-                  startIcon={<ArrowBackIcon />}
+        <Box component="form" onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="English Name"
+                value={formData.name_en}
+                onChange={(e) => handleInputChange('name_en', e.target.value)}
+                error={!!errors.name_en}
+                helperText={errors.name_en}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Myanmar Name"
+                value={formData.name_mm}
+                onChange={(e) => handleInputChange('name_mm', e.target.value)}
+                error={!!errors.name_mm}
+                helperText={errors.name_mm}
+                required
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.is_active.toString()}
+                  onChange={(e) => handleInputChange('is_active', e.target.value === 'true')}
+                  label="Status"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  startIcon={<SaveIcon />}
-                >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </Button>
-              </Box>
-            </Box>
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                multiline
+                rows={3}
+              />
+            </Grid>
           </Grid>
-        </Grid>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => navigate('/locations')}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleDelete}
+            >
+              Delete
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<SaveIcon />}
+              disabled={updateRegionMutation.isPending}
+            >
+              {updateRegionMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Box>
+        </Box>
       </Paper>
     </Box>
   );

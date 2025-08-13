@@ -8,6 +8,7 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Visibility as VisibilityIcon,
@@ -16,17 +17,21 @@ import {
   Lock as LockIcon,
   Login as LoginIcon,
 } from '@mui/icons-material';
+import { useLogin } from '../../services/queries/auth';
 import { useAuthStore } from '../../stores/useAuthStore';
 
 const LoginPage: React.FC = () => {
   const [formData, setFormData] = useState({
-    email: 'demo@yopmail.com',
-    password: 'demo123',
+    email: 'admin@myasattyaung.com',
+    password: 'password',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [generalError, setGeneralError] = useState<string>('');
   const { login } = useAuthStore();
+  
+  // Use React Query login hook
+  const loginMutation = useLogin();
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string } = {};
@@ -44,6 +49,7 @@ const LoginPage: React.FC = () => {
     }
 
     setErrors(newErrors);
+    setGeneralError(''); // Clear general error when validating
     return Object.keys(newErrors).length === 0;
   };
 
@@ -54,20 +60,46 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      const mockUser = {
-        id: '1',
-        name: 'Admin User',
-        email: formData.email,
-        role: 'admin',
-        avatar: 'AU',
-      };
-      const mockToken = 'mock-jwt-token';
-      login(mockUser, mockToken);
-      setIsLoading(false);
-    }, 1500);
+    // Clear previous errors
+    setErrors({});
+    setGeneralError('');
+
+    try {
+      const result = await loginMutation.mutateAsync(formData);
+      
+      // The React Query hook should handle storing the data
+      // We just need to call the auth store login function
+      if (result.data?.user && result.data?.token) {
+        login(result.data.user, result.data.token);
+      } else {
+        setGeneralError('Unexpected response format from server');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      // Handle API validation errors
+      if (error.errors) {
+        const fieldErrors: { email?: string; password?: string } = {};
+        
+        // Handle field-specific errors
+        if (error.errors.email && error.errors.email.length > 0) {
+          fieldErrors.email = error.errors.email[0];
+        }
+        if (error.errors.password && error.errors.password.length > 0) {
+          fieldErrors.password = error.errors.password[0];
+        }
+        
+        setErrors(fieldErrors);
+        
+        // Set general error message if no field-specific errors
+        if (Object.keys(fieldErrors).length === 0 && error.message) {
+          setGeneralError(error.message);
+        }
+      } else {
+        // Handle general errors
+        setGeneralError(error.message || 'Login failed. Please try again.');
+      }
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,13 +109,22 @@ const LoginPage: React.FC = () => {
       [name]: value,
     }));
     
+    // Clear field-specific error when user starts typing
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({
         ...prev,
         [name]: undefined,
       }));
     }
+    
+    // Clear general error when user starts typing
+    if (generalError) {
+      setGeneralError('');
+    }
   };
+
+  // Check if there are any errors to display
+  const hasErrors = Object.values(errors).some(error => error) || generalError || loginMutation.error;
 
   return (
     <Box
@@ -150,6 +191,15 @@ const LoginPage: React.FC = () => {
           }}
         >
           <Box component="form" onSubmit={handleSubmit}>
+            {/* Error Alert */}
+            {hasErrors && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {generalError || 
+                 loginMutation.error?.message || 
+                 'Please check your credentials and try again.'}
+              </Alert>
+            )}
+            
             <TextField
               margin="normal"
               required
@@ -209,9 +259,9 @@ const LoginPage: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
               startIcon={
-                isLoading ? (
+                loginMutation.isPending ? (
                   <CircularProgress size={20} color="inherit" />
                 ) : (
                   <LoginIcon />
@@ -226,7 +276,7 @@ const LoginPage: React.FC = () => {
                 textTransform: 'none',
               }}
             >
-              {isLoading ? 'Signing In...' : 'Sign In'}
+              {loginMutation.isPending ? 'Signing In...' : 'Sign In'}
             </Button>
           </Box>
         </Paper>

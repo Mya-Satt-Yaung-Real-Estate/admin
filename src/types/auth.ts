@@ -1,10 +1,22 @@
-// User Types
+import { Role, Permission } from './index';
+
+// Authentication Types based on API Documentation
 export interface User {
-  id: string;
+  id: number;
   name: string;
+  slug: string;
   email: string;
-  role: string;
-  avatar?: string;
+  user_type: string;
+  member_level: string;
+  is_active: boolean;
+  last_login_at?: string;
+  last_active_at?: string;
+  email_verified_at?: string;
+  created_at: string;
+  updated_at: string;
+  is_admin: boolean;
+  roles?: Role[];
+  permissions?: Permission[];
 }
 
 // Authentication State Types
@@ -28,12 +40,28 @@ export type AuthStore = AuthState & AuthActions;
 export interface LoginFormData {
   email: string;
   password: string;
-  rememberMe: boolean;
+  rememberMe?: boolean;
 }
 
 // API Response Types
 export interface LoginResponse {
-  user: User;
-  token: string;
-  message?: string;
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+    token_type: string;
+  };
+}
+
+export interface LogoutResponse {
+  success: boolean;
+  message: string;
+  data: null;
+}
+
+// Login Credentials for API
+export interface LoginCredentials {
+  email: string;
+  password: string;
 } 
