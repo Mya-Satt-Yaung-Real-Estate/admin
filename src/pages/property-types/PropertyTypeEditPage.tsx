@@ -10,7 +10,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -87,7 +86,10 @@ const PropertyTypeEditPage: React.FC = () => {
       { slug, data: formData },
       {
         onSuccess: () => {
-          navigate('/property-types');
+          navigate('/property-types?success=' + encodeURIComponent('Property type updated successfully!'));
+        },
+        onError: () => {
+          navigate('/property-types?error=' + encodeURIComponent('Failed to update property type. Please try again.'));
         },
       }
     );
@@ -142,18 +144,7 @@ const PropertyTypeEditPage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error alerts */}
-      {updatePropertyTypeMutation.isSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Property type updated successfully!
-        </Alert>
-      )}
 
-      {updatePropertyTypeMutation.isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to update property type: {updatePropertyTypeMutation.error?.message}
-        </Alert>
-      )}
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

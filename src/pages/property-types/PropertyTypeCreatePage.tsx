@@ -9,7 +9,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -71,7 +70,10 @@ const PropertyTypeCreatePage: React.FC = () => {
       },
       {
         onSuccess: () => {
-          navigate('/property-types');
+          navigate('/property-types?success=' + encodeURIComponent('Property type created successfully!'));
+        },
+        onError: () => {
+          navigate('/property-types?error=' + encodeURIComponent('Failed to create property type. Please try again.'));
         },
       }
     );
@@ -90,18 +92,7 @@ const PropertyTypeCreatePage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error alerts */}
-      {createPropertyTypeMutation.isSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Property type created successfully!
-        </Alert>
-      )}
 
-      {createPropertyTypeMutation.isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to create property type: {createPropertyTypeMutation.error?.message}
-        </Alert>
-      )}
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

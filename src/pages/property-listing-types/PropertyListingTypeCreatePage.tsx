@@ -9,7 +9,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -77,7 +76,10 @@ const PropertyListingTypeCreatePage: React.FC = () => {
       },
       {
         onSuccess: () => {
-          navigate('/property-listing-types');
+          navigate('/property-listing-types?success=' + encodeURIComponent('Property listing type created successfully!'));
+        },
+        onError: () => {
+          navigate('/property-listing-types?error=' + encodeURIComponent('Failed to create property listing type. Please try again.'));
         },
       }
     );
@@ -96,18 +98,7 @@ const PropertyListingTypeCreatePage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error alerts */}
-      {createListingTypeMutation.isSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Property listing type created successfully!
-        </Alert>
-      )}
 
-      {createListingTypeMutation.isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to create property listing type: {createListingTypeMutation.error?.message}
-        </Alert>
-      )}
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

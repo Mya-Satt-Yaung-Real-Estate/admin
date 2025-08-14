@@ -21,7 +21,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
 import { useRole, useDeleteRole } from '../../services/queries/roles';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { formatDate } from '../../constants/dateFormats';
 
 
@@ -33,6 +33,9 @@ const RoleDetailPage: React.FC = () => {
   const { data: roleResponse, isLoading, error } = useRole(slug || '');
   const deleteRoleMutation = useDeleteRole();
 
+  // Alert system hook
+  const { showSuccess, showError } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -51,12 +54,14 @@ const RoleDetailPage: React.FC = () => {
     openDeleteConfirmation(
       role.name,
       'role',
-      () => {
-        deleteRoleMutation.mutate(role.slug, {
-          onSuccess: () => {
-            navigate('/roles');
-          },
-        });
+      async () => {
+        try {
+          await deleteRoleMutation.mutateAsync(role.slug);
+          showSuccess(`${role.name} deleted successfully!`, true);
+          navigate('/roles');
+        } catch (error) {
+          showError('Failed to delete role. Please try again.', true);
+        }
       }
     );
   };

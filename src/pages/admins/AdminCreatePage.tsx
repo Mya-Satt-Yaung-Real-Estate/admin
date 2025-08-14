@@ -9,7 +9,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -87,7 +86,7 @@ const AdminCreatePage: React.FC = () => {
 
     try {
       await createAdminMutation.mutateAsync(formData);
-      navigate('/admins');
+      navigate('/admins?success=' + encodeURIComponent('Admin user created successfully!'));
     } catch (error: any) {
       console.error('Error creating admin:', error);
       
@@ -100,6 +99,8 @@ const AdminCreatePage: React.FC = () => {
           }
         });
         setErrors(apiErrors);
+      } else {
+        navigate('/admins?error=' + encodeURIComponent(error.message || 'Failed to create admin user. Please try again.'));
       }
     }
   };
@@ -146,12 +147,6 @@ const AdminCreatePage: React.FC = () => {
       />
       
       <Paper sx={{ p: 3 }}>
-        {/* Error Alert */}
-        {createAdminMutation.error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {createAdminMutation.error.message || 'Failed to create admin user. Please try again.'}
-          </Alert>
-        )}
 
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={3}>

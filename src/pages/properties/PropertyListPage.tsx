@@ -27,10 +27,8 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, VerificationActions } from '../../components/ui';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, VerificationActions, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useProperties, useDeleteProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
@@ -158,6 +156,9 @@ const PropertyListPage: React.FC = () => {
   // Delete mutation
   const deletePropertyMutation = useDeleteProperty();
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -434,6 +435,8 @@ const PropertyListPage: React.FC = () => {
               propertyId={property.id}
               propertyTitle={property.title_en}
               verificationStatus={property.verification_status}
+              onShowSuccess={showSuccess}
+              onShowError={showError}
             />
             
             <Tooltip title="Edit">
@@ -494,8 +497,13 @@ const PropertyListPage: React.FC = () => {
     openDeleteConfirmation(
       property.title_en,
       'property',
-      () => {
-        deletePropertyMutation.mutate(property.id);
+      async () => {
+        try {
+          await deletePropertyMutation.mutateAsync(property.id);
+          showSuccess(`${property.title_en} deleted successfully!`, true);
+        } catch (error) {
+          showError('Failed to delete property. Please try again.', true);
+        }
       }
     );
   };
@@ -537,6 +545,8 @@ const PropertyListPage: React.FC = () => {
           onClick: handleAddProperty
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Statistics Cards */}
       <StatisticsCards cards={statsCards} />

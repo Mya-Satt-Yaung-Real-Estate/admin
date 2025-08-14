@@ -99,10 +99,16 @@ const AdminDetailPage: React.FC = () => {
         }}
       />
 
-      {/* Error Alert */}
-      {deleteAdminMutation.error && (
+      {/* Success/Error alerts */}
+      {deleteAdminMutation.isSuccess && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Admin user deleted successfully!
+        </Alert>
+      )}
+
+      {deleteAdminMutation.isError && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {deleteAdminMutation.error.message || 'Failed to delete admin user. Please try again.'}
+          {deleteAdminMutation.error?.message || 'Failed to delete admin user. Please try again.'}
         </Alert>
       )}
 

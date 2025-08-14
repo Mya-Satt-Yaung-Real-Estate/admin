@@ -20,10 +20,8 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { usePropertyTypes, useDeletePropertyType } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { PropertyType } from '../../types/property';
@@ -94,6 +92,9 @@ const PropertyTypeListPage: React.FC = () => {
     statusFilter: 'all',
   });
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -285,8 +286,13 @@ const PropertyTypeListPage: React.FC = () => {
     openDeleteConfirmation(
       `${propertyType.name_en} (${propertyType.name_mm})`,
       'property type',
-      () => {
-        deletePropertyTypeMutation.mutate(propertyType.slug);
+      async () => {
+        try {
+          await deletePropertyTypeMutation.mutateAsync(propertyType.slug);
+          showSuccess(`${propertyType.name_en} deleted successfully!`, true);
+        } catch (error) {
+          showError('Failed to delete property type. Please try again.', true);
+        }
       }
     );
   };
@@ -328,6 +334,8 @@ const PropertyTypeListPage: React.FC = () => {
           onClick: handleAddPropertyType
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Statistics Cards */}
       <StatisticsCards cards={statsCards} />

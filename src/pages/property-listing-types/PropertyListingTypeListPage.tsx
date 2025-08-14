@@ -20,10 +20,8 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { usePropertyListingTypes, useDeletePropertyListingType } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { PropertyListingType } from '../../types/property';
@@ -94,6 +92,9 @@ const PropertyListingTypeListPage: React.FC = () => {
     statusFilter: 'all',
   });
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -298,8 +299,13 @@ const PropertyListingTypeListPage: React.FC = () => {
     openDeleteConfirmation(
       `${listingType.name_en} (${listingType.name_mm})`,
       'listing type',
-      () => {
-        deleteListingTypeMutation.mutate(listingType.slug);
+      async () => {
+        try {
+          await deleteListingTypeMutation.mutateAsync(listingType.slug);
+          showSuccess(`${listingType.name_en} deleted successfully!`, true);
+        } catch (error) {
+          showError('Failed to delete listing type. Please try again.', true);
+        }
       }
     );
   };
@@ -341,6 +347,8 @@ const PropertyListingTypeListPage: React.FC = () => {
           onClick: handleAddListingType
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Statistics Cards */}
       <StatisticsCards cards={statsCards} />

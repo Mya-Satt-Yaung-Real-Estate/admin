@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProperty, useDeleteProperty } from '../../services/queries/properties';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, VerificationActions } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
@@ -59,6 +59,9 @@ const PropertyDetailPage: React.FC = () => {
   const { data: propertyResponse, isLoading, error } = useProperty(Number(id));
   const deletePropertyMutation = useDeleteProperty();
 
+  // Alert system hook
+  const { showSuccess, showError } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -79,8 +82,14 @@ const PropertyDetailPage: React.FC = () => {
     openDeleteConfirmation(
       property.title_en,
       'property',
-      () => {
-        deletePropertyMutation.mutate(property.id);
+      async () => {
+        try {
+          await deletePropertyMutation.mutateAsync(property.id);
+          showSuccess(`${property.title_en} deleted successfully!`, true);
+          navigate('/properties');
+        } catch (error) {
+          showError('Failed to delete property. Please try again.', true);
+        }
       }
     );
   };
@@ -168,6 +177,8 @@ const PropertyDetailPage: React.FC = () => {
           propertyId={property.id}
           propertyTitle={property.title_en}
           verificationStatus={property.verification_status}
+          onShowSuccess={showSuccess}
+          onShowError={showError}
         />
         
         <Tooltip title="Edit Property">

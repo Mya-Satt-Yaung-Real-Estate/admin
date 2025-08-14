@@ -23,6 +23,8 @@ interface VerificationActionsProps {
   propertyTitle: string;
   verificationStatus: string;
   onSuccess?: () => void;
+  onShowSuccess?: (message: string) => void;
+  onShowError?: (message: string) => void;
   size?: 'small' | 'medium';
 }
 
@@ -31,6 +33,8 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
   propertyTitle,
   verificationStatus,
   onSuccess,
+  onShowSuccess,
+  onShowError,
   size = 'medium',
 }) => {
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
@@ -52,7 +56,11 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
         // Invalidate and refetch properties data
         queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
         queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
+        onShowSuccess?.(`${propertyTitle} approved successfully!`);
         onSuccess?.();
+      },
+      onError: () => {
+        onShowError?.('Failed to approve property. Please try again.');
       },
     });
   };
@@ -77,7 +85,11 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
           // Invalidate and refetch properties data
           queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
           queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
+          onShowSuccess?.(`${propertyTitle} rejected successfully!`);
           onSuccess?.();
+        },
+        onError: () => {
+          onShowError?.('Failed to reject property. Please try again.');
         },
       }
     );

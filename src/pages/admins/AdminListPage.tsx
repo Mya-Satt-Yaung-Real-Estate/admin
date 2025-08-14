@@ -23,9 +23,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination } from '../../components/ui';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { FilterState, STATUS_OPTIONS, FILTER_CONFIG } from '../../constants/filters';
 
 import { 
@@ -33,7 +31,8 @@ import {
   PageErrorState, 
   PageEmptyState, 
   DeleteConfirmationDialog,
-  StatusChip
+  StatusChip,
+  ActionAlert
 } from '../../components/ui';
 import { 
   getUserInitials, 
@@ -290,6 +289,8 @@ const AdminListPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user: currentUser } = useAuthStore();
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
   // Delete admin user mutation
   const deleteAdminMutation = useDeleteAdminUser();
 
@@ -329,12 +330,14 @@ const AdminListPage: React.FC = () => {
       async () => {
         try {
           await deleteAdminMutation.mutateAsync(adminSlug);
+          showSuccess(`${adminName} deleted successfully!`, true); // Auto-hide after 5 seconds
         } catch (error) {
           console.error('Failed to delete admin user:', error);
+          showError('Failed to delete admin user. Please try again.', true); // Auto-hide after 5 seconds
         }
       }
     );
-  }, [deleteAdminMutation, openDeleteConfirmation]);
+  }, [deleteAdminMutation, openDeleteConfirmation, showSuccess, showError]);
 
   const handleRetry = useCallback(() => {
     window.location.reload();
@@ -397,6 +400,9 @@ const AdminListPage: React.FC = () => {
           onClick: () => navigate(PAGE_CONFIG.createButtonPath)
         }}
       />
+
+      {/* Action Alert */}
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Filters */}
       <StandardFilters

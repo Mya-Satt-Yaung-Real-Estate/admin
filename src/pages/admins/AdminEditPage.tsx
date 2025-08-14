@@ -9,7 +9,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -23,6 +22,7 @@ const AdminEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const adminSlug = slug || '';
+
 
   const [formData, setFormData] = useState<UpdateAdminUserData>({
     name: '',
@@ -117,7 +117,7 @@ const AdminEditPage: React.FC = () => {
       }
 
       await updateAdminMutation.mutateAsync({ slug: adminSlug, data: updateData });
-      navigate(`/admins/${adminSlug}`);
+      navigate('/admins?success=' + encodeURIComponent('Admin user updated successfully!'));
     } catch (error: any) {
       console.error('Error updating admin:', error);
       
@@ -130,6 +130,8 @@ const AdminEditPage: React.FC = () => {
           }
         });
         setErrors(apiErrors);
+      } else {
+        navigate('/admins?error=' + encodeURIComponent(error.message || 'Failed to update admin user. Please try again.'));
       }
     }
   };
@@ -203,12 +205,6 @@ const AdminEditPage: React.FC = () => {
       />
       
       <Paper sx={{ p: 3 }}>
-        {/* Error Alert */}
-        {updateAdminMutation.error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {updateAdminMutation.error.message || 'Failed to update admin user. Please try again.'}
-          </Alert>
-        )}
 
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={3}>

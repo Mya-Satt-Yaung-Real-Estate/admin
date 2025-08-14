@@ -24,10 +24,8 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useUsers, useDeleteUser } from '../../services/queries/users';
 import { FilterState } from '../../constants/filters';
 import { RegularUser } from '../../types/user';
@@ -124,6 +122,9 @@ const UserListPage: React.FC = () => {
     statusFilter: 'all',
   });
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -376,8 +377,13 @@ const UserListPage: React.FC = () => {
     openDeleteConfirmation(
       user.name,
       'user',
-      () => {
-        deleteUserMutation.mutate(user.id);
+      async () => {
+        try {
+          await deleteUserMutation.mutateAsync(user.id);
+          showSuccess(`${user.name} deleted successfully!`, true);
+        } catch (error) {
+          showError('Failed to delete user. Please try again.', true);
+        }
       }
     );
   };
@@ -419,6 +425,8 @@ const UserListPage: React.FC = () => {
           onClick: handleAddUser
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Statistics Cards */}
       <StatisticsCards cards={statsCards} />

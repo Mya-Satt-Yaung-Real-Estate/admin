@@ -9,7 +9,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -64,7 +63,10 @@ const RoleCreatePage: React.FC = () => {
     // Submit form
     createRoleMutation.mutate(formData, {
       onSuccess: () => {
-        navigate('/roles');
+        navigate('/roles?success=' + encodeURIComponent('Role created successfully!'));
+      },
+      onError: () => {
+        navigate('/roles?error=' + encodeURIComponent('Failed to create role. Please try again.'));
       },
     });
   };
@@ -99,18 +101,7 @@ const RoleCreatePage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error alerts */}
-      {createRoleMutation.isSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Role created successfully!
-        </Alert>
-      )}
 
-      {createRoleMutation.isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to create role: {createRoleMutation.error?.message}
-        </Alert>
-      )}
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

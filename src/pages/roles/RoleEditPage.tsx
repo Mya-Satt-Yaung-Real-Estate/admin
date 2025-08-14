@@ -10,7 +10,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Alert,
 } from '@mui/material';
 import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -84,7 +83,10 @@ const RoleEditPage: React.FC = () => {
       { slug, data: formData },
       {
         onSuccess: () => {
-          navigate(`/roles/${slug}`);
+          navigate('/roles?success=' + encodeURIComponent('Role updated successfully!'));
+        },
+        onError: () => {
+          navigate('/roles?error=' + encodeURIComponent('Failed to update role. Please try again.'));
         },
       }
     );
@@ -139,18 +141,7 @@ const RoleEditPage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error alerts */}
-      {updateRoleMutation.isSuccess && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          Role updated successfully!
-        </Alert>
-      )}
 
-      {updateRoleMutation.isError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Failed to update role: {updateRoleMutation.error?.message}
-        </Alert>
-      )}
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

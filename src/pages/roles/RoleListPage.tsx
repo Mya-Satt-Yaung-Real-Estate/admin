@@ -23,10 +23,8 @@ import { StandardFilters, FilterField } from '../../components/common/StandardFi
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination } from '../../components/ui';
-import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useRoles, useDeleteRole } from '../../services/queries/roles';
 import { formatDate } from '../../constants/dateFormats';
 
@@ -59,6 +57,9 @@ const RoleListPage: React.FC = () => {
   // Delete role mutation
   const deleteRoleMutation = useDeleteRole();
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
   // Delete confirmation hook
   const {
     deleteState,
@@ -299,8 +300,13 @@ const RoleListPage: React.FC = () => {
     openDeleteConfirmation(
       role.name,
       'role',
-      () => {
-        deleteRoleMutation.mutate(role.slug);
+      async () => {
+        try {
+          await deleteRoleMutation.mutateAsync(role.slug);
+          showSuccess(`${role.name} deleted successfully!`, true);
+        } catch (error) {
+          showError('Failed to delete role. Please try again.', true);
+        }
       }
     );
   };
@@ -338,6 +344,8 @@ const RoleListPage: React.FC = () => {
           onClick: handleAddRole
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Statistics Cards */}
       <StatisticsCards cards={statsCards} />
