@@ -23,14 +23,13 @@ import { StandardFilters, FilterField } from '../../components/common/StandardFi
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination } from '../../components/ui';
-import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
+import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
 import { useRoles, useDeleteRole } from '../../services/queries/roles';
 import { formatDate } from '../../constants/dateFormats';
-import { getStatusChipColor } from '../../utils/statusUtils';
-import { getStatusLabel } from '../../constants/status';
+
 import { FilterState } from '../../constants/filters';
 import { Role } from '../../types/role';
 
@@ -158,13 +157,7 @@ const RoleListPage: React.FC = () => {
             <Typography variant="subtitle2" fontWeight="600">
               {role.name}
             </Typography>
-            <Chip
-              label={getStatusLabel(role.is_active ? 'active' : 'inactive')}
-              size="small"
-              color={getStatusChipColor(role.is_active)}
-              variant="outlined"
-              sx={{ mt: 0.5 }}
-            />
+            <StatusChip status={role.is_active} />
           </Box>
         );
       },
@@ -382,8 +375,8 @@ const RoleListPage: React.FC = () => {
               avatar={<SecurityIcon />}
               avatarColor={role.name.toLowerCase().includes('admin') ? 'warning.main' : 'primary.main'}
               status={{
-                label: getStatusLabel(role.is_active ? 'active' : 'inactive'),
-                color: getStatusChipColor(role.is_active),
+                label: role.is_active ? 'Active' : 'Inactive',
+                color: 'default',
               }}
               chips={[
                 {

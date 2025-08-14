@@ -4,7 +4,6 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
-  Chip,
 } from '@mui/material';
 import {
   Security as SecurityIcon,
@@ -15,12 +14,11 @@ import { StandardFilters, FilterField } from '../../components/common/StandardFi
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard } from '../../components/common/MobileCard';
 import { Pagination } from '../../components/ui';
-import { PageLoadingState, PageErrorState, PageEmptyState } from '../../components/ui';
+import { PageLoadingState, PageErrorState, PageEmptyState, StatusChip } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { usePermissions } from '../../services/queries/permissions';
-import { getStatusChipColor } from '../../utils/statusUtils';
-import { getStatusLabel } from '../../constants/status';
+
 import { FilterState } from '../../constants/filters';
 import { Permission } from '../../types/permission';
 
@@ -133,12 +131,7 @@ const PermissionListPage: React.FC = () => {
               {permission.name}
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-              <Chip
-                label={getStatusLabel(permission.is_active ? 'active' : 'inactive')}
-                size="small"
-                color={getStatusChipColor(permission.is_active)}
-                variant="outlined"
-              />
+              <StatusChip status={permission.is_active} />
             </Box>
           </Box>
         );
@@ -229,8 +222,8 @@ const PermissionListPage: React.FC = () => {
               avatar={<SecurityIcon />}
               avatarColor="primary.main"
               status={{
-                label: getStatusLabel(permission.is_active ? 'active' : 'inactive'),
-                color: getStatusChipColor(permission.is_active),
+                label: permission.is_active ? 'Active' : 'Inactive',
+                color: 'default',
               }}
               children={
                 <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>

@@ -7,9 +7,11 @@ export { default as LogoutDialog } from './LogoutDialog';
 export { default as DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 export { default as EnhancedMultiSelect } from './EnhancedMultiSelect';
 export { default as Pagination } from './Pagination';
+export { default as StatusChip } from './StatusChip';
 export type { DeleteConfirmationDialogProps } from './DeleteConfirmationDialog';
 export type { EnhancedMultiSelectProps, EnhancedMultiSelectOption } from './EnhancedMultiSelect';
 export type { PaginationProps } from './Pagination';
+export type { StatusChipProps } from './StatusChip';
 
 // Types
 export type { 

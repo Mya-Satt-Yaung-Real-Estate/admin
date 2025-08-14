@@ -2,7 +2,6 @@ import React, { useMemo, useCallback } from 'react';
 import {
   Box,
   IconButton,
-  Chip,
   Typography,
   Tooltip,
   useTheme,
@@ -32,15 +31,15 @@ import { FilterState, STATUS_OPTIONS, FILTER_CONFIG } from '../../constants/filt
 import { 
   PageLoadingState, 
   PageErrorState, 
-  PageEmptyState,
-  DeleteConfirmationDialog
+  PageEmptyState, 
+  DeleteConfirmationDialog,
+  StatusChip
 } from '../../components/ui';
 import { 
   getUserInitials, 
   formatLastLogin, 
   getUserDisplayName, 
-  getUserDisplayEmail,
-  getStatusDisplay 
+  getUserDisplayEmail
 } from '../../utils';
 import { AdminUser } from '../../types/admin';
 
@@ -187,13 +186,8 @@ const createTableColumns = (
     render: (_value, admin, _index) => {
       if (!admin) return <Typography variant="body2">No data</Typography>;
       
-      const status = getStatusDisplay(admin.is_active === true);
       return (
-        <Chip
-          label={status.label}
-          color={status.color}
-          size="small"
-        />
+        <StatusChip status={admin.is_active === true} />
       );
     },
   },
@@ -225,6 +219,7 @@ const createTableColumns = (
             <IconButton
               size="small"
               onClick={() => navigate(`/admins/${admin.slug || ''}`)}
+              color="primary"
             >
               <ViewIcon />
             </IconButton>
@@ -233,6 +228,7 @@ const createTableColumns = (
             <IconButton
               size="small"
               onClick={() => navigate(`/admins/${admin.slug || ''}/edit`)}
+              color="secondary"
             >
               <EditIcon />
             </IconButton>
@@ -264,12 +260,14 @@ const createMobileCardActions = (
   {
     icon: <ViewIcon />,
     tooltip: 'View Details',
-            onClick: () => navigate(`/admins/${admin.slug || ''}`),
+    color: 'primary' as const,
+    onClick: () => navigate(`/admins/${admin.slug || ''}`),
   },
   {
     icon: <EditIcon />,
     tooltip: 'Edit',
-            onClick: () => navigate(`/admins/${admin.slug || ''}/edit`),
+    color: 'secondary' as const,
+    onClick: () => navigate(`/admins/${admin.slug || ''}/edit`),
   },
   ...(currentUserId !== admin.id ? [{
     icon: <DeleteIcon />,
@@ -431,8 +429,6 @@ const AdminListPage: React.FC = () => {
           {paginatedData.map((admin) => {
             if (!admin) return null;
             
-            const status = getStatusDisplay(admin.is_active === true);
-            
             return (
               <MobileCard
                 key={admin.id || 'unknown'}
@@ -444,8 +440,8 @@ const AdminListPage: React.FC = () => {
                   </Avatar>
                 }
                 status={{
-                  label: status.label,
-                  color: status.color,
+                  label: admin.is_active ? 'Active' : 'Inactive',
+                  color: 'default',
                 }}
                 actions={createMobileCardActions(admin, navigate, handleDelete, currentUser?.id)}
               />

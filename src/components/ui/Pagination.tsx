@@ -119,6 +119,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             px: 1,
             color: theme.palette.text.secondary,
             userSelect: 'none',
+            fontWeight: 500,
           }}
         >
           ...
@@ -129,30 +130,44 @@ export const Pagination: React.FC<PaginationProps> = ({
     return (
       <Button
         key={pageNum}
-        variant={isCurrentPage ? 'contained' : 'outlined'}
+        variant="outlined"
         size="small"
         onClick={() => handlePageChange(Number(pageNum) - 1)}
         disabled={disabled}
         sx={{
           minWidth: 36,
           height: 36,
-          borderRadius: 1,
+          borderRadius: 2,
           fontWeight: isCurrentPage ? 600 : 500,
-          backgroundColor: isCurrentPage ? theme.palette.primary.main : 'transparent',
-          color: isCurrentPage ? theme.palette.primary.contrastText : theme.palette.primary.main,
-          borderColor: isCurrentPage ? theme.palette.primary.main : theme.palette.divider,
+          fontSize: '0.875rem',
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+          backgroundColor: isCurrentPage ? '#ffffff' : 'transparent',
+          color: isCurrentPage ? '#3B8880' : '#64748B',
+          borderColor: isCurrentPage ? '#3B8880' : '#E2E8F0',
+          borderWidth: '1px',
+          boxShadow: 'none',
+          transition: 'all 0.2s ease-in-out',
           '&:hover': {
             backgroundColor: isCurrentPage 
-              ? theme.palette.primary.dark 
-              : theme.palette.primary.light + '10',
+              ? '#ffffff' 
+              : '#F0F9F8',
             borderColor: isCurrentPage 
-              ? theme.palette.primary.dark 
-              : theme.palette.primary.main,
+              ? '#3B8880' 
+              : '#3B8880',
+            color: isCurrentPage ? '#3B8880' : '#3B8880',
+            transform: 'scale(1.02)',
+            boxShadow: '0 2px 4px rgba(59, 136, 128, 0.1)',
+          },
+          '&:focus': {
+            outline: 'none',
+            boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
           },
           '&:disabled': {
-            backgroundColor: theme.palette.action.disabledBackground,
-            color: theme.palette.action.disabled,
-            borderColor: theme.palette.action.disabled,
+            backgroundColor: '#F1F5F9',
+            color: '#94A3B8',
+            borderColor: '#E2E8F0',
+            transform: 'none',
+            boxShadow: 'none',
           },
         }}
       >
@@ -172,7 +187,15 @@ export const Pagination: React.FC<PaginationProps> = ({
             alignItems: 'center', 
             mb: 2 
           }}>
-            <Typography variant="body2" color="textSecondary">
+            <Typography 
+              variant="body2" 
+              sx={{
+                color: '#64748B',
+                fontSize: '0.875rem',
+                fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                fontWeight: 500,
+              }}
+            >
               Showing {startItem} to {endItem} of {totalCount} results
             </Typography>
             
@@ -185,23 +208,49 @@ export const Pagination: React.FC<PaginationProps> = ({
                   disabled={disabled}
                   sx={{
                     fontSize: '0.75rem',
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                     '& .MuiSelect-select': {
                       py: 0.5,
                       px: 1,
+                      color: '#1E293B',
+                      fontWeight: 500,
                     },
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.divider,
+                      borderColor: '#E2E8F0',
+                      borderRadius: 1,
                     },
                     '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
+                      borderColor: '#3B8880',
                     },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
+                      borderColor: '#3B8880',
+                      borderWidth: '2px',
                     },
+                    '& .MuiSelect-icon': {
+                      color: '#3B8880',
+                    },
+                    transition: 'all 0.2s ease-in-out',
                   }}
                 >
                   {PAGINATION_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option} sx={{ fontSize: '0.75rem' }}>
+                    <MenuItem 
+                      key={option} 
+                      value={option} 
+                      sx={{ 
+                        fontSize: '0.75rem',
+                        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                        fontWeight: 500,
+                        color: '#1E293B',
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(59, 136, 128, 0.08)',
+                          color: '#3B8880',
+                          fontWeight: 600,
+                        },
+                        '&:hover': {
+                          backgroundColor: 'rgba(59, 136, 128, 0.04)',
+                        },
+                      }}
+                    >
                       {option}
                     </MenuItem>
                   ))}
@@ -222,12 +271,22 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => handlePageChange(page - 1)}
             size="small"
             sx={{
-              color: theme.palette.primary.main,
+              color: '#3B8880',
+              backgroundColor: 'transparent',
+              borderRadius: '50%',
+              transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                backgroundColor: theme.palette.primary.light + '10',
+                backgroundColor: 'rgba(59, 136, 128, 0.08)',
+                transform: 'scale(1.05)',
+              },
+              '&:focus': {
+                outline: 'none',
+                boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
               },
               '&:disabled': {
-                color: theme.palette.action.disabled,
+                color: '#94A3B8',
+                backgroundColor: 'transparent',
+                transform: 'none',
               },
             }}
           >
@@ -241,8 +300,10 @@ export const Pagination: React.FC<PaginationProps> = ({
               alignItems: 'center', 
               minWidth: '80px', 
               justifyContent: 'center',
-              fontWeight: 500,
-              color: theme.palette.text.primary,
+              fontWeight: 600,
+              color: '#1E293B',
+              fontSize: '0.875rem',
+              fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
             }}
           >
             Page {page + 1} of {totalPages}
@@ -253,12 +314,22 @@ export const Pagination: React.FC<PaginationProps> = ({
             onClick={() => handlePageChange(page + 1)}
             size="small"
             sx={{
-              color: theme.palette.primary.main,
+              color: '#3B8880',
+              backgroundColor: 'transparent',
+              borderRadius: '50%',
+              transition: 'all 0.2s ease-in-out',
               '&:hover': {
-                backgroundColor: theme.palette.primary.light + '10',
+                backgroundColor: 'rgba(59, 136, 128, 0.08)',
+                transform: 'scale(1.05)',
+              },
+              '&:focus': {
+                outline: 'none',
+                boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
               },
               '&:disabled': {
-                color: theme.palette.action.disabled,
+                color: '#94A3B8',
+                backgroundColor: 'transparent',
+                transform: 'none',
               },
             }}
           >
@@ -291,7 +362,15 @@ export const Pagination: React.FC<PaginationProps> = ({
           {/* Desktop rows per page selector */}
           {onRowsPerPageChange && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="body2" color="textSecondary">
+              <Typography 
+                variant="body2" 
+                sx={{
+                  color: '#64748B',
+                  fontSize: '0.875rem',
+                  fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                  fontWeight: 500,
+                }}
+              >
                 Rows per page:
               </Typography>
               <FormControl size="small" sx={{ minWidth: 80 }}>
@@ -301,23 +380,48 @@ export const Pagination: React.FC<PaginationProps> = ({
                   disabled={disabled}
                   sx={{
                     fontSize: '0.875rem',
+                    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
                     '& .MuiSelect-select': {
                       py: 0.75,
                       px: 1.5,
+                      color: '#1E293B',
+                      fontWeight: 500,
                     },
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.divider,
+                      borderColor: '#E2E8F0',
+                      borderRadius: 1,
                     },
                     '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
+                      borderColor: '#3B8880',
                     },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: theme.palette.primary.main,
+                      borderColor: '#3B8880',
+                      borderWidth: '2px',
                     },
+                    '& .MuiSelect-icon': {
+                      color: '#3B8880',
+                    },
+                    transition: 'all 0.2s ease-in-out',
                   }}
                 >
                   {PAGINATION_OPTIONS.map((option) => (
-                    <MenuItem key={option} value={option}>
+                    <MenuItem 
+                      key={option} 
+                      value={option}
+                      sx={{
+                        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+                        fontWeight: 500,
+                        color: '#1E293B',
+                        '&.Mui-selected': {
+                          backgroundColor: 'rgba(59, 136, 128, 0.08)',
+                          color: '#3B8880',
+                          fontWeight: 600,
+                        },
+                        '&:hover': {
+                          backgroundColor: 'rgba(59, 136, 128, 0.04)',
+                        },
+                      }}
+                    >
                       {option}
                     </MenuItem>
                   ))}
@@ -340,12 +444,22 @@ export const Pagination: React.FC<PaginationProps> = ({
           onClick={() => handlePageChange(0)}
           size="small"
           sx={{
-            color: theme.palette.primary.main,
+            color: '#3B8880',
+            backgroundColor: 'transparent',
+            borderRadius: '50%',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              backgroundColor: theme.palette.primary.light + '10',
+              backgroundColor: 'rgba(59, 136, 128, 0.08)',
+              transform: 'scale(1.05)',
+            },
+            '&:focus': {
+              outline: 'none',
+              boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
             },
             '&:disabled': {
-              color: theme.palette.action.disabled,
+              color: '#94A3B8',
+              backgroundColor: 'transparent',
+              transform: 'none',
             },
           }}
         >
@@ -358,12 +472,22 @@ export const Pagination: React.FC<PaginationProps> = ({
           onClick={() => handlePageChange(page - 1)}
           size="small"
           sx={{
-            color: theme.palette.primary.main,
+            color: '#3B8880',
+            backgroundColor: 'transparent',
+            borderRadius: '50%',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              backgroundColor: theme.palette.primary.light + '10',
+              backgroundColor: 'rgba(59, 136, 128, 0.08)',
+              transform: 'scale(1.05)',
+            },
+            '&:focus': {
+              outline: 'none',
+              boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
             },
             '&:disabled': {
-              color: theme.palette.action.disabled,
+              color: '#94A3B8',
+              backgroundColor: 'transparent',
+              transform: 'none',
             },
           }}
         >
@@ -388,12 +512,22 @@ export const Pagination: React.FC<PaginationProps> = ({
           onClick={() => handlePageChange(page + 1)}
           size="small"
           sx={{
-            color: theme.palette.primary.main,
+            color: '#3B8880',
+            backgroundColor: 'transparent',
+            borderRadius: '50%',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              backgroundColor: theme.palette.primary.light + '10',
+              backgroundColor: 'rgba(59, 136, 128, 0.08)',
+              transform: 'scale(1.05)',
+            },
+            '&:focus': {
+              outline: 'none',
+              boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
             },
             '&:disabled': {
-              color: theme.palette.action.disabled,
+              color: '#94A3B8',
+              backgroundColor: 'transparent',
+              transform: 'none',
             },
           }}
         >
@@ -406,12 +540,22 @@ export const Pagination: React.FC<PaginationProps> = ({
           onClick={() => handlePageChange(totalPages - 1)}
           size="small"
           sx={{
-            color: theme.palette.primary.main,
+            color: '#3B8880',
+            backgroundColor: 'transparent',
+            borderRadius: '50%',
+            transition: 'all 0.2s ease-in-out',
             '&:hover': {
-              backgroundColor: theme.palette.primary.light + '10',
+              backgroundColor: 'rgba(59, 136, 128, 0.08)',
+              transform: 'scale(1.05)',
+            },
+            '&:focus': {
+              outline: 'none',
+              boxShadow: '0 0 0 2px rgba(59, 136, 128, 0.2)',
             },
             '&:disabled': {
-              color: theme.palette.action.disabled,
+              color: '#94A3B8',
+              backgroundColor: 'transparent',
+              transform: 'none',
             },
           }}
         >

@@ -3,7 +3,6 @@ import {
   Box,
   Paper,
   Typography,
-  Chip,
   Grid,
   Card,
   CardContent,
@@ -22,9 +21,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useTownship, useDeleteTownship } from '../../services/queries/locations';
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, PageErrorState, DeleteConfirmationDialog } from '../../components/ui';
-import { getStatusChipColor } from '../../utils/statusUtils';
-import { getStatusLabel } from '../../constants/status';
+import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
+
 
 const TownshipDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -167,12 +165,7 @@ const TownshipDetailPage: React.FC = () => {
                     <Typography variant="body2" color="textSecondary">
                       Status
                     </Typography>
-                    <Chip
-                      label={getStatusLabel(township.is_active ? 'active' : 'inactive')}
-                      size="small"
-                      color={getStatusChipColor(township.is_active)}
-                      variant="outlined"
-                    />
+                    <StatusChip status={township.is_active} />
                   </Box>
                 </Grid>
 
@@ -251,12 +244,7 @@ const TownshipDetailPage: React.FC = () => {
                       <Typography variant="body2" color="textSecondary">
                         Region Status
                       </Typography>
-                      <Chip
-                        label={getStatusLabel(township.region.is_active ? 'active' : 'inactive')}
-                        size="small"
-                        color={getStatusChipColor(township.region.is_active)}
-                        variant="outlined"
-                      />
+                      <StatusChip status={township.region.is_active} />
                     </Box>
                   </Grid>
 

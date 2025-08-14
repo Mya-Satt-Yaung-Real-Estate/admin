@@ -236,8 +236,10 @@ const theme = createTheme({
     MuiSelect: {
       styleOverrides: {
         root: {
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: '#3B8880',
+            borderWidth: '2px',
           },
         },
         icon: {
@@ -248,11 +250,17 @@ const theme = createTheme({
     MuiMenuItem: {
       styleOverrides: {
         root: {
+          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
           '&.Mui-selected': {
             backgroundColor: 'rgba(59, 136, 128, 0.08)',
+            color: '#3B8880',
+            fontWeight: 600,
             '&:hover': {
               backgroundColor: 'rgba(59, 136, 128, 0.12)',
             },
+          },
+          '&:hover': {
+            backgroundColor: 'rgba(59, 136, 128, 0.04)',
           },
         },
       },

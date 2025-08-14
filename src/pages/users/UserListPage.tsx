@@ -25,10 +25,10 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination } from '../../components/ui';
+import { Pagination, StatusChip } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
-import { getStatusColor, getStatusLabel } from '../../constants/status';
+
 import { formatRelativeTime } from '../../constants/dateFormats';
 import { FilterState } from '../../constants/filters';
 
@@ -471,11 +471,7 @@ const UserListPage: React.FC = () => {
       id: 'status',
       label: 'Status',
       render: (_, user) => (
-        <Chip
-          label={getStatusLabel(user.status)}
-          color={getStatusColor(user.status)}
-          size="small"
-        />
+        <StatusChip status={user.status} />
       ),
     },
     {
@@ -610,10 +606,8 @@ const UserListPage: React.FC = () => {
                   avatarText={user.avatar}
                   avatarColor="primary.main"
                   status={{
-                    label: getStatusLabel(user.status),
-                    color: getStatusColor(user.status) === 'success' ? 'success' : 
-                           getStatusColor(user.status) === 'error' ? 'error' : 
-                           getStatusColor(user.status) === 'warning' ? 'warning' : 'default',
+                    label: user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'Pending',
+                    color: 'default',
                   }}
                   chips={[
                     {

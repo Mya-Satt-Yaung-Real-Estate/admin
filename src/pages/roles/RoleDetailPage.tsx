@@ -19,12 +19,11 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, PageErrorState, DeleteConfirmationDialog } from '../../components/ui';
+import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
 import { useRole, useDeleteRole } from '../../services/queries/roles';
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
 import { formatDate } from '../../constants/dateFormats';
-import { getStatusChipColor } from '../../utils/statusUtils';
-import { getStatusLabel } from '../../constants/status';
+
 
 const RoleDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -134,12 +133,7 @@ const RoleDetailPage: React.FC = () => {
                 <Typography variant="h4" gutterBottom>
                   {role.name}
                 </Typography>
-                <Chip
-                  label={getStatusLabel(role.is_active ? 'active' : 'inactive')}
-                  color={getStatusChipColor(role.is_active)}
-                  variant="outlined"
-                  size="small"
-                />
+                <StatusChip status={role.is_active} />
               </Box>
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Tooltip title="Edit Role">

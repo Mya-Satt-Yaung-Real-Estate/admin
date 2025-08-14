@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import {
   Box,
   IconButton,
-  Chip,
   Typography,
   Tooltip,
   useTheme,
@@ -28,13 +27,12 @@ import { StandardFilters, FilterField } from '../../components/common/StandardFi
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination } from '../../components/ui';
-import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
+import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
 import { FilterState } from '../../constants/filters';
-import { getStatusChipColor } from '../../utils/statusUtils';
-import { getStatusLabel } from '../../constants/status';
+
 import { Region, Township } from '../../types/location';
 
 // ============================================================================
@@ -270,12 +268,7 @@ const LocationListPage: React.FC = () => {
         id: 'is_active',
         label: 'Status',
         render: (_value, item) => (
-          <Chip
-            label={getStatusLabel(item.is_active ? 'active' : 'inactive')}
-            size="small"
-            color={getStatusChipColor(item.is_active)}
-            variant="outlined"
-          />
+          <StatusChip status={item.is_active} />
         ),
       },
       {
@@ -284,12 +277,20 @@ const LocationListPage: React.FC = () => {
         render: (_value, item) => (
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Tooltip title="View Details">
-              <IconButton size="small" onClick={() => handleView(item)}>
+              <IconButton 
+                size="small" 
+                onClick={() => handleView(item)}
+                color="primary"
+              >
                 <ViewIcon />
               </IconButton>
             </Tooltip>
             <Tooltip title="Edit">
-              <IconButton size="small" onClick={() => handleEdit(item)}>
+              <IconButton 
+                size="small" 
+                onClick={() => handleEdit(item)}
+                color="secondary"
+              >
                 <EditIcon />
               </IconButton>
             </Tooltip>
@@ -297,6 +298,7 @@ const LocationListPage: React.FC = () => {
               <IconButton 
                 size="small" 
                 onClick={() => handleDelete(item)}
+                color="error"
                 disabled={deleteRegionMutation.isPending || deleteTownshipMutation.isPending}
               >
                 <DeleteIcon />
@@ -334,16 +336,19 @@ const LocationListPage: React.FC = () => {
     {
       icon: <ViewIcon />,
       tooltip: 'View',
+      color: 'primary' as const,
       onClick: () => handleView(item),
     },
     {
       icon: <EditIcon />,
       tooltip: 'Edit',
+      color: 'secondary' as const,
       onClick: () => handleEdit(item),
     },
     {
       icon: <DeleteIcon />,
       tooltip: 'Delete',
+      color: 'error' as const,
       onClick: () => handleDelete(item),
     },
   ];
@@ -430,10 +435,10 @@ const LocationListPage: React.FC = () => {
                   description={region.description}
                   avatar={<LocationIcon />}
                   avatarColor="primary.main"
-                  status={{
-                    label: getStatusLabel(region.is_active ? 'active' : 'inactive'),
-                    color: getStatusChipColor(region.is_active),
-                  }}
+                                  status={{
+                  label: region.is_active ? 'Active' : 'Inactive',
+                  color: 'default',
+                }}
                   actions={createMobileCardActions(region)}
                   onClick={() => handleView(region)}
                   clickable
@@ -492,10 +497,10 @@ const LocationListPage: React.FC = () => {
                   description={township.description}
                   avatar={<BusinessIcon />}
                   avatarColor="secondary.main"
-                  status={{
-                    label: getStatusLabel(township.is_active ? 'active' : 'inactive'),
-                    color: getStatusChipColor(township.is_active),
-                  }}
+                                  status={{
+                  label: township.is_active ? 'Active' : 'Inactive',
+                  color: 'default',
+                }}
                   chips={[
                     {
                       label: township.region?.name_en || 'Unknown Region',
