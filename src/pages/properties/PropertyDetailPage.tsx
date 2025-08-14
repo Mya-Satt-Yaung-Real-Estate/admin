@@ -168,10 +168,6 @@ const PropertyDetailPage: React.FC = () => {
           propertyId={property.id}
           propertyTitle={property.title_en}
           verificationStatus={property.verification_status}
-          onSuccess={() => {
-            // Refresh property data after verification
-            window.location.reload();
-          }}
         />
         
         <Tooltip title="Edit Property">
@@ -242,17 +238,27 @@ const PropertyDetailPage: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <HomeIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                      <Typography variant="body2" fontWeight="500">
-                        Property Type: {property.property_type?.name_en || 'N/A'}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" fontWeight="500">
+                          Property Type: {property.property_type?.name_en || 'N/A'}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {property.property_type?.name_mm || ''}
+                        </Typography>
+                      </Box>
                     </Box>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                      <Typography variant="body2" fontWeight="500">
-                        Listing Type: {property.listing_type?.name_en || 'N/A'}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" fontWeight="500">
+                          Listing Type: {property.listing_type?.name_en || 'N/A'}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {property.listing_type?.name_mm || ''}
+                        </Typography>
+                      </Box>
                     </Box>
                   </Grid>
                   <Grid item xs={12} sm={6}>

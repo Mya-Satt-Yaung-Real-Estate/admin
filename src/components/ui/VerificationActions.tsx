@@ -15,6 +15,8 @@ import {
   Cancel as RejectIcon,
 } from '@mui/icons-material';
 import { useApproveProperty, useRejectProperty } from '../../services/queries/properties';
+import { useQueryClient } from '@tanstack/react-query';
+import { propertyKeys } from '../../services/queries/properties';
 
 interface VerificationActionsProps {
   propertyId: number;
@@ -35,6 +37,7 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
   const [rejectionReason, setRejectionReason] = useState('');
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
 
+  const queryClient = useQueryClient();
   const approvePropertyMutation = useApproveProperty();
   const rejectPropertyMutation = useRejectProperty();
 
@@ -46,6 +49,9 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
     approvePropertyMutation.mutate(propertyId, {
       onSuccess: () => {
         setApproveDialogOpen(false);
+        // Invalidate and refetch properties data
+        queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
         onSuccess?.();
       },
     });
@@ -68,6 +74,9 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
         onSuccess: () => {
           setRejectionDialogOpen(false);
           setRejectionReason('');
+          // Invalidate and refetch properties data
+          queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+          queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
           onSuccess?.();
         },
       }

@@ -19,7 +19,7 @@ import {
   Bathtub as BathIcon,
   SquareFoot as AreaIcon,
   Visibility as ViewCountIcon,
-  Category as PropertyTypeIcon,
+
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -98,7 +98,7 @@ const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterFi
       { value: 'all', label: 'All Types' },
       ...propertyTypes.map(type => ({
         value: type.slug,
-        label: type.name_en
+        label: `${type.name_en} (${type.name_mm})`
       }))
     ],
   },
@@ -110,7 +110,7 @@ const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterFi
       { value: 'all', label: 'All Listings' },
       ...listingTypes.map(type => ({
         value: type.slug,
-        label: type.name_en
+        label: `${type.name_en} (${type.name_mm})`
       }))
     ],
   },
@@ -273,10 +273,12 @@ const PropertyListPage: React.FC = () => {
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <PropertyTypeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+          <Box>
             <Typography variant="body2" fontWeight="500">
               {property.property_type?.name_en || 'N/A'}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {property.property_type?.name_mm || ''}
             </Typography>
           </Box>
         );
@@ -289,9 +291,14 @@ const PropertyListPage: React.FC = () => {
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
-          <Typography variant="body2" fontWeight="500">
-            {property.listing_type?.name_en || 'N/A'}
-          </Typography>
+          <Box>
+            <Typography variant="body2" fontWeight="500">
+              {property.listing_type?.name_en || 'N/A'}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {property.listing_type?.name_mm || ''}
+            </Typography>
+          </Box>
         );
       },
       hidden: isMobile,
@@ -427,10 +434,6 @@ const PropertyListPage: React.FC = () => {
               propertyId={property.id}
               propertyTitle={property.title_en}
               verificationStatus={property.verification_status}
-              onSuccess={() => {
-                // Refresh properties data after verification
-                window.location.reload();
-              }}
             />
             
             <Tooltip title="Edit">
@@ -576,17 +579,17 @@ const PropertyListPage: React.FC = () => {
               }}
                             chips={[
                 {
-                  label: property.property_type?.name_en || 'N/A',
+                  label: `${property.property_type?.name_en || 'N/A'} (${property.property_type?.name_mm || ''})`,
                   color: 'primary',
                 },
                 {
-                  label: property.listing_type?.name_en || 'N/A',
+                  label: `${property.listing_type?.name_en || 'N/A'} (${property.listing_type?.name_mm || ''})`,
                   color: 'secondary',
                 },
-                                 {
-                   label: property.formatted_price || 'N/A',
-                   color: 'primary',
-                 },
+                {
+                  label: property.formatted_price || 'N/A',
+                  color: 'primary',
+                },
                 {
                   label: `${property.stats?.view_count || 0} views`,
                   color: 'info',
