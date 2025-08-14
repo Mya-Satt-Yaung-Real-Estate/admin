@@ -18,3 +18,6 @@ export type {
   LoadingSpinnerProps,
   LogoutDialogProps
 } from '@/types/ui';
+
+// Verification Actions
+export { VerificationActions } from './VerificationActions';

@@ -27,7 +27,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, VerificationActions } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
@@ -411,7 +411,7 @@ const PropertyListPage: React.FC = () => {
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Tooltip title="View Details">
               <IconButton
                 size="small"
@@ -421,6 +421,18 @@ const PropertyListPage: React.FC = () => {
                 <ViewIcon />
               </IconButton>
             </Tooltip>
+            
+            {/* Verification Actions */}
+            <VerificationActions
+              propertyId={property.id}
+              propertyTitle={property.title_en}
+              verificationStatus={property.verification_status}
+              onSuccess={() => {
+                // Refresh properties data after verification
+                window.location.reload();
+              }}
+            />
+            
             <Tooltip title="Edit">
               <IconButton
                 size="small"
