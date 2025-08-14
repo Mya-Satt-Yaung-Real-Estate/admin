@@ -25,7 +25,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { MobilePagination } from '../../components/common/MobilePagination';
+import { Pagination } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { getStatusColor, getStatusLabel } from '../../constants/status';
@@ -632,11 +632,13 @@ const UserListPage: React.FC = () => {
               ))}
             </Box>
           )}
-          <MobilePagination
+          <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
             totalCount={filteredUsers.length}
             onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            showResultsInfo={true}
           />
         </Box>
       ) : (

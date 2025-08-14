@@ -6,8 +6,10 @@ export { default as PageEmptyState } from './PageEmptyState';
 export { default as LogoutDialog } from './LogoutDialog';
 export { default as DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 export { default as EnhancedMultiSelect } from './EnhancedMultiSelect';
+export { default as Pagination } from './Pagination';
 export type { DeleteConfirmationDialogProps } from './DeleteConfirmationDialog';
 export type { EnhancedMultiSelectProps, EnhancedMultiSelectOption } from './EnhancedMultiSelect';
+export type { PaginationProps } from './Pagination';
 
 // Types
 export type { 

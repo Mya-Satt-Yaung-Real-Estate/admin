@@ -23,12 +23,12 @@ import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { MobilePagination } from '../../components/common/MobilePagination';
+import { Pagination } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
 import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
 import { FilterState, STATUS_OPTIONS, FILTER_CONFIG } from '../../constants/filters';
-import { PAGINATION_CONFIG } from '../../constants/pagination';
+
 import { 
   PageLoadingState, 
   PageErrorState, 
@@ -104,7 +104,7 @@ const TABLE_CONFIG = {
 const useListPageData = (filters: AdminUserFilters, page: number, rowsPerPage: number): ListPageState => {
   // Data fetching
   const { data: allAdminsData, isLoading, error } = useAdminUsers({
-    per_page: PAGINATION_CONFIG.maxRowsPerPage,
+    per_page: 100, // Fetch all admin users for client-side filtering
     sort_by: 'created_at',
     sort_direction: 'desc',
   });
@@ -452,11 +452,13 @@ const AdminListPage: React.FC = () => {
             );
           })}
           
-          <MobilePagination
-            totalCount={totalCount}
+          <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
+            totalCount={totalCount}
             onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            showResultsInfo={true}
           />
         </Box>
       ) : (

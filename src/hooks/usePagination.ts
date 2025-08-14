@@ -1,14 +1,10 @@
 import { useState, useCallback } from 'react';
-import { PAGINATION_CONFIG, PaginationState, PaginationHandlers } from '../constants/pagination';
-
-export interface ExtendedPaginationHandlers extends PaginationHandlers {
-  resetPagination: () => void;
-}
+import { DEFAULT_PAGE, DEFAULT_ROWS_PER_PAGE, PaginationState, PaginationHandlers } from '../constants/pagination';
 
 export const usePagination = (
-  initialPage: number = PAGINATION_CONFIG.defaultPage,
-  initialRowsPerPage: number = PAGINATION_CONFIG.defaultRowsPerPage
-): PaginationState & ExtendedPaginationHandlers => {
+  initialPage: number = DEFAULT_PAGE,
+  initialRowsPerPage: number = DEFAULT_ROWS_PER_PAGE
+): PaginationState & PaginationHandlers => {
   const [page, setPage] = useState(initialPage);
   const [rowsPerPage, setRowsPerPage] = useState(initialRowsPerPage);
 
@@ -22,16 +18,10 @@ export const usePagination = (
     setPage(0); // Reset to first page when changing rows per page
   }, []);
 
-  const resetPagination = useCallback(() => {
-    setPage(PAGINATION_CONFIG.defaultPage);
-    setRowsPerPage(PAGINATION_CONFIG.defaultRowsPerPage);
-  }, []);
-
   return {
     page,
     rowsPerPage,
     handleChangePage,
     handleChangeRowsPerPage,
-    resetPagination,
   };
 }; 

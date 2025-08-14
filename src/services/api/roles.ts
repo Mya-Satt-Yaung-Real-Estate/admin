@@ -10,31 +10,31 @@ export const rolesAPI = {
         Object.entries(params).filter(([_, value]) => value !== undefined && value !== null && value !== '')
       );
       const queryString = new URLSearchParams(cleanParams as any).toString();
-      return apiRequest<Role[]>(`/role${queryString ? '?' + queryString : ''}`);
+      return apiRequest<Role[]>(`/roles${queryString ? '?' + queryString : ''}`);
     }
-    return apiRequest<Role[]>(`/role`);
+    return apiRequest<Role[]>(`/roles`);
   },
 
   // Create new role
   create: (data: CreateRoleData) =>
-    apiRequest<Role>('/role', {
+    apiRequest<Role>('/roles', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Get single role
   get: (slug: string) =>
-    apiRequest<Role>(`/role/${slug}`),
+    apiRequest<Role>(`/roles/${slug}`),
 
   // Update role
   update: (slug: string, data: UpdateRoleData) =>
-    apiRequest<Role>(`/role/${slug}`, {
+    apiRequest<Role>(`/roles/${slug}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   // Delete role
   delete: (slug: string) =>
-    apiRequest(`/role/${slug}`, { method: 'DELETE' }),
+    apiRequest(`/roles/${slug}`, { method: 'DELETE' }),
 };
 

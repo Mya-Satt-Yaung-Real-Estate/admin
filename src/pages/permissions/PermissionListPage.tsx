@@ -14,7 +14,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard } from '../../components/common/MobileCard';
-import { MobilePagination } from '../../components/common/MobilePagination';
+import { Pagination } from '../../components/ui';
 import { PageLoadingState, PageErrorState, PageEmptyState } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
@@ -239,11 +239,13 @@ const PermissionListPage: React.FC = () => {
               }
             />
           ))}
-          <MobilePagination
+          <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
             totalCount={filteredPermissions.length}
             onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            showResultsInfo={true}
           />
         </Box>
       ) : (

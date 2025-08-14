@@ -10,31 +10,31 @@ export const permissionsAPI = {
         Object.entries(params).filter(([_, value]) => value !== undefined && value !== null && value !== '')
       );
       const queryString = new URLSearchParams(cleanParams as any).toString();
-      return apiRequest<Permission[]>(`/permission${queryString ? '?' + queryString : ''}`);
+      return apiRequest<Permission[]>(`/permissions${queryString ? '?' + queryString : ''}`);
     }
-    return apiRequest<Permission[]>(`/permission`);
+    return apiRequest<Permission[]>(`/permissions`);
   },
 
   // Create new permission
   create: (data: CreatePermissionData) =>
-    apiRequest<Permission>('/permission', {
+    apiRequest<Permission>('/permissions', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Get single permission
   get: (slug: string) =>
-    apiRequest<Permission>(`/permission/${slug}`),
+    apiRequest<Permission>(`/permissions/${slug}`),
 
   // Update permission
   update: (slug: string, data: UpdatePermissionData) =>
-    apiRequest<Permission>(`/permission/${slug}`, {
+    apiRequest<Permission>(`/permissions/${slug}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
   // Delete permission
   delete: (slug: string) =>
-    apiRequest(`/permission/${slug}`, { method: 'DELETE' }),
+    apiRequest(`/permissions/${slug}`, { method: 'DELETE' }),
 };
 

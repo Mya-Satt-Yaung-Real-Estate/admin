@@ -233,6 +233,30 @@ const theme = createTheme({
         },
       },
     },
+    MuiSelect: {
+      styleOverrides: {
+        root: {
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#3B8880',
+          },
+        },
+        icon: {
+          color: '#3B8880',
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          '&.Mui-selected': {
+            backgroundColor: 'rgba(59, 136, 128, 0.08)',
+            '&:hover': {
+              backgroundColor: 'rgba(59, 136, 128, 0.12)',
+            },
+          },
+        },
+      },
+    },
   },
 });
 
