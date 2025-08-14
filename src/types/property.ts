@@ -142,12 +142,14 @@ export interface CreatePropertyTypeData {
   name_mm: string;
   name_en: string;
   description?: string;
+  is_active?: boolean;
 }
 
 export interface UpdatePropertyTypeData {
   name_mm?: string;
   name_en?: string;
   description?: string;
+  is_active?: boolean;
 }
 
 // Property Listing Type
@@ -166,6 +168,7 @@ export interface CreatePropertyListingTypeData {
   name_en: string;
   description?: string;
   sort_order?: number;
+  is_active?: boolean;
 }
 
 export interface UpdatePropertyListingTypeData {
@@ -173,6 +176,7 @@ export interface UpdatePropertyListingTypeData {
   name_en?: string;
   description?: string;
   sort_order?: number;
+  is_active?: boolean;
 }
 
 // Property Verification

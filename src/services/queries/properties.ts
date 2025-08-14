@@ -161,3 +161,115 @@ export const usePropertyListingTypes = (params?: QueryParams) => {
     gcTime: 60 * 60 * 1000, // 1 hour
   });
 };
+
+
+
+// Get property type by slug
+export const usePropertyType = (slug: string) => {
+  return useQuery({
+    queryKey: [...propertyKeys.propertyTypes(), 'detail', slug],
+    queryFn: () => propertiesAPI.getPropertyType(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Create property type
+export const useCreatePropertyType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => propertiesAPI.createPropertyType(data),
+    onSuccess: () => {
+      // Invalidate and refetch property types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.propertyTypes() });
+    },
+  });
+};
+
+// Update property type
+export const useUpdatePropertyType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: any }) =>
+      propertiesAPI.updatePropertyType(slug, data),
+    onSuccess: (data, variables) => {
+      // Update the specific property type in cache
+      queryClient.setQueryData(
+        [...propertyKeys.propertyTypes(), 'detail', variables.slug],
+        data
+      );
+      // Invalidate and refetch property types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.propertyTypes() });
+    },
+  });
+};
+
+// Delete property type
+export const useDeletePropertyType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (slug: string) => propertiesAPI.deletePropertyType(slug),
+    onSuccess: () => {
+      // Invalidate and refetch property types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.propertyTypes() });
+    },
+  });
+};
+
+// Get property listing type by slug
+export const usePropertyListingType = (slug: string) => {
+  return useQuery({
+    queryKey: [...propertyKeys.listingTypes(), 'detail', slug],
+    queryFn: () => propertiesAPI.getPropertyListingType(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Create property listing type
+export const useCreatePropertyListingType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => propertiesAPI.createPropertyListingType(data),
+    onSuccess: () => {
+      // Invalidate and refetch listing types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.listingTypes() });
+    },
+  });
+};
+
+// Update property listing type
+export const useUpdatePropertyListingType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: any }) =>
+      propertiesAPI.updatePropertyListingType(slug, data),
+    onSuccess: (data, variables) => {
+      // Update the specific listing type in cache
+      queryClient.setQueryData(
+        [...propertyKeys.listingTypes(), 'detail', variables.slug],
+        data
+      );
+      // Invalidate and refetch listing types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.listingTypes() });
+    },
+  });
+};
+
+// Delete property listing type
+export const useDeletePropertyListingType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (slug: string) => propertiesAPI.deletePropertyListingType(slug),
+    onSuccess: () => {
+      // Invalidate and refetch listing types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.listingTypes() });
+    },
+  });
+};

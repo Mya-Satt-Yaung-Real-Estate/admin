@@ -68,5 +68,49 @@ export const propertiesAPI = {
     const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
     return apiRequest<PropertyListingType[]>(`/property-listing-types${queryString}`);
   },
+
+  // Get Property Type by slug
+  getPropertyType: (slug: string) =>
+    apiRequest<PropertyType>(`/property-types/${slug}`),
+
+  // Create Property Type
+  createPropertyType: (data: any) =>
+    apiRequest<PropertyType>('/property-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update Property Type
+  updatePropertyType: (slug: string, data: any) =>
+    apiRequest<PropertyType>(`/property-types/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete Property Type
+  deletePropertyType: (slug: string) =>
+    apiRequest(`/property-types/${slug}`, { method: 'DELETE' }),
+
+  // Get Property Listing Type by slug
+  getPropertyListingType: (slug: string) =>
+    apiRequest<PropertyListingType>(`/property-listing-types/${slug}`),
+
+  // Create Property Listing Type
+  createPropertyListingType: (data: any) =>
+    apiRequest<PropertyListingType>('/property-listing-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update Property Listing Type
+  updatePropertyListingType: (slug: string, data: any) =>
+    apiRequest<PropertyListingType>(`/property-listing-types/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete Property Listing Type
+  deletePropertyListingType: (slug: string) =>
+    apiRequest(`/property-listing-types/${slug}`, { method: 'DELETE' }),
 };
 

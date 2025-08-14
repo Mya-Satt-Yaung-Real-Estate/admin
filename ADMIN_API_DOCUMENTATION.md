@@ -1356,6 +1356,33 @@ All API responses follow a standardized format:
 }
 ```
 
+### Detail Users
+**GET** `/users/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** * For Individual User *
+{
+    "success": true,
+    "message": "User retrieved successfully",
+    "data": {
+        "user": {
+            "id": 10,
+            "name": "individualUser",
+            "slug": "individualuser",
+            "email": "individual.user@example.com",
+            "user_type": "individual",
+            "member_level": "silver",
+            "is_active": true,
+            "last_login_at": null,
+            "last_active_at": null,
+            "email_verified_at": null,
+            "created_at": "2025-08-14T06:27:07.000000Z",
+            "updated_at": "2025-08-14T06:27:07.000000Z"
+        }
+    }
+}
+
 ## Error Codes
 
 | Code | Description |

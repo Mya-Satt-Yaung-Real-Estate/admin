@@ -15,20 +15,36 @@ export const MENU_ITEMS = [
     path: '/properties',
   },
   {
-    text: 'Location',
-    iconName: 'LocationOn',
-    path: '/locations',
+    text: 'Master Data',
+    iconName: 'Assessment',
+    children: [
+      {
+        text: 'Locations',
+        iconName: 'LocationOn',
+        path: '/locations',
+      },
+      {
+        text: 'Property Types',
+        iconName: 'Category',
+        path: '/property-types',
+      },
+      {
+        text: 'Listing Types',
+        iconName: 'List',
+        path: '/property-listing-types',
+      },
+    ],
   },
   // {
   //   text: 'Analytics',
   //   iconName: 'Assessment',
   //   path: '/analytics',
   // },
-  // {
-  //   text: 'Settings',
-  //   iconName: 'Settings',
-  //   path: '/settings',
-  // },
+  {
+    text: 'Settings',
+    iconName: 'Settings',
+    path: '/settings',
+  },
   {
     text: 'Admins',
     iconName: 'People',
