@@ -12,6 +12,8 @@ export const propertyKeys = {
   detail: (id: number) => [...propertyKeys.details(), id] as const,
   pending: () => [...propertyKeys.all, 'pending'] as const,
   published: () => [...propertyKeys.all, 'published'] as const,
+  propertyTypes: () => [...propertyKeys.all, 'propertyTypes'] as const,
+  listingTypes: () => [...propertyKeys.all, 'listingTypes'] as const,
 };
 
 // Get list of properties
@@ -137,5 +139,25 @@ export const useRejectProperty = () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.pending() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.published() });
     },
+  });
+};
+
+// Get property types
+export const usePropertyTypes = (params?: QueryParams) => {
+  return useQuery({
+    queryKey: [...propertyKeys.propertyTypes(), params],
+    queryFn: () => propertiesAPI.getPropertyTypes(params),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
+  });
+};
+
+// Get property listing types
+export const usePropertyListingTypes = (params?: QueryParams) => {
+  return useQuery({
+    queryKey: [...propertyKeys.listingTypes(), params],
+    queryFn: () => propertiesAPI.getPropertyListingTypes(params),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
   });
 };

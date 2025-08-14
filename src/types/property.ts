@@ -3,35 +3,72 @@ import { User, Region, Township } from './index';
 // Property Types based on API Documentation
 export interface Property {
   id: number;
+  user_id: number;
   title_en: string;
   title_mm: string;
   description: string;
-  price: number;
-  area_sqft: number;
-  bedrooms?: number;
-  bathrooms?: number;
   property_condition: 'new' | 'good' | 'fair' | 'poor';
-  status: 'published' | 'draft' | 'pending' | 'rejected';
+  status: 'published' | 'draft' | 'sold' | 'rented';
   verification_status: 'pending' | 'approved' | 'rejected';
   is_featured: boolean;
-  is_verified: boolean;
-  address: string;
-  latitude?: number;
-  longitude?: number;
+  price: string;
+  formatted_price: string;
+  area_sqft: string;
+  bedrooms?: number;
+  bathrooms?: number;
   bank_installment_available?: boolean;
   features?: string[];
-  owner_name: string;
-  phone_numbers: string[];
-  email: string;
-  published_at?: string;
-  expires_at?: string;
-  created_at: string;
-  updated_at: string;
+  location: {
+    region: Region;
+    township: Township;
+    address: string;
+    latitude?: string;
+    longitude?: string;
+    location_string: string;
+    location_string_mm: string;
+  };
+  contact_info: {
+    owner_name: string;
+    phone_numbers: string[];
+    email: string;
+  };
+  stats: {
+    view_count: number;
+    contact_count: number;
+    favorite_count: number;
+  };
+  dates: {
+    published_at?: string;
+    expires_at?: string;
+    created_at: string;
+    verified_at?: string;
+  };
+  rejection_reason?: string;
+  is_published: boolean;
+  is_draft: boolean;
+  is_sold: boolean;
+  is_rented: boolean;
+  is_expired: boolean;
+  can_be_published: boolean;
+  is_approved: boolean;
+  is_pending_approval: boolean;
+  is_rejected: boolean;
+  media?: {
+    images: Array<{
+      id: number;
+      type: string;
+      filename: string;
+      is_primary: boolean;
+      status: string;
+      url: string;
+      small_url: string;
+      medium_url: string;
+      thumbnail_url: string;
+    }>;
+  };
   user?: User;
   property_type?: PropertyType;
   listing_type?: PropertyListingType;
-  region?: Region;
-  township?: Township;
 }
 
 export interface CreatePropertyData {
@@ -55,7 +92,7 @@ export interface CreatePropertyData {
   owner_name: string;
   phone_numbers: string[];
   email: string;
-  status?: 'published' | 'draft' | 'pending';
+  status?: 'published' | 'draft' | 'sold' | 'rented';
   is_featured?: boolean;
   is_verified?: boolean;
   published_at?: string;

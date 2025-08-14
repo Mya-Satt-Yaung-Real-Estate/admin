@@ -1,6 +1,6 @@
 // Properties API functions
 import { apiRequest, QueryParams } from './base';
-import { Property, CreatePropertyData, UpdatePropertyData } from '../../types/property';
+import { Property, CreatePropertyData, UpdatePropertyData, PropertyType, PropertyListingType } from '../../types/property';
 
 export const propertiesAPI = {
   // Get list of properties
@@ -56,5 +56,17 @@ export const propertiesAPI = {
       method: 'POST',
       body: JSON.stringify({ action: 'reject', reason }),
     }),
+
+  // Property Types
+  getPropertyTypes: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<PropertyType[]>(`/property-types${queryString}`);
+  },
+
+  // Property Listing Types
+  getPropertyListingTypes: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<PropertyListingType[]>(`/property-listing-types${queryString}`);
+  },
 };
 

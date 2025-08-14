@@ -3,11 +3,13 @@ import { Chip, ChipProps } from '@mui/material';
 
 export interface StatusChipProps extends Omit<ChipProps, 'color'> {
   status: string | boolean;
+  statusType?: 'status' | 'verification_status';
   size?: 'small' | 'medium';
 }
 
 export const StatusChip: React.FC<StatusChipProps> = ({ 
   status, 
+  statusType = 'status',
   size = 'small',
   ...chipProps 
 }) => {
@@ -16,64 +18,111 @@ export const StatusChip: React.FC<StatusChipProps> = ({
     ? (status ? 'active' : 'inactive')
     : status;
 
-  // Get status label
-  const getStatusLabel = (status: string): string => {
-    const statusMap: Record<string, string> = {
-      active: 'Active',
-      inactive: 'Inactive',
-      pending: 'Pending',
-      draft: 'Draft',
-      published: 'Published',
-      archived: 'Archived',
-    };
-    return statusMap[status] || status;
+  // Get status label based on status type
+  const getStatusLabel = (status: string, type: 'status' | 'verification_status'): string => {
+    if (type === 'verification_status') {
+      const verificationStatusMap: Record<string, string> = {
+        pending: 'Pending',
+        approved: 'Approved',
+        rejected: 'Rejected',
+      };
+      return verificationStatusMap[status] || status;
+    } else {
+      const statusMap: Record<string, string> = {
+        active: 'Active',
+        inactive: 'Inactive',
+        published: 'Published',
+        draft: 'Draft',
+        sold: 'Sold',
+        rented: 'Rented',
+        pending: 'Pending',
+        rejected: 'Rejected',
+      };
+      return statusMap[status] || status;
+    }
   };
 
-  // Get status colors
-  const getStatusColors = (status: string) => {
-    const colorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
-      active: {
-        text: '#3B8880', // Teal-green
-        border: '#3B8880',
-        hoverBg: '#F0F9F8',
-        hoverBorder: '#2F6B64',
-      },
-      inactive: {
-        text: '#DC2626', // Red
-        border: '#DC2626',
-        hoverBg: '#FEF2F2',
-        hoverBorder: '#B91C1C',
-      },
-      pending: {
-        text: '#D97706', // Orange
-        border: '#D97706',
-        hoverBg: '#FFFBEB',
-        hoverBorder: '#B45309',
-      },
-      draft: {
-        text: '#6B7280', // Gray
-        border: '#6B7280',
-        hoverBg: '#F9FAFB',
-        hoverBorder: '#4B5563',
-      },
-      published: {
-        text: '#059669', // Green
-        border: '#059669',
-        hoverBg: '#ECFDF5',
-        hoverBorder: '#047857',
-      },
-      archived: {
-        text: '#7C3AED', // Purple
-        border: '#7C3AED',
-        hoverBg: '#F5F3FF',
-        hoverBorder: '#5B21B6',
-      },
-    };
-    return colorMap[status] || colorMap.inactive;
+  // Get status colors based on status type
+  const getStatusColors = (status: string, type: 'status' | 'verification_status') => {
+    if (type === 'verification_status') {
+      const verificationColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
+        pending: {
+          text: '#D97706', // Orange
+          border: '#D97706',
+          hoverBg: '#FFFBEB',
+          hoverBorder: '#B45309',
+        },
+        approved: {
+          text: '#059669', // Green
+          border: '#059669',
+          hoverBg: '#ECFDF5',
+          hoverBorder: '#047857',
+        },
+        rejected: {
+          text: '#DC2626', // Red
+          border: '#DC2626',
+          hoverBg: '#FEF2F2',
+          hoverBorder: '#B91C1C',
+        },
+      };
+      return verificationColorMap[status] || verificationColorMap.pending;
+    } else {
+      const statusColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
+        active: {
+          text: '#3B8880', // Teal-green
+          border: '#3B8880',
+          hoverBg: '#F0F9F8',
+          hoverBorder: '#2F6B64',
+        },
+        inactive: {
+          text: '#DC2626', // Red
+          border: '#DC2626',
+          hoverBg: '#FEF2F2',
+          hoverBorder: '#B91C1C',
+        },
+        published: {
+          text: '#059669', // Green
+          border: '#059669',
+          hoverBg: '#ECFDF5',
+          hoverBorder: '#047857',
+        },
+        draft: {
+          text: '#6B7280', // Gray
+          border: '#6B7280',
+          hoverBg: '#F9FAFB',
+          hoverBorder: '#4B5563',
+        },
+        sold: {
+          text: '#7C3AED', // Purple
+          border: '#7C3AED',
+          hoverBg: '#F5F3FF',
+          hoverBorder: '#5B21B6',
+        },
+        rented: {
+          text: '#0891B2', // Cyan
+          border: '#0891B2',
+          hoverBg: '#ECFEFF',
+          hoverBorder: '#0E7490',
+        },
+        pending: {
+          text: '#D97706', // Orange
+          border: '#D97706',
+          hoverBg: '#FFFBEB',
+          hoverBorder: '#B45309',
+        },
+        rejected: {
+          text: '#DC2626', // Red
+          border: '#DC2626',
+          hoverBg: '#FEF2F2',
+          hoverBorder: '#B91C1C',
+        },
+      };
+      return statusColorMap[status] || statusColorMap.inactive;
+    }
   };
 
-  const label = getStatusLabel(statusString);
-  const colors = getStatusColors(statusString);
+  const label = getStatusLabel(statusString, statusType);
+  const colors = getStatusColors(statusString, statusType);
 
   return (
     <Chip

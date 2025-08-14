@@ -9,6 +9,7 @@ import { adminUserRoutes } from './admin-users';
 import { roleRoutes } from './roles';
 import { permissionRoutes } from './permissions';
 import { locationRoutes } from './locations';
+import { propertyRoutes } from './properties';
 import { userRoutes } from './users';
 import { analyticsRoutes } from './analytics';
 import { settingsRoutes } from './settings';
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
   ...roleRoutes,
   ...permissionRoutes,
   ...locationRoutes,
+  ...propertyRoutes,
   ...userRoutes,
   ...analyticsRoutes,
   ...settingsRoutes,

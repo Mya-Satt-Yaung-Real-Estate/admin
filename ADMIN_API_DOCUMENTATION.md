@@ -300,48 +300,122 @@ All API responses follow a standardized format:
   "message": "Properties retrieved successfully",
   "data": [
     {
-      "id": 1,
-      "title_en": "Beautiful House",
-      "title_mm": "လှပတဲ့ အိမ်",
-      "description": "A beautiful house for sale",
-      "price": 500000,
-      "area_sqft": 1500,
-      "bedrooms": 3,
-      "bathrooms": 2,
-      "property_condition": "good",
-      "status": "published",
-      "verification_status": "approved",
-      "is_featured": false,
-      "is_verified": true,
-      "published_at": "2024-01-15T10:30:00.000000Z",
-      "created_at": "2024-01-15T10:30:00.000000Z",
-      "updated_at": "2024-01-15T10:30:00.000000Z",
-      "user": {
-        "id": 1,
-        "name": "Property Owner",
-        "email": "owner@example.com"
-      },
-      "property_type": {
-        "id": 1,
-        "name_en": "House",
-        "name_mm": "အိမ်"
-      },
-      "listing_type": {
-        "id": 1,
-        "name_en": "For Sale",
-        "name_mm": "ရောင်းရန်"
-      },
-      "region": {
-        "id": 1,
-        "name_en": "Yangon",
-        "name_mm": "ရန်ကုန်"
-      },
-      "township": {
-        "id": 1,
-        "name_en": "Downtown",
-        "name_mm": "မြို့လယ်"
-      }
-    }
+            "id": 3,
+            "user_id": 3,
+            "property_type": {
+                "id": 1,
+                "name_en": "House",
+                "name_mm": "အိမ်",
+                "slug": "house"
+            },
+            "listing_type": {
+                "id": 1,
+                "name_en": "For Sale",
+                "name_mm": "ရောင်းရန်",
+                "slug": "for-sale"
+            },
+            "title_en": "Beautiful House for Sale 3",
+            "title_mm": "လှပတဲ့ အိမ်ရောင်းမယ် 3",
+            "description": "This is a beautiful 3-bedroom house located in a prime area. Perfect for families looking for a comfortable home with modern amenities.",
+            "property_condition": "good",
+            "location": {
+                "region": {
+                    "id": 1,
+                    "name_en": "Yangon",
+                    "name_mm": "ရန်ကုန်"
+                },
+                "township": {
+                    "id": 1,
+                    "name_en": "Downtown",
+                    "name_mm": "မြို့ပြ"
+                },
+                "address": "123 Main Street, Downtown",
+                "latitude": "16.86610000",
+                "longitude": "96.19510000",
+                "location_string": "Downtown, Yangon",
+                "location_string_mm": "မြို့ပြ, ရန်ကုန်"
+            },
+            "price": "150000000.00",
+            "formatted_price": "150,000,000 MMK",
+            "area_sqft": "2500.00",
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "bank_installment_available": true,
+            "features": [
+                "parking",
+                "swimming_pool"
+            ],
+            "contact_info": {
+                "owner_name": "John Doe",
+                "phone_numbers": [
+                    "09123456789",
+                    "09234567890"
+                ],
+                "email": "john.doe@example.com"
+            },
+            "status": "draft",
+            "is_featured": false,
+            "stats": {
+                "view_count": 0,
+                "contact_count": 0,
+                "favorite_count": 0
+            },
+            "dates": {
+                "published_at": null,
+                "expires_at": null,
+                "created_at": "2025-08-14T06:58:01.000000Z",
+                "verified_at": null
+            },
+            "verification_status": "pending",
+            "rejection_reason": null,
+            "is_published": false,
+            "is_draft": true,
+            "is_sold": false,
+            "is_rented": false,
+            "is_expired": false,
+            "can_be_published": true,
+            "is_approved": false,
+            "is_pending_approval": true,
+            "is_rejected": false,
+            "media": {
+                "images": [
+                    {
+                        "id": 19,
+                        "type": "image",
+                        "filename": "SampleJPGImage_2mbmb.jpg",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a23efd9.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a21a5ec_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a22be74_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a207803_thumbnail.jpg"
+                    },
+                    {
+                        "id": 18,
+                        "type": "image",
+                        "filename": "SampleJPGImage_2mbmb.jpg",
+                        "is_primary": true,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a0abb90.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a08ac28_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a099c20_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a07c728_thumbnail.jpg"
+                    }
+                ],
+                "videos": [],
+                "primary_image": {
+                    "id": 18,
+                    "type": "image",
+                    "filename": "SampleJPGImage_2mbmb.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a0abb90.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a08ac28_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a099c20_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88a07c728_thumbnail.jpg"
+                }
+            }
+        },
   ],
   "pagination": { ... }
 }
@@ -376,37 +450,122 @@ All API responses follow a standardized format:
   "success": true,
   "message": "Property retrieved successfully",
   "data": {
-    "id": 1,
-    "title_en": "Beautiful House",
-    "title_mm": "လှပတဲ့ အိမ်",
-    "description": "A beautiful house for sale",
-    "price": 500000,
-    "area_sqft": 1500,
-    "bedrooms": 3,
-    "bathrooms": 2,
-    "property_condition": "good",
-    "status": "published",
-    "verification_status": "approved",
-    "is_featured": false,
-    "is_verified": true,
-    "address": "123 Main Street",
-    "latitude": 16.8661,
-    "longitude": 96.1951,
-    "bank_installment_available": true,
-    "features": ["garden", "parking"],
-    "owner_name": "John Doe",
-    "phone_numbers": ["+959123456789"],
-    "email": "owner@example.com",
-    "published_at": "2024-01-15T10:30:00.000000Z",
-    "expires_at": "2024-02-15T10:30:00.000000Z",
-    "created_at": "2024-01-15T10:30:00.000000Z",
-    "updated_at": "2024-01-15T10:30:00.000000Z",
-    "user": { ... },
-    "property_type": { ... },
-    "listing_type": { ... },
-    "region": { ... },
-    "township": { ... }
-  }
+        "id": 1,
+        "user_id": 3,
+        "property_type": {
+            "id": 1,
+            "name_en": "House",
+            "name_mm": "အိမ်",
+            "slug": "house"
+        },
+        "listing_type": {
+            "id": 1,
+            "name_en": "For Sale",
+            "name_mm": "ရောင်းရန်",
+            "slug": "for-sale"
+        },
+        "title_en": "Beautiful House for Sale 1",
+        "title_mm": "လှပတဲ့ အိမ်ရောင်းမယ် 3",
+        "description": "This is a beautiful 3-bedroom house located in a prime area. Perfect for families looking for a comfortable home with modern amenities.",
+        "property_condition": "good",
+        "location": {
+            "region": {
+                "id": 1,
+                "name_en": "Yangon",
+                "name_mm": "ရန်ကုန်"
+            },
+            "township": {
+                "id": 1,
+                "name_en": "Downtown",
+                "name_mm": "မြို့ပြ"
+            },
+            "address": "123 Main Street, Downtown",
+            "latitude": "16.86610000",
+            "longitude": "96.19510000",
+            "location_string": "Downtown, Yangon",
+            "location_string_mm": "မြို့ပြ, ရန်ကုန်"
+        },
+        "price": "150000000.00",
+        "formatted_price": "150,000,000 MMK",
+        "area_sqft": "2500.00",
+        "bedrooms": 3,
+        "bathrooms": 2,
+        "bank_installment_available": true,
+        "features": [
+            "parking",
+            "swimming_pool"
+        ],
+        "contact_info": {
+            "owner_name": "John Doe",
+            "phone_numbers": [
+                "09123456789",
+                "09234567890"
+            ],
+            "email": "john.doe@example.com"
+        },
+        "status": "published",
+        "is_featured": false,
+        "stats": {
+            "view_count": 3,
+            "contact_count": 0,
+            "favorite_count": 0
+        },
+        "dates": {
+            "published_at": "2025-08-14T06:57:27.000000Z",
+            "expires_at": null,
+            "created_at": "2025-08-14T06:57:27.000000Z",
+            "verified_at": null
+        },
+        "verification_status": "pending",
+        "rejection_reason": null,
+        "is_published": true,
+        "is_draft": false,
+        "is_sold": false,
+        "is_rented": false,
+        "is_expired": false,
+        "can_be_published": false,
+        "is_approved": false,
+        "is_pending_approval": true,
+        "is_rejected": false,
+        "media": {
+            "images": [
+                {
+                    "id": 15,
+                    "type": "image",
+                    "filename": "SampleJPGImage_2mbmb.jpg",
+                    "is_primary": false,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8898c701f.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8898a88ae_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8898b8837_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8898983cd_thumbnail.jpg"
+                },
+                {
+                    "id": 14,
+                    "type": "image",
+                    "filename": "SampleJPGImage_2mbmb.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d889436d98.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d889402a3a_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88941c28b_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8893dc2f2_thumbnail.jpg"
+                }
+            ],
+            "videos": [],
+            "primary_image": {
+                "id": 14,
+                "type": "image",
+                "filename": "SampleJPGImage_2mbmb.jpg",
+                "is_primary": true,
+                "status": "completed",
+                "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d889436d98.jpg",
+                "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d889402a3a_small.jpg",
+                "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d88941c28b_medium.jpg",
+                "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8893dc2f2_thumbnail.jpg"
+            }
+        }
+    }
 }
 ```
 
@@ -771,7 +930,7 @@ All API responses follow a standardized format:
 ## Property Type Management
 
 ### List Property Types
-**GET** `/property-type`
+**GET** `/property-types`
 
 **Headers:** `Authorization: Bearer {token}`
 
@@ -859,7 +1018,7 @@ All API responses follow a standardized format:
 ## Property Listing Type Management
 
 ### List Property Listing Types
-**GET** `/property-listing-type`
+**GET** `/property-listing-types`
 
 **Headers:** `Authorization: Bearer {token}`
 

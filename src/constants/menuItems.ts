@@ -10,20 +10,25 @@ export const MENU_ITEMS = [
     path: '/users',
   },
   {
+    text: 'Properties',
+    iconName: 'Home',
+    path: '/properties',
+  },
+  {
     text: 'Location',
     iconName: 'LocationOn',
     path: '/locations',
   },
-  {
-    text: 'Analytics',
-    iconName: 'Assessment',
-    path: '/analytics',
-  },
-  {
-    text: 'Settings',
-    iconName: 'Settings',
-    path: '/settings',
-  },
+  // {
+  //   text: 'Analytics',
+  //   iconName: 'Assessment',
+  //   path: '/analytics',
+  // },
+  // {
+  //   text: 'Settings',
+  //   iconName: 'Settings',
+  //   path: '/settings',
+  // },
   {
     text: 'Admins',
     iconName: 'People',
