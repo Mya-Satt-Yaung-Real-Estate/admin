@@ -32,6 +32,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Image as ImageIcon,
+  PlayArrow as PlayIcon,
+
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProperty, useDeleteProperty } from '../../services/queries/properties';
@@ -45,9 +47,11 @@ const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const theme = useTheme();
 
-  // Image viewer state
+  // Media viewer state
   const [selectedImage, setSelectedImage] = useState<any>(null);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [videoViewerOpen, setVideoViewerOpen] = useState(false);
   
 
 
@@ -90,6 +94,17 @@ const PropertyDetailPage: React.FC = () => {
   const handleCloseImageViewer = () => {
     setImageViewerOpen(false);
     setSelectedImage(null);
+  };
+
+  // Video viewer handlers
+  const handleVideoClick = (video: any) => {
+    setSelectedVideo(video);
+    setVideoViewerOpen(true);
+  };
+
+  const handleCloseVideoViewer = () => {
+    setVideoViewerOpen(false);
+    setSelectedVideo(null);
   };
 
 
@@ -522,7 +537,7 @@ const PropertyDetailPage: React.FC = () => {
         </Grid>
 
         {/* Media Section */}
-        {property.media?.images && property.media.images.length > 0 && (
+        {property.media && (property.media.images?.length > 0 || property.media.videos?.length > 0) && (
           <Grid item xs={12}>
             <Card>
               <CardContent>
@@ -532,7 +547,7 @@ const PropertyDetailPage: React.FC = () => {
                   </Avatar>
                   <Box>
                     <Typography variant="h6" fontWeight={600}>
-                      Media ({property.media.images.length} images)
+                      Media ({property.media?.images?.length || 0} images, {property.media?.videos?.length || 0} videos)
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
                       Property photos and videos
@@ -543,7 +558,8 @@ const PropertyDetailPage: React.FC = () => {
                 <Divider sx={{ mb: 2 }} />
 
                 <Grid container spacing={2}>
-                  {property.media.images.map((image) => (
+                  {/* Images */}
+                  {property.media?.images?.map((image) => (
                     <Grid item xs={12} sm={6} md={4} lg={3} key={image.id}>
                       <Paper
                         sx={{
@@ -575,6 +591,63 @@ const PropertyDetailPage: React.FC = () => {
                         </Typography>
                         <Typography variant="caption" display="block" color="textSecondary">
                           Click to view
+                        </Typography>
+                      </Paper>
+                    </Grid>
+                  ))}
+                  
+                  {/* Videos */}
+                  {property.media?.videos?.map((video) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={video.id}>
+                      <Paper
+                        sx={{
+                          p: 1,
+                          textAlign: 'center',
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                          '&:hover': {
+                            transform: 'scale(1.02)',
+                            boxShadow: theme.shadows[4],
+                          },
+                        }}
+                        onClick={() => handleVideoClick(video)}
+                      >
+                        <Box sx={{ position: 'relative' }}>
+                          <img
+                            src={video.thumbnail_url || '/placeholder-video.jpg'}
+                            alt={video.filename}
+                            style={{
+                              width: '100%',
+                              height: '150px',
+                              objectFit: 'cover',
+                              borderRadius: '4px',
+                            }}
+                          />
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              bgcolor: 'rgba(0, 0, 0, 0.7)',
+                              borderRadius: '50%',
+                              width: 48,
+                              height: 48,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <PlayIcon sx={{ color: 'white', fontSize: 24 }} />
+                          </Box>
+                        </Box>
+                        <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                          Video
+                        </Typography>
+                        <Typography variant="caption" display="block" color="textSecondary">
+                          Click to play
                         </Typography>
                       </Paper>
                     </Grid>
@@ -645,7 +718,65 @@ const PropertyDetailPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-
+      {/* Video Viewer Modal */}
+      <Dialog
+        open={videoViewerOpen}
+        onClose={handleCloseVideoViewer}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            bgcolor: 'rgba(0, 0, 0, 0.9)',
+            boxShadow: 'none',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
+          {selectedVideo && (
+            <Box sx={{ position: 'relative', textAlign: 'center', width: '100%' }}>
+              <video
+                src={selectedVideo.url}
+                controls
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '80vh',
+                  borderRadius: '8px',
+                }}
+                autoPlay
+              >
+                Your browser does not support the video tag.
+              </video>
+              <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+                <IconButton
+                  onClick={handleCloseVideoViewer}
+                  sx={{
+                    bgcolor: 'rgba(0, 0, 0, 0.5)',
+                    color: 'white',
+                    '&:hover': {
+                      bgcolor: 'rgba(0, 0, 0, 0.7)',
+                    },
+                  }}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              </Box>
+              <Box sx={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
+                <Paper sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.7)', color: 'white' }}>
+                  <Typography variant="body2">
+                    {selectedVideo.filename}
+                  </Typography>
+                  <Chip
+                    label="Video"
+                    size="small"
+                    color="primary"
+                    sx={{ mt: 1 }}
+                  />
+                </Paper>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog

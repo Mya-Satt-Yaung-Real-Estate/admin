@@ -65,6 +65,25 @@ export interface Property {
       medium_url: string;
       thumbnail_url: string;
     }>;
+    videos: Array<{
+      id: number;
+      type: string;
+      filename: string;
+      status: string;
+      url: string;
+      thumbnail_url?: string;
+    }>;
+    primary_image?: {
+      id: number;
+      type: string;
+      filename: string;
+      is_primary: boolean;
+      status: string;
+      url: string;
+      small_url: string;
+      medium_url: string;
+      thumbnail_url: string;
+    };
   };
   user?: User;
   property_type?: PropertyType;

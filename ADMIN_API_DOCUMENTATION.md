@@ -552,7 +552,44 @@ All API responses follow a standardized format:
                     "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/14/689d8893dc2f2_thumbnail.jpg"
                 }
             ],
-            "videos": [],
+            "videos": [
+              {
+                    "id": 24,
+                    "type": "video",
+                    "filename": "SampleVideo_1280x720_2mb.mp4",
+                    "is_primary": false,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6b2bf88.mp4",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6abbade_small.mp4",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6ae99a6_medium.mp4",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6a8cd54_thumbnail.mp4",
+                    "video_info": {
+                        "duration": 13,
+                        "resolution": "1280x720",
+                        "format": "mp4",
+                        "bitrate": 1248,
+                        "thumbnail_timestamp": null
+                    }
+                },
+                {
+                    "id": 23,
+                    "type": "video",
+                    "filename": "SampleVideo_1280x720_30mb.mp4",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac601b07c.mp4",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac5f9a2c6_small.mp4",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac5fca6e8_medium.mp4",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac5f68b57_thumbnail.mp4",
+                    "video_info": {
+                        "duration": 170,
+                        "resolution": "1280x720",
+                        "format": "mp4",
+                        "bitrate": 1474,
+                        "thumbnail_timestamp": null
+                    }
+                }
+            ],
             "primary_image": {
                 "id": 14,
                 "type": "image",
