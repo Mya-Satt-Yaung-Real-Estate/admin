@@ -18,6 +18,8 @@ import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../com
 import { useRole, useUpdateRole } from '../../services/queries/roles';
 import { usePermissions } from '../../services/queries/permissions';
 import { UpdateRoleData } from '../../types/role';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 const RoleEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +30,9 @@ const RoleEditPage: React.FC = () => {
   const { data: permissionsResponse, isLoading: isLoadingPermissions, error: permissionsError } = usePermissions();
   const updateRoleMutation = useUpdateRole();
 
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   // Extract data
   const role = roleResponse?.data;
   const permissions = permissionsResponse?.data || [];
@@ -85,8 +90,9 @@ const RoleEditPage: React.FC = () => {
         onSuccess: () => {
           navigate('/roles?success=' + encodeURIComponent('Role updated successfully!'));
         },
-        onError: () => {
-          navigate('/roles?error=' + encodeURIComponent('Failed to update role. Please try again.'));
+        onError: (error) => {
+          const errorMessage = error?.message || 'Failed to update role. Please try again.';
+          showError(errorMessage, true);
         },
       }
     );
@@ -140,8 +146,8 @@ const RoleEditPage: React.FC = () => {
           onClick: () => navigate(`/roles/${slug}`)
         }}
       />
-
-
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

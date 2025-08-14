@@ -20,12 +20,17 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRegion, useUpdateRegion } from '../../services/queries/locations';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, PageErrorState } from '../../components/ui';
+import { PageLoadingState, PageErrorState, ActionAlert } from '../../components/ui';
 import { UpdateRegionData } from '../../types/location';
+import { useAlertSystem } from '../../hooks';
 
 const RegionEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   const updateRegionMutation = useUpdateRegion();
 
   // API Queries
@@ -99,8 +104,8 @@ const RegionEditPage: React.FC = () => {
         },
       });
       
-      // Navigate to region detail on success
-      navigate(`/locations/regions/${slug}`);
+      // Navigate to locations list on success
+      navigate('/locations?success=' + encodeURIComponent('Region updated successfully!'));
     } catch (error: any) {
       // Handle API validation errors
       if (error?.data?.errors) {
@@ -109,6 +114,9 @@ const RegionEditPage: React.FC = () => {
           apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
         });
         setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to update region. Please try again.';
+        showError(errorMessage, true);
       }
     }
   };
@@ -154,6 +162,8 @@ const RegionEditPage: React.FC = () => {
         title="Edit Region"
         subtitle={`Editing: ${region.name_en}`}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button

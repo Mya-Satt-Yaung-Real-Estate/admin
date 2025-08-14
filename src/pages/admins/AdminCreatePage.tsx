@@ -17,6 +17,8 @@ import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../com
 import { useCreateAdminUser } from '../../services/queries/adminUsers';
 import { useRoles } from '../../services/queries/roles';
 import { CreateAdminUserData } from '../../types/admin';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 const AdminCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -30,6 +32,9 @@ const AdminCreatePage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof CreateAdminUserData, string>>>({});
 
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   // Queries
   const createAdminMutation = useCreateAdminUser();
   const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles({
@@ -100,7 +105,8 @@ const AdminCreatePage: React.FC = () => {
         });
         setErrors(apiErrors);
       } else {
-        navigate('/admins?error=' + encodeURIComponent(error.message || 'Failed to create admin user. Please try again.'));
+        const errorMessage = error?.message || 'Failed to create admin user. Please try again.';
+        showError(errorMessage, true);
       }
     }
   };
@@ -145,6 +151,8 @@ const AdminCreatePage: React.FC = () => {
           onClick: () => navigate('/admins')
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
       
       <Paper sx={{ p: 3 }}>
 

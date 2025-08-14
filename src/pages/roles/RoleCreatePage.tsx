@@ -17,6 +17,8 @@ import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../com
 import { useCreateRole } from '../../services/queries/roles';
 import { usePermissions } from '../../services/queries/permissions';
 import { CreateRoleData } from '../../types/role';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 const RoleCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,9 @@ const RoleCreatePage: React.FC = () => {
   const { data: permissionsResponse, isLoading: isLoadingPermissions, error: permissionsError } = usePermissions();
   const createRoleMutation = useCreateRole();
 
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   // Extract permissions data
   const permissions = permissionsResponse?.data || [];
 
@@ -65,8 +70,9 @@ const RoleCreatePage: React.FC = () => {
       onSuccess: () => {
         navigate('/roles?success=' + encodeURIComponent('Role created successfully!'));
       },
-      onError: () => {
-        navigate('/roles?error=' + encodeURIComponent('Failed to create role. Please try again.'));
+      onError: (error) => {
+        const errorMessage = error?.message || 'Failed to create role. Please try again.';
+        showError(errorMessage, true);
       },
     });
   };
@@ -100,8 +106,8 @@ const RoleCreatePage: React.FC = () => {
           onClick: () => navigate('/roles')
         }}
       />
-
-
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

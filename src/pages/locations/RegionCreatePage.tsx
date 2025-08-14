@@ -20,11 +20,16 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCreateRegion } from '../../services/queries/locations';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState } from '../../components/ui';
+import { PageLoadingState, ActionAlert } from '../../components/ui';
 import { CreateRegionData } from '../../types/location';
+import { useAlertSystem } from '../../hooks';
 
 const RegionCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   const createRegionMutation = useCreateRegion();
 
   // Form state
@@ -80,7 +85,7 @@ const RegionCreatePage: React.FC = () => {
       });
       
       // Navigate to locations list on success
-      navigate('/locations');
+      navigate('/locations?success=' + encodeURIComponent('Region created successfully!'));
     } catch (error: any) {
       // Handle API validation errors
       if (error?.data?.errors) {
@@ -89,6 +94,9 @@ const RegionCreatePage: React.FC = () => {
           apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
         });
         setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to create region. Please try again.';
+        showError(errorMessage, true);
       }
     }
   };
@@ -107,6 +115,8 @@ const RegionCreatePage: React.FC = () => {
         title="Create Region"
         subtitle="Add a new region to the system"
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button

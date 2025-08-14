@@ -14,6 +14,8 @@ import { Save as SaveIcon, Cancel as CancelIcon, ArrowBack as ArrowBackIcon } fr
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { useCreatePropertyListingType } from '../../services/queries/properties';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 interface FormData {
   name_en: string;
@@ -25,6 +27,9 @@ interface FormData {
 
 const PropertyListingTypeCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
   
   // Create mutation
   const createListingTypeMutation = useCreatePropertyListingType();
@@ -78,8 +83,9 @@ const PropertyListingTypeCreatePage: React.FC = () => {
         onSuccess: () => {
           navigate('/property-listing-types?success=' + encodeURIComponent('Property listing type created successfully!'));
         },
-        onError: () => {
-          navigate('/property-listing-types?error=' + encodeURIComponent('Failed to create property listing type. Please try again.'));
+        onError: (error) => {
+          const errorMessage = error?.message || 'Failed to create property listing type. Please try again.';
+          showError(errorMessage, true);
         },
       }
     );
@@ -97,8 +103,8 @@ const PropertyListingTypeCreatePage: React.FC = () => {
           onClick: () => navigate('/property-listing-types')
         }}
       />
-
-
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

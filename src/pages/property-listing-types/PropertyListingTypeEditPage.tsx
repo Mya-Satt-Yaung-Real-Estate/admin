@@ -16,6 +16,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { PageLoadingState, PageErrorState } from '../../components/ui';
 import { usePropertyListingType, useUpdatePropertyListingType } from '../../services/queries/properties';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 interface FormData {
   name_en: string;
@@ -28,6 +30,9 @@ interface FormData {
 const PropertyListingTypeEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
   
   // Fetch property listing type data
   const { data: listingTypeResponse, isLoading, error } = usePropertyListingType(slug || '');
@@ -94,8 +99,9 @@ const PropertyListingTypeEditPage: React.FC = () => {
         onSuccess: () => {
           navigate('/property-listing-types?success=' + encodeURIComponent('Property listing type updated successfully!'));
         },
-        onError: () => {
-          navigate('/property-listing-types?error=' + encodeURIComponent('Failed to update property listing type. Please try again.'));
+        onError: (error) => {
+          const errorMessage = error?.message || 'Failed to update property listing type. Please try again.';
+          showError(errorMessage, true);
         },
       }
     );
@@ -140,7 +146,7 @@ const PropertyListingTypeEditPage: React.FC = () => {
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
-        title="Edit Property Listing Type"
+        title="Edit Property Type"
         breadcrumbs={`Dashboard / Master Data / Property Listing Types / ${listingType.name_en} / Edit`}
         subtitle="Update property listing type information"
         actionButton={{
@@ -149,8 +155,8 @@ const PropertyListingTypeEditPage: React.FC = () => {
           onClick: () => navigate('/property-listing-types')
         }}
       />
-
-
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Paper sx={{ p: 4, mb: 3 }}>
         <Grid container spacing={3}>

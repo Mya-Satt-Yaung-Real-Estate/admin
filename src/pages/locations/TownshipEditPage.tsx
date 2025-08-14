@@ -24,12 +24,17 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTownship, useUpdateTownship, useRegions } from '../../services/queries/locations';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, PageErrorState } from '../../components/ui';
+import { PageLoadingState, PageErrorState, ActionAlert } from '../../components/ui';
 import { UpdateTownshipData } from '../../types/location';
+import { useAlertSystem } from '../../hooks';
 
 const TownshipEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   const updateTownshipMutation = useUpdateTownship();
 
   // API Queries
@@ -111,8 +116,8 @@ const TownshipEditPage: React.FC = () => {
         },
       });
       
-      // Navigate to township detail on success
-      navigate(`/locations/townships/${slug}`);
+      // Navigate to locations list on success
+      navigate('/locations?success=' + encodeURIComponent('Township updated successfully!'));
     } catch (error: any) {
       // Handle API validation errors
       if (error?.data?.errors) {
@@ -121,6 +126,9 @@ const TownshipEditPage: React.FC = () => {
           apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
         });
         setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to update township. Please try again.';
+        showError(errorMessage, true);
       }
     }
   };
@@ -166,6 +174,8 @@ const TownshipEditPage: React.FC = () => {
         title="Edit Township"
         subtitle={`Editing: ${township.name_en}`}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button

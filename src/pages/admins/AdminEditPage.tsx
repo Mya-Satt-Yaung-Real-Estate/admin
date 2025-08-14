@@ -17,6 +17,8 @@ import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../com
 import { useAdminUser, useUpdateAdminUser } from '../../services/queries/adminUsers';
 import { useRoles } from '../../services/queries/roles';
 import { UpdateAdminUserData } from '../../types/admin';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 const AdminEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,6 +36,9 @@ const AdminEditPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Partial<Record<keyof UpdateAdminUserData, string>>>({});
 
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   // Queries
   const { data: adminData, isLoading: adminLoading, error: adminError } = useAdminUser(adminSlug);
   const updateAdminMutation = useUpdateAdminUser();
@@ -131,7 +136,8 @@ const AdminEditPage: React.FC = () => {
         });
         setErrors(apiErrors);
       } else {
-        navigate('/admins?error=' + encodeURIComponent(error.message || 'Failed to update admin user. Please try again.'));
+        const errorMessage = error?.message || 'Failed to update admin user. Please try again.';
+        showError(errorMessage, true);
       }
     }
   };
@@ -203,6 +209,8 @@ const AdminEditPage: React.FC = () => {
           onClick: () => navigate(`/admins/${adminSlug}`)
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
       
       <Paper sx={{ p: 3 }}>
 

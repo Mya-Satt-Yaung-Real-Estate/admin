@@ -24,11 +24,16 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCreateTownship, useRegions } from '../../services/queries/locations';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState } from '../../components/ui';
+import { PageLoadingState, ActionAlert } from '../../components/ui';
 import { CreateTownshipData } from '../../types/location';
+import { useAlertSystem } from '../../hooks';
 
 const TownshipCreatePage: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   const createTownshipMutation = useCreateTownship();
 
   // API Queries
@@ -93,7 +98,7 @@ const TownshipCreatePage: React.FC = () => {
       });
       
       // Navigate to locations list on success
-      navigate('/locations');
+      navigate('/locations?success=' + encodeURIComponent('Township created successfully!'));
     } catch (error: any) {
       // Handle API validation errors
       if (error?.data?.errors) {
@@ -102,6 +107,9 @@ const TownshipCreatePage: React.FC = () => {
           apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
         });
         setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to create township. Please try again.';
+        showError(errorMessage, true);
       }
     }
   };
@@ -120,6 +128,8 @@ const TownshipCreatePage: React.FC = () => {
         title="Create Township"
         subtitle="Add a new township to the system"
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button
