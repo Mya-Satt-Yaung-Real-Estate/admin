@@ -553,42 +553,7 @@ All API responses follow a standardized format:
                 }
             ],
             "videos": [
-              {
-                    "id": 24,
-                    "type": "video",
-                    "filename": "SampleVideo_1280x720_2mb.mp4",
-                    "is_primary": false,
-                    "status": "completed",
-                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6b2bf88.mp4",
-                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6abbade_small.mp4",
-                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6ae99a6_medium.mp4",
-                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac6a8cd54_thumbnail.mp4",
-                    "video_info": {
-                        "duration": 13,
-                        "resolution": "1280x720",
-                        "format": "mp4",
-                        "bitrate": 1248,
-                        "thumbnail_timestamp": null
-                    }
-                },
-                {
-                    "id": 23,
-                    "type": "video",
-                    "filename": "SampleVideo_1280x720_30mb.mp4",
-                    "is_primary": true,
-                    "status": "completed",
-                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac601b07c.mp4",
-                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac5f9a2c6_small.mp4",
-                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac5fca6e8_medium.mp4",
-                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/14/689dac5f68b57_thumbnail.mp4",
-                    "video_info": {
-                        "duration": 170,
-                        "resolution": "1280x720",
-                        "format": "mp4",
-                        "bitrate": 1474,
-                        "thumbnail_timestamp": null
-                    }
-                }
+              
             ],
             "primary_image": {
                 "id": 14,
@@ -1339,6 +1304,55 @@ All API responses follow a standardized format:
   "success": true,
   "message": "Permission deleted successfully",
   "data": null
+}
+```
+
+
+
+## User Management (Individual, Company)
+
+### List Users
+**GET** `/users`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:** Same as regions
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Users retrieved successfully",
+    "data": [
+        {
+            "id": 3,
+            "name": "John Doe",
+            "slug": "john-doe",
+            "email": "john@company.com",
+            "user_type": "company",
+            "member_level": "silver",
+            "is_active": true,
+            "last_login_at": "2025-08-14T06:54:01.000000Z",
+            "last_active_at": "2025-08-14T06:54:01.000000Z",
+            "email_verified_at": null,
+            "created_at": "2025-08-12T08:24:56.000000Z",
+            "updated_at": "2025-08-14T06:54:01.000000Z"
+        },
+        {
+            "id": 2,
+            "name": "Test User",
+            "slug": "test-user",
+            "email": "test@example.com",
+            "user_type": "individual",
+            "member_level": "silver",
+            "is_active": true,
+            "last_login_at": "2025-08-12T08:54:18.000000Z",
+            "last_active_at": "2025-08-12T08:54:18.000000Z",
+            "email_verified_at": null,
+            "created_at": "2025-08-12T07:11:37.000000Z",
+            "updated_at": "2025-08-12T08:54:18.000000Z"
+        }
+    ]
 }
 ```
 

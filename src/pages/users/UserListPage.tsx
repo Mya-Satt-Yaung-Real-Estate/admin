@@ -2,22 +2,21 @@ import React, { useMemo } from 'react';
 import {
   Box,
   IconButton,
-  Chip,
   Typography,
   Tooltip,
-  Avatar,
-  Badge,
   useTheme,
   useMediaQuery,
-  Paper,
+  Avatar,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  People as PeopleIcon,
+  Person as PersonIcon,
   Business as BusinessIcon,
+  Email as EmailIcon,
+  Schedule as ScheduleIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -25,552 +24,397 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip } from '../../components/ui';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
-
-import { formatRelativeTime } from '../../constants/dateFormats';
+import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { useUsers, useDeleteUser } from '../../services/queries/users';
 import { FilterState } from '../../constants/filters';
+import { RegularUser } from '../../types/user';
+import { formatDate } from '../../constants/dateFormats';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'Normal User' | 'Company User';
-  status: 'active' | 'inactive' | 'pending';
-  avatar: string;
-  lastLogin: string;
-  createdAt: string;
-  phone?: string;
-}
+// ============================================================================
+// TYPES & INTERFACES
+// ============================================================================
 
 interface UserFilters extends FilterState {
   searchTerm: string;
+  userTypeFilter: string;
+  memberLevelFilter: string;
   statusFilter: string;
-  roleFilter: string;
 }
 
-const mockUsers: User[] = [
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
+
+const PAGE_CONFIG = {
+  title: 'User Management',
+  description: 'Manage individual and company users',
+  createButtonText: 'Add User',
+  createButtonPath: '/users/create',
+} as const;
+
+const FILTER_FIELDS: FilterField[] = [
   {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'JD',
-    lastLogin: '2024-01-15 09:30',
-    createdAt: '2023-01-15',
-    phone: '+1 (555) 123-4567'
+    key: 'searchTerm',
+    type: 'search',
+    label: 'Search',
+    placeholder: 'Search by name or email...',
   },
   {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'JS',
-    lastLogin: '2024-01-14 16:45',
-    createdAt: '2023-02-20',
-    phone: '+1 (555) 234-5678'
+    key: 'userTypeFilter',
+    type: 'select',
+    label: 'User Type',
+    options: [
+      { value: 'all', label: 'All Types' },
+      { value: 'individual', label: 'Individual' },
+      { value: 'company', label: 'Company' },
+    ],
   },
   {
-    id: 3,
-    name: 'Bob Johnson',
-    email: 'bob.johnson@example.com',
-    role: 'Normal User',
-    status: 'inactive',
-    avatar: 'BJ',
-    lastLogin: '2024-01-10 11:20',
-    createdAt: '2023-03-10',
-    phone: '+1 (555) 345-6789'
+    key: 'memberLevelFilter',
+    type: 'select',
+    label: 'Member Level',
+    options: [
+      { value: 'all', label: 'All Levels' },
+      { value: 'bronze', label: 'Bronze' },
+      { value: 'silver', label: 'Silver' },
+      { value: 'gold', label: 'Gold' },
+      { value: 'platinum', label: 'Platinum' },
+    ],
   },
   {
-    id: 4,
-    name: 'Alice Brown',
-    email: 'alice.brown@example.com',
-    role: 'Company User',
-    status: 'pending',
-    avatar: 'AB',
-    lastLogin: '2024-01-12 14:15',
-    createdAt: '2023-04-05',
-    phone: '+1 (555) 456-7890'
+    key: 'statusFilter',
+    type: 'select',
+    label: 'Status',
+    options: [
+      { value: 'all', label: 'All Statuses' },
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+    ],
   },
-  {
-    id: 5,
-    name: 'Charlie Wilson',
-    email: 'charlie.wilson@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'CW',
-    lastLogin: '2024-01-13 10:30',
-    createdAt: '2023-05-12',
-    phone: '+1 (555) 567-8901'
-  },
-  {
-    id: 6,
-    name: 'Diana Davis',
-    email: 'diana.davis@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'DD',
-    lastLogin: '2024-01-14 13:45',
-    createdAt: '2023-06-18',
-    phone: '+1 (555) 678-9012'
-  },
-  {
-    id: 7,
-    name: 'Edward Miller',
-    email: 'edward.miller@example.com',
-    role: 'Normal User',
-    status: 'inactive',
-    avatar: 'EM',
-    lastLogin: '2024-01-08 09:15',
-    createdAt: '2023-07-22',
-    phone: '+1 (555) 789-0123'
-  },
-  {
-    id: 8,
-    name: 'Fiona Garcia',
-    email: 'fiona.garcia@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'FG',
-    lastLogin: '2024-01-15 08:20',
-    createdAt: '2023-08-30',
-    phone: '+1 (555) 890-1234'
-  },
-  {
-    id: 9,
-    name: 'George Martinez',
-    email: 'george.martinez@example.com',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: 'GM',
-    lastLogin: '2024-01-11 15:40',
-    createdAt: '2023-09-14',
-    phone: '+1 (555) 901-2345'
-  },
-  {
-    id: 10,
-    name: 'Helen Taylor',
-    email: 'helen.taylor@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'HT',
-    lastLogin: '2024-01-13 12:10',
-    createdAt: '2023-10-08',
-    phone: '+1 (555) 012-3456'
-  },
-  {
-    id: 11,
-    name: 'Ivan Anderson',
-    email: 'ivan.anderson@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'IA',
-    lastLogin: '2024-01-14 17:25',
-    createdAt: '2023-11-20',
-    phone: '+1 (555) 123-4567'
-  },
-  {
-    id: 12,
-    name: 'Julia Thomas',
-    email: 'julia.thomas@example.com',
-    role: 'Company User',
-    status: 'inactive',
-    avatar: 'JT',
-    lastLogin: '2024-01-09 14:50',
-    createdAt: '2023-12-03',
-    phone: '+1 (555) 234-5678'
-  },
-  {
-    id: 13,
-    name: 'Kevin Jackson',
-    email: 'kevin.jackson@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'KJ',
-    lastLogin: '2024-01-15 11:35',
-    createdAt: '2023-12-15',
-    phone: '+1 (555) 345-6789'
-  },
-  {
-    id: 14,
-    name: 'Laura White',
-    email: 'laura.white@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'LW',
-    lastLogin: '2024-01-14 16:20',
-    createdAt: '2023-12-25',
-    phone: '+1 (555) 456-7890'
-  },
-  {
-    id: 15,
-    name: 'Michael Harris',
-    email: 'michael.harris@example.com',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: 'MH',
-    lastLogin: '2024-01-12 10:45',
-    createdAt: '2024-01-02',
-    phone: '+1 (555) 567-8901'
-  },
-  {
-    id: 16,
-    name: 'Nancy Clark',
-    email: 'nancy.clark@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'NC',
-    lastLogin: '2024-01-13 13:30',
-    createdAt: '2024-01-05',
-    phone: '+1 (555) 678-9012'
-  },
-  {
-    id: 17,
-    name: 'Oscar Lewis',
-    email: 'oscar.lewis@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'OL',
-    lastLogin: '2024-01-14 09:15',
-    createdAt: '2024-01-08',
-    phone: '+1 (555) 789-0123'
-  },
-  {
-    id: 18,
-    name: 'Patricia Hall',
-    email: 'patricia.hall@example.com',
-    role: 'Company User',
-    status: 'inactive',
-    avatar: 'PH',
-    lastLogin: '2024-01-10 15:20',
-    createdAt: '2024-01-10',
-    phone: '+1 (555) 890-1234'
-  },
-  {
-    id: 19,
-    name: 'Quentin Young',
-    email: 'quentin.young@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'QY',
-    lastLogin: '2024-01-15 14:40',
-    createdAt: '2024-01-12',
-    phone: '+1 (555) 901-2345'
-  },
-  {
-    id: 20,
-    name: 'Rachel King',
-    email: 'rachel.king@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'RK',
-    lastLogin: '2024-01-13 11:25',
-    createdAt: '2024-01-14',
-    phone: '+1 (555) 012-3456'
-  },
-  {
-    id: 21,
-    name: 'Samuel Wright',
-    email: 'samuel.wright@example.com',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: 'SW',
-    lastLogin: '2024-01-11 16:50',
-    createdAt: '2024-01-15',
-    phone: '+1 (555) 123-4567'
-  },
-  {
-    id: 22,
-    name: 'Tina Lopez',
-    email: 'tina.lopez@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'TL',
-    lastLogin: '2024-01-14 12:35',
-    createdAt: '2024-01-16',
-    phone: '+1 (555) 234-5678'
-  },
-  {
-    id: 23,
-    name: 'Ulysses Scott',
-    email: 'ulysses.scott@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'US',
-    lastLogin: '2024-01-15 08:45',
-    createdAt: '2024-01-17',
-    phone: '+1 (555) 345-6789'
-  },
-  {
-    id: 24,
-    name: 'Victoria Green',
-    email: 'victoria.green@example.com',
-    role: 'Company User',
-    status: 'inactive',
-    avatar: 'VG',
-    lastLogin: '2024-01-09 13:15',
-    createdAt: '2024-01-18',
-    phone: '+1 (555) 456-7890'
-  },
-  {
-    id: 25,
-    name: 'Walter Baker',
-    email: 'walter.baker@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'WB',
-    lastLogin: '2024-01-14 17:30',
-    createdAt: '2024-01-19',
-    phone: '+1 (555) 567-8901'
-  }
 ];
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const UserListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  // Use standardized hooks
-  const { filters, setFilter } = useFilters<UserFilters>({
-    statusFilter: 'all',
-    roleFilter: 'all',
-  });
-  const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
-  // Filter users using standardized logic
+  // Pagination hook
+  const {
+    page,
+    rowsPerPage,
+    handleChangePage,
+    handleChangeRowsPerPage,
+  } = usePagination();
+
+  // Filters hook
+  const {
+    filters,
+    setFilter,
+  } = useFilters<UserFilters>({
+    searchTerm: '',
+    userTypeFilter: 'all',
+    memberLevelFilter: 'all',
+    statusFilter: 'all',
+  });
+
+  // Delete confirmation hook
+  const {
+    deleteState,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    handleConfirmDelete,
+  } = useDeleteConfirmation();
+
+  // API Queries
+  const { data: usersResponse, isLoading, error } = useUsers({
+    per_page: 100, // Get all users for client-side filtering
+    sort_by: 'created_at',
+    sort_direction: 'desc',
+  });
+
+  // Delete mutation
+  const deleteUserMutation = useDeleteUser();
+
+  // Extract users data
+  const users = usersResponse?.data || [];
+
+  // Filter users using client-side filtering
   const filteredUsers = useMemo(() => {
-    return mockUsers.filter(user => {
-      const matchesSearch = 
+    return users.filter((user) => {
+      const matchesSearch = !filters.searchTerm || 
         user.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        (user.phone && user.phone.includes(filters.searchTerm));
-      const matchesStatus = filters.statusFilter === 'all' || user.status === filters.statusFilter;
-      const matchesRole = filters.roleFilter === 'all' || user.role === filters.roleFilter;
-      return matchesSearch && matchesStatus && matchesRole;
+        user.email.toLowerCase().includes(filters.searchTerm.toLowerCase());
+      
+      const matchesUserType = filters.userTypeFilter === 'all' || 
+        user.user_type === filters.userTypeFilter;
+      
+      const matchesMemberLevel = filters.memberLevelFilter === 'all' || 
+        user.member_level === filters.memberLevelFilter;
+      
+      const matchesStatus = filters.statusFilter === 'all' || 
+        (filters.statusFilter === 'active' && user.is_active) ||
+        (filters.statusFilter === 'inactive' && !user.is_active);
+      
+      return matchesSearch && matchesUserType && matchesMemberLevel && matchesStatus;
     });
-  }, [filters]);
+  }, [users, filters]);
 
   // Paginate data
   const paginatedUsers = useMemo(() => {
     return filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
   }, [filteredUsers, page, rowsPerPage]);
 
-  // Statistics cards
+  // ========================================================================
+  // STATISTICS
+  // ========================================================================
+
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Users',
-      value: mockUsers.length,
+      value: users.length,
       color: 'primary',
-      icon: <PeopleIcon />,
+      icon: <PersonIcon />,
+    },
+    {
+      title: 'Individuals',
+      value: users.filter(user => user.user_type === 'individual').length,
+      color: 'info',
+      icon: <PersonIcon />,
+    },
+    {
+      title: 'Companies',
+      value: users.filter(user => user.user_type === 'company').length,
+      color: 'success',
+      icon: <BusinessIcon />,
     },
     {
       title: 'Active Users',
-      value: mockUsers.filter(user => user.status === 'active').length,
-      color: 'success',
-      icon: <PeopleIcon />,
+      value: users.filter(user => user.is_active).length,
+      color: 'warning',
+      icon: <PersonIcon />,
     },
-    {
-      title: 'Normal Users',
-      value: mockUsers.filter(user => user.role === 'Normal User').length,
-      color: 'info',
-      icon: <PeopleIcon />,
-    },
-    {
-      title: 'Company Users',
-      value: mockUsers.filter(user => user.role === 'Company User').length,
-      color: 'secondary',
-      icon: <BusinessIcon />,
-    },
-  ], []);
+  ], [users]);
 
-  // Filter fields configuration
-  const filterFields: FilterField[] = [
-    {
-      key: 'searchTerm',
-      type: 'search',
-      label: 'Search',
-      placeholder: 'Search users by name, email, or phone...',
-    },
-    {
-      key: 'statusFilter',
-      type: 'select',
-      label: 'Status',
-      options: [
-        { value: 'all', label: 'All Status' },
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' },
-        { value: 'pending', label: 'Pending' },
-      ],
-    },
-    {
-      key: 'roleFilter',
-      type: 'select',
-      label: 'Role',
-      options: [
-        { value: 'all', label: 'All Roles' },
-        { value: 'Normal User', label: 'Normal User' },
-        { value: 'Company User', label: 'Company User' },
-      ],
-    },
-  ];
+  // ========================================================================
+  // TABLE COLUMNS
+  // ========================================================================
 
-  // Table columns configuration
-  const columns: TableColumn<User>[] = [
+  const columns: TableColumn<RegularUser>[] = useMemo(() => [
     {
-      id: 'user',
-      label: 'User',
-      render: (_, user) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Badge
-            overlap="circular"
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            badgeContent={
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  backgroundColor: user.status === 'active' ? '#4caf50' : '#f44336'
-                }}
-              />
-            }
-          >
-            <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-              <Typography variant="body2" fontSize="0.75rem">
-                {user.avatar}
-              </Typography>
+      id: 'name',
+      label: 'Name',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={{ bgcolor: user.user_type === 'company' ? 'success.main' : 'primary.main' }}>
+              {user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
             </Avatar>
-          </Badge>
-          <Box>
-            <Typography variant="subtitle2" fontWeight="600">
-              {user.name}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
+            <Box>
+              <Typography variant="subtitle2" fontWeight="600">
+                {user.name}
+              </Typography>
+              <Typography variant="caption" color="textSecondary">
+                {user.user_type === 'company' ? 'Company' : 'Individual'}
+              </Typography>
+            </Box>
+          </Box>
+        );
+      },
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <EmailIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight="500">
               {user.email}
             </Typography>
           </Box>
-        </Box>
-      ),
+        );
+      },
+      hidden: isMobile,
     },
     {
-      id: 'role',
-      label: 'Role',
-      render: (_, user) => (
-        <Chip
-          label={user.role}
-          size="small"
-          color={user.role === 'Normal User' ? 'primary' : 'secondary'}
-          variant="outlined"
-        />
-      ),
+      id: 'memberLevel',
+      label: 'Member Level',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <StatusChip 
+            status={user.member_level} 
+            size="small"
+          />
+        );
+      },
+      hidden: isMobile,
     },
     {
       id: 'status',
       label: 'Status',
-      render: (_, user) => (
-        <StatusChip status={user.status} />
-      ),
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <StatusChip 
+            status={user.is_active ? 'active' : 'inactive'} 
+            size="small"
+          />
+        );
+      },
     },
     {
       id: 'lastLogin',
       label: 'Last Login',
-      render: (_, user) => (
-        <Typography variant="body2" color="textSecondary">
-          {formatRelativeTime(user.lastLogin)}
-        </Typography>
-      ),
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" color="textSecondary">
+              {user.last_login_at ? formatDate(user.last_login_at, 'display') : 'Never'}
+            </Typography>
+          </Box>
+        );
+      },
       hidden: isMobile,
     },
     {
       id: 'createdAt',
       label: 'Created',
-      render: (_, user) => (
-        <Typography variant="body2" color="textSecondary">
-          {user.createdAt}
-        </Typography>
-      ),
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Typography variant="body2" color="textSecondary">
+            {formatDate(user.created_at, 'display')}
+          </Typography>
+        );
+      },
       hidden: isMobile,
     },
     {
       id: 'actions',
       label: 'Actions',
       align: 'center',
-      render: (_, user) => (
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-          <Tooltip title="View Details">
-            <IconButton
-              size="small"
-              onClick={() => navigate(`/users/${user.id}`)}
-              color="primary"
-            >
-              <ViewIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <IconButton
-              size="small"
-              onClick={() => navigate(`/users/${user.id}/edit`)}
-              color="secondary"
-            >
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              size="small"
-              onClick={() => handleDeleteUser(user)}
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <Tooltip title="View Details">
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/users/${user.id}`)}
+                color="primary"
+              >
+                <ViewIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Edit">
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/users/${user.id}/edit`)}
+                color="secondary"
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete">
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteUser(user)}
+                color="error"
+                disabled={deleteUserMutation.isPending}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
-  ];
+  ], [isMobile, navigate, deleteUserMutation.isPending]);
 
-  // Helper function to create mobile card actions
-  const createMobileCardActions = (user: User): MobileCardAction[] => [
+  // ========================================================================
+  // MOBILE CARD ACTIONS
+  // ========================================================================
+
+  const createMobileCardActions = (user: RegularUser): MobileCardAction[] => [
     {
       icon: <ViewIcon />,
       tooltip: 'View Details',
-      color: 'primary',
+      color: 'primary' as const,
       onClick: () => navigate(`/users/${user.id}`),
     },
     {
       icon: <EditIcon />,
       tooltip: 'Edit',
-      color: 'secondary',
+      color: 'secondary' as const,
       onClick: () => navigate(`/users/${user.id}/edit`),
     },
     {
       icon: <DeleteIcon />,
       tooltip: 'Delete',
-      color: 'error',
+      color: 'error' as const,
       onClick: () => handleDeleteUser(user),
     },
   ];
 
-  // Event handlers
-  const handleDeleteUser = (user: User) => {
-    console.log('Delete user:', user);
+  // ========================================================================
+  // EVENT HANDLERS
+  // ========================================================================
+
+  const handleDeleteUser = (user: RegularUser) => {
+    openDeleteConfirmation(
+      user.name,
+      'user',
+      () => {
+        deleteUserMutation.mutate(user.id);
+      }
+    );
   };
 
   const handleAddUser = () => {
     navigate('/users/create');
   };
 
+  // ========================================================================
+  // RENDER
+  // ========================================================================
+
+  // Loading state
+  if (isLoading) {
+    return <PageLoadingState title="Loading Users" />;
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <PageErrorState
+        error={error}
+        title="Error Loading Users"
+        message={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
-        title="User Management"
+        title={PAGE_CONFIG.title}
         breadcrumbs="Dashboard / User Management"
-        subtitle="Manage real estate users and company users"
+        subtitle={PAGE_CONFIG.description}
         actionButton={{
-          text: 'Add User',
+          text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,
           onClick: handleAddUser
         }}
@@ -583,49 +427,50 @@ const UserListPage: React.FC = () => {
       <StandardFilters
         filters={filters}
         onFilterChange={(key, value) => setFilter(key as keyof UserFilters, value)}
-        fields={filterFields}
+        fields={FILTER_FIELDS}
       />
 
+      {/* Empty state */}
+      {filteredUsers.length === 0 && !isLoading && (
+        <PageEmptyState
+          title="No Users Found"
+          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all'
+            ? "No users match your current filters. Try adjusting your search criteria."
+            : "No users have been created yet."
+          }
+        />
+      )}
+
       {/* Mobile Card Layout */}
-      {isMobile ? (
+      {isMobile && filteredUsers.length > 0 ? (
         <Box>
-          {paginatedUsers.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="textSecondary">
-                No data available
-              </Typography>
-            </Paper>
-          ) : (
-            <Box>
-              {paginatedUsers.map((user) => (
-                <MobileCard
-                  key={user.id}
-                  title={user.name}
-                  subtitle={user.email}
-                  description={user.phone}
-                  avatarText={user.avatar}
-                  avatarColor="primary.main"
-                  status={{
-                    label: user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'Pending',
-                    color: 'default',
-                  }}
-                  chips={[
-                    {
-                      label: user.role,
-                      color: user.role === 'Normal User' ? 'primary' : 'secondary',
-                      variant: 'outlined',
-                    },
-                  ]}
-                  actions={createMobileCardActions(user)}
-                  children={
-                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
-                      Last login: {formatRelativeTime(user.lastLogin)}
-                    </Typography>
-                  }
-                />
-              ))}
-            </Box>
-          )}
+          {paginatedUsers.map((user) => (
+            <MobileCard
+              key={user.id}
+              title={user.name}
+              subtitle={user.email}
+              description={`${user.user_type === 'company' ? 'Company' : 'Individual'} • ${user.member_level} member`}
+              avatar={user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
+              avatarColor={user.user_type === 'company' ? 'success.main' : 'primary.main'}
+              status={{
+                label: user.is_active ? 'Active' : 'Inactive',
+                color: user.is_active ? 'success' : 'error',
+              }}
+                             chips={[
+                 {
+                   label: user.user_type === 'company' ? 'Company' : 'Individual',
+                   color: user.user_type === 'company' ? 'primary' : 'secondary',
+                 },
+                 {
+                   label: user.member_level,
+                   color: 'info',
+                 },
+               ]}
+              actions={createMobileCardActions(user)}
+              onClick={() => navigate(`/users/${user.id}`)}
+              clickable={true}
+            />
+          ))}
           <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
@@ -637,17 +482,30 @@ const UserListPage: React.FC = () => {
         </Box>
       ) : (
         /* Desktop Table Layout */
-        <StandardTable
-          columns={columns}
-          data={paginatedUsers}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          totalCount={filteredUsers.length}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          getRowKey={(user) => user.id}
-        />
+        filteredUsers.length > 0 && (
+          <StandardTable
+            columns={columns}
+            data={paginatedUsers}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredUsers.length}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            getRowKey={(user) => user.id}
+          />
+        )
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={deleteState.open}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteState.itemName}
+        itemType={deleteState.itemType}
+        isLoading={deleteUserMutation.isPending}
+        error={deleteUserMutation.error?.message}
+      />
     </Box>
   );
 };

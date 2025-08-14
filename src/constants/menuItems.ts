@@ -5,7 +5,7 @@ export const MENU_ITEMS = [
     path: '/',
   },
   {
-    text: 'User Management',
+    text: 'Users',
     iconName: 'People',
     path: '/users',
   },
