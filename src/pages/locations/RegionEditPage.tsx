@@ -101,14 +101,15 @@ const RegionEditPage: React.FC = () => {
         data: {
           ...formData,
           description: formData.description || undefined,
+          is_active: isActive,
         },
       });
       
-      // Navigate to locations list on success
-      navigate('/locations?success=' + encodeURIComponent('Region updated successfully!'));
+      // Navigate to region detail page on success
+      navigate(`/locations/regions/${slug}?success=${encodeURIComponent('Region updated successfully!')}`);
     } catch (error: any) {
       // Handle API validation errors
-      if (error?.data?.errors) {
+      if (error?.errors) {
         const apiErrors: Record<string, string> = {};
         Object.entries(error.data.errors).forEach(([field, messages]) => {
           apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);

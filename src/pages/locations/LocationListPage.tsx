@@ -27,10 +27,10 @@ import { StandardFilters, FilterField } from '../../components/common/StandardFi
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination } from '../../components/ui';
-import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
+import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip, ActionAlert } from '../../components/ui';
 import { usePagination } from '../../hooks/usePagination';
 import { useFilters } from '../../hooks/useFilters';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { FilterState } from '../../constants/filters';
 
 import { Region, Township } from '../../types/location';
@@ -91,6 +91,9 @@ const LocationListPage: React.FC = () => {
 
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+
   // API Queries
   const { data: regionsData, isLoading: regionsLoading, error: regionsError } = useRegions();
   const { data: townshipsData, isLoading: townshipsLoading, error: townshipsError } = useTownships();
@@ -100,7 +103,7 @@ const LocationListPage: React.FC = () => {
   const deleteTownshipMutation = useDeleteTownship();
 
   // Delete confirmation
-  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation } = useDeleteConfirmation();
+  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
 
   // ========================================================================
   // COMPUTED VALUES
@@ -225,15 +228,19 @@ const LocationListPage: React.FC = () => {
         try {
           if (activeTab === 0) {
             await deleteRegionMutation.mutateAsync(item.slug);
+            showSuccess(`${itemName} deleted successfully!`, true);
           } else {
             await deleteTownshipMutation.mutateAsync(item.slug);
+            showSuccess(`${itemName} deleted successfully!`, true);
           }
-        } catch (error) {
-          console.error(`Failed to delete ${itemType}:`, error);
+        } catch (error: any) {
+          // Handle API error response
+          const errorMessage = error?.message || `Failed to delete ${itemType}. Please try again.`;
+          showError(errorMessage, true);
         }
       });
     };
-  }, [activeTab, deleteRegionMutation, deleteTownshipMutation, openDeleteConfirmation]);
+  }, [activeTab, deleteRegionMutation, deleteTownshipMutation, openDeleteConfirmation, showSuccess, showError]);
 
   // ========================================================================
   // TABLE COLUMNS
@@ -379,6 +386,8 @@ const LocationListPage: React.FC = () => {
         // breadcrumbs="Location Management"
         subtitle="Manage locations"
       />
+
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
         <Button
@@ -542,7 +551,7 @@ const LocationListPage: React.FC = () => {
       <DeleteConfirmationDialog
         open={deleteState.open}
         onClose={closeDeleteConfirmation}
-        onConfirm={deleteState.onConfirm || (() => {})}
+        onConfirm={handleConfirmDelete}
         title={`Delete ${deleteState.itemType}`}
         message={`Are you sure you want to delete this ${deleteState.itemType}? This action cannot be undone.`}
         itemName={deleteState.itemName}

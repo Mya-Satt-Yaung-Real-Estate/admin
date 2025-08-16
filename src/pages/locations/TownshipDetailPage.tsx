@@ -19,10 +19,9 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTownship, useDeleteTownship } from '../../services/queries/locations';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
-
+import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip, ActionAlert } from '../../components/ui';
 
 const TownshipDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,8 +31,11 @@ const TownshipDetailPage: React.FC = () => {
   const { data: townshipData, isLoading, error } = useTownship(slug || '');
   const deleteTownshipMutation = useDeleteTownship();
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+
   // Delete confirmation
-  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation } = useDeleteConfirmation();
+  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
 
   const township = townshipData?.data;
 
@@ -46,9 +48,12 @@ const TownshipDetailPage: React.FC = () => {
     openDeleteConfirmation(township.name_en || township.name_mm, 'township', async () => {
       try {
         await deleteTownshipMutation.mutateAsync(township.slug);
-        navigate('/locations');
-      } catch (error) {
-        console.error('Failed to delete township:', error);
+        showSuccess(`${township.name_en || township.name_mm} deleted successfully!`, true);
+        navigate('/locations?success=' + encodeURIComponent('Township deleted successfully!'));
+      } catch (error: any) {
+        // Handle API error response
+        const errorMessage = error?.message || 'Failed to delete township. Please try again.';
+        showError(errorMessage, true);
       }
     });
   };
@@ -90,6 +95,8 @@ const TownshipDetailPage: React.FC = () => {
         title={township.name_en}
         subtitle={township.name_mm}
       />
+
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button
@@ -382,7 +389,7 @@ const TownshipDetailPage: React.FC = () => {
       <DeleteConfirmationDialog
         open={deleteState.open}
         onClose={closeDeleteConfirmation}
-        onConfirm={deleteState.onConfirm || (() => {})}
+        onConfirm={handleConfirmDelete}
         title="Delete Township"
         message="Are you sure you want to delete this township? This action cannot be undone."
         itemName={deleteState.itemName}

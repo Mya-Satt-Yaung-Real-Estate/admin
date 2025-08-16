@@ -19,10 +19,9 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRegion, useDeleteRegion } from '../../services/queries/locations';
-import { useDeleteConfirmation } from '../../hooks/useDeleteConfirmation';
+import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip } from '../../components/ui';
-
+import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, StatusChip, ActionAlert } from '../../components/ui';
 
 const RegionDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,8 +31,11 @@ const RegionDetailPage: React.FC = () => {
   const { data: regionData, isLoading, error } = useRegion(slug || '');
   const deleteRegionMutation = useDeleteRegion();
 
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+
   // Delete confirmation
-  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation } = useDeleteConfirmation();
+  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
 
   const region = regionData?.data;
 
@@ -46,9 +48,12 @@ const RegionDetailPage: React.FC = () => {
     openDeleteConfirmation(region.name_en || region.name_mm, 'region', async () => {
       try {
         await deleteRegionMutation.mutateAsync(region.slug);
-        navigate('/locations');
-      } catch (error) {
-        console.error('Failed to delete region:', error);
+        showSuccess(`${region.name_en || region.name_mm} deleted successfully!`, true);
+        navigate('/locations?success=' + encodeURIComponent('Region deleted successfully!'));
+      } catch (error: any) {
+        // Handle API error response
+        const errorMessage = error?.message || 'Failed to delete region. Please try again.';
+        showError(errorMessage, true);
       }
     });
   };
@@ -90,6 +95,8 @@ const RegionDetailPage: React.FC = () => {
         title={region.name_en}
         subtitle={region.name_mm}
       />
+
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button
@@ -329,7 +336,7 @@ const RegionDetailPage: React.FC = () => {
       <DeleteConfirmationDialog
         open={deleteState.open}
         onClose={closeDeleteConfirmation}
-        onConfirm={deleteState.onConfirm || (() => {})}
+        onConfirm={handleConfirmDelete}
         title="Delete Region"
         message="Are you sure you want to delete this region? This action cannot be undone and will also remove all associated townships."
         itemName={deleteState.itemName}
