@@ -12,6 +12,7 @@ import { locationRoutes } from './locations';
 import { propertyRoutes } from './properties';
 import { propertyTypeRoutes } from './property-types';
 import { propertyListingTypeRoutes } from './property-listing-types';
+import { pointRoutes } from './points';
 import { userRoutes } from './users';
 import { analyticsRoutes } from './analytics';
 import { settingsRoutes } from './settings';
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
   ...propertyRoutes,
   ...propertyTypeRoutes,
   ...propertyListingTypeRoutes,
+  ...pointRoutes,
   ...userRoutes,
   ...analyticsRoutes,
   ...settingsRoutes,

@@ -8,6 +8,7 @@ export * from './location';
 export * from './property';
 export * from './user';
 export * from './ui';
+export * from './point';
 
 // Global types that don't fit into specific categories
 export interface BaseEntity {

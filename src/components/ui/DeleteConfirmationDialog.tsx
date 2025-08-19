@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -8,6 +8,7 @@ import {
   Typography,
   Box,
   Alert,
+  TextField,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -17,13 +18,16 @@ import {
 export interface DeleteConfirmationDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (reason?: string) => void;
   title?: string;
   message?: string;
   itemName?: string;
   itemType?: string;
   isLoading?: boolean;
   error?: string | null;
+  requireReason?: boolean;
+  reasonLabel?: string;
+  reasonPlaceholder?: string;
 }
 
 const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
@@ -36,17 +40,34 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
   itemType = 'item',
   isLoading = false,
   error = null,
+  requireReason = false,
+  reasonLabel = 'Reason for deletion',
+  reasonPlaceholder = 'Enter reason for deletion (optional)',
 }) => {
+  const [reason, setReason] = useState('');
+
   const defaultMessage = itemName 
     ? `Are you sure you want to delete the ${itemType} "${itemName}"? This action cannot be undone.`
     : `Are you sure you want to delete this ${itemType}? This action cannot be undone.`;
 
   const finalMessage = message || defaultMessage;
 
+  const handleConfirm = () => {
+    onConfirm(reason.trim() || undefined);
+    setReason(''); // Reset reason when dialog closes
+  };
+
+  const handleClose = () => {
+    setReason(''); // Reset reason when dialog closes
+    onClose();
+  };
+
+  const canConfirm = !requireReason || reason.trim().length > 0;
+
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -71,22 +92,34 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
           </Alert>
         )}
         
-        <Typography variant="body1" color="textSecondary">
+        <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
           {finalMessage}
         </Typography>
+
+        <TextField
+          fullWidth
+          label={reasonLabel}
+          placeholder={reasonPlaceholder}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          multiline
+          rows={3}
+          variant="outlined"
+          disabled={isLoading}
+        />
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button
-          onClick={onClose}
+          onClick={handleClose}
           disabled={isLoading}
           variant="outlined"
         >
           Cancel
         </Button>
         <Button
-          onClick={onConfirm}
-          disabled={isLoading}
+          onClick={handleConfirm}
+          disabled={isLoading || !canConfirm}
           variant="contained"
           color="error"
           startIcon={isLoading ? undefined : <DeleteIcon />}

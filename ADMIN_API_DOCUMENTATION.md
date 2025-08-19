@@ -1209,6 +1209,566 @@ All API responses follow a standardized format:
   "data": null
 }
 ```
+## Company Type management
+
+### Company type list
+**GET** `/company-types`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:** Same as regions
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Company types retrieved successfully",
+    "data": [
+        {
+            "id": 2,
+            "name_mm": "ဆောက်လုပ်ရေးကုမ္ပဏီ",
+            "name_en": "Construction Company",
+            "slug": "construction-company",
+            "description": "Companies that build and renovate properties",
+            "is_active": true,
+            "created_at": "2025-08-16T00:56:39.000000Z",
+            "updated_at": "2025-08-16T00:56:39.000000Z"
+        }
+}
+```
+### Create Company Type
+**POST** `/company-types`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+    "success": true,
+    "message": "Company type created successfully",
+    "data": {
+        "id": 6,
+        "name_mm": "ပွဲစား",
+        "name_en": "Agent",
+        "slug": "agent",
+        "description": "This is property type descrition testing.",
+        "is_active": true,
+        "created_at": "2025-08-16T06:31:41.000000Z",
+        "updated_at": "2025-08-16T06:31:41.000000Z"
+    }
+}
+
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Permission created successfully.",
+  "data": {
+    "id": 2,
+    "name": "property.approve",
+    "slug": "property-approve",
+    "module": "property",
+    "description": "Approve properties",
+    "is_active": true,
+    "roles": []
+  }
+}
+```
+### Update Company Type
+**PUT** `/company-types/{slug}`
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+    "success": true,
+    "message": "Company type created successfully",
+    "data": {
+        "id": 6,
+        "name_mm": "ပွဲစား",
+        "name_en": "Agent",
+        "slug": "agent",
+        "description": "This is property type descrition testing.",
+        "is_active": true,
+        "created_at": "2025-08-16T06:31:41.000000Z",
+        "updated_at": "2025-08-16T06:31:41.000000Z"
+    }
+}
+
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Permission created successfully.",
+  "data": {
+    "id": 2,
+    "name": "property.approve",
+    "slug": "property-approve",
+    "module": "property",
+    "description": "Approve properties",
+    "is_active": true,
+    "roles": []
+  }
+}
+```
+
+## Point Package Management
+
+### List Point Packages
+**GET** `/point-packages`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `per_page` (optional): Number of items per page (1-100, default: 10)
+- `page` (optional): Page number (default: 1)
+- `search` (optional): Search by name (English or Myanmar)
+- `status` (optional): Filter by status (`active` or `inactive`)
+- `sort_by` (optional): Sort field (`name_en`, `name_mm`, `points`, `price_mmk`, `created_at`)
+- `sort_direction` (optional): Sort direction (`asc` or `desc`)
+- `include_deleted` (optional): Include soft-deleted packages (`true` or `false`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point packages retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "name_en": "Starter Pack",
+      "name_mm": "စတင်သူများအတွက် ပက်ကေ့ချ်",
+      "slug": "starter-pack",
+      "points": 25,
+      "price_mmk": "25000.00",
+      "formatted_price": "25,000 MMK",
+      "description_en": "Perfect for new users",
+      "description_mm": "အသုံးပြုသူအသစ်များအတွက် အကောင်းဆုံး",
+      "is_active": true,
+      "is_available": true,
+      "total_purchases": 15,
+      "total_revenue": "375000.00",
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "deleted_at": null,
+      "deleted_by": null,
+      "deletion_reason": null
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+### Create Point Package
+**POST** `/point-packages`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "name_en": "Premium Pack",
+  "name_mm": "ပရီမီယံ ပက်ကေ့ချ်",
+  "points": 100,
+  "price_mmk": 75000,
+  "description_en": "Best value for money",
+  "description_mm": "ငွေကြေးအတွက် အကောင်းဆုံးတန်ဖိုး",
+  "is_active": true
+}
+```
+
+**Note:** The `slug` field is automatically generated from the `name_en` field and is unique. You don't need to provide it in the request.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package created successfully",
+  "data": {
+    "id": 2,
+    "name_en": "Premium Pack",
+    "name_mm": "ပရီမီယံ ပက်ကေ့ချ်",
+    "slug": "premium-pack",
+    "points": 100,
+    "price_mmk": "75000.00",
+    "formatted_price": "75,000 MMK",
+    "description_en": "Best value for money",
+    "description_mm": "ငွေကြေးအတွက် အကောင်းဆုံးတန်ဖိုး",
+    "is_active": true,
+    "is_available": true,
+    "total_purchases": 0,
+    "total_revenue": "0.00",
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+### Get Point Package
+**GET** `/point-packages/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package retrieved successfully",
+  "data": {
+    "id": 1,
+    "name_en": "Starter Pack",
+    "name_mm": "စတင်သူများအတွက် ပက်ကေ့ချ်",
+    "slug": "starter-pack",
+    "points": 25,
+    "price_mmk": "25000.00",
+    "formatted_price": "25,000 MMK",
+    "description_en": "Perfect for new users",
+    "description_mm": "အသုံးပြုသူအသစ်များအတွက် အကောင်းဆုံး",
+    "is_active": true,
+    "is_available": true,
+    "total_purchases": 15,
+    "total_revenue": "375000.00",
+    "purchase_requests_count": 5,
+    "user_points_count": 10,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z",
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null
+  }
+}
+```
+
+### Update Point Package
+**PUT** `/point-packages/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "name_en": "Updated Premium Pack",
+  "name_mm": "အပ်ဒိတ်ပရီမီယံ ပက်ကေ့ချ်",
+  "points": 120,
+  "price_mmk": 80000,
+  "description_en": "Updated best value for money",
+  "description_mm": "အပ်ဒိတ်ငွေကြေးအတွက် အကောင်းဆုံးတန်ဖိုး",
+  "is_active": true
+}
+```
+
+**Note:** The `slug` field is automatically updated if the `name_en` field changes. You don't need to provide it in the request.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package updated successfully",
+  "data": {
+    "id": 2,
+    "name_en": "Updated Premium Pack",
+    "name_mm": "အပ်ဒိတ်ပရီမီယံ ပက်ကေ့ချ်",
+    "slug": "updated-premium-pack",
+    "points": 120,
+    "price_mmk": "80000.00",
+    "formatted_price": "80,000 MMK",
+    "description_en": "Updated best value for money",
+    "description_mm": "အပ်ဒိတ်ငွေကြေးအတွက် အကောင်းဆုံးတန်ဖိုး",
+    "is_active": true,
+    "is_available": true,
+    "total_purchases": 0,
+    "total_revenue": "0.00",
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+### Delete Point Package (Soft Delete)
+**DELETE** `/point-packages/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "deletion_reason": "Package no longer available"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package deleted successfully",
+  "data": null
+}
+```
+
+**Note:** Packages cannot be deleted if they have active users with remaining points or pending purchase requests.
+
+### Restore Point Package
+**POST** `/point-packages/{slug}/restore`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package restored successfully",
+  "data": {
+    "id": 2,
+    "name_en": "Premium Pack",
+    "name_mm": "ပရီမီယံ ပက်ကေ့ချ်",
+    "slug": "premium-pack",
+    "is_active": true,
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null
+  }
+}
+```
+
+### Permanently Delete Point Package
+**DELETE** `/point-packages/{slug}/force`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package permanently deleted",
+  "data": null
+}
+```
+
+**Note:** This action is irreversible and can only be performed on packages with no historical data.
+
+### Toggle Point Package Status
+**POST** `/point-packages/{slug}/toggle-status`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package status toggled successfully",
+  "data": {
+    "id": 1,
+    "name_en": "Starter Pack",
+    "name_mm": "စတင်သူများအတွက် ပက်ကေ့ချ်",
+    "slug": "starter-pack",
+    "is_active": false,
+    "is_available": false
+  }
+}
+```
+
+## Point Purchase Request Management
+
+### List Point Purchase Requests
+**GET** `/point-purchase-requests`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `per_page` (optional): Number of items per page (1-100, default: 10)
+- `page` (optional): Page number (default: 1)
+- `status` (optional): Filter by status (`pending`, `approved`, `rejected`, `cancelled`)
+- `payment_method` (optional): Filter by payment method
+- `date_from` (optional): Filter from date (YYYY-MM-DD)
+- `date_to` (optional): Filter to date (YYYY-MM-DD)
+- `sort_by` (optional): Sort field (`created_at`, `requested_at`, `price_mmk`)
+- `sort_direction` (optional): Sort direction (`asc` or `desc`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Purchase requests retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "status": "pending",
+      "status_label": "Pending",
+      "payment_method": "bank_transfer",
+      "formatted_payment_method": "Bank Transfer",
+      "payment_reference": "TEST123456",
+      "payment_date": "2024-01-15T00:00:00.000000Z",
+      "requested_at": "2024-01-15T10:30:00.000000Z",
+      "approved_at": null,
+      "user": {
+        "id": 6,
+        "name": "Golden Real Estate",
+        "email": "info@goldenrealestate.com",
+        "user_type": "company",
+        "current_point_balance": 0
+      },
+      "package": {
+        "id": 2,
+        "name_en": "Popular Pack",
+        "name_mm": "လူကြိုက်များသော ပက်ကေ့ချ်",
+        "slug": "popular-pack",
+        "points": 50,
+        "price_mmk": "35000.00",
+        "formatted_price": "35,000 MMK"
+      },
+      "points_requested": 50,
+      "price_mmk": "35000.00",
+      "formatted_price": "35,000 MMK",
+      "approved_by": null,
+      "admin_notes": null,
+      "rejected_reason": null,
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "can_approve": true,
+      "can_reject": true,
+      "is_pending": true,
+      "is_approved": false,
+      "is_rejected": false,
+      "is_cancelled": false
+    }
+  ],
+  "pagination": { ... },
+  "summary": {
+    "total_requests": 5,
+    "pending_requests": 2,
+    "approved_requests": 2,
+    "rejected_requests": 1,
+    "cancelled_requests": 0,
+    "total_revenue": "175000.00"
+  }
+}
+```
+
+### Approve/Reject Point Purchase Request
+**POST** `/point-purchase-requests/{id}/approve`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request for Approval:**
+```json
+{
+  "action": "approve",
+  "notes": "Payment verified, points allocated"
+}
+```
+
+**Request for Rejection:**
+```json
+{
+  "action": "reject",
+  "rejection_reason": "Payment proof not provided"
+}
+```
+
+**Response (Approval):**
+```json
+{
+  "success": true,
+  "message": "Purchase request approved and points allocated successfully",
+  "data": {
+    "id": 1,
+    "status": "approved",
+    "status_label": "Approved",
+    "payment_method": "bank_transfer",
+    "formatted_payment_method": "Bank Transfer",
+    "payment_reference": "TEST123456",
+    "payment_date": "2024-01-15T00:00:00.000000Z",
+    "requested_at": "2024-01-15T10:30:00.000000Z",
+    "approved_at": "2024-01-15T11:00:00.000000Z",
+    "user": {
+      "id": 6,
+      "name": "Golden Real Estate",
+      "email": "info@goldenrealestate.com",
+      "user_type": "company",
+      "current_point_balance": 50
+    },
+    "package": {
+      "id": 2,
+      "name_en": "Popular Pack",
+      "name_mm": "လူကြိုက်များသော ပက်ကေ့ချ်",
+      "slug": "popular-pack",
+      "points": 50,
+      "price_mmk": "35000.00",
+      "formatted_price": "35,000 MMK"
+    },
+    "points_requested": 50,
+    "price_mmk": "35000.00",
+    "formatted_price": "35,000 MMK",
+    "approved_by": {
+      "id": 11,
+      "name": "Super Admin"
+    },
+    "admin_notes": "Payment verified, points allocated",
+    "rejected_reason": null,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T11:00:00.000000Z",
+    "can_approve": false,
+    "can_reject": false,
+    "is_pending": false,
+    "is_approved": true,
+    "is_rejected": false,
+    "is_cancelled": false
+  }
+}
+```
+
+**Response (Rejection):**
+```json
+{
+  "success": true,
+  "message": "Purchase request rejected successfully",
+  "data": {
+    "id": 1,
+    "status": "rejected",
+    "status_label": "Rejected",
+    "payment_method": "bank_transfer",
+    "formatted_payment_method": "Bank Transfer",
+    "payment_reference": "TEST123456",
+    "payment_date": "2024-01-15T00:00:00.000000Z",
+    "requested_at": "2024-01-15T10:30:00.000000Z",
+    "approved_at": null,
+    "user": {
+      "id": 6,
+      "name": "Golden Real Estate",
+      "email": "info@goldenrealestate.com",
+      "user_type": "company",
+      "current_point_balance": 0
+    },
+    "package": {
+      "id": 2,
+      "name_en": "Popular Pack",
+      "name_mm": "လူကြိုက်များသော ပက်ကေ့ချ်",
+      "slug": "popular-pack",
+      "points": 50,
+      "price_mmk": "35000.00",
+      "formatted_price": "35,000 MMK"
+    },
+    "points_requested": 50,
+    "price_mmk": "35000.00",
+    "formatted_price": "35,000 MMK",
+    "approved_by": null,
+    "admin_notes": null,
+    "rejected_reason": "Payment proof not provided",
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T11:00:00.000000Z",
+    "can_approve": false,
+    "can_reject": false,
+    "is_pending": false,
+    "is_approved": false,
+    "is_rejected": true,
+    "is_cancelled": false
+  }
+}
+```
 
 ## Permission Management
 

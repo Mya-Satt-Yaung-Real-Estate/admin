@@ -33,6 +33,16 @@ export const MENU_ITEMS = [
         iconName: 'List',
         path: '/property-listing-types',
       },
+      {
+        text: 'Point Packages',
+        iconName: 'Star',
+        path: '/points/packages',
+      },
+      {
+        text: 'Point Purchase Requests',
+        iconName: 'ShoppingCart',
+        path: '/points/purchase-requests',
+      },
     ],
   },
   // {

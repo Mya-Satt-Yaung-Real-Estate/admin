@@ -4,7 +4,7 @@ export interface DeleteConfirmationState {
   open: boolean;
   itemName?: string;
   itemType?: string;
-  onConfirm?: () => void;
+  onConfirm?: (reason?: string) => void;
 }
 
 export const useDeleteConfirmation = () => {
@@ -15,7 +15,7 @@ export const useDeleteConfirmation = () => {
   const openDeleteConfirmation = (
     itemName: string,
     itemType: string = 'item',
-    onConfirm: () => void
+    onConfirm: (reason?: string) => void
   ) => {
     setDeleteState({
       open: true,
@@ -31,9 +31,9 @@ export const useDeleteConfirmation = () => {
     });
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = (reason?: string) => {
     if (deleteState.onConfirm) {
-      deleteState.onConfirm();
+      deleteState.onConfirm(reason);
     }
     closeDeleteConfirmation();
   };
