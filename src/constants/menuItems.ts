@@ -5,6 +5,11 @@ export const MENU_ITEMS = [
     path: '/',
   },
   {
+    text: 'Point Orders',
+    iconName: 'ShoppingCart',
+    path: '/points/purchase-requests',
+  },
+  {
     text: 'Users',
     iconName: 'People',
     path: '/users',
@@ -37,11 +42,6 @@ export const MENU_ITEMS = [
         text: 'Point Packages',
         iconName: 'Star',
         path: '/points/packages',
-      },
-      {
-        text: 'Point Purchase Requests',
-        iconName: 'ShoppingCart',
-        path: '/points/purchase-requests',
       },
     ],
   },

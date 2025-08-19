@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Drawer,
@@ -63,6 +63,21 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const theme = useTheme();
   const currentDrawerWidth = isMobile ? drawerWidth : (isCollapsed ? 64 : drawerWidth);
+  
+  // Track which dropdown is currently open
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+  // Handle navigation and dropdown management
+  const handleNavigate = useCallback((path: string) => {
+    // Close any open dropdown when navigating to a non-dropdown item
+    setOpenDropdown(null);
+    onNavigate(path);
+  }, [onNavigate]);
+
+  // Handle dropdown toggle
+  const handleDropdownToggle = useCallback((dropdownText: string) => {
+    setOpenDropdown(prev => prev === dropdownText ? null : dropdownText);
+  }, []);
 
   // Find the index of the Analytics item
   const analyticsIdx = menuItems.findIndex(item => item.text === 'Analytics');
@@ -121,9 +136,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               path={item.path}
               isSelected={currentPath === item.path}
               isCollapsed={isCollapsed}
-              onClick={onNavigate}
+              onClick={handleNavigate}
               childrenItems={item.children}
               currentPath={currentPath}
+              openDropdown={openDropdown}
+              onDropdownToggle={handleDropdownToggle}
             />
           ))}
         </List>
@@ -139,9 +156,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               path={item.path}
               isSelected={currentPath === item.path}
               isCollapsed={isCollapsed}
-              onClick={onNavigate}
+              onClick={handleNavigate}
               childrenItems={item.children}
               currentPath={currentPath}
+              openDropdown={openDropdown}
+              onDropdownToggle={handleDropdownToggle}
             />
           ))}
         </List>
