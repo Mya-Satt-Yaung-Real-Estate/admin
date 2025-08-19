@@ -7,6 +7,7 @@ export * from './permissions';
 export * from './locations';
 export * from './properties';
 export * from './points';
+export * from './companies';
 
 // Export query keys for external use
 export { authKeys } from './auth';

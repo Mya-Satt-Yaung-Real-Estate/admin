@@ -191,8 +191,8 @@ const PointPurchaseRequestListPage: React.FC = () => {
   const handleDelete = (request: PointPurchaseRequest) => {
     openDeleteConfirmation(`Request #${request.id}`, 'purchase request', async () => {
       try {
-        await deleteRequestMutation.mutateAsync(request.id);
-        showSuccess('Purchase request deleted successfully!', true);
+        const response = await deleteRequestMutation.mutateAsync(request.id);
+        showSuccess(response.message || 'Purchase request deleted successfully!', true);
       } catch (error: any) {
         showError(error?.message || 'Failed to delete purchase request', true);
       }
@@ -225,7 +225,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
     try {
       const { type, request, notes, reason } = approveRejectDialog;
       
-      await approveRejectMutation.mutateAsync({ 
+      const response = await approveRejectMutation.mutateAsync({ 
         id: request.id, 
         data: { 
           action: type, 
@@ -234,7 +234,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
         }
       });
       
-      showSuccess(`Request ${type === 'approve' ? 'approved' : 'rejected'} successfully!`, true);
+      showSuccess(response.message || `Request ${type === 'approve' ? 'approved' : 'rejected'} successfully!`, true);
       setApproveRejectDialog({ open: false, type: 'approve', request: null, notes: '', reason: '' });
     } catch (error: any) {
       showError(error?.message || `Failed to ${approveRejectDialog.type} request`, true);

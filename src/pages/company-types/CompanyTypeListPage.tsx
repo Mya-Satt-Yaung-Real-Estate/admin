@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   Box,
   IconButton,
@@ -6,17 +6,15 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
-  Chip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  Star as StarIcon,
-  AttachMoney as MoneyIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
@@ -24,16 +22,15 @@ import { StatisticsCards, StatCard } from '../../components/common/StatisticsCar
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { usePointPackages, useDeletePointPackage } from '../../services/queries/points';
+import { useCompanyTypes, useDeleteCompanyType } from '../../services/queries/companies';
 import { FilterState } from '../../constants/filters';
-import { PointPackage } from '../../types/point';
-import { formatDate } from '../../constants/dateFormats';
+import { CompanyType } from '../../types/company';
 
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
 
-interface PointPackageFilters extends FilterState {
+interface CompanyTypeFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
 }
@@ -43,10 +40,10 @@ interface PointPackageFilters extends FilterState {
 // ============================================================================
 
 const PAGE_CONFIG = {
-  title: 'Point Packages',
-  description: 'Manage point packages and their pricing',
-  createButtonText: 'Add Point Package',
-  createButtonPath: '/points/packages/create',
+  title: 'Company Type Management',
+  description: 'Manage company types and categories',
+  createButtonText: 'Add Company Type',
+  createButtonPath: '/company-types/create',
 } as const;
 
 const FILTER_FIELDS: FilterField[] = [
@@ -54,7 +51,7 @@ const FILTER_FIELDS: FilterField[] = [
     key: 'searchTerm',
     type: 'search',
     label: 'Search',
-    placeholder: 'Search by name...',
+    placeholder: 'Search by name or description...',
   },
   {
     key: 'statusFilter',
@@ -72,114 +69,123 @@ const FILTER_FIELDS: FilterField[] = [
 // COMPONENT
 // ============================================================================
 
-const PointPackageListPage: React.FC = () => {
+const CompanyTypeListPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Hooks
-  const { filters, setFilter } = useFilters<PointPackageFilters>();
+  const { filters, setFilter } = useFilters<CompanyTypeFilters>();
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
 
   // Queries
-  const { data: packagesData, isLoading, error, refetch } = usePointPackages();
+  const { data: companyTypesData, isLoading, error, refetch } = useCompanyTypes();
+  const deleteCompanyTypeMutation = useDeleteCompanyType();
 
-  const deletePackageMutation = useDeletePointPackage();
+  // Handle URL parameters for success messages
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const successMessage = searchParams.get('success');
+    
+    if (successMessage) {
+      showSuccess(decodeURIComponent(successMessage), true);
+      // Clean up the URL by removing the success parameter
+      const newSearchParams = new URLSearchParams(location.search);
+      newSearchParams.delete('success');
+      const newUrl = location.pathname + (newSearchParams.toString() ? `?${newSearchParams.toString()}` : '');
+      navigate(newUrl, { replace: true });
+    }
+  }, [location.search, showSuccess, navigate]);
 
   // Computed values
-  const packages = packagesData?.data || [];
-  const pagination = packagesData?.pagination;
+  const companyTypes = companyTypesData?.data || [];
 
   // Filter data based on search and status
   const filteredData = useMemo(() => {
-    return packages.filter((item: PointPackage) => {
+    return companyTypes.filter((item: CompanyType) => {
       const matchesSearch = filters.searchTerm === '' || 
         item.name_en.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        item.name_mm.toLowerCase().includes(filters.searchTerm.toLowerCase());
-      
+        item.name_mm.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(filters.searchTerm.toLowerCase()));
+
       const matchesStatus = filters.statusFilter === 'all' || 
         (filters.statusFilter === 'active' && item.is_active) ||
         (filters.statusFilter === 'inactive' && !item.is_active);
-      
+
       return matchesSearch && matchesStatus;
     });
-  }, [packages, filters]);
+  }, [companyTypes, filters]);
 
+  // Paginate data
   const paginatedData = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredData.slice(start, end);
+    const startIndex = page * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredData.slice(startIndex, endIndex);
   }, [filteredData, page, rowsPerPage]);
 
+  // Statistics cards
   const statsCards: StatCard[] = useMemo(() => [
     {
-      title: 'Total Packages',
-      value: pagination?.total?.toString() || '0',
+      title: 'Total Company Types',
+      value: companyTypes.length.toString(),
       color: 'primary',
-      icon: <StarIcon />,
+      icon: <BusinessIcon />,
     },
     {
-      title: 'Active Packages',
-      value: packages.filter(p => p.is_active).length.toString(),
+      title: 'Active Types',
+      value: companyTypes.filter(t => t.is_active).length.toString(),
       color: 'success',
-      icon: <StarIcon />,
+      icon: <BusinessIcon />,
     },
     {
-      title: 'Total Revenue',
-      value: packages.reduce((sum, p) => sum + (p.total_revenue || 0), 0).toLocaleString() + ' MMK',
-      color: 'info',
-      icon: <MoneyIcon />,
-    },
-    {
-      title: 'Total Purchases',
-      value: packages.reduce((sum, p) => sum + (p.total_purchases || 0), 0).toString(),
+      title: 'Inactive Types',
+      value: companyTypes.filter(t => !t.is_active).length.toString(),
       color: 'warning',
-      icon: <MoneyIcon />,
+      icon: <BusinessIcon />,
     },
-  ], [packages, pagination]);
+  ], [companyTypes]);
 
   // Event handlers
   const handleCreate = () => navigate(PAGE_CONFIG.createButtonPath);
-  const handleView = (pointPackage: PointPackage) => navigate(`/points/packages/${pointPackage.slug}`);
-  const handleEdit = (pointPackage: PointPackage) => navigate(`/points/packages/${pointPackage.slug}/edit`);
-  const handleDelete = (pointPackage: PointPackage) => {
-    openDeleteConfirmation(pointPackage.name_en, 'point package', async (deletion_reason) => {
+  const handleView = (companyType: CompanyType) => navigate(`/company-types/${companyType.slug}`);
+  const handleEdit = (companyType: CompanyType) => navigate(`/company-types/${companyType.slug}/edit`);
+  
+  const handleDelete = (companyType: CompanyType) => {
+    openDeleteConfirmation(companyType.name_en, 'company type', async () => {
       try {
-        const response = await deletePackageMutation.mutateAsync({ 
-          slug: pointPackage.slug, 
-          deletion_reason 
-        });
-        showSuccess(response.message || 'Point package deleted successfully!', true);
+        const response = await deleteCompanyTypeMutation.mutateAsync(companyType.slug);
+        showSuccess(response.message || 'Company type deleted successfully!', true);
       } catch (error: any) {
-        showError(error?.message || 'Failed to delete point package', true);
+        showError(error?.message || 'Failed to delete company type', true);
       }
     });
   };
 
-  // Create mobile card actions for a specific package
-  const createMobileCardActions = (pointPackage: PointPackage): MobileCardAction[] => [
+  // Create mobile card actions for a specific company type
+  const createMobileCardActions = (companyType: CompanyType): MobileCardAction[] => [
     {
       icon: <ViewIcon />,
       tooltip: 'View Details',
-      onClick: () => handleView(pointPackage),
+      onClick: () => handleView(companyType),
     },
     {
       icon: <EditIcon />,
       tooltip: 'Edit',
-      onClick: () => handleEdit(pointPackage),
+      onClick: () => handleEdit(companyType),
     },
     {
       icon: <DeleteIcon />,
       tooltip: 'Delete',
-      onClick: () => handleDelete(pointPackage),
+      onClick: () => handleDelete(companyType),
       color: 'error',
     },
   ];
 
   // Table columns
-  const columns: TableColumn<PointPackage>[] = [
+  const columns: TableColumn<CompanyType>[] = [
     {
       id: 'name_en',
       label: 'Name (English)',
@@ -195,45 +201,11 @@ const PointPackageListPage: React.FC = () => {
       ),
     },
     {
-      id: 'points',
-      label: 'Points',
-      align: 'center',
-      render: (value) => (
-        <Chip
-          label={(value || 0).toLocaleString()}
-          size="small"
-          color="primary"
-          variant="outlined"
-        />
-      ),
-    },
-    {
-      id: 'price_mmk',
-      label: 'Price (MMK)',
-      align: 'right',
-      render: (_, row) => (
-        <Typography variant="body2" fontWeight={500} color="success.main">
-          {row.formatted_price}
-        </Typography>
-      ),
-    },
-    {
-      id: 'total_purchases',
-      label: 'Purchases',
-      align: 'center',
+      id: 'description',
+      label: 'Description',
       render: (value) => (
         <Typography variant="body2" color="textSecondary">
-          {value || 0}
-        </Typography>
-      ),
-    },
-    {
-      id: 'total_revenue',
-      label: 'Revenue',
-      align: 'right',
-      render: (value) => (
-        <Typography variant="body2" color="info.main">
-          {(value || 0).toLocaleString()} MMK
+          {value || 'No description'}
         </Typography>
       ),
     },
@@ -241,13 +213,13 @@ const PointPackageListPage: React.FC = () => {
       id: 'is_active',
       label: 'Status',
       align: 'center',
-      render: (value) => <StatusChip status={value ? 'active' : 'inactive'} />,
+      render: (_, row) => <StatusChip status={row.is_active ? 'active' : 'inactive'} />,
     },
     {
       id: 'created_at',
       label: 'Created',
       align: 'center',
-      render: (value) => formatDate(value, 'display'),
+      render: (value) => new Date(value).toLocaleDateString(),
     },
     {
       id: 'actions',
@@ -294,16 +266,17 @@ const PointPackageListPage: React.FC = () => {
     },
   ];
 
-  // Loading and error states
+  // Loading state
   if (isLoading) {
-    return <PageLoadingState title="Loading Point Packages" />;
+    return <PageLoadingState />;
   }
 
+  // Error state
   if (error) {
     return (
       <PageErrorState
-        title="Failed to Load Point Packages"
-        message={error?.message || 'An error occurred while loading point packages'}
+        title="Failed to Load Company Types"
+        message={error?.message || 'An error occurred while loading company types'}
         onRetry={refetch}
         error={error}
       />
@@ -330,17 +303,17 @@ const PointPackageListPage: React.FC = () => {
       {/* Filters */}
       <StandardFilters
         filters={filters}
-        onFilterChange={(key, value) => setFilter(key as keyof PointPackageFilters, value)}
+        onFilterChange={(key, value) => setFilter(key as keyof CompanyTypeFilters, value)}
         fields={FILTER_FIELDS}
       />
 
       {/* Content */}
       {filteredData.length === 0 ? (
         <PageEmptyState
-          title="No Point Packages Found"
-          message="No point packages match your current filters. Try adjusting your search criteria."
+          title="No Company Types Found"
+          message="No company types match your current filters. Try adjusting your search criteria."
           actionButton={{
-            text: 'Add Point Package',
+            text: 'Add Company Type',
             onClick: handleCreate,
           }}
         />
@@ -348,30 +321,20 @@ const PointPackageListPage: React.FC = () => {
         <>
           {isMobile ? (
             <Box>
-              {paginatedData.map((pointPackage) => (
+              {paginatedData.map((companyType) => (
                 <MobileCard
-                  key={pointPackage.id}
-                  title={pointPackage.name_en}
-                  subtitle={pointPackage.name_mm}
-                  description={`${(pointPackage.points || 0).toLocaleString()} points • ${pointPackage.formatted_price}`}
-                  avatar={<StarIcon />}
+                  key={companyType.id}
+                  title={companyType.name_en}
+                  subtitle={companyType.name_mm}
+                  description={companyType.description || 'No description'}
+                  avatar={<BusinessIcon />}
                   avatarColor="primary.main"
                   status={{
-                    label: pointPackage.is_active ? 'Active' : 'Inactive',
-                    color: pointPackage.is_active ? 'success' : 'error',
+                    label: companyType.is_active ? 'Active' : 'Inactive',
+                    color: companyType.is_active ? 'success' : 'error',
                   }}
-                  chips={[
-                    {
-                      label: `${pointPackage.total_purchases || 0} purchases`,
-                      color: 'info',
-                    },
-                    {
-                      label: `${(pointPackage.total_revenue || 0).toLocaleString()} MMK revenue`,
-                      color: 'primary',
-                    },
-                  ]}
-                  actions={createMobileCardActions(pointPackage)}
-                  onClick={() => handleView(pointPackage)}
+                  actions={createMobileCardActions(companyType)}
+                  onClick={() => handleView(companyType)}
                   clickable={true}
                 />
               ))}
@@ -402,16 +365,14 @@ const PointPackageListPage: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={deleteState.open}
-        title="Delete Point Package"
-        message={`Are you sure you want to delete "${deleteState.itemName}"? This action cannot be undone.`}
+        title="Delete Company Type"
+        message={`Are you sure you want to delete ${deleteState.itemName}? This action cannot be undone.`}
         onConfirm={handleConfirmDelete}
         onClose={closeDeleteConfirmation}
-        isLoading={deletePackageMutation.isPending}
-        reasonLabel="Deletion Reason"
-        reasonPlaceholder="Enter reason for deletion (optional)"
+        isLoading={deleteCompanyTypeMutation.isPending}
       />
     </Box>
   );
 };
 
-export default PointPackageListPage;
+export default CompanyTypeListPage;

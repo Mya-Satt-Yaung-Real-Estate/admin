@@ -43,6 +43,11 @@ export const MENU_ITEMS = [
         iconName: 'Star',
         path: '/points/packages',
       },
+      {
+        text: 'Company Types',
+        iconName: 'Business',
+        path: '/company-types',
+      },
     ],
   },
   // {
