@@ -90,7 +90,7 @@ const FILTER_FIELDS: FilterField[] = [
     type: 'select',
     label: 'Payment Method',
     options: [
-      { value: 'all', label: 'All Methods' },
+      { value: 'allMethods', label: 'All Methods' },
       { value: 'bank_transfer', label: 'Bank Transfer' },
       { value: 'cash', label: 'Cash' },
       { value: 'mobile_money', label: 'Mobile Money' },
@@ -117,7 +117,9 @@ const PointPurchaseRequestListPage: React.FC = () => {
   });
 
   // Hooks
-  const { filters, setFilter } = useFilters<PointPurchaseRequestFilters>();
+  const { filters, setFilter } = useFilters<PointPurchaseRequestFilters>({
+    paymentMethodFilter: 'allMethods',
+  });
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
@@ -140,7 +142,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
         item.id.toString().includes(filters.searchTerm);
 
       const matchesStatus = filters.statusFilter === 'all' || item.status === filters.statusFilter;
-      const matchesPaymentMethod = filters.paymentMethodFilter === 'all' || item.payment_method === filters.paymentMethodFilter;
+      const matchesPaymentMethod = !filters.paymentMethodFilter || filters.paymentMethodFilter === 'allMethods' || item.payment_method === filters.paymentMethodFilter;
 
       return matchesSearch && matchesStatus && matchesPaymentMethod;
     });
