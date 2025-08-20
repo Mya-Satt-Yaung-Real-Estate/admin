@@ -9,8 +9,8 @@ export const usersAPI = {
     return apiRequest<RegularUser[]>(`/users${queryString}`);
   },
 
-  // Get user by ID
-  getUser: (id: number) => apiRequest<RegularUser>(`/users/${id}`),
+  // Get user by slug
+  getUser: (slug: string) => apiRequest<{ user: RegularUser }>(`/users/${slug}`),
 
   // Create user
   createUser: (data: CreateRegularUserData) =>
@@ -20,8 +20,8 @@ export const usersAPI = {
     }),
 
   // Update user
-  updateUser: (id: number, data: UpdateRegularUserData) =>
-    apiRequest<RegularUser>(`/users/${id}`, {
+  updateUser: (slug: string, data: UpdateRegularUserData) =>
+    apiRequest<RegularUser>(`/users/${slug}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

@@ -9,7 +9,7 @@ export const userKeys = {
   lists: () => [...userKeys.all, 'list'] as const,
   list: (params?: QueryParams) => [...userKeys.lists(), params] as const,
   details: () => [...userKeys.all, 'detail'] as const,
-  detail: (id: number) => [...userKeys.details(), id] as const,
+  detail: (slug: string) => [...userKeys.details(), slug] as const,
 };
 
 // Get users list
@@ -22,12 +22,12 @@ export const useUsers = (params?: QueryParams) => {
   });
 };
 
-// Get user by ID
-export const useUser = (id: number) => {
+// Get user by slug
+export const useUser = (slug: string) => {
   return useQuery({
-    queryKey: userKeys.detail(id),
-    queryFn: () => usersAPI.getUser(id),
-    enabled: !!id,
+    queryKey: userKeys.detail(slug),
+    queryFn: () => usersAPI.getUser(slug),
+    enabled: !!slug,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
@@ -51,11 +51,17 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      usersAPI.updateUser(id, data),
-    onSuccess: () => {
+    mutationFn: ({ slug, data }: { slug: string; data: any }) =>
+      usersAPI.updateUser(slug, data),
+    onSuccess: (response, { slug }) => {
       // Invalidate and refetch users lists
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate specific user detail
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(slug) });
+      // Update the user detail cache with the new data
+      if (response?.data) {
+        queryClient.setQueryData(userKeys.detail(slug), response);
+      }
     },
   });
 };
@@ -66,9 +72,7 @@ export const useDeleteUser = () => {
 
   return useMutation({
     mutationFn: usersAPI.deleteUser,
-    onSuccess: (_data, variables) => {
-      // Remove the specific user from cache
-      queryClient.removeQueries({ queryKey: userKeys.detail(variables) });
+    onSuccess: () => {
       // Invalidate and refetch users lists
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     },

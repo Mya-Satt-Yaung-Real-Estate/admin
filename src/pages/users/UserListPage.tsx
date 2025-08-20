@@ -313,7 +313,7 @@ const UserListPage: React.FC = () => {
             <Tooltip title="View Details">
               <IconButton
                 size="small"
-                onClick={() => navigate(`/users/${user.id}`)}
+                onClick={() => navigate(`/users/${user.slug}`)}
                 color="primary"
               >
                 <ViewIcon />
@@ -322,7 +322,7 @@ const UserListPage: React.FC = () => {
             <Tooltip title="Edit">
               <IconButton
                 size="small"
-                onClick={() => navigate(`/users/${user.id}/edit`)}
+                onClick={() => navigate(`/users/${user.slug}/edit`)}
                 color="secondary"
               >
                 <EditIcon />
@@ -353,13 +353,13 @@ const UserListPage: React.FC = () => {
       icon: <ViewIcon />,
       tooltip: 'View Details',
       color: 'primary' as const,
-      onClick: () => navigate(`/users/${user.id}`),
+      onClick: () => navigate(`/users/${user.slug}`),
     },
     {
       icon: <EditIcon />,
       tooltip: 'Edit',
       color: 'secondary' as const,
-      onClick: () => navigate(`/users/${user.id}/edit`),
+      onClick: () => navigate(`/users/${user.slug}/edit`),
     },
     {
       icon: <DeleteIcon />,
