@@ -33,7 +33,10 @@ import {
   Schedule as ScheduleIcon,
   Image as ImageIcon,
   PlayArrow as PlayIcon,
-
+  Person as PersonIcon,
+  Business as BusinessIcon,
+  Email as EmailIcon,
+  Diamond as DiamondIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProperty, useDeleteProperty } from '../../services/queries/properties';
@@ -359,6 +362,126 @@ const PropertyDetailPage: React.FC = () => {
               </Box>
             </CardContent>
           </Card>
+
+          {/* User Information Card */}
+          {property.user && (
+              <Card sx={{ mb: 3, mt: 3 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                      {property.user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" fontWeight={600}>
+                        {property.user.user_type === 'company' ? "Company Information" : "User Information"}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Details about the user who posted this property
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Divider sx={{ mb: 2 }} />
+
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        {property.user.user_type === 'company' ? <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} /> : <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />}
+                        <Typography variant="body2" fontWeight="500">
+                          User Type: {property.user.user_type === 'individual' ? 'Individual' : 'Company'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <DiamondIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" fontWeight="500">
+                          Member Level: {property.user.member_level || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <EmailIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="textSecondary">
+                          Email: {property.user.email || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <CheckCircleIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="textSecondary">
+                          Status: {property.user.is_active ? 'Active' : 'Inactive'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    {property.user.user_type === 'individual' && (
+                      <Grid item xs={12}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          <Typography variant="body2" fontWeight="500">
+                            Name: {property.user.name || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    {property.user.user_type === 'company' && (
+                      <>
+                        <Grid item xs={12}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <Typography variant="body2" fontWeight="500">
+                              Company: {property.user.name || 'N/A'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="textSecondary">
+                              Company Type: {property.user.company_profile?.company_type_name || 'N/A'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <ViewCountIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="textSecondary">
+                              Views: {property.user.company_profile?.view_count || 0}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <PhoneIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="textSecondary">
+                              Phone: {property.user.company_profile?.phone_number || 'N/A'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="textSecondary">
+                              Location: {property.user.company_profile?.location_en || 'N/A'} ({property.user.company_profile?.location_mm || ''})
+                            </Typography>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <Typography variant="body2" color="textSecondary">
+                              Address: {property.user.company_profile?.address || 'N/A'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+          )}
         </Grid>
 
         {/* Sidebar Information */}

@@ -659,49 +659,305 @@ The admin panel supports two modes for property creation and management:
   "message": "Properties retrieved successfully",
   "data": [
     {
-      "id": 1,
-      "title_en": "Beautiful House",
-      "title_mm": "လှပတဲ့ အိမ်",
-      "description": "A beautiful house for sale",
-      "price": 500000,
-      "area_sqft": 1500,
-      "bedrooms": 3,
-      "bathrooms": 2,
-      "property_condition": "good",
-      "status": "published",
-      "verification_status": "approved",
-      "is_featured": false,
-      "is_verified": true,
-      "published_at": "2024-01-15T10:30:00.000000Z",
-      "created_at": "2024-01-15T10:30:00.000000Z",
-      "updated_at": "2024-01-15T10:30:00.000000Z",
-      "user": {
-        "id": 1,
-        "name": "Property Owner",
-        "email": "owner@example.com",
-        "user_type": "individual"
-      },
-      "property_type": {
-        "id": 1,
-        "name_en": "House",
-        "name_mm": "အိမ်"
-      },
-      "listing_type": {
-        "id": 1,
-        "name_en": "For Sale",
-        "name_mm": "ရောင်းရန်"
-      },
-      "region": {
-        "id": 1,
-        "name_en": "Yangon",
-        "name_mm": "ရန်ကုန်"
-      },
-      "township": {
-        "id": 1,
-        "name_en": "Downtown",
-        "name_mm": "မြို့လယ်"
-      }
-    }
+            "id": 2,
+            "user_id": 7,
+            "user": {
+                "id": 7,
+                "name": "Yangon Properties",
+                "slug": "yangon-properties",
+                "email": "contact@yangonproperties.com",
+                "user_type": "company",
+                "member_level": "silver",
+                "is_active": true,
+                "company_profile": {
+                    "id": 2,
+                    "company_name": "Yangon Properties Ltd.",
+                    "company_type_id": 2,
+                    "company_type_name": "Construction Company(ဆောက်လုပ်ရေးကုမ္ပဏီ)",
+                    "phone_number": "+959987654321",
+                    "address": "Building A, Downtown Business Center",
+                    "website": null,
+                    "description": "Comprehensive property solutions for Yangon area",
+                    "view_count": 0,
+                    "location_en": "Mandalay,Amarapura",
+                    "location_mm": "မန္တလေး,အမရပူရ"
+                }
+            },
+            "property_type": {
+                "id": 1,
+                "name": "House(အိမ်)",
+                "slug": "house"
+            },
+            "listing_type": {
+                "id": 1,
+                "name": "For Sale(ရောင်းရန်)",
+                "slug": "for-sale"
+            },
+            "title_en": "Luxury Villa in Mandalay",
+            "title_mm": "မန္တလေးမှာ ဇိမ်ခံအိမ်ကြီး",
+            "description": "Exclusive luxury villa with premium finishes and amenities. Features include a swimming pool, home theater, and smart home automation. Located in the most prestigious area of Mandalay.",
+            "property_condition": "new",
+            "location": {
+                "region": {
+                    "id": 2,
+                    "name": "Mandalay(မန္တလေး)"
+                },
+                "township": {
+                    "id": 14,
+                    "name_en": "Pyigyidagun(ပြည်ကြီးတံခွန်)"
+                },
+                "address": "No. 177, Residential Lane, Pyigyidagun, Mandalay",
+                "latitude": "22.06400000",
+                "longitude": "96.18400000",
+                "location": "Pyigyidagun, Mandalay(ပြည်ကြီးတံခွန်, မန္တလေး)"
+            },
+            "price": "1200000000.00",
+            "formatted_price": "1,200,000,000 MMK",
+            "area_sqft": "4000.00",
+            "bedrooms": 5,
+            "bathrooms": 4,
+            "bank_installment_available": true,
+            "features": [
+                "swimming_pool",
+                "home_theater",
+                "smart_home",
+                "garden",
+                "parking"
+            ],
+            "contact_info": {
+                "owner_name": "Daw Su Su Win",
+                "phone_numbers": [
+                    "+959555123456"
+                ],
+                "email": "su.su.win@example.com"
+            },
+            "status": "published",
+            "is_featured": false,
+            "stats": {
+                "view_count": 0,
+                "contact_count": 0,
+                "favorite_count": 1
+            },
+            "dates": {
+                "published_at": "2025-08-16T01:05:31.000000Z",
+                "expires_at": "2025-09-19T10:49:46.000000Z",
+                "created_at": "2025-08-16T01:05:31.000000Z",
+                "verified_at": "2025-08-16T01:05:31.000000Z"
+            },
+            "verification_status": "approved",
+            "rejection_reason": null,
+            "verified_by": {
+                "id": 1,
+                "name": "Aung Min"
+            },
+            "is_published": true,
+            "is_draft": false,
+            "is_sold": false,
+            "is_rented": false,
+            "is_expired": false,
+            "can_be_published": false,
+            "is_approved": true,
+            "is_pending_approval": false,
+            "is_rejected": false,
+            "media": {
+                "images": [
+                    {
+                        "id": 6,
+                        "type": "image",
+                        "filename": "h6.jpg",
+                        "is_primary": true,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1ab141.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e197c8f_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1a302b_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e18a051_thumbnail.jpg"
+                    },
+                    {
+                        "id": 7,
+                        "type": "image",
+                        "filename": "h7.jpg",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb3d2ad.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb2b873_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb347e3_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb1f8b0_thumbnail.jpg"
+                    },
+                ],
+                "videos": [],
+                "primary_image": {
+                    "id": 6,
+                    "type": "image",
+                    "filename": "h6.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1ab141.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e197c8f_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1a302b_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e18a051_thumbnail.jpg"
+                }
+            }
+        },
+        {
+            "id": 3,
+            "user_id": 7,
+            "user": {
+                "id": 7,
+                "name": "Yangon Properties",
+                "slug": "yangon-properties",
+                "email": "contact@yangonproperties.com",
+                "user_type": "company",
+                "member_level": "silver",
+                "is_active": true,
+                "company_profile": {
+                    "id": 2,
+                    "company_name": "Yangon Properties Ltd.",
+                    "company_type_id": 2,
+                    "company_type_name": "Construction Company(ဆောက်လုပ်ရေးကုမ္ပဏီ)",
+                    "phone_number": "+959987654321",
+                    "address": "Building A, Downtown Business Center",
+                    "website": null,
+                    "description": "Comprehensive property solutions for Yangon area",
+                    "view_count": 0,
+                    "location_en": "Mandalay,Amarapura",
+                    "location_mm": "မန္တလေး,အမရပူရ"
+                }
+            },
+            "property_type": {
+                "id": 2,
+                "name": "Apartment(တိုက်ခန်း)",
+                "slug": "apartment"
+            },
+            "listing_type": {
+                "id": 2,
+                "name": "For Rent(ငှားရန်)",
+                "slug": "for-rent"
+            },
+            "title_en": "Modern Apartment for Rent in Downtown",
+            "title_mm": "မြို့လယ်မှာ ခေတ်မီတိုက်ခန်း ငှားရန်",
+            "description": "Fully furnished modern apartment in the heart of downtown. Perfect for professionals or small families. Includes all utilities, 24/7 security, and access to gym and pool facilities.",
+            "property_condition": "good",
+            "location": {
+                "region": {
+                    "id": 1,
+                    "name": "Yangon(ရန်ကုန်)"
+                },
+                "township": {
+                    "id": 1,
+                    "name_en": "Downtown(မြို့ပြ)"
+                },
+                "address": "No. 43, Business Street, Downtown, Yangon",
+                "latitude": "16.89400000",
+                "longitude": "96.25800000",
+                "location": "Downtown, Yangon(မြို့ပြ, ရန်ကုန်)"
+            },
+            "price": "2500000.00",
+            "formatted_price": "2,500,000 MMK",
+            "area_sqft": "1200.00",
+            "bedrooms": 2,
+            "bathrooms": 2,
+            "bank_installment_available": false,
+            "features": [
+                "furnished",
+                "gym",
+                "pool",
+                "security",
+                "parking"
+            ],
+            "contact_info": {
+                "owner_name": "U Kyaw Zin",
+                "phone_numbers": [
+                    "+959777888999"
+                ],
+                "email": "kyaw.zin@example.com"
+            },
+            "status": "published",
+            "is_featured": false,
+            "stats": {
+                "view_count": 0,
+                "contact_count": 0,
+                "favorite_count": 1
+            },
+            "dates": {
+                "published_at": "2025-08-16T01:05:31.000000Z",
+                "expires_at": "2025-08-27T02:05:04.000000Z",
+                "created_at": "2025-08-16T01:05:31.000000Z",
+                "verified_at": "2025-08-16T01:05:31.000000Z"
+            },
+            "verification_status": "approved",
+            "rejection_reason": null,
+            "verified_by": {
+                "id": 1,
+                "name": "Aung Min"
+            },
+            "is_published": true,
+            "is_draft": false,
+            "is_sold": false,
+            "is_rented": false,
+            "is_expired": false,
+            "can_be_published": false,
+            "is_approved": true,
+            "is_pending_approval": false,
+            "is_rejected": false,
+            "media": {
+                "images": [
+                    {
+                        "id": 11,
+                        "type": "image",
+                        "filename": "h11.jpg",
+                        "is_primary": true,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+                    },
+                    {
+                        "id": 12,
+                        "type": "image",
+                        "filename": "h12.jpg",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761b02694.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ae40c3_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761aed563_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ad8fb2_thumbnail.jpg"
+                    },
+                ],
+                "videos": [
+                    {
+                        "id": 15,
+                        "type": "video",
+                        "filename": "SampleVideo_1280x720_30mb.mp4",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7689d29a3.mp4",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76893f4be_small.mp4",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76898786d_medium.mp4",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7688f2b33_thumbnail.mp4",
+                        "video_info": {
+                            "duration": 170,
+                            "resolution": "1280x720",
+                            "format": "mp4",
+                            "bitrate": 1474,
+                            "thumbnail_timestamp": null
+                        }
+                    }
+                ],
+                "primary_image": {
+                    "id": 11,
+                    "type": "image",
+                    "filename": "h11.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+                }
+            }
+        }
+
   ],
   "pagination": { ... }
 }
@@ -736,59 +992,163 @@ The admin panel supports two modes for property creation and management:
   "success": true,
   "message": "Property retrieved successfully",
   "data": {
-    "id": 1,
-    "title_en": "Beautiful House",
-    "title_mm": "လှပတဲ့ အိမ်",
-    "description": "A beautiful house for sale",
-    "price": 500000,
-    "area_sqft": 1500,
-    "bedrooms": 3,
-    "bathrooms": 2,
-    "property_condition": "good",
-    "status": "published",
-    "verification_status": "approved",
-    "is_featured": false,
-    "is_verified": true,
-    "address": "123 Main Street",
-    "latitude": 16.8661,
-    "longitude": 96.1951,
-    "bank_installment_available": true,
-    "features": ["garden", "parking"],
-    "owner_name": "John Doe",
-    "phone_numbers": ["+959123456789"],
-    "email": "owner@example.com",
-    "published_at": "2024-01-15T10:30:00.000000Z",
-    "expires_at": "2024-02-15T10:30:00.000000Z",
-    "created_at": "2024-01-15T10:30:00.000000Z",
-    "updated_at": "2024-01-15T10:30:00.000000Z",
-    "user": {
-      "id": 1,
-      "name": "Property Owner",
-      "email": "owner@example.com",
-      "user_type": "individual"
-    },
-    "property_type": { ... },
-    "listing_type": { ... },
-    "region": { ... },
-    "township": { ... },
-    "media": [
-      {
-        "id": 1,
-        "file_path": "properties/1/image1.jpg",
-        "file_type": "image",
-        "file_size": 1024000,
-        "mime_type": "image/jpeg",
-        "is_primary": true,
-        "variants": [
-          {
+    "id": 3,
+        "user_id": 7,
+        "user": {
+            "id": 7,
+            "name": "Yangon Properties",
+            "slug": "yangon-properties",
+            "email": "contact@yangonproperties.com",
+            "user_type": "company",
+            "member_level": "silver",
+            "is_active": true,
+            "company_profile": {
+                "id": 2,
+                "company_name": "Yangon Properties Ltd.",
+                "company_type_id": 2,
+                "company_type_name": "Construction Company(ဆောက်လုပ်ရေးကုမ္ပဏီ)",
+                "phone_number": "+959987654321",
+                "address": "Building A, Downtown Business Center",
+                "website": null,
+                "description": "Comprehensive property solutions for Yangon area",
+                "view_count": 0,
+                "location_en": "Mandalay,Amarapura",
+                "location_mm": "မန္တလေး,အမရပူရ"
+            }
+        },
+        "property_type": {
+            "id": 2,
+            "name": "Apartment(တိုက်ခန်း)",
+            "slug": "apartment"
+        },
+        "listing_type": {
+            "id": 2,
+            "name": "For Rent(ငှားရန်)",
+            "slug": "for-rent"
+        },
+        "title_en": "Modern Apartment for Rent in Downtown",
+        "title_mm": "မြို့လယ်မှာ ခေတ်မီတိုက်ခန်း ငှားရန်",
+        "description": "Fully furnished modern apartment in the heart of downtown. Perfect for professionals or small families. Includes all utilities, 24/7 security, and access to gym and pool facilities.",
+        "property_condition": "good",
+        "location": {
+            "region": {
+                "id": 1,
+                "name": "Yangon(ရန်ကုန်)"
+            },
+            "township": {
+                "id": 1,
+                "name_en": "Downtown(မြို့ပြ)"
+            },
+            "address": "No. 43, Business Street, Downtown, Yangon",
+            "latitude": "16.89400000",
+            "longitude": "96.25800000",
+            "location": "Downtown, Yangon(မြို့ပြ, ရန်ကုန်)"
+        },
+        "price": "2500000.00",
+        "formatted_price": "2,500,000 MMK",
+        "area_sqft": "1200.00",
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "bank_installment_available": false,
+        "features": [
+            "furnished",
+            "gym",
+            "pool",
+            "security",
+            "parking"
+        ],
+        "contact_info": {
+            "owner_name": "U Kyaw Zin",
+            "phone_numbers": [
+                "+959777888999"
+            ],
+            "email": "kyaw.zin@example.com"
+        },
+        "status": "published",
+        "is_featured": false,
+        "stats": {
+            "view_count": 0,
+            "contact_count": 0,
+            "favorite_count": 1
+        },
+        "dates": {
+            "published_at": "2025-08-16T01:05:31.000000Z",
+            "expires_at": "2025-08-27T02:05:04.000000Z",
+            "created_at": "2025-08-16T01:05:31.000000Z",
+            "verified_at": "2025-08-16T01:05:31.000000Z"
+        },
+        "verification_status": "approved",
+        "rejection_reason": null,
+        "verified_by": {
             "id": 1,
-            "variant_type": "thumbnail",
-            "file_path": "properties/1/image1_thumb.jpg",
-            "file_size": 51200
-          }
-        ]
-      }
-    ]
+            "name": "Aung Min"
+        },
+        "is_published": true,
+        "is_draft": false,
+        "is_sold": false,
+        "is_rented": false,
+        "is_expired": false,
+        "can_be_published": false,
+        "is_approved": true,
+        "is_pending_approval": false,
+        "is_rejected": false,
+        "media": {
+            "images": [
+                {
+                    "id": 11,
+                    "type": "image",
+                    "filename": "h11.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+                },
+                {
+                    "id": 12,
+                    "type": "image",
+                    "filename": "h12.jpg",
+                    "is_primary": false,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761b02694.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ae40c3_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761aed563_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ad8fb2_thumbnail.jpg"
+                },
+            ],
+            "videos": [
+                {
+                    "id": 15,
+                    "type": "video",
+                    "filename": "SampleVideo_1280x720_30mb.mp4",
+                    "is_primary": false,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7689d29a3.mp4",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76893f4be_small.mp4",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76898786d_medium.mp4",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7688f2b33_thumbnail.mp4",
+                    "video_info": {
+                        "duration": 170,
+                        "resolution": "1280x720",
+                        "format": "mp4",
+                        "bitrate": 1474,
+                        "thumbnail_timestamp": null
+                    }
+                }
+            ],
+            "primary_image": {
+                "id": 11,
+                "type": "image",
+                "filename": "h11.jpg",
+                "is_primary": true,
+                "status": "completed",
+                "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+            }
+        }
   }
 }
 ```

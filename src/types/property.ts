@@ -1,4 +1,4 @@
-import { User, Region, Township } from './index';
+import { RegularUser, Region, Township } from './index';
 
 // Property Types based on API Documentation
 export interface Property {
@@ -85,7 +85,7 @@ export interface Property {
       thumbnail_url: string;
     };
   };
-  user?: User;
+  user?: RegularUser;
   property_type?: PropertyType;
   listing_type?: PropertyListingType;
 }
