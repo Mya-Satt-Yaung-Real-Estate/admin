@@ -11,7 +11,6 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Visibility as ViewIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
@@ -24,9 +23,9 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
-import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { useUsers, useDeleteUser } from '../../services/queries/users';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useAlertSystem } from '../../hooks';
+import { useUsers } from '../../services/queries/users';
 import { FilterState } from '../../constants/filters';
 import { RegularUser } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
@@ -123,15 +122,7 @@ const UserListPage: React.FC = () => {
   });
 
   // Alert system hook
-  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
-  
-  // Delete confirmation hook
-  const {
-    deleteState,
-    openDeleteConfirmation,
-    closeDeleteConfirmation,
-    handleConfirmDelete,
-  } = useDeleteConfirmation();
+  const { alert, clearAlert } = useAlertSystem();
 
   // API Queries
   const { data: usersResponse, isLoading, error } = useUsers({
@@ -140,8 +131,7 @@ const UserListPage: React.FC = () => {
     sort_direction: 'desc',
   });
 
-  // Delete mutation
-  const deleteUserMutation = useDeleteUser();
+
 
   // Extract users data
   const users = usersResponse?.data || [];
@@ -328,21 +318,12 @@ const UserListPage: React.FC = () => {
                 <EditIcon />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton
-                size="small"
-                onClick={() => handleDeleteUser(user)}
-                color="error"
-                disabled={deleteUserMutation.isPending}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
+
           </Box>
         );
       },
     },
-  ], [isMobile, navigate, deleteUserMutation.isPending]);
+  ], [isMobile, navigate]);
 
   // ========================================================================
   // MOBILE CARD ACTIONS
@@ -361,32 +342,11 @@ const UserListPage: React.FC = () => {
       color: 'secondary' as const,
       onClick: () => navigate(`/users/${user.slug}/edit`),
     },
-    {
-      icon: <DeleteIcon />,
-      tooltip: 'Delete',
-      color: 'error' as const,
-      onClick: () => handleDeleteUser(user),
-    },
   ];
 
   // ========================================================================
   // EVENT HANDLERS
   // ========================================================================
-
-  const handleDeleteUser = (user: RegularUser) => {
-    openDeleteConfirmation(
-      user.name,
-      'user',
-      async () => {
-        try {
-          await deleteUserMutation.mutateAsync(user.id);
-          showSuccess(`${user.name} deleted successfully!`, true);
-        } catch (error) {
-          showError('Failed to delete user. Please try again.', true);
-        }
-      }
-    );
-  };
 
   const handleAddUser = () => {
     navigate('/users/create');
@@ -504,16 +464,7 @@ const UserListPage: React.FC = () => {
         )
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={deleteState.open}
-        onClose={closeDeleteConfirmation}
-        onConfirm={handleConfirmDelete}
-        itemName={deleteState.itemName}
-        itemType={deleteState.itemType}
-        isLoading={deleteUserMutation.isPending}
-        error={deleteUserMutation.error?.message}
-      />
+
     </Box>
   );
 };

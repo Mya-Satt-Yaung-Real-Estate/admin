@@ -204,3 +204,4 @@ const UserPointTransactions: React.FC<UserPointTransactionsProps> = ({ transacti
 };
 
 export default UserPointTransactions;
+
