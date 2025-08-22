@@ -238,7 +238,7 @@ const UserEditPage: React.FC = () => {
                   </ListItemIcon>
                   <ListItemText
                     primary="Created"
-                    secondary={formatDate(user.created_at)}
+                    secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
                   />
                 </ListItem>
               </List>

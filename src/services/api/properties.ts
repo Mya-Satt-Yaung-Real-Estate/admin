@@ -25,6 +25,10 @@ export const propertiesAPI = {
   get: (id: number) =>
     apiRequest<Property>(`/properties/${id}`),
 
+  // Get single property by ID (alias for get)
+  getById: (id: number) =>
+    apiRequest<Property>(`/properties/${id}`),
+
   // Create new property
   create: (data: CreatePropertyData) =>
     apiRequest<Property>('/properties', {
@@ -42,6 +46,10 @@ export const propertiesAPI = {
   // Delete property
   delete: (id: number) =>
     apiRequest(`/properties/${id}`, { method: 'DELETE' }),
+
+  // Restore property
+  restore: (id: number) =>
+    apiRequest<Property>(`/properties/${id}/restore`, { method: 'POST' }),
 
   // Approve property
   approve: (id: number) =>

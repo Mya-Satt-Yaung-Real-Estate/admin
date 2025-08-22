@@ -398,16 +398,8 @@ The admin panel supports two modes for property creation and management:
       "user_type": "individual",
       "member_level": "silver",
       "is_active": true,
-      "last_login_at": "2024-01-15T10:30:00.000000Z",
-      "last_active_at": "2024-01-15T10:30:00.000000Z",
-      "email_verified_at": "2024-01-15T10:30:00.000000Z",
-      "created_at": "2024-01-15T10:30:00.000000Z",
-      "updated_at": "2024-01-15T10:30:00.000000Z",
       "property_count": 5,
       "point_balance": 150,
-      "total_points_allocated": 500,
-      "total_points_consumed": 350,
-      "point_packages_count": 3
     },
     {
       "id": 2,
@@ -759,6 +751,7 @@ The admin panel supports two modes for property creation and management:
             "is_approved": true,
             "is_pending_approval": false,
             "is_rejected": false,
+            "is_deleted": false,
             "media": {
                 "images": [
                     {
@@ -1466,6 +1459,62 @@ The admin panel supports two modes for property creation and management:
     "region": { ... },
     "township": { ... }
   }
+}
+```
+
+## File Upload Management
+
+### Image or video upload
+**POST** `/media`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "file": // Image with multipart form,
+  "media_type": 'image'
+}
+```
+
+**Or for video:**
+```json
+{
+  "file": // video with multipart form,
+  "media_type": 'video'
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Media uploaded successfully",
+    "data": {
+        "id": 5,
+        "type": "image",
+        "filename": "SampleJPGImage_10mbmb.jpg",
+        "size": 10506316,
+        "formatted_size": "10.02 MB",
+        "mime_type": "image/jpeg",
+        "is_primary": null,
+        "status": "uploading",
+        "url": "https://msy-demo.s3.ap-southeast-1.amazonaws.com/temp/images/2025-08-10-17-36-08_0xw35SZWyeQt.jpg?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYGSAGSQLQMB567PR%2F20250810%2Fap-southeast-1%2Fs3%2Faws4_request&X-Amz-Date=20250810T173611Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Signature=e3ae2cfbe4f5e7fbde8789d26de4e6a887411af6da9d447b0bb37d0654b33140",
+        "created_at": "2025-08-10T17:36:11.000000Z"
+    }
+}
+```
+
+### Image or video delete
+**POST** `/media/{media_id}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Media deleted successfully",
 }
 ```
 

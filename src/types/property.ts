@@ -4,6 +4,7 @@ import { RegularUser, Region, Township } from './index';
 export interface Property {
   id: number;
   user_id: number;
+  property_mode: 'platform' | 'user';
   title_en: string;
   title_mm: string;
   description: string;
@@ -42,6 +43,7 @@ export interface Property {
     expires_at?: string;
     created_at: string;
     verified_at?: string;
+    deleted_at?: string;
   };
   rejection_reason?: string;
   is_published: boolean;
@@ -53,6 +55,7 @@ export interface Property {
   is_approved: boolean;
   is_pending_approval: boolean;
   is_rejected: boolean;
+  is_deleted: boolean;
   media?: {
     images: Array<{
       id: number;
@@ -91,31 +94,47 @@ export interface Property {
 }
 
 export interface CreatePropertyData {
+  // Dual-mode fields
+  is_platform_property: boolean;
+  user_id?: number; // Required only for user properties
+  
+  // Basic property information
   property_type_id: number;
   listing_type_id: number;
   title_en: string;
   title_mm: string;
   description: string;
   property_condition: 'new' | 'good' | 'fair' | 'poor';
+  
+  // Location information
   region_id: number;
   township_id: number;
   address: string;
   latitude?: number;
   longitude?: number;
+  
+  // Property details
   price: number;
   area_sqft: number;
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;
   features?: string[];
+  
+  // Contact information
   owner_name: string;
   phone_numbers: string[];
   email: string;
+  
+  // Status and settings
   status?: 'published' | 'draft' | 'sold' | 'rented';
   is_featured?: boolean;
   is_verified?: boolean;
   published_at?: string;
   expires_at?: string;
+  
+  // Media
+  media_ids?: number[];
 }
 
 export interface UpdatePropertyData extends Partial<CreatePropertyData> {}

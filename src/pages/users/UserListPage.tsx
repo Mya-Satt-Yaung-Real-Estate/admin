@@ -16,6 +16,8 @@ import {
   Business as BusinessIcon,
   Email as EmailIcon,
   Schedule as ScheduleIcon,
+  Home as HomeIcon,
+  Diamond as DiamondIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -191,6 +193,18 @@ const UserListPage: React.FC = () => {
       color: 'warning',
       icon: <PersonIcon />,
     },
+    {
+      title: 'Total Properties',
+      value: users.reduce((sum, user) => sum + (user.property_count || 0), 0),
+      color: 'secondary',
+      icon: <HomeIcon />,
+    },
+    {
+      title: 'Total Points',
+      value: users.reduce((sum, user) => sum + (user.point_balance || 0), 0).toLocaleString(),
+      color: 'error',
+      icon: <DiamondIcon />,
+    },
   ], [users]);
 
   // ========================================================================
@@ -244,8 +258,41 @@ const UserListPage: React.FC = () => {
         return (
           <StatusChip 
             status={user.member_level} 
+            statusType="member_level"
             size="small"
           />
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'propertyCount',
+      label: 'Properties',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <HomeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight="500">
+              {user.property_count || 0}
+            </Typography>
+          </Box>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'pointBalance',
+      label: 'Points',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <DiamondIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight="500">
+              {user.point_balance || 0}
+            </Typography>
+          </Box>
         );
       },
       hidden: isMobile,
@@ -286,7 +333,7 @@ const UserListPage: React.FC = () => {
         if (!user) return <Typography variant="body2">No data</Typography>;
         return (
           <Typography variant="body2" color="textSecondary">
-            {formatDate(user.created_at, 'display')}
+            {user.created_at ? formatDate(user.created_at, 'display') : 'N/A'}
           </Typography>
         );
       },
@@ -417,7 +464,7 @@ const UserListPage: React.FC = () => {
               key={user.id}
               title={user.name}
               subtitle={user.email}
-              description={`${user.user_type === 'company' ? 'Company' : 'Individual'} • ${user.member_level} member`}
+              description={`${user.user_type === 'company' ? 'Company' : 'Individual'} • ${user.member_level} member • ${user.property_count || 0} properties • ${user.point_balance || 0} points`}
               avatar={user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
               avatarColor={user.user_type === 'company' ? 'success.main' : 'primary.main'}
               status={{
@@ -432,6 +479,14 @@ const UserListPage: React.FC = () => {
                  {
                    label: user.member_level,
                    color: 'info',
+                 },
+                 {
+                   label: `${user.property_count || 0} Properties`,
+                   color: 'secondary',
+                 },
+                 {
+                   label: `${user.point_balance || 0} Points`,
+                   color: 'warning',
                  },
                ]}
               actions={createMobileCardActions(user)}

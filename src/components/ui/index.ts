@@ -5,6 +5,7 @@ export { default as PageErrorState } from './PageErrorState';
 export { default as PageEmptyState } from './PageEmptyState';
 export { default as LogoutDialog } from './LogoutDialog';
 export { default as DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+export { default as ConfirmationDialog } from './ConfirmationDialog';
 export { default as ActionAlert } from './ActionAlert';
 export { default as EnhancedMultiSelect } from './EnhancedMultiSelect';
 export { default as Pagination } from './Pagination';
@@ -27,3 +28,6 @@ export type {
 
 // Verification Actions
 export { VerificationActions } from './VerificationActions';
+
+// Media Upload
+export { default as MediaUpload } from './MediaUpload';

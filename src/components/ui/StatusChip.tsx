@@ -3,7 +3,7 @@ import { Chip, ChipProps } from '@mui/material';
 
 export interface StatusChipProps extends Omit<ChipProps, 'color'> {
   status: string | boolean;
-  statusType?: 'status' | 'verification_status';
+  statusType?: 'status' | 'verification_status' | 'member_level';
   size?: 'small' | 'medium';
 }
 
@@ -19,7 +19,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
     : status;
 
   // Get status label based on status type
-  const getStatusLabel = (status: string, type: 'status' | 'verification_status'): string => {
+  const getStatusLabel = (status: string, type: 'status' | 'verification_status' | 'member_level'): string => {
     if (type === 'verification_status') {
       const verificationStatusMap: Record<string, string> = {
         pending: 'Pending',
@@ -27,6 +27,14 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         rejected: 'Rejected',
       };
       return verificationStatusMap[status] || status;
+    } else if (type === 'member_level') {
+      const memberLevelMap: Record<string, string> = {
+        bronze: 'Bronze',
+        silver: 'Silver',
+        gold: 'Gold',
+        platinum: 'Platinum',
+      };
+      return memberLevelMap[status] || status;
     } else {
       const statusMap: Record<string, string> = {
         active: 'Active',
@@ -43,7 +51,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
   };
 
   // Get status colors based on status type
-  const getStatusColors = (status: string, type: 'status' | 'verification_status') => {
+  const getStatusColors = (status: string, type: 'status' | 'verification_status' | 'member_level') => {
     if (type === 'verification_status') {
       const verificationColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
         pending: {
@@ -66,6 +74,34 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         },
       };
       return verificationColorMap[status] || verificationColorMap.pending;
+    } else if (type === 'member_level') {
+      const memberLevelColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
+        bronze: {
+          text: '#CD7F32', // Bronze color
+          border: '#CD7F32',
+          hoverBg: '#FDF8F3',
+          hoverBorder: '#B8860B',
+        },
+        silver: {
+          text: '#C0C0C0', // Silver color
+          border: '#C0C0C0',
+          hoverBg: '#F8F9FA',
+          hoverBorder: '#A9A9A9',
+        },
+        gold: {
+          text: '#FFD700', // Gold color
+          border: '#FFD700',
+          hoverBg: '#FFFBEB',
+          hoverBorder: '#DAA520',
+        },
+        platinum: {
+          text: '#E5E4E2', // Platinum color
+          border: '#E5E4E2',
+          hoverBg: '#F5F5F5',
+          hoverBorder: '#B8B8B8',
+        },
+      };
+      return memberLevelColorMap[status] || memberLevelColorMap.bronze;
     } else {
       const statusColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
         active: {

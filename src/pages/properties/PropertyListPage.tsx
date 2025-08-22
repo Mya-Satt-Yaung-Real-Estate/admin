@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   IconButton,
@@ -6,11 +6,14 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  RestoreFromTrash as RestoreIcon,
   Visibility as ViewIcon,
   Home as HomeIcon,
 
@@ -27,9 +30,9 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, VerificationActions, ActionAlert } from '../../components/ui';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { useProperties, useDeleteProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
+import { useProperties, useDeleteProperty, useRestoreProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
 import { formatDate } from '../../constants/dateFormats';
@@ -137,6 +140,13 @@ const PropertyListPage: React.FC = () => {
 
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
+  // Tab state for active/deleted properties
+  const [activeTab, setActiveTab] = useState(0); // 0 = Active, 1 = Deleted
+
+  // Restore confirmation state
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [propertyToRestore, setPropertyToRestore] = useState<Property | null>(null);
+
   // API Queries
   const { data: propertiesResponse, isLoading, error } = useProperties({
     per_page: 100, // Get all properties for client-side filtering
@@ -153,8 +163,9 @@ const PropertyListPage: React.FC = () => {
     per_page: 100, // Get all listing types
   });
 
-  // Delete mutation
+  // Delete and restore mutations
   const deletePropertyMutation = useDeleteProperty();
+  const restorePropertyMutation = useRestoreProperty();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -188,6 +199,13 @@ const PropertyListPage: React.FC = () => {
     const validProperties = properties.filter(property => property != null);
     
     return validProperties.filter(property => {
+      // Check if property is deleted using is_deleted field
+      const isDeleted = property.is_deleted;
+      
+      // Apply tab filter (0 = Active, 1 = Deleted)
+      if (activeTab === 0 && isDeleted) return false;
+      if (activeTab === 1 && !isDeleted) return false;
+      
       const matchesSearch = 
         property.title_en.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         property.title_mm.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
@@ -208,7 +226,7 @@ const PropertyListPage: React.FC = () => {
       
       return matchesSearch && matchesStatus && matchesVerification && matchesPropertyType && matchesListingType;
     });
-  }, [properties, filters]);
+  }, [properties, filters, activeTab]);
 
   // Paginate data
   const paginatedProperties = useMemo(() => {
@@ -227,20 +245,20 @@ const PropertyListPage: React.FC = () => {
       icon: <HomeIcon />,
     },
     {
-      title: 'Published',
-      value: properties.filter(property => property.status === 'published').length,
+      title: 'Active Properties',
+      value: properties.filter(property => !property.is_deleted).length,
       color: 'success',
       icon: <HomeIcon />,
     },
     {
-      title: 'Pending Verification',
-      value: properties.filter(property => property.verification_status === 'pending').length,
-      color: 'warning',
+      title: 'Deleted Properties',
+      value: properties.filter(property => property.is_deleted).length,
+      color: 'error',
       icon: <HomeIcon />,
     },
     {
-      title: 'Draft',
-      value: properties.filter(property => property.status === 'draft').length,
+      title: 'Published',
+      value: properties.filter(property => property.status === 'published' && !property.is_deleted).length,
       color: 'info',
       icon: <HomeIcon />,
     },
@@ -406,7 +424,7 @@ const PropertyListPage: React.FC = () => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
                       <Typography variant="body2" color="textSecondary">
-              {formatDate(property.dates.created_at, 'display')}
+              {property.dates?.created_at ? formatDate(property.dates.created_at, 'display') : 'N/A'}
             </Typography>
         );
       },
@@ -418,6 +436,9 @@ const PropertyListPage: React.FC = () => {
       align: 'center',
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
+        
+        const isDeleted = property.is_deleted;
+        
         return (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Tooltip title="View Details">
@@ -430,64 +451,98 @@ const PropertyListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
             
-            {/* Verification Actions */}
-            <VerificationActions
-              propertyId={property.id}
-              propertyTitle={property.title_en}
-              verificationStatus={property.verification_status}
-              onShowSuccess={showSuccess}
-              onShowError={showError}
-            />
-            
-            <Tooltip title="Edit">
-              <IconButton
-                size="small"
-                onClick={() => navigate(`/properties/${property.id}/edit`)}
-                color="secondary"
-              >
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete">
-              <IconButton
-                size="small"
-                onClick={() => handleDeleteProperty(property)}
-                color="error"
-                disabled={deletePropertyMutation.isPending}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
+            {/* Show different actions based on deleted status */}
+            {!isDeleted ? (
+              <>
+                {/* Verification Actions */}
+                <VerificationActions
+                  propertyId={property.id}
+                  propertyTitle={property.title_en}
+                  verificationStatus={property.verification_status}
+                  onShowSuccess={showSuccess}
+                  onShowError={showError}
+                />
+                
+                <Tooltip title="Edit">
+                  <IconButton
+                    size="small"
+                    onClick={() => navigate(`/properties/${property.id}/edit`)}
+                    color="secondary"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteProperty(property)}
+                    color="error"
+                    disabled={deletePropertyMutation.isPending}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : (
+              <Tooltip title="Restore">
+                <IconButton
+                  size="small"
+                  onClick={() => handleRestoreProperty(property)}
+                  color="success"
+                  disabled={restorePropertyMutation.isPending}
+                >
+                  <RestoreIcon />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         );
       },
     },
-  ], [isMobile, navigate, deletePropertyMutation.isPending]);
+  ], [isMobile, navigate, deletePropertyMutation.isPending, restorePropertyMutation.isPending]);
 
   // ========================================================================
   // MOBILE CARD ACTIONS
   // ========================================================================
 
-  const createMobileCardActions = (property: Property): MobileCardAction[] => [
-    {
-      icon: <ViewIcon />,
-      tooltip: 'View Details',
-      color: 'primary' as const,
-      onClick: () => navigate(`/properties/${property.id}`),
-    },
-    {
-      icon: <EditIcon />,
-      tooltip: 'Edit',
-      color: 'secondary' as const,
-      onClick: () => navigate(`/properties/${property.id}/edit`),
-    },
-    {
-      icon: <DeleteIcon />,
-      tooltip: 'Delete',
-      color: 'error' as const,
-      onClick: () => handleDeleteProperty(property),
-    },
-  ];
+  const createMobileCardActions = (property: Property): MobileCardAction[] => {
+    const isDeleted = property.is_deleted;
+    
+    const baseActions: MobileCardAction[] = [
+      {
+        icon: <ViewIcon />,
+        tooltip: 'View Details',
+        color: 'primary' as const,
+        onClick: () => navigate(`/properties/${property.id}`),
+      },
+    ];
+    
+    if (!isDeleted) {
+      baseActions.push(
+        {
+          icon: <EditIcon />,
+          tooltip: 'Edit',
+          color: 'secondary' as const,
+          onClick: () => navigate(`/properties/${property.id}/edit`),
+        },
+        {
+          icon: <DeleteIcon />,
+          tooltip: 'Delete',
+          color: 'error' as const,
+          onClick: () => handleDeleteProperty(property),
+        }
+      );
+    } else {
+      baseActions.push({
+        icon: <RestoreIcon />,
+        tooltip: 'Restore',
+        color: 'success' as const,
+        onClick: () => handleRestoreProperty(property),
+      });
+    }
+    
+    return baseActions;
+  };
 
   // ========================================================================
   // EVENT HANDLERS
@@ -506,6 +561,24 @@ const PropertyListPage: React.FC = () => {
         }
       }
     );
+  };
+
+  const handleRestoreProperty = (property: Property) => {
+    setPropertyToRestore(property);
+    setRestoreConfirmOpen(true);
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!propertyToRestore) return;
+    
+    try {
+      await restorePropertyMutation.mutateAsync(propertyToRestore.id);
+      showSuccess(`${propertyToRestore.title_en} restored successfully!`, true);
+      setRestoreConfirmOpen(false);
+      setPropertyToRestore(null);
+    } catch (error) {
+      showError('Failed to restore property. Please try again.', true);
+    }
   };
 
   const handleAddProperty = () => {
@@ -557,6 +630,26 @@ const PropertyListPage: React.FC = () => {
         onFilterChange={(key, value) => setFilter(key as keyof PropertyFilters, value)}
         fields={filterFields}
       />
+
+      {/* Active/Deleted Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs 
+          value={activeTab} 
+          onChange={(_, newValue) => setActiveTab(newValue)}
+          aria-label="property status tabs"
+        >
+          <Tab 
+            label={`Active Properties (${properties.filter(p => !p.is_deleted).length})`} 
+            id="property-tab-0"
+            aria-controls="property-tabpanel-0"
+          />
+          <Tab 
+            label={`Deleted Properties (${properties.filter(p => p.is_deleted).length})`} 
+            id="property-tab-1"
+            aria-controls="property-tabpanel-1"
+          />
+        </Tabs>
+      </Box>
 
       {/* Empty state */}
       {filteredProperties.length === 0 && !isLoading && (
@@ -644,6 +737,21 @@ const PropertyListPage: React.FC = () => {
         itemType={deleteState.itemType}
         isLoading={deletePropertyMutation.isPending}
         error={deletePropertyMutation.error?.message}
+      />
+
+      {/* Restore Confirmation Dialog */}
+      <ConfirmationDialog
+        open={restoreConfirmOpen}
+        onClose={() => {
+          setRestoreConfirmOpen(false);
+          setPropertyToRestore(null);
+        }}
+        onConfirm={handleConfirmRestore}
+        itemName={propertyToRestore?.title_en}
+        itemType="property"
+        action="restore"
+        isLoading={restorePropertyMutation.isPending}
+        error={restorePropertyMutation.error?.message}
       />
     </Box>
   );

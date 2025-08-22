@@ -19,6 +19,7 @@ import {
 import {
   Edit as EditIcon,
   Delete as DeleteIcon,
+  RestoreFromTrash as RestoreIcon,
   ArrowBack as ArrowBackIcon,
   Home as HomeIcon,
   LocationOn as LocationIcon,
@@ -39,10 +40,10 @@ import {
   Diamond as DiamondIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useProperty, useDeleteProperty } from '../../services/queries/properties';
+import { useProperty, useDeleteProperty, useRestoreProperty } from '../../services/queries/properties';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, VerificationActions } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 
 const PropertyDetailPage: React.FC = () => {
@@ -55,15 +56,14 @@ const PropertyDetailPage: React.FC = () => {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
   const [videoViewerOpen, setVideoViewerOpen] = useState(false);
-  
-
 
   // API Queries
   const { data: propertyResponse, isLoading, error } = useProperty(Number(id));
   const deletePropertyMutation = useDeleteProperty();
+  const restorePropertyMutation = useRestoreProperty();
 
   // Alert system hook
-  const { showSuccess, showError } = useAlertSystem();
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   
   // Delete confirmation hook
   const {
@@ -72,6 +72,9 @@ const PropertyDetailPage: React.FC = () => {
     closeDeleteConfirmation,
     handleConfirmDelete,
   } = useDeleteConfirmation();
+
+  // Restore confirmation state
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
 
   // Extract property data
   const property = propertyResponse?.data;
@@ -95,6 +98,24 @@ const PropertyDetailPage: React.FC = () => {
         }
       }
     );
+  };
+
+  const handleRestore = () => {
+    setRestoreConfirmOpen(true);
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!property) return;
+    
+    try {
+      await restorePropertyMutation.mutateAsync(property.id);
+      showSuccess(`${property.title_en} restored successfully!`, true);
+      setRestoreConfirmOpen(false);
+      // Refresh the data to update the UI
+      window.location.reload();
+    } catch (error) {
+      showError('Failed to restore property. Please try again.', true);
+    }
   };
 
   // Image viewer handlers
@@ -165,6 +186,9 @@ const PropertyDetailPage: React.FC = () => {
         breadcrumbs="Dashboard / Property Management / Property Details"
       />
 
+      {/* Success/Error Alert */}
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
+
       {/* Action Buttons */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
         <Button
@@ -175,32 +199,47 @@ const PropertyDetailPage: React.FC = () => {
           Back to Properties
         </Button>
         
-        {/* Verification Actions */}
-        <VerificationActions
-          propertyId={property.id}
-          propertyTitle={property.title_en}
-          verificationStatus={property.verification_status}
-          onShowSuccess={showSuccess}
-          onShowError={showError}
-        />
-        
-        <Tooltip title="Edit Property">
-          <IconButton
-            color="primary"
-            onClick={handleEdit}
-          >
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete Property">
-          <IconButton
-            color="error"
-            onClick={handleDelete}
-            disabled={deletePropertyMutation.isPending}
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Tooltip>
+        {/* Show different actions based on deleted status */}
+        {!property.is_deleted ? (
+          <>
+            {/* Verification Actions */}
+            <VerificationActions
+              propertyId={property.id}
+              propertyTitle={property.title_en}
+              verificationStatus={property.verification_status}
+              onShowSuccess={showSuccess}
+              onShowError={showError}
+            />
+            
+            <Tooltip title="Edit Property">
+              <IconButton
+                color="primary"
+                onClick={handleEdit}
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete Property">
+              <IconButton
+                color="error"
+                onClick={handleDelete}
+                disabled={deletePropertyMutation.isPending}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </>
+        ) : (
+          <Tooltip title="Restore Property">
+            <IconButton
+              color="success"
+              onClick={handleRestore}
+              disabled={restorePropertyMutation.isPending}
+            >
+              <RestoreIcon />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       <Grid container spacing={3}>
@@ -369,116 +408,126 @@ const PropertyDetailPage: React.FC = () => {
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                      {property.user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
+                      {property.property_mode === 'platform' ? <BusinessIcon /> : (property.user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />)}
                     </Avatar>
                     <Box>
                       <Typography variant="h6" fontWeight={600}>
-                        {property.user.user_type === 'company' ? "Company Information" : "User Information"}
+                        {property.property_mode === 'platform' ? "Company Property" : (property.user.user_type === 'company' ? "Company Information" : "User Information")}
                       </Typography>
                       <Typography variant="body2" color="textSecondary">
-                        Details about the user who posted this property
+                        {property.property_mode === 'platform' ? "Platform-owned property information" : "Details about the user who posted this property"}
                       </Typography>
                     </Box>
                   </Box>
 
                   <Divider sx={{ mb: 2 }} />
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        {property.user.user_type === 'company' ? <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} /> : <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />}
-                        <Typography variant="body2" fontWeight="500">
-                          User Type: {property.user.user_type === 'individual' ? 'Individual' : 'Company'}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <DiamondIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                        <Typography variant="body2" fontWeight="500">
-                          Member Level: {property.user.member_level || 'N/A'}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <EmailIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="textSecondary">
-                          Email: {property.user.email || 'N/A'}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <CheckCircleIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                        <Typography variant="body2" color="textSecondary">
-                          Status: {property.user.is_active ? 'Active' : 'Inactive'}
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    {property.user.user_type === 'individual' && (
-                      <Grid item xs={12}>
+                  {property.property_mode === 'platform' ? (
+                    // Platform Property Information
+                    <Box>
+                      <Typography variant="body1" color="textSecondary" sx={{ mb: 2 }}>
+                        This property is owned and managed by the platform (Mya Satt Yaung).
+                      </Typography>
+                    </Box>
+                  ) : (
+                    // User Property Information
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                          <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          {property.user.user_type === 'company' ? <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} /> : <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />}
                           <Typography variant="body2" fontWeight="500">
-                            Name: {property.user.name || 'N/A'}
+                            User Type: {property.user.user_type === 'individual' ? 'Individual' : 'Company'}
                           </Typography>
                         </Box>
                       </Grid>
-                    )}
-                    {property.user.user_type === 'company' && (
-                      <>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <DiamondIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          <Typography variant="body2" fontWeight="500">
+                            Member Level: {property.user.member_level || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <EmailIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          <Typography variant="body2" color="textSecondary">
+                            Email: {property.user.email || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <CheckCircleIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                          <Typography variant="body2" color="textSecondary">
+                            Status: {property.user.is_active ? 'Active' : 'Inactive'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      {property.user.user_type === 'individual' && (
                         <Grid item xs={12}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                             <Typography variant="body2" fontWeight="500">
-                              Company: {property.user.name || 'N/A'}
+                              Name: {property.user.name || 'N/A'}
                             </Typography>
                           </Box>
                         </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="textSecondary">
-                              Company Type: {property.user.company_profile?.company_type_name || 'N/A'}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <ViewCountIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="textSecondary">
-                              Views: {property.user.company_profile?.view_count || 0}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <PhoneIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="textSecondary">
-                              Phone: {property.user.company_profile?.phone_number || 'N/A'}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12} sm={6}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="textSecondary">
-                              Location: {property.user.company_profile?.location_en || 'N/A'} ({property.user.company_profile?.location_mm || ''})
-                            </Typography>
-                          </Box>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="textSecondary">
-                              Address: {property.user.company_profile?.address || 'N/A'}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      </>
-                    )}
-                  </Grid>
+                      )}
+                      {property.user.user_type === 'company' && (
+                        <>
+                          <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                              <Typography variant="body2" fontWeight="500">
+                                Company: {property.user.name || 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                              <Typography variant="body2" color="textSecondary">
+                                Company Type: {property.user.company_profile?.company_type_name || 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <ViewCountIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                              <Typography variant="body2" color="textSecondary">
+                                Views: {property.user.company_profile?.view_count || 0}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <PhoneIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                              <Typography variant="body2" color="textSecondary">
+                                Phone: {property.user.company_profile?.phone_number || 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                              <Typography variant="body2" color="textSecondary">
+                                Location: {property.user.company_profile?.location_en || 'N/A'} ({property.user.company_profile?.location_mm || ''})
+                              </Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                              <Typography variant="body2" color="textSecondary">
+                                Address: {property.user.company_profile?.address || 'N/A'}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        </>
+                      )}
+                    </Grid>
+                  )}
                 </CardContent>
               </Card>
           )}
@@ -927,6 +976,18 @@ const PropertyDetailPage: React.FC = () => {
         itemType={deleteState.itemType}
         isLoading={deletePropertyMutation.isPending}
         error={deletePropertyMutation.error?.message}
+      />
+
+      {/* Restore Confirmation Dialog */}
+      <ConfirmationDialog
+        open={restoreConfirmOpen}
+        onClose={() => setRestoreConfirmOpen(false)}
+        onConfirm={handleConfirmRestore}
+        itemName={property?.title_en}
+        itemType="property"
+        action="restore"
+        isLoading={restorePropertyMutation.isPending}
+        error={restorePropertyMutation.error?.message}
       />
     </Box>
   );

@@ -40,7 +40,14 @@ export const formatRelativeTime = (date: Date | string): string => {
 };
 
 export const formatDate = (date: Date | string, format: keyof typeof DATE_FORMATS = 'display'): string => {
+  if (!date) return 'N/A';
+  
   const targetDate = new Date(date);
+  
+  // Check if the date is invalid
+  if (isNaN(targetDate.getTime())) {
+    return 'Invalid Date';
+  }
   
   switch (format) {
     case 'display':

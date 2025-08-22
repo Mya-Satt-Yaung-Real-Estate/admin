@@ -101,6 +101,24 @@ export const useDeleteProperty = () => {
   });
 };
 
+// Restore property
+export const useRestoreProperty = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => propertiesAPI.restore(id),
+    onSuccess: (data, id) => {
+      // Update the specific property in cache
+      queryClient.setQueryData(
+        propertyKeys.detail(id),
+        data
+      );
+      // Invalidate and refetch properties lists
+      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+    },
+  });
+};
+
 // Approve property
 export const useApproveProperty = () => {
   const queryClient = useQueryClient();

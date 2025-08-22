@@ -8,6 +8,7 @@ export * from './locations';
 export * from './properties';
 export * from './points';
 export * from './companies';
+export * from './media';
 
 // Export query keys for external use
 export { authKeys } from './auth';
