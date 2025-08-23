@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersAPI } from '../api/users';
 import { QueryParams } from '../../types';
 
+
 // Query keys for users
 export const userKeys = {
   all: ['users'] as const,
@@ -66,12 +67,44 @@ export const useUpdateUser = () => {
   });
 };
 
-// Delete user
-export const useDeleteUser = () => {
+// Soft delete user
+export const useSoftDeleteUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: usersAPI.deleteUser,
+    mutationFn: usersAPI.softDeleteUser,
+    onSuccess: () => {
+      // Invalidate and refetch users lists
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+    },
+  });
+};
+
+// Restore user
+export const useRestoreUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersAPI.restoreUser,
+    onSuccess: (response, slug) => {
+      // Invalidate and refetch users lists
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      // Invalidate specific user detail
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(slug) });
+      // Update the user detail cache with the new data
+      if (response?.data) {
+        queryClient.setQueryData(userKeys.detail(slug), response);
+      }
+    },
+  });
+};
+
+// Permanent delete user
+export const useForceDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersAPI.forceDeleteUser,
     onSuccess: () => {
       // Invalidate and refetch users lists
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });

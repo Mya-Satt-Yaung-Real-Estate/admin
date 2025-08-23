@@ -35,6 +35,17 @@ export interface QueryParams {
   [key: string]: any;
 }
 
+// Get auth token from localStorage
+function getAuthToken(): string | null {
+  try {
+    const authStore = JSON.parse(localStorage.getItem('auth-storage') || '{}');
+    return authStore.state?.token || authStore.token || null;
+  } catch (error) {
+    console.error('Error parsing auth store:', error);
+    return null;
+  }
+}
+
 // Base API request function
 export async function apiRequest<T>(
   endpoint: string,
@@ -42,8 +53,8 @@ export async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
   
-  // Get auth token from localStorage
-  const token = localStorage.getItem('admin_token');
+  // Get auth token
+  const token = getAuthToken();
   
   const config: RequestInit = {
     headers: {

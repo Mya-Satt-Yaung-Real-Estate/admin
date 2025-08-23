@@ -63,6 +63,9 @@ export const useCreateProperty = () => {
       // Invalidate and refetch properties lists
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.pending() });
+      
+      // Invalidate users cache since property creation may affect user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };
@@ -79,6 +82,9 @@ export const useUpdateProperty = () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       // Invalidate the specific property to force a fresh fetch
       queryClient.invalidateQueries({ queryKey: propertyKeys.detail(variables.id) });
+      
+      // Invalidate users cache since property updates may affect user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };
@@ -132,6 +138,9 @@ export const useApproveProperty = () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.pending() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.published() });
+      
+      // Invalidate users cache since property approval may affect user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };

@@ -60,6 +60,7 @@ export interface RegularUser {
   email_verified_at?: string;
   created_at: string;
   updated_at: string;
+  deleted_at?: string; // Soft delete support
   // Additional fields for detail view
   company_profile?: CompanyProfile;
   property_count: number;
@@ -85,10 +86,17 @@ export interface CreateRegularUserData {
   name: string;
   email: string;
   password: string;
-  password_confirmation: string;
   user_type: 'company' | 'individual';
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
+  // Company-specific fields
+  company_name?: string;
+  company_type_id?: number;
+  phone?: string;
+  address?: string;
+  region_id?: number;
+  township_id?: number;
+  description?: string;
 }
 
 export interface UpdateRegularUserData {
@@ -108,4 +116,64 @@ export interface RegularUserFilters {
   sort_direction?: 'asc' | 'desc';
   page?: number;
   per_page?: number;
+  include_deleted?: boolean; // Soft delete filter
+}
+
+// API Response types
+export interface UserListResponse {
+  success: boolean;
+  message: string;
+  data: RegularUser[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+    has_more_pages: boolean;
+  };
+}
+
+export interface UserDetailResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: RegularUser;
+  };
+}
+
+export interface CreateUserResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: RegularUser;
+    trial_points: {
+      points_allocated: number;
+      expires_at: string;
+    };
+    company_profile?: {
+      id: number;
+      name: string;
+      slug: string;
+      phone: string;
+      business_address: string;
+      description: string;
+      company_type: {
+        id: number;
+        name_en: string;
+        name_mm: string;
+      };
+      region: {
+        id: number;
+        name_en: string;
+        name_mm: string;
+      };
+      township: {
+        id: number;
+        name_en: string;
+        name_mm: string;
+      };
+    };
+  };
 }

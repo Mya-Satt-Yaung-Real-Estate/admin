@@ -1,34 +1,53 @@
 // Users API functions
 import { apiRequest, QueryParams } from './base';
-import { RegularUser, CreateRegularUserData, UpdateRegularUserData } from '../../types/user';
+import { 
+  RegularUser, 
+  CreateRegularUserData, 
+  UpdateRegularUserData,
+  UserListResponse,
+  UserDetailResponse,
+  CreateUserResponse
+} from '../../types/user';
 
 export const usersAPI = {
   // Get users list
   getUsers: (params?: QueryParams) => {
     const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
-    return apiRequest<RegularUser[]>(`/users${queryString}`);
+    return apiRequest<UserListResponse>(`/users${queryString}`);
   },
 
   // Get user by slug
-  getUser: (slug: string) => apiRequest<{ user: RegularUser }>(`/users/${slug}`),
+  getUser: (slug: string) => apiRequest<UserDetailResponse>(`/users/${slug}`),
 
   // Create user
   createUser: (data: CreateRegularUserData) =>
-    apiRequest<RegularUser>('/users', {
+    apiRequest<CreateUserResponse>('/users', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   // Update user
   updateUser: (slug: string, data: UpdateRegularUserData) =>
-    apiRequest<RegularUser>(`/users/${slug}`, {
+    apiRequest<{ success: boolean; message: string; data: { user: RegularUser } }>(`/users/${slug}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  // Delete user
-  deleteUser: (id: number) =>
-    apiRequest<null>(`/users/${id}`, {
+  // Soft delete user
+  softDeleteUser: (slug: string) =>
+    apiRequest<{ success: boolean; message: string; data: null }>(`/users/${slug}`, {
+      method: 'DELETE',
+    }),
+
+  // Restore user
+  restoreUser: (slug: string) =>
+    apiRequest<{ success: boolean; message: string; data: { user: RegularUser } }>(`/users/${slug}/restore`, {
+      method: 'POST',
+    }),
+
+  // Permanent delete user
+  forceDeleteUser: (slug: string) =>
+    apiRequest<{ success: boolean; message: string; data: null }>(`/users/${slug}/force`, {
       method: 'DELETE',
     }),
 };

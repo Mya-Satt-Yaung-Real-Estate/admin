@@ -165,6 +165,9 @@ export const useApproveRejectPointPurchaseRequest = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: pointKeys.purchaseRequests() });
       queryClient.invalidateQueries({ queryKey: pointKeys.purchaseRequest(id) });
+      
+      // Invalidate users cache since point purchase approval affects user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };

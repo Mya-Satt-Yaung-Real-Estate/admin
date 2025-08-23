@@ -4,6 +4,7 @@ import { ProtectedRoute } from '../shared';
 
 // Lazy load user pages
 const UserListPage = lazy(() => import('@/pages/users/UserListPage'));
+const UserCreatePage = lazy(() => import('@/pages/users/UserCreatePage'));
 const UserDetailPage = lazy(() => import('@/pages/users/UserDetailPage'));
 const UserEditPage = lazy(() => import('@/pages/users/UserEditPage'));
 
@@ -14,6 +15,16 @@ export const userRoutes = [
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <UserListPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/users/create',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <UserCreatePage />
         </Suspense>
       </ProtectedRoute>
     ),

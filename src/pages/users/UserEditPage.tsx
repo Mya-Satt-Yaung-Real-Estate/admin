@@ -26,6 +26,7 @@ import {
   Email as EmailIcon,
   Business as BusinessIcon,
   CalendarToday as CalendarIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -39,6 +40,7 @@ import { useUser, useUpdateUser } from '../../services/queries/users';
 import { UpdateRegularUserData } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
+import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -58,6 +60,7 @@ const UserEditPage: React.FC = () => {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const [status, setStatus] = useState<boolean>(true);
+  const [memberLevel, setMemberLevel] = useState<string>('silver');
   const [hasChanges, setHasChanges] = useState(false);
 
   // Hooks
@@ -74,6 +77,7 @@ const UserEditPage: React.FC = () => {
   React.useEffect(() => {
     if (user) {
       setStatus(user.is_active);
+      setMemberLevel(user.member_level);
       setHasChanges(false);
     }
   }, [user]);
@@ -83,7 +87,19 @@ const UserEditPage: React.FC = () => {
   
   const handleStatusChange = (newStatus: boolean) => {
     setStatus(newStatus);
-    setHasChanges(newStatus !== user?.is_active);
+    checkForChanges();
+  };
+
+  const handleMemberLevelChange = (newMemberLevel: string) => {
+    setMemberLevel(newMemberLevel);
+    checkForChanges();
+  };
+
+  const checkForChanges = () => {
+    if (!user) return;
+    const statusChanged = status !== user.is_active;
+    const memberLevelChanged = memberLevel !== user.member_level;
+    setHasChanges(statusChanged || memberLevelChanged);
   };
 
   const handleSubmit = async () => {
@@ -91,6 +107,7 @@ const UserEditPage: React.FC = () => {
 
     const updateData: UpdateRegularUserData = {
       is_active: status,
+      member_level: memberLevel as 'bronze' | 'silver' | 'gold' | 'platinum',
     };
 
     try {
@@ -234,6 +251,16 @@ const UserEditPage: React.FC = () => {
                 
                 <ListItem>
                   <ListItemIcon>
+                    <StarIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Member Level"
+                    secondary={user.member_level}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
                     <CalendarIcon />
                   </ListItemIcon>
                   <ListItemText
@@ -258,12 +285,6 @@ const UserEditPage: React.FC = () => {
               while inactive users will be restricted from logging in.
             </Typography>
 
-            {hasChanges && (
-              <Alert severity="info" sx={{ mb: 3 }}>
-                You have unsaved changes. Click "Save Changes" to apply the new status.
-              </Alert>
-            )}
-
             <Box sx={{ mb: 3 }}>
               <FormControl fullWidth sx={{ maxWidth: 300 }}>
                 <InputLabel>Account Status</InputLabel>
@@ -277,6 +298,48 @@ const UserEditPage: React.FC = () => {
                 </Select>
               </FormControl>
             </Box>
+          </Paper>
+        </Grid>
+
+        {/* Member Level Edit Section */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Member Level
+            </Typography>
+            
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+              Change the user's member level. Member levels determine the user's privileges 
+              and benefits within the platform.
+            </Typography>
+
+            <Box sx={{ mb: 3 }}>
+              <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                <InputLabel>Member Level</InputLabel>
+                <Select
+                  value={memberLevel}
+                  label="Member Level"
+                  onChange={(e) => handleMemberLevelChange(e.target.value)}
+                >
+                  {MEMBER_LEVEL_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Actions Section */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            {hasChanges && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                You have unsaved changes. Click "Save Changes" to apply the new settings.
+              </Alert>
+            )}
 
             <Box sx={{ 
               display: 'flex', 
@@ -287,9 +350,14 @@ const UserEditPage: React.FC = () => {
               borderTop: '1px solid',
               borderColor: 'divider'
             }}>
-              <Typography variant="body2" color="textSecondary">
-                Current Status: <StatusChip status={user.is_active ? 'active' : 'inactive'} />
-              </Typography>
+              <Box>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                  Current Status: <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Current Member Level: <strong>{user.member_level}</strong>
+                </Typography>
+              </Box>
               
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button

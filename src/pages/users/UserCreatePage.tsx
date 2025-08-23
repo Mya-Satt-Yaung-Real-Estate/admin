@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Paper,
@@ -10,351 +10,516 @@ import {
   Select,
   MenuItem,
   Grid,
-  Avatar,
-  Alert,
-  Stepper,
-  Step,
-  StepLabel,
+  FormHelperText,
+  Divider,
+  Autocomplete,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import PageHeader from '../../components/layout/PageHeader';
+import { PageLoadingState, ActionAlert } from '../../components/ui';
+import { useCreateUser } from '../../services/queries/users';
+import { useCompanyTypes } from '../../services/queries/companies';
+import { useRegions, useTownships } from '../../services/queries/locations';
+import { CreateRegularUserData } from '../../types/user';
+import { useAlertSystem } from '../../hooks';
+import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
 
-interface UserFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: 'Normal User' | 'Company User';
-  status: 'active' | 'inactive' | 'pending';
-  avatar: string;
-  password: string;
-  confirmPassword: string;
-}
+// ============================================================================
+// VALIDATION SCHEMA
+// ============================================================================
+
+const createUserSchema = Yup.object().shape({
+  name: Yup.string()
+    .required('Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(255, 'Name must be less than 255 characters'),
+  email: Yup.string()
+    .required('Email is required')
+    .email('Please enter a valid email address'),
+  password: Yup.string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters'),
+  user_type: Yup.string()
+    .required('User type is required')
+    .oneOf(['individual', 'company'], 'Invalid user type'),
+  member_level: Yup.string()
+    .required('Member level is required')
+    .oneOf(['bronze', 'silver', 'gold', 'platinum'], 'Invalid member level'),
+  is_active: Yup.boolean(),
+  // Company-specific fields
+  company_name: Yup.string().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.required('Company name is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  company_type_id: Yup.number().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.required('Company type is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  phone: Yup.string().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.required('Phone number is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  address: Yup.string().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.required('Address is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  region_id: Yup.number().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.required('Region is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  township_id: Yup.number().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.required('Township is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  description: Yup.string().optional(),
+});
+
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
+
+const PAGE_CONFIG = {
+  title: 'Create User',
+  description: 'Create a new individual or company user',
+  backButtonPath: '/users',
+} as const;
+
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const UserCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState<UserFormData>({
-    firstName: '',
-    lastName: '',
+  const { alert, showSuccess, showError } = useAlertSystem();
+
+  // Queries
+  const { data: companyTypesData, isLoading: loadingCompanyTypes } = useCompanyTypes();
+  const { data: regionsData, isLoading: loadingRegions } = useRegions();
+  const { data: townshipsData, isLoading: loadingTownships } = useTownships();
+
+  // Mutations
+  const createUserMutation = useCreateUser();
+
+  // Form state
+  const formik = useFormik({
+    initialValues: {
+      name: '',
     email: '',
+      password: '',
+      user_type: 'individual' as 'individual' | 'company',
+      member_level: 'silver' as 'bronze' | 'silver' | 'gold' | 'platinum',
+      is_active: 'true' as string,
+      // Company-specific fields
+      company_name: '',
+      company_type_id: '',
     phone: '',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: '',
-    password: '',
-    confirmPassword: '',
+      address: '',
+      region_id: '',
+      township_id: '',
+      description: '',
+    },
+    validationSchema: createUserSchema,
+    onSubmit: async (values) => {
+      try {
+        const userData: CreateRegularUserData = {
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          user_type: values.user_type,
+          member_level: values.member_level,
+          is_active: values.is_active === 'true',
+        };
+
+        // Add company-specific fields if user type is company
+        if (values.user_type === 'company') {
+          userData.company_name = values.company_name;
+          userData.company_type_id = Number(values.company_type_id);
+          userData.phone = values.phone;
+          userData.address = values.address;
+          userData.region_id = Number(values.region_id);
+          userData.township_id = Number(values.township_id);
+          userData.description = values.description;
+        }
+
+        const response = await createUserMutation.mutateAsync(userData);
+        
+        showSuccess('User created successfully!');
+        
+        // Navigate to user detail page
+        if (response.data?.data?.user?.slug) {
+          navigate(`/users/${response.data.data.user.slug}`, {
+            state: { 
+              message: 'User created successfully!',
+              trialPoints: response.data.data.trial_points 
+            }
+          });
+        } else {
+          navigate('/users');
+        }
+      } catch (error: any) {
+        showError(error.message || 'Failed to create user');
+      }
+    },
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof UserFormData, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const steps = ['Basic Information', 'Role & Status', 'Account Settings'];
+  // Filter townships based on selected region
+  const filteredTownships = townshipsData?.data?.filter(
+    (township) => township.region_id === Number(formik.values.region_id)
+  ) || [];
 
-  const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+  // Loading state
+  const isLoading = loadingCompanyTypes || loadingRegions || loadingTownships;
+
+  // Event handlers
+  const handleBack = () => navigate(PAGE_CONFIG.backButtonPath);
+
+  const handleUserTypeChange = (userType: 'individual' | 'company') => {
+    formik.setFieldValue('user_type', userType);
     
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined,
-      }));
+    // Clear company fields when switching to individual
+    if (userType === 'individual') {
+      formik.setFieldValue('company_name', '');
+      formik.setFieldValue('company_type_id', '');
+      formik.setFieldValue('phone', '');
+      formik.setFieldValue('address', '');
+      formik.setFieldValue('region_id', '');
+      formik.setFieldValue('township_id', '');
+      formik.setFieldValue('description', '');
     }
   };
 
-  const validateStep = (step: number): boolean => {
-    const newErrors: Partial<Record<keyof UserFormData, string>> = {};
-
-    switch (step) {
-      case 0:
-        if (!formData.firstName.trim()) {
-          newErrors.firstName = 'First name is required';
-        }
-        if (!formData.lastName.trim()) {
-          newErrors.lastName = 'Last name is required';
-        }
-        if (!formData.email.trim()) {
-          newErrors.email = 'Email is required';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-          newErrors.email = 'Please enter a valid email address';
-        }
-        if (!formData.phone.trim()) {
-          newErrors.phone = 'Phone number is required';
-        }
-        break;
-      case 1:
-        if (!formData.role) {
-          newErrors.role = 'Role is required';
-        }
-        break;
-      case 2:
-        if (!formData.password) {
-          newErrors.password = 'Password is required';
-        } else if (formData.password.length < 6) {
-          newErrors.password = 'Password must be at least 6 characters';
-        }
-        if (!formData.confirmPassword) {
-          newErrors.confirmPassword = 'Please confirm your password';
-        } else if (formData.password !== formData.confirmPassword) {
-          newErrors.confirmPassword = 'Passwords do not match';
-        }
-        break;
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(activeStep)) {
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
-
-  const handleSubmit = async () => {
-    if (!validateStep(activeStep)) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Creating user:', formData);
-      setIsSubmitting(false);
-      navigate('/users');
-    }, 1500);
-  };
-
-  const generateAvatar = () => {
-    const initials = `${formData.firstName.charAt(0)}${formData.lastName.charAt(0)}`.toUpperCase();
-    setFormData(prev => ({ ...prev, avatar: initials }));
-  };
-
-  const renderStepContent = (step: number) => {
-    switch (step) {
-      case 0:
-        return (
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="First Name"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                error={!!errors.firstName}
-                helperText={errors.firstName}
-                required
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Last Name"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                error={!!errors.lastName}
-                helperText={errors.lastName}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email Address"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                error={!!errors.email}
-                helperText={errors.email}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Phone Number"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                error={!!errors.phone}
-                helperText={errors.phone}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    bgcolor: 'primary.main',
-                    fontSize: '1.5rem',
-                  }}
-                >
-                  {formData.avatar || 'U'}
-                </Avatar>
-                <Button
-                  variant="outlined"
-                  onClick={generateAvatar}
-                  disabled={!formData.firstName || !formData.lastName}
-                >
-                  Generate Avatar
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        );
-      case 1:
-        return (
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth required>
-                <InputLabel>Role</InputLabel>
-                <Select
-                  value={formData.role}
-                  label="Role"
-                  onChange={(e) => handleInputChange('role', e.target.value)}
-                  error={!!errors.role}
-                >
-                  <MenuItem value="Normal User">Normal User (Real Estate Seeker)</MenuItem>
-                  <MenuItem value="Company User">Company User (Agency/Owner)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.status}
-                  label="Status"
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                >
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12}>
-              <Alert severity="info">
-                <Typography variant="body2">
-                  <strong>Normal User:</strong> Real estate seekers who can browse properties and contact agents.
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  <strong>Company User:</strong> Real estate agencies, property owners, and agents who can list properties.
-                </Typography>
-              </Alert>
-            </Grid>
-          </Grid>
-        );
-      case 2:
-        return (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                error={!!errors.password}
-                helperText={errors.password}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Confirm Password"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                error={!!errors.confirmPassword}
-                helperText={errors.confirmPassword}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Alert severity="warning">
-                <Typography variant="body2">
-                  Password must be at least 6 characters long. The user will be able to change their password after first login.
-                </Typography>
-              </Alert>
-            </Grid>
-          </Grid>
-        );
-      default:
-        return null;
-    }
-  };
+  if (isLoading) {
+    return <PageLoadingState />;
+  }
 
   return (
-    <Box sx={{ marginLeft: 0, width: '100%' }}>
+    <Box>
       <PageHeader
-        title="Create New User"
-        breadcrumbs="Dashboard / User Management / Create User"
-        subtitle="Add a new user to the system"
+        title={PAGE_CONFIG.title}
+        subtitle={PAGE_CONFIG.description}
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,
-          onClick: () => navigate('/users')
+          onClick: handleBack,
         }}
       />
 
-      <Paper sx={{ p: 3 }}>
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+      <ActionAlert 
+        success={alert.success}
+        error={alert.error}
+        onClose={alert.onClose}
+      />
 
-        <Box sx={{ mt: 4 }}>
-          {renderStepContent(activeStep)}
-        </Box>
+      <Paper sx={{ p: 3, mt: 3 }}>
+        <form onSubmit={formik.handleSubmit}>
+          <Grid container spacing={3}>
+            {/* Basic Information */}
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                Basic Information
+              </Typography>
+            </Grid>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                id="name"
+                name="name"
+                label="Full Name *"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.name && Boolean(formik.errors.name)}
+                helperText={formik.touched.name && formik.errors.name}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                id="email"
+                name="email"
+                label="Email Address *"
+                type="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                id="password"
+                name="password"
+                label="Password *"
+                type="password"
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.password && Boolean(formik.errors.password)}
+                helperText={formik.touched.password && formik.errors.password}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>User Type *</InputLabel>
+                <Select
+                  value={formik.values.user_type}
+                  onChange={(e) => handleUserTypeChange(e.target.value as 'individual' | 'company')}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.user_type && Boolean(formik.errors.user_type)}
+                  label="User Type *"
+                >
+                  <MenuItem value="individual">Individual User</MenuItem>
+                  <MenuItem value="company">Company User</MenuItem>
+                </Select>
+                {formik.touched.user_type && formik.errors.user_type && (
+                  <FormHelperText error>{formik.errors.user_type}</FormHelperText>
+                )}
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Member Level *</InputLabel>
+                <Select
+                  value={formik.values.member_level}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.member_level && Boolean(formik.errors.member_level)}
+                  label="Member Level *"
+                  name="member_level"
+                >
+                  {MEMBER_LEVEL_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {formik.touched.member_level && formik.errors.member_level && (
+                  <FormHelperText error>{formik.errors.member_level}</FormHelperText>
+                )}
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formik.values.is_active}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  label="Status"
+                  name="is_active"
+                >
+                  <MenuItem value="true">Active</MenuItem>
+                  <MenuItem value="false">Inactive</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            {/* Company Information - Only show for company users */}
+            {formik.values.user_type === 'company' && (
+              <>
+            <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Company Information
+                </Typography>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    id="company_name"
+                    name="company_name"
+                    label="Company Name *"
+                    value={formik.values.company_name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.company_name && Boolean(formik.errors.company_name)}
+                    helperText={formik.touched.company_name && formik.errors.company_name}
+                    required
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Autocomplete
+                    options={companyTypesData?.data || []}
+                    getOptionLabel={(option) => 
+                      `${option.name_en} (${option.name_mm})`
+                    }
+                    value={companyTypesData?.data?.find(type => type.id === Number(formik.values.company_type_id)) || null}
+                    onChange={(_, newValue) => {
+                      formik.setFieldValue('company_type_id', newValue?.id || 0);
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Company Type *"
+                        error={formik.touched.company_type_id && Boolean(formik.errors.company_type_id)}
+                        helperText={formik.touched.company_type_id && formik.errors.company_type_id}
+                      />
+                    )}
+                    filterOptions={(options, { inputValue }) => {
+                      const searchTerm = inputValue.toLowerCase();
+                      return options.filter((option) =>
+                        option.name_en.toLowerCase().includes(searchTerm) ||
+                        option.name_mm.toLowerCase().includes(searchTerm)
+                      );
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    id="phone"
+                    name="phone"
+                    label="Phone Number *"
+                    value={formik.values.phone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.phone && Boolean(formik.errors.phone)}
+                    helperText={formik.touched.phone && formik.errors.phone}
+                    required
+                  />
+            </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Autocomplete
+                    options={regionsData?.data || []}
+                    getOptionLabel={(option) => 
+                      `${option.name_en} (${option.name_mm})`
+                    }
+                    value={regionsData?.data?.find(region => region.id === Number(formik.values.region_id)) || null}
+                    onChange={(_, newValue) => {
+                      formik.setFieldValue('region_id', newValue?.id || 0);
+                      formik.setFieldValue('township_id', 0); // Reset township when region changes
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Region *"
+                        error={formik.touched.region_id && Boolean(formik.errors.region_id)}
+                        helperText={formik.touched.region_id && formik.errors.region_id}
+                      />
+                    )}
+                    filterOptions={(options, { inputValue }) => {
+                      const searchTerm = inputValue.toLowerCase();
+                      return options.filter((option) =>
+                        option.name_en.toLowerCase().includes(searchTerm) ||
+                        option.name_mm.toLowerCase().includes(searchTerm)
+                      );
+                    }}
+                  />
+          </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Autocomplete
+                    options={filteredTownships}
+                    getOptionLabel={(option) => 
+                      `${option.name_en} (${option.name_mm})`
+                    }
+                    value={filteredTownships.find(township => township.id === Number(formik.values.township_id)) || null}
+                    onChange={(_, newValue) => {
+                      formik.setFieldValue('township_id', newValue?.id || 0);
+                    }}
+                    disabled={!formik.values.region_id}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Township *"
+                        error={formik.touched.township_id && Boolean(formik.errors.township_id)}
+                        helperText={formik.touched.township_id && formik.errors.township_id}
+                      />
+                    )}
+                    filterOptions={(options, { inputValue }) => {
+                      const searchTerm = inputValue.toLowerCase();
+                      return options.filter((option) =>
+                        option.name_en.toLowerCase().includes(searchTerm) ||
+                        option.name_mm.toLowerCase().includes(searchTerm)
+                      );
+                    }}
+                  />
+                </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                    id="address"
+                    name="address"
+                    label="Business Address *"
+                    multiline
+                    rows={3}
+                    value={formik.values.address}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.address && Boolean(formik.errors.address)}
+                    helperText={formik.touched.address && formik.errors.address}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                    id="description"
+                    name="description"
+                    label="Company Description (Optional)"
+                    multiline
+                    rows={3}
+                    value={formik.values.description}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.description && Boolean(formik.errors.description)}
+                    helperText={formik.touched.description && formik.errors.description}
+              />
+            </Grid>
+              </>
+            )}
+
+            {/* Submit Button */}
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button
-            disabled={activeStep === 0}
+                  variant="outlined"
             onClick={handleBack}
             startIcon={<ArrowBackIcon />}
           >
-            Back
+                  Cancel
           </Button>
-          <Box>
-            {activeStep === steps.length - 1 ? (
               <Button
+                  type="submit"
                 variant="contained"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
                 startIcon={<SaveIcon />}
-              >
-                {isSubmitting ? 'Creating...' : 'Create User'}
+                  disabled={createUserMutation.isPending || !formik.isValid}
+                >
+                  {createUserMutation.isPending ? 'Creating...' : 'Create User'}
               </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={handleNext}
-                startIcon={<ArrowBackIcon />}
-                sx={{ transform: 'rotate(180deg)' }}
-              >
-                Next
-              </Button>
-            )}
           </Box>
-        </Box>
+            </Grid>
+          </Grid>
+        </form>
       </Paper>
     </Box>
   );

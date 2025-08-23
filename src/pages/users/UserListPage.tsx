@@ -136,7 +136,7 @@ const UserListPage: React.FC = () => {
 
 
   // Extract users data
-  const users = usersResponse?.data || [];
+  const users: RegularUser[] = usersResponse?.data || [];
 
   // Filter users using client-side filtering
   const filteredUsers = useMemo(() => {
