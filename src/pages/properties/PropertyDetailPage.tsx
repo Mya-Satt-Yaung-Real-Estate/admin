@@ -39,7 +39,7 @@ import {
   Email as EmailIcon,
   Diamond as DiamondIcon,
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useProperty, useDeleteProperty, useRestoreProperty } from '../../services/queries/properties';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
@@ -49,6 +49,7 @@ import { formatDate } from '../../constants/dateFormats';
 const PropertyDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const theme = useTheme();
 
   // Media viewer state
@@ -58,7 +59,7 @@ const PropertyDetailPage: React.FC = () => {
   const [videoViewerOpen, setVideoViewerOpen] = useState(false);
 
   // API Queries
-  const { data: propertyResponse, isLoading, error } = useProperty(Number(id));
+  const { data: propertyResponse, isLoading, isFetching, error } = useProperty(Number(id));
   const deletePropertyMutation = useDeleteProperty();
   const restorePropertyMutation = useRestoreProperty();
 
@@ -75,6 +76,19 @@ const PropertyDetailPage: React.FC = () => {
 
   // Restore confirmation state
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+
+  // Handle success message from URL
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const successMessage = searchParams.get('success');
+    if (successMessage) {
+      showSuccess(decodeURIComponent(successMessage));
+      // Clear the success parameter from URL
+      const newSearch = new URLSearchParams(location.search);
+      newSearch.delete('success');
+      navigate(`${location.pathname}${newSearch.toString() ? '?' + newSearch.toString() : ''}`, { replace: true });
+    }
+  }, [location.search, navigate, showSuccess]);
 
   // Extract property data
   const property = propertyResponse?.data;
@@ -93,8 +107,8 @@ const PropertyDetailPage: React.FC = () => {
           await deletePropertyMutation.mutateAsync(property.id);
           showSuccess(`${property.title_en} deleted successfully!`, true);
           navigate('/properties');
-        } catch (error) {
-          showError('Failed to delete property. Please try again.', true);
+        } catch (error: any) {
+          showError(error.message || 'Failed to delete property. Please try again.', true);
         }
       }
     );
@@ -113,8 +127,8 @@ const PropertyDetailPage: React.FC = () => {
       setRestoreConfirmOpen(false);
       // Refresh the data to update the UI
       window.location.reload();
-    } catch (error) {
-      showError('Failed to restore property. Please try again.', true);
+    } catch (error: any) {
+      showError(error.message || 'Failed to restore property. Please try again.', true);
     }
   };
 
@@ -145,6 +159,11 @@ const PropertyDetailPage: React.FC = () => {
   // Loading state
   if (isLoading) {
     return <PageLoadingState title="Loading Property Details" />;
+  }
+
+  // Show loading state during refetch to ensure fresh data is displayed
+  if (isFetching && !propertyResponse?.data) {
+    return <PageLoadingState title="Refreshing Property Details" />;
   }
 
   // Error state

@@ -129,7 +129,7 @@ const PropertyCreatePage: React.FC = () => {
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
 
   // Alert system hook
-  const { alert, clearAlert } = useAlertSystem();
+  const { alert, showError, clearAlert } = useAlertSystem();
 
   // API Queries
   const { data: users, isLoading: usersLoading } = useUsers();
@@ -187,8 +187,9 @@ const PropertyCreatePage: React.FC = () => {
         } else {
           navigate('/properties');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating property:', error);
+        showError(error.message || 'Failed to create property. Please try again.');
       }
     },
   });

@@ -74,14 +74,11 @@ export const useUpdateProperty = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdatePropertyData }) =>
       propertiesAPI.update(id, data),
-    onSuccess: (data, variables) => {
-      // Update the specific property in cache
-      queryClient.setQueryData(
-        propertyKeys.detail(variables.id),
-        data
-      );
+    onSuccess: (_data, variables) => {
       // Invalidate and refetch properties lists
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      // Invalidate the specific property to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: propertyKeys.detail(variables.id) });
     },
   });
 };

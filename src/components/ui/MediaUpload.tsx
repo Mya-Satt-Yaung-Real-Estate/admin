@@ -89,8 +89,9 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     try {
       await deleteMediaMutation.mutateAsync(mediaId);
       onMediaDelete(mediaId);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete failed:', error);
+      // Note: The error will be displayed by the mutation's error state
     }
   };
 
@@ -159,6 +160,13 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
       {uploadMediaMutation.isError && (
         <Alert severity="error" sx={{ mt: 2 }}>
           {uploadMediaMutation.error?.message || 'Upload failed. Please try again.'}
+        </Alert>
+      )}
+
+      {/* Delete Error Alert */}
+      {deleteMediaMutation.isError && (
+        <Alert severity="error" sx={{ mt: 2 }}>
+          {deleteMediaMutation.error?.message || 'Delete failed. Please try again.'}
         </Alert>
       )}
 

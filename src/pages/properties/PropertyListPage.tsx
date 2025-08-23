@@ -556,8 +556,8 @@ const PropertyListPage: React.FC = () => {
         try {
           await deletePropertyMutation.mutateAsync(property.id);
           showSuccess(`${property.title_en} deleted successfully!`, true);
-        } catch (error) {
-          showError('Failed to delete property. Please try again.', true);
+        } catch (error: any) {
+          showError(error.message || 'Failed to delete property. Please try again.', true);
         }
       }
     );
@@ -576,8 +576,8 @@ const PropertyListPage: React.FC = () => {
       showSuccess(`${propertyToRestore.title_en} restored successfully!`, true);
       setRestoreConfirmOpen(false);
       setPropertyToRestore(null);
-    } catch (error) {
-      showError('Failed to restore property. Please try again.', true);
+    } catch (error: any) {
+      showError(error.message || 'Failed to restore property. Please try again.', true);
     }
   };
 

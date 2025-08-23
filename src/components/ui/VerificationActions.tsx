@@ -49,20 +49,18 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
     setApproveDialogOpen(true);
   };
 
-  const handleConfirmApprove = () => {
-    approvePropertyMutation.mutate(propertyId, {
-      onSuccess: () => {
-        setApproveDialogOpen(false);
-        // Invalidate and refetch properties data
-        queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
-        onShowSuccess?.(`${propertyTitle} approved successfully!`);
-        onSuccess?.();
-      },
-      onError: () => {
-        onShowError?.('Failed to approve property. Please try again.');
-      },
-    });
+  const handleConfirmApprove = async () => {
+    try {
+      await approvePropertyMutation.mutateAsync(propertyId);
+      setApproveDialogOpen(false);
+      // Invalidate and refetch properties data
+      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
+      onShowSuccess?.(`${propertyTitle} approved successfully!`);
+      onSuccess?.();
+    } catch (error: any) {
+      onShowError?.(error.message || 'Failed to approve property. Please try again.');
+    }
   };
 
   const handleCancelApprove = () => {
@@ -73,26 +71,21 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
     setRejectionDialogOpen(true);
   };
 
-  const handleConfirmRejection = () => {
+  const handleConfirmRejection = async () => {
     if (!rejectionReason.trim()) return;
     
-    rejectPropertyMutation.mutate(
-      { id: propertyId, reason: rejectionReason.trim() },
-      {
-        onSuccess: () => {
-          setRejectionDialogOpen(false);
-          setRejectionReason('');
-          // Invalidate and refetch properties data
-          queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
-          queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
-          onShowSuccess?.(`${propertyTitle} rejected successfully!`);
-          onSuccess?.();
-        },
-        onError: () => {
-          onShowError?.('Failed to reject property. Please try again.');
-        },
-      }
-    );
+    try {
+      await rejectPropertyMutation.mutateAsync({ id: propertyId, reason: rejectionReason.trim() });
+      setRejectionDialogOpen(false);
+      setRejectionReason('');
+      // Invalidate and refetch properties data
+      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyKeys.detail(propertyId) });
+      onShowSuccess?.(`${propertyTitle} rejected successfully!`);
+      onSuccess?.();
+    } catch (error: any) {
+      onShowError?.(error.message || 'Failed to reject property. Please try again.');
+    }
   };
 
   const handleCancelRejection = () => {

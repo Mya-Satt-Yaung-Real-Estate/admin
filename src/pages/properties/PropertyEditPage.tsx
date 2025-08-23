@@ -998,7 +998,7 @@ export default function PropertyEditPage() {
                           Media Management
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
-                          Property photos and videos
+                          Manage existing media and upload new photos/videos
                         </Typography>
                       </Box>
                     </Box>
@@ -1119,115 +1119,6 @@ export default function PropertyEditPage() {
                       onMediaUpload={handleMediaUpload}
                       onMediaDelete={handleNewMediaDelete}
                     />
-                    
-                    {/* Newly Uploaded Media Display */}
-                    {uploadedMedia.length > 0 && (
-                      <Box sx={{ mt: 3 }}>
-                        <Typography variant="subtitle2" gutterBottom>
-                          New Media ({uploadedMedia.length} files)
-                        </Typography>
-                        <Grid container spacing={2}>
-                          {uploadedMedia.map((media) => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={media.id}>
-                              <Paper
-                                sx={{
-                                  p: 1,
-                                  textAlign: 'center',
-                                  border: '1px solid',
-                                  borderColor: 'divider',
-                                  cursor: 'pointer',
-                                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                                  '&:hover': {
-                                    transform: 'scale(1.02)',
-                                    boxShadow: theme.shadows[4],
-                                  },
-                                  position: 'relative',
-                                }}
-                                onClick={() => media.type === 'image' ? handleImageClick(media) : handleVideoClick(media)}
-                              >
-                                {media.type === 'image' ? (
-                                  <>
-                                    <img
-                                      src={media.url}
-                                      alt={media.filename}
-                                      style={{
-                                        width: '100%',
-                                        height: '150px',
-                                        objectFit: 'cover',
-                                        borderRadius: '4px',
-                                      }}
-                                    />
-                                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                                      New Image
-                                    </Typography>
-                                    <Typography variant="caption" display="block" color="textSecondary">
-                                      Click to view
-                                    </Typography>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Box sx={{ position: 'relative' }}>
-                                      <img
-                                        src={media.url}
-                                        alt={media.filename}
-                                        style={{
-                                          width: '100%',
-                                          height: '150px',
-                                          objectFit: 'cover',
-                                          borderRadius: '4px',
-                                        }}
-                                      />
-                                      <Box
-                                        sx={{
-                                          position: 'absolute',
-                                          top: '50%',
-                                          left: '50%',
-                                          transform: 'translate(-50%, -50%)',
-                                          bgcolor: 'rgba(0, 0, 0, 0.7)',
-                                          borderRadius: '50%',
-                                          width: 48,
-                                          height: 48,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                        }}
-                                      >
-                                        <PlayIcon sx={{ color: 'white', fontSize: 24 }} />
-                                      </Box>
-                                    </Box>
-                                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                                      New Video
-                                    </Typography>
-                                    <Typography variant="caption" display="block" color="textSecondary">
-                                      Click to play
-                                    </Typography>
-                                  </>
-                                )}
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    bgcolor: 'rgba(255, 255, 255, 0.8)',
-                                    '&:hover': {
-                                      bgcolor: 'rgba(255, 255, 255, 0.9)',
-                                    }
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleNewMediaDelete(media.id);
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Paper>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </Box>
-                    )}
                   </CardContent>
                 </Card>
               </Grid>
