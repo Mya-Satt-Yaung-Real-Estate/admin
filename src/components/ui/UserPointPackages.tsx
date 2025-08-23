@@ -14,7 +14,6 @@ import {
 import {
   Star as StarIcon,
   Schedule as ScheduleIcon,
-  Person as PersonIcon,
   Warning as WarningIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
@@ -136,15 +135,15 @@ const UserPointPackages: React.FC<UserPointPackagesProps> = ({ pointPackages }) 
                             Allocated: {formatDate(pkg.allocated_at, 'display')}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                           <Typography variant="caption" color="textSecondary">
                             Expires: {formatDate(pkg.expires_at, 'display')}
                           </Typography>
-                        </Box>
+                        </Box> */}
                       </Grid>
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        {/* <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                           <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                           <Typography variant="caption" color="textSecondary">
                             Allocated by: {pkg.allocated_by.name}
@@ -153,6 +152,12 @@ const UserPointPackages: React.FC<UserPointPackagesProps> = ({ pointPackages }) 
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="caption" color="textSecondary">
                             {pkg.allocated_by.email}
+                          </Typography>
+                        </Box> */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                          <ScheduleIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                          <Typography variant="caption" color="textSecondary">
+                            Expires: {formatDate(pkg.expires_at, 'display')}
                           </Typography>
                         </Box>
                       </Grid>

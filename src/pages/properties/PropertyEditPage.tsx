@@ -54,6 +54,7 @@ import { useProperty, useUpdateProperty } from '../../services/queries/propertie
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { CreatePropertyData } from '../../types/property';
 import { Media } from '../../types/media';
+import { RegularUser } from '../../types/user';
 
 // ============================================================================
 // CONSTANTS
@@ -476,7 +477,7 @@ export default function PropertyEditPage() {
                           borderColor: 'grey.200'
                         }}>
                           {(() => {
-                            const user = users?.find(u => u.id === values.user_id);
+                            const user = users?.find((u: RegularUser) => u.id === values.user_id);
                             return user ? (
                               <Typography variant="body2">
                                 {user.name} ({user.email}) - {user.user_type}

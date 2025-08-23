@@ -326,7 +326,7 @@ const PropertyCreatePage: React.FC = () => {
                       getOptionLabel={(option: RegularUser) => 
                         `${option.name} (${option.email}) - ${option.user_type}`
                       }
-                      value={users?.data?.find(user => user.id === formik.values.user_id) || null}
+                      value={users?.data?.find((user: RegularUser) => user.id === formik.values.user_id) || null}
                       onChange={(_, newValue) => {
                         formik.setFieldValue('user_id', newValue?.id || undefined);
                       }}

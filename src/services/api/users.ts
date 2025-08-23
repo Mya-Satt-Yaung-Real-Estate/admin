@@ -4,8 +4,6 @@ import {
   RegularUser, 
   CreateRegularUserData, 
   UpdateRegularUserData,
-  UserListResponse,
-  UserDetailResponse,
   CreateUserResponse
 } from '../../types/user';
 
@@ -13,11 +11,11 @@ export const usersAPI = {
   // Get users list
   getUsers: (params?: QueryParams) => {
     const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
-    return apiRequest<UserListResponse>(`/users${queryString}`);
+    return apiRequest<RegularUser[]>(`/users${queryString}`);
   },
 
   // Get user by slug
-  getUser: (slug: string) => apiRequest<UserDetailResponse>(`/users/${slug}`),
+  getUser: (slug: string) => apiRequest<{ user: RegularUser }>(`/users/${slug}`),
 
   // Create user
   createUser: (data: CreateRegularUserData) =>
