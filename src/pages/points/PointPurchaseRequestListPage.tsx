@@ -7,14 +7,6 @@ import {
   useTheme,
   useMediaQuery,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-
-  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -38,6 +30,7 @@ import { usePointPurchaseRequests, useDeletePointPurchaseRequest, useApproveReje
 import { FilterState } from '../../constants/filters';
 import { PointPurchaseRequest, PointPurchaseRequestsResponse } from '../../types/point';
 import { formatDate } from '../../constants/dateFormats';
+import ApproveRejectDialog from '../../components/dialogs/ApproveRejectDialog';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -351,7 +344,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
           notes: notes.trim() || undefined,
           rejection_reason: type === 'reject' ? reason.trim() : undefined,
           payment_method: type === 'approve' ? (payment_method as 'bank_transfer' | 'cash' | 'mobile_money' | 'other' | undefined) : undefined,
-          payment_reference: type === 'approve' ? (payment_reference.trim() || undefined) : undefined,
+          payment_reference: type === 'approve' ? (payment_reference?.trim() || undefined) : undefined,
         }
       });
       
@@ -723,135 +716,13 @@ const PointPurchaseRequestListPage: React.FC = () => {
       />
 
       {/* Approve/Reject Dialog */}
-      <Dialog 
-        open={approveRejectDialog.open} 
+      <ApproveRejectDialog
+        dialog={approveRejectDialog}
         onClose={handleApproveRejectClose}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {approveRejectDialog.type === 'approve' ? 'Approve Request' : 'Reject Request'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              Request Details
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
-              <Box>
-                <Typography variant="caption" color="textSecondary">Request ID</Typography>
-                <Typography variant="body2" fontWeight={500}>#{approveRejectDialog.request?.id}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="textSecondary">User</Typography>
-                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.user.name}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="textSecondary">Package</Typography>
-                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.package.name_en}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="textSecondary">Points</Typography>
-                <Typography variant="body2" fontWeight={500}>{(approveRejectDialog.request?.points_requested || 0).toLocaleString()}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="textSecondary">Price</Typography>
-                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.formatted_price}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" color="textSecondary">Payment Method</Typography>
-                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.formatted_payment_method}</Typography>
-              </Box>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="textSecondary">Request Date</Typography>
-              <Typography variant="body2" fontWeight={500}>
-                {approveRejectDialog.request?.requested_at ? formatDate(approveRejectDialog.request.requested_at, 'display') : 'N/A'}
-              </Typography>
-            </Box>
-          </Box>
-
-          {approveRejectDialog.type === 'approve' && (
-            <>
-              <TextField
-                select
-                label="Payment Method"
-                fullWidth
-                margin="normal"
-                value={approveRejectDialog.payment_method}
-                onChange={(e) => handleDialogInputChange('payment_method', e.target.value)}
-                error={!!approveRejectDialog.errors.payment_method}
-                helperText={approveRejectDialog.errors.payment_method}
-              >
-                <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
-                <MenuItem value="cash">Cash</MenuItem>
-                <MenuItem value="mobile_money">Mobile Money</MenuItem>
-                <MenuItem value="other">Other</MenuItem>
-              </TextField>
-              
-              <TextField
-                label="Payment Reference (Optional)"
-                fullWidth
-                margin="normal"
-                value={approveRejectDialog.payment_reference}
-                onChange={(e) => handleDialogInputChange('payment_reference', e.target.value)}
-                error={!!approveRejectDialog.errors.payment_reference}
-                helperText={approveRejectDialog.errors.payment_reference}
-                placeholder="Enter payment reference number (optional)..."
-              />
-              
-              <TextField
-                label="Admin Notes"
-                fullWidth
-                margin="normal"
-                multiline
-                rows={3}
-                value={approveRejectDialog.notes}
-                onChange={(e) => handleDialogInputChange('notes', e.target.value)}
-                error={!!approveRejectDialog.errors.notes}
-                helperText={approveRejectDialog.errors.notes}
-                placeholder="Add notes about the approval (required)..."
-                required
-              />
-            </>
-          )}
-          {approveRejectDialog.type === 'reject' && (
-            <TextField
-              label="Rejection Reason"
-              fullWidth
-              margin="normal"
-              multiline
-              rows={3}
-              value={approveRejectDialog.reason}
-              onChange={(e) => handleDialogInputChange('reason', e.target.value)}
-              error={!!approveRejectDialog.errors.reason}
-              helperText={approveRejectDialog.errors.reason}
-              placeholder="Please provide a reason for rejection..."
-              required
-            />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={handleApproveRejectClose} 
-            color="primary"
-            disabled={approveRejectMutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleApproveRejectConfirm} 
-            color={approveRejectDialog.type === 'approve' ? 'success' : 'error'} 
-            variant="contained"
-            disabled={approveRejectMutation.isPending}
-          >
-            {approveRejectMutation.isPending 
-              ? 'Processing...' 
-              : approveRejectDialog.type === 'approve' ? 'Approve' : 'Reject'
-            }
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleApproveRejectConfirm}
+        onInputChange={handleDialogInputChange}
+        isLoading={approveRejectMutation.isPending}
+      />
     </Box>
   );
 };
