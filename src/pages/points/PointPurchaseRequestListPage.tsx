@@ -202,32 +202,71 @@ const PointPurchaseRequestListPage: React.FC = () => {
   }, [filters.searchTerm, filters.statusFilter, filters.paymentMethodFilter, handleChangePage]);
 
   // Statistics cards
-  const statsCards: StatCard[] = useMemo(() => [
-    {
-      title: 'Total Requests',
-      value: statistics.totalRequests.toString(),
-      color: 'primary',
-      icon: <OrderIcon />,
-    },
-    {
-      title: 'Pending',
-      value: statistics.pendingRequests.toString(),
-      color: 'warning',
-      icon: <OrderIcon />,
-    },
-    {
-      title: 'Approved',
-      value: statistics.approvedRequests.toString(),
-      color: 'success',
-      icon: <ApproveIcon />,
-    },
-    {
-      title: 'Total Revenue',
-      value: `${statistics.totalRevenue.toLocaleString()} MMK`,
-      color: 'info',
-      icon: <OrderIcon />,
-    },
-  ], [statistics]);
+  const statsCards: StatCard[] = useMemo(() => {
+    // Determine revenue label and value based on status filter
+    let revenueLabel = 'Total Revenue'; // Default to total revenue
+    let revenueValue = 0;
+    
+    if (filters.statusFilter === 'pending') {
+      revenueLabel = 'Incoming Revenue';
+      revenueValue = statistics.totalRevenue; // Revenue from pending requests
+    } else if (filters.statusFilter === 'rejected') {
+      revenueLabel = 'Lost Revenue';
+      revenueValue = statistics.totalRevenue; // Revenue from rejected requests
+    } else if (filters.statusFilter === 'cancelled') {
+      revenueLabel = 'Cancelled Revenue';
+      revenueValue = statistics.totalRevenue; // Revenue from cancelled requests
+    } else if (filters.statusFilter === 'approved') {
+      revenueLabel = 'Approved Revenue';
+      revenueValue = statistics.totalRevenue; // Revenue from approved requests
+    } else {
+      // 'all' or any other status - show revenue based on current filters
+      revenueLabel = 'Total Revenue';
+      
+      // If payment method filter is applied, calculate revenue for that payment method
+      if (filters.paymentMethodFilter !== 'allMethods') {
+        // Calculate revenue for specific payment method from all requests
+        revenueValue = allRequests
+          .filter(request => 
+            request.status === 'approved' && 
+            request.payment_method === filters.paymentMethodFilter
+          )
+          .reduce((sum, request) => sum + Number(request.price_mmk || 0), 0);
+      } else {
+        // No payment method filter - show total approved revenue
+        revenueValue = allRequests
+          .filter(request => request.status === 'approved')
+          .reduce((sum, request) => sum + Number(request.price_mmk || 0), 0);
+      }
+    }
+
+    return [
+      {
+        title: 'Total Requests',
+        value: statistics.totalRequests.toString(),
+        color: 'primary',
+        icon: <OrderIcon />,
+      },
+      {
+        title: 'Pending',
+        value: statistics.pendingRequests.toString(),
+        color: 'warning',
+        icon: <OrderIcon />,
+      },
+      {
+        title: 'Approved',
+        value: statistics.approvedRequests.toString(),
+        color: 'success',
+        icon: <ApproveIcon />,
+      },
+      {
+        title: revenueLabel,
+        value: `${revenueValue.toLocaleString()} MMK`,
+        color: 'info',
+        icon: <OrderIcon />,
+      },
+    ];
+  }, [statistics, filters.statusFilter, filters.paymentMethodFilter, allRequests]);
 
   // Validation function
   const validateDialogForm = (): boolean => {
