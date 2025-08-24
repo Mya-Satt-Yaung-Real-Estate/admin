@@ -12,7 +12,6 @@ import {
   Avatar,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
   ShoppingCart as OrderIcon,
   Person as PersonIcon,
@@ -74,10 +73,6 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
   const approveRejectMutation = useApproveRejectPointPurchaseRequest();
 
   // Event handlers
-  const handleEdit = () => {
-    navigate(`/points/purchase-requests/${id}/edit`);
-  };
-
   const handleBack = () => {
     navigate('/points/purchase-requests');
   };
@@ -237,11 +232,6 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
       <PageHeader
         title="Point Purchase Request Details"
         subtitle="View point purchase request information"
-        actionButton={{
-          text: 'Edit',
-          icon: <EditIcon />,
-          onClick: handleEdit,
-        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />

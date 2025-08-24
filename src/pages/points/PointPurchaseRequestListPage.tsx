@@ -10,8 +10,6 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
   Visibility as ViewIcon,
   Person as PersonIcon,
   ShoppingCart as OrderIcon,
@@ -24,9 +22,9 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
-import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { usePointPurchaseRequests, useDeletePointPurchaseRequest, useApproveRejectPointPurchaseRequest } from '../../services/queries/points';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useAlertSystem } from '../../hooks';
+import { usePointPurchaseRequests, useApproveRejectPointPurchaseRequest } from '../../services/queries/points';
 import { FilterState } from '../../constants/filters';
 import { PointPurchaseRequest, PointPurchaseRequestsResponse } from '../../types/point';
 import { formatDate } from '../../constants/dateFormats';
@@ -130,7 +128,6 @@ const PointPurchaseRequestListPage: React.FC = () => {
   });
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
-  const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
 
   // Queries - Fetch all data once for client-side filtering
   const { data: requestsData, isLoading, error, refetch } = usePointPurchaseRequests({
@@ -138,7 +135,6 @@ const PointPurchaseRequestListPage: React.FC = () => {
     per_page: 1000, // Fetch all data
   });
 
-  const deleteRequestMutation = useDeletePointPurchaseRequest();
   const approveRejectMutation = useApproveRejectPointPurchaseRequest();
 
   // Computed values
@@ -286,20 +282,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
   // Event handlers
   const handleCreate = () => navigate(PAGE_CONFIG.createButtonPath);
   const handleView = (request: PointPurchaseRequest) => navigate(`/points/purchase-requests/${request.id}`);
-  const handleEdit = (request: PointPurchaseRequest) => navigate(`/points/purchase-requests/${request.id}/edit`);
   
-  const handleDelete = (request: PointPurchaseRequest) => {
-    openDeleteConfirmation(`Request #${request.id}`, 'purchase request', async () => {
-      try {
-        const response = await deleteRequestMutation.mutateAsync(request.id);
-        showSuccess(response.message || 'Purchase request deleted successfully!', true);
-        refetch();
-      } catch (error: any) {
-        showError(error?.message || 'Failed to delete purchase request', true);
-      }
-    });
-  };
-
   const handleApprove = (request: PointPurchaseRequest) => {
     setApproveRejectDialog({
       open: true,
@@ -409,19 +392,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
       onClick: () => handleReject(request),
       color: 'error' as const,
     }] : []),
-    {
-      icon: <EditIcon />,
-      tooltip: 'Edit',
-      onClick: () => handleEdit(request),
-      color: 'secondary',
-    },
-    {
-      icon: <DeleteIcon />,
-      tooltip: 'Delete',
-      onClick: () => handleDelete(request),
-      color: 'error',
-    },
-  ], [handleView, handleApprove, handleReject, handleEdit, handleDelete]);
+  ], [handleView, handleApprove, handleReject]);
 
   // Table columns
   const columns: TableColumn<PointPurchaseRequest>[] = useMemo(() => [
@@ -567,34 +538,10 @@ const PointPurchaseRequestListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title="Edit">
-            <IconButton 
-              size="small" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEdit(row);
-              }}
-              color="secondary"
-            >
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton 
-              size="small" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete(row);
-              }}
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
         </Box>
       ),
     },
-  ], [handleView, handleApprove, handleReject, handleEdit, handleDelete, deleteRequestMutation.isPending]);
+  ], [handleView, handleApprove, handleReject]);
 
   // Loading and error states
   if (isLoading) {
@@ -702,18 +649,6 @@ const PointPurchaseRequestListPage: React.FC = () => {
           )}
         </>
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={deleteState.open}
-        title="Delete Point Purchase Request"
-        message={`Are you sure you want to delete ${deleteState.itemName}? This action cannot be undone.`}
-        onConfirm={handleConfirmDelete}
-        onClose={closeDeleteConfirmation}
-        isLoading={deleteRequestMutation.isPending}
-        reasonLabel="Deletion Reason"
-        reasonPlaceholder="Enter reason for deletion (optional)"
-      />
 
       {/* Approve/Reject Dialog */}
       <ApproveRejectDialog
