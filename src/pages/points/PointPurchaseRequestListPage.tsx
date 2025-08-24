@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   Box,
   IconButton,
@@ -13,6 +13,8 @@ import {
   DialogActions,
   Button,
   TextField,
+
+  MenuItem,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,7 +36,7 @@ import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyStat
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { usePointPurchaseRequests, useDeletePointPurchaseRequest, useApproveRejectPointPurchaseRequest } from '../../services/queries/points';
 import { FilterState } from '../../constants/filters';
-import { PointPurchaseRequest } from '../../types/point';
+import { PointPurchaseRequest, PointPurchaseRequestsResponse } from '../../types/point';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -53,6 +55,14 @@ interface ApproveRejectDialogState {
   request: PointPurchaseRequest | null;
   notes: string;
   reason: string;
+  payment_method: string;
+  payment_reference: string;
+  errors: {
+    notes?: string;
+    reason?: string;
+    payment_method?: string;
+    payment_reference?: string;
+  };
 }
 
 // ============================================================================
@@ -114,74 +124,132 @@ const PointPurchaseRequestListPage: React.FC = () => {
     request: null,
     notes: '',
     reason: '',
+    payment_method: '',
+    payment_reference: '',
+    errors: {},
   });
 
   // Hooks
   const { filters, setFilter } = useFilters<PointPurchaseRequestFilters>({
+    searchTerm: '',
+    statusFilter: 'all',
     paymentMethodFilter: 'allMethods',
   });
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   const { deleteState, openDeleteConfirmation, closeDeleteConfirmation, handleConfirmDelete } = useDeleteConfirmation();
 
-  // Queries
-  const { data: requestsData, isLoading, error, refetch } = usePointPurchaseRequests();
+  // Queries - Fetch all data once for client-side filtering
+  const { data: requestsData, isLoading, error, refetch } = usePointPurchaseRequests({
+    page: 1,
+    per_page: 1000, // Fetch all data
+  });
 
   const deleteRequestMutation = useDeletePointPurchaseRequest();
   const approveRejectMutation = useApproveRejectPointPurchaseRequest();
 
   // Computed values
-  const requests = requestsData?.data || [];
-  const pagination = requestsData?.pagination;
+  const allRequests = (requestsData as PointPurchaseRequestsResponse)?.data || [];
 
-  // Filter data based on search and status
-  const filteredData = useMemo(() => {
-    return requests.filter((item: PointPurchaseRequest) => {
-      const matchesSearch = filters.searchTerm === '' || 
-        item.user.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        item.id.toString().includes(filters.searchTerm);
+  // Client-side filtering
+  const filteredRequests = useMemo(() => {
+    let filtered = allRequests;
 
-      const matchesStatus = filters.statusFilter === 'all' || item.status === filters.statusFilter;
-      const matchesPaymentMethod = !filters.paymentMethodFilter || filters.paymentMethodFilter === 'allMethods' || item.payment_method === filters.paymentMethodFilter;
+    // Filter by search term
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(request => 
+        request.user.name.toLowerCase().includes(searchLower) ||
+        request.user.email.toLowerCase().includes(searchLower) ||
+        request.id.toString().includes(searchLower)
+      );
+    }
 
-      return matchesSearch && matchesStatus && matchesPaymentMethod;
-    });
-  }, [requests, filters]);
+    // Filter by status
+    if (filters.statusFilter !== 'all') {
+      filtered = filtered.filter(request => request.status === filters.statusFilter);
+    }
 
-  // Paginate data
-  const paginatedData = useMemo(() => {
+    // Filter by payment method
+    if (filters.paymentMethodFilter !== 'allMethods') {
+      filtered = filtered.filter(request => request.payment_method === filters.paymentMethodFilter);
+    }
+
+    return filtered;
+  }, [allRequests, filters.searchTerm, filters.statusFilter, filters.paymentMethodFilter]);
+
+  // Client-side pagination
+  const paginatedRequests = useMemo(() => {
     const startIndex = page * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, page, rowsPerPage]);
+    return filteredRequests.slice(startIndex, endIndex);
+  }, [filteredRequests, page, rowsPerPage]);
+
+  // Use filtered and paginated data
+  const requests = paginatedRequests;
+
+  // Calculate statistics from filtered data
+  const statistics = useMemo(() => ({
+    totalRequests: filteredRequests.length,
+    pendingRequests: filteredRequests.filter(r => r.status === 'pending').length,
+    approvedRequests: filteredRequests.filter(r => r.status === 'approved').length,
+    totalRevenue: filteredRequests.reduce((sum, r) => sum + Number(r.price_mmk || 0), 0),
+  }), [filteredRequests]);
+
+  // Reset page to 0 when filters change
+  useEffect(() => {
+    handleChangePage(null, 0);
+  }, [filters.searchTerm, filters.statusFilter, filters.paymentMethodFilter, handleChangePage]);
 
   // Statistics cards
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Requests',
-      value: pagination?.total?.toString() || '0',
+      value: statistics.totalRequests.toString(),
       color: 'primary',
       icon: <OrderIcon />,
     },
     {
       title: 'Pending',
-      value: requests.filter(r => r.is_pending).length.toString(),
+      value: statistics.pendingRequests.toString(),
       color: 'warning',
       icon: <OrderIcon />,
     },
     {
       title: 'Approved',
-      value: requests.filter(r => r.is_approved).length.toString(),
+      value: statistics.approvedRequests.toString(),
       color: 'success',
       icon: <ApproveIcon />,
     },
     {
       title: 'Total Revenue',
-      value: `${requests.reduce((sum, r) => sum + (r.price_mmk || 0), 0).toLocaleString()} MMK`,
+      value: `${statistics.totalRevenue.toLocaleString()} MMK`,
       color: 'info',
       icon: <OrderIcon />,
     },
-  ], [requests, pagination]);
+  ], [statistics]);
+
+  // Validation function
+  const validateDialogForm = (): boolean => {
+    const errors: { notes?: string; reason?: string; payment_method?: string; payment_reference?: string } = {};
+
+    if (approveRejectDialog.type === 'reject' && !approveRejectDialog.reason.trim()) {
+      errors.reason = 'Rejection reason is required';
+    }
+
+    if (approveRejectDialog.type === 'approve') {
+      if (!approveRejectDialog.payment_method) {
+        errors.payment_method = 'Payment method is required';
+      }
+      if (!approveRejectDialog.notes.trim()) {
+        errors.notes = 'Admin notes are required';
+      }
+      // Payment reference is optional, so no validation needed
+    }
+
+    setApproveRejectDialog(prev => ({ ...prev, errors }));
+    return Object.keys(errors).length === 0;
+  };
 
   // Event handlers
   const handleCreate = () => navigate(PAGE_CONFIG.createButtonPath);
@@ -193,6 +261,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
       try {
         const response = await deleteRequestMutation.mutateAsync(request.id);
         showSuccess(response.message || 'Purchase request deleted successfully!', true);
+        refetch();
       } catch (error: any) {
         showError(error?.message || 'Failed to delete purchase request', true);
       }
@@ -206,6 +275,9 @@ const PointPurchaseRequestListPage: React.FC = () => {
       request,
       notes: '',
       reason: '',
+      payment_method: request.payment_method,
+      payment_reference: request.payment_reference,
+      errors: {},
     });
   };
 
@@ -216,41 +288,82 @@ const PointPurchaseRequestListPage: React.FC = () => {
       request,
       notes: '',
       reason: '',
+      payment_method: request.payment_method,
+      payment_reference: request.payment_reference,
+      errors: {},
     });
   };
 
   const handleApproveRejectConfirm = async () => {
     if (!approveRejectDialog.request) return;
 
+    // Validate form
+    if (!validateDialogForm()) {
+      return;
+    }
+
     try {
-      const { type, request, notes, reason } = approveRejectDialog;
+      const { type, request, notes, reason, payment_method, payment_reference } = approveRejectDialog;
       
       const response = await approveRejectMutation.mutateAsync({ 
         id: request.id, 
         data: { 
           action: type, 
           notes: notes.trim() || undefined,
-          rejection_reason: type === 'reject' ? reason.trim() : undefined
+          rejection_reason: type === 'reject' ? reason.trim() : undefined,
+          payment_method: type === 'approve' ? (payment_method as 'bank_transfer' | 'cash' | 'mobile_money' | 'other' | undefined) : undefined,
+          payment_reference: type === 'approve' ? (payment_reference.trim() || undefined) : undefined,
         }
       });
       
       showSuccess(response.message || `Request ${type === 'approve' ? 'approved' : 'rejected'} successfully!`, true);
-      setApproveRejectDialog({ open: false, type: 'approve', request: null, notes: '', reason: '' });
+      setApproveRejectDialog({ 
+        open: false, 
+        type: 'approve', 
+        request: null, 
+        notes: '', 
+        reason: '', 
+        payment_method: '',
+        payment_reference: '',
+        errors: {} 
+      });
+      refetch(); // Refresh the data
     } catch (error: any) {
       showError(error?.message || `Failed to ${approveRejectDialog.type} request`, true);
     }
   };
 
   const handleApproveRejectClose = () => {
-    setApproveRejectDialog({ open: false, type: 'approve', request: null, notes: '', reason: '' });
+    setApproveRejectDialog({ 
+      open: false, 
+      type: 'approve', 
+      request: null, 
+      notes: '', 
+      reason: '', 
+      payment_method: '',
+      payment_reference: '',
+      errors: {} 
+    });
+  };
+
+  const handleDialogInputChange = (field: 'notes' | 'reason' | 'payment_method' | 'payment_reference', value: string) => {
+    setApproveRejectDialog(prev => ({
+      ...prev,
+      [field]: value,
+      errors: {
+        ...prev.errors,
+        [field]: undefined // Clear error when user starts typing
+      }
+    }));
   };
 
   // Create mobile card actions for a specific request
-  const createMobileCardActions = (request: PointPurchaseRequest): MobileCardAction[] => [
+  const createMobileCardActions = useCallback((request: PointPurchaseRequest): MobileCardAction[] => [
     {
       icon: <ViewIcon />,
       tooltip: 'View Details',
       onClick: () => handleView(request),
+      color: 'primary',
     },
     ...(request.can_approve ? [{
       icon: <ApproveIcon />,
@@ -268,6 +381,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
       icon: <EditIcon />,
       tooltip: 'Edit',
       onClick: () => handleEdit(request),
+      color: 'secondary',
     },
     {
       icon: <DeleteIcon />,
@@ -275,10 +389,10 @@ const PointPurchaseRequestListPage: React.FC = () => {
       onClick: () => handleDelete(request),
       color: 'error',
     },
-  ];
+  ], [handleView, handleApprove, handleReject, handleEdit, handleDelete]);
 
   // Table columns
-  const columns: TableColumn<PointPurchaseRequest>[] = [
+  const columns: TableColumn<PointPurchaseRequest>[] = useMemo(() => [
     {
       id: 'id',
       label: 'Request ID',
@@ -350,22 +464,24 @@ const PointPurchaseRequestListPage: React.FC = () => {
       id: 'payment_method',
       label: 'Payment',
       align: 'center',
-      render: (_, row) => (
-        <Box>
-          <Typography variant="body2" fontWeight={500}>
-            {row.formatted_payment_method}
-          </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {row.payment_reference}
-          </Typography>
-        </Box>
-      ),
+             render: (_, row) => (
+         <Box>
+           <Typography variant="body2" fontWeight={500}>
+             {row.status === 'approved' ? row.formatted_payment_method : '-'}
+           </Typography>
+         </Box>
+       ),
     },
     {
       id: 'status',
       label: 'Status',
       align: 'center',
-      render: (_, row) => <StatusChip status={row.status} />,
+             render: (_, row) => (
+         <StatusChip 
+           status={row.status}
+           statusType="verification_status"
+         />
+       ),
     },
     {
       id: 'requested_at',
@@ -386,8 +502,9 @@ const PointPurchaseRequestListPage: React.FC = () => {
                 e.stopPropagation();
                 handleView(row);
               }}
+                color="primary"
             >
-              <ViewIcon fontSize="small" />
+              <ViewIcon />
             </IconButton>
           </Tooltip>
           {row.can_approve && (
@@ -400,7 +517,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
                 }}
                 color="success"
               >
-                <ApproveIcon fontSize="small" />
+                <ApproveIcon />
               </IconButton>
             </Tooltip>
           )}
@@ -414,7 +531,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
                 }}
                 color="error"
               >
-                <RejectIcon fontSize="small" />
+                <RejectIcon />
               </IconButton>
             </Tooltip>
           )}
@@ -425,8 +542,9 @@ const PointPurchaseRequestListPage: React.FC = () => {
                 e.stopPropagation();
                 handleEdit(row);
               }}
+              color="secondary"
             >
-              <EditIcon fontSize="small" />
+              <EditIcon />
             </IconButton>
           </Tooltip>
           <Tooltip title="Delete">
@@ -438,13 +556,13 @@ const PointPurchaseRequestListPage: React.FC = () => {
               }}
               color="error"
             >
-              <DeleteIcon fontSize="small" />
+              <DeleteIcon />
             </IconButton>
           </Tooltip>
         </Box>
       ),
     },
-  ];
+  ], [handleView, handleApprove, handleReject, handleEdit, handleDelete, deleteRequestMutation.isPending]);
 
   // Loading and error states
   if (isLoading) {
@@ -487,7 +605,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
       />
 
       {/* Content */}
-      {filteredData.length === 0 ? (
+      {requests.length === 0 ? (
         <PageEmptyState
           title="No Point Purchase Requests Found"
           message="No point purchase requests match your current filters. Try adjusting your search criteria."
@@ -500,7 +618,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
         <>
           {isMobile ? (
             <Box>
-              {paginatedData.map((request) => (
+              {requests.map((request: PointPurchaseRequest) => (
                 <MobileCard
                   key={request.id}
                   title={`Request #${request.id}`}
@@ -508,10 +626,12 @@ const PointPurchaseRequestListPage: React.FC = () => {
                   description={`${request.package.name_en} • ${(request.points_requested || 0).toLocaleString()} points`}
                   avatar={request.user.user_type === 'company' ? <PersonIcon /> : <PersonIcon />}
                   avatarColor="primary.main"
-                  status={{
-                    label: request.status_label,
-                    color: request.is_pending ? 'warning' : request.is_approved ? 'success' : 'error',
-                  }}
+                                      status={{
+                      label: request.status_label,
+                      color: request.status === 'pending' ? 'warning' : 
+                             request.status === 'approved' ? 'success' : 
+                             request.status === 'rejected' ? 'error' : 'default',
+                    }}
                   chips={[
                     {
                       label: request.formatted_payment_method,
@@ -530,7 +650,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
               <Pagination
                 page={page}
                 rowsPerPage={rowsPerPage}
-                totalCount={filteredData.length}
+                totalCount={filteredRequests.length} // Use filteredRequests for total count
                 onPageChange={handleChangePage}
                 onRowsPerPageChange={handleChangeRowsPerPage}
                 showResultsInfo={true}
@@ -539,10 +659,10 @@ const PointPurchaseRequestListPage: React.FC = () => {
           ) : (
             <StandardTable
               columns={columns}
-              data={paginatedData}
+              data={requests}
               page={page}
               rowsPerPage={rowsPerPage}
-              totalCount={filteredData.length}
+              totalCount={filteredRequests.length} // Use filteredRequests for total count
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               onRowClick={handleView}
@@ -564,28 +684,97 @@ const PointPurchaseRequestListPage: React.FC = () => {
       />
 
       {/* Approve/Reject Dialog */}
-      <Dialog open={approveRejectDialog.open} onClose={handleApproveRejectClose}>
-        <DialogTitle>{approveRejectDialog.type === 'approve' ? 'Approve Request' : 'Reject Request'}</DialogTitle>
+      <Dialog 
+        open={approveRejectDialog.open} 
+        onClose={handleApproveRejectClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {approveRejectDialog.type === 'approve' ? 'Approve Request' : 'Reject Request'}
+        </DialogTitle>
         <DialogContent>
-          <Typography variant="body1">Request ID: #{approveRejectDialog.request?.id}</Typography>
-          <Typography variant="body1">User: {approveRejectDialog.request?.user.name}</Typography>
-          <Typography variant="body1">Package: {approveRejectDialog.request?.package.name_en}</Typography>
-          <Typography variant="body1">Points: {(approveRejectDialog.request?.points_requested || 0).toLocaleString()}</Typography>
-          <Typography variant="body1">Price: {approveRejectDialog.request?.formatted_price}</Typography>
-          <Typography variant="body1">Payment Method: {approveRejectDialog.request?.formatted_payment_method}</Typography>
-          <Typography variant="body1">Status: {approveRejectDialog.request?.status_label}</Typography>
-                     <Typography variant="body1">Request Date: {approveRejectDialog.request?.requested_at ? formatDate(approveRejectDialog.request.requested_at, 'display') : 'N/A'}</Typography>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              Request Details
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+              <Box>
+                <Typography variant="caption" color="textSecondary">Request ID</Typography>
+                <Typography variant="body2" fontWeight={500}>#{approveRejectDialog.request?.id}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="textSecondary">User</Typography>
+                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.user.name}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="textSecondary">Package</Typography>
+                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.package.name_en}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="textSecondary">Points</Typography>
+                <Typography variant="body2" fontWeight={500}>{(approveRejectDialog.request?.points_requested || 0).toLocaleString()}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="textSecondary">Price</Typography>
+                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.formatted_price}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="textSecondary">Payment Method</Typography>
+                <Typography variant="body2" fontWeight={500}>{approveRejectDialog.request?.formatted_payment_method}</Typography>
+              </Box>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="textSecondary">Request Date</Typography>
+              <Typography variant="body2" fontWeight={500}>
+                {approveRejectDialog.request?.requested_at ? formatDate(approveRejectDialog.request.requested_at, 'display') : 'N/A'}
+              </Typography>
+            </Box>
+          </Box>
 
           {approveRejectDialog.type === 'approve' && (
-            <TextField
-              label="Admin Notes (Optional)"
-              fullWidth
-              margin="normal"
-              multiline
-              rows={2}
-              value={approveRejectDialog.notes}
-              onChange={(e) => setApproveRejectDialog({ ...approveRejectDialog, notes: e.target.value })}
-            />
+            <>
+              <TextField
+                select
+                label="Payment Method"
+                fullWidth
+                margin="normal"
+                value={approveRejectDialog.payment_method}
+                onChange={(e) => handleDialogInputChange('payment_method', e.target.value)}
+                error={!!approveRejectDialog.errors.payment_method}
+                helperText={approveRejectDialog.errors.payment_method}
+              >
+                <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
+                <MenuItem value="cash">Cash</MenuItem>
+                <MenuItem value="mobile_money">Mobile Money</MenuItem>
+                <MenuItem value="other">Other</MenuItem>
+              </TextField>
+              
+              <TextField
+                label="Payment Reference (Optional)"
+                fullWidth
+                margin="normal"
+                value={approveRejectDialog.payment_reference}
+                onChange={(e) => handleDialogInputChange('payment_reference', e.target.value)}
+                error={!!approveRejectDialog.errors.payment_reference}
+                helperText={approveRejectDialog.errors.payment_reference}
+                placeholder="Enter payment reference number (optional)..."
+              />
+              
+              <TextField
+                label="Admin Notes"
+                fullWidth
+                margin="normal"
+                multiline
+                rows={3}
+                value={approveRejectDialog.notes}
+                onChange={(e) => handleDialogInputChange('notes', e.target.value)}
+                error={!!approveRejectDialog.errors.notes}
+                helperText={approveRejectDialog.errors.notes}
+                placeholder="Add notes about the approval (required)..."
+                required
+              />
+            </>
           )}
           {approveRejectDialog.type === 'reject' && (
             <TextField
@@ -593,18 +782,34 @@ const PointPurchaseRequestListPage: React.FC = () => {
               fullWidth
               margin="normal"
               multiline
-              rows={2}
+              rows={3}
               value={approveRejectDialog.reason}
-              onChange={(e) => setApproveRejectDialog({ ...approveRejectDialog, reason: e.target.value })}
+              onChange={(e) => handleDialogInputChange('reason', e.target.value)}
+              error={!!approveRejectDialog.errors.reason}
+              helperText={approveRejectDialog.errors.reason}
+              placeholder="Please provide a reason for rejection..."
+              required
             />
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleApproveRejectClose} color="primary">
+          <Button 
+            onClick={handleApproveRejectClose} 
+            color="primary"
+            disabled={approveRejectMutation.isPending}
+          >
             Cancel
           </Button>
-          <Button onClick={handleApproveRejectConfirm} color="primary" variant="contained">
-            {approveRejectDialog.type === 'approve' ? 'Approve' : 'Reject'}
+          <Button 
+            onClick={handleApproveRejectConfirm} 
+            color={approveRejectDialog.type === 'approve' ? 'success' : 'error'} 
+            variant="contained"
+            disabled={approveRejectMutation.isPending}
+          >
+            {approveRejectMutation.isPending 
+              ? 'Processing...' 
+              : approveRejectDialog.type === 'approve' ? 'Approve' : 'Reject'
+            }
           </Button>
         </DialogActions>
       </Dialog>

@@ -38,8 +38,20 @@ export interface QueryParams {
 // Get auth token from localStorage
 function getAuthToken(): string | null {
   try {
-    const authStore = JSON.parse(localStorage.getItem('auth-storage') || '{}');
-    return authStore.state?.token || authStore.token || null;
+    // First check for admin_token (used by the login hook)
+    const adminToken = localStorage.getItem('admin_token');
+    if (adminToken) {
+      return adminToken;
+    }
+    
+    // Then check Zustand store
+    const authStoreData = localStorage.getItem('auth-storage');
+    const authStore = JSON.parse(authStoreData || '{}');
+    
+    // Zustand stores data in a 'state' property when using persist middleware
+    const token = authStore.state?.token || authStore.token || null;
+    
+    return token;
   } catch (error) {
     console.error('Error parsing auth store:', error);
     return null;
@@ -66,26 +78,9 @@ export async function apiRequest<T>(
     ...options,
   };
 
-  // Debug logging
-  console.log('🔍 API Request Debug:', {
-    url,
-    method: config.method || 'GET',
-    hasToken: !!token,
-    tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token',
-    headers: config.headers,
-  });
-
   try {
     const response = await fetch(url, config);
     
-    // Debug response status
-    console.log('🔍 API Response Debug:', {
-      status: response.status,
-      statusText: response.statusText,
-      url: response.url,
-      headers: Object.fromEntries(response.headers.entries()),
-    });
-
     // Check if response is JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -126,14 +121,6 @@ export async function apiRequest<T>(
 
     const data = await response.json();
 
-    // Debug successful response
-    console.log('✅ API Success:', {
-      success: data.success,
-      message: data.message,
-      dataKeys: data.data ? Object.keys(data.data) : 'No data',
-      hasPagination: !!data.pagination,
-    });
-
     // Handle API error responses (success: false)
     if (!data.success) {
       const errorResponse = data as ApiErrorResponse;
@@ -154,13 +141,6 @@ export async function apiRequest<T>(
 
     return data;
   } catch (error) {
-    // Debug error details
-    console.error('❌ API Request Error:', {
-      url,
-      error: error instanceof Error ? error.message : error,
-      errorType: error instanceof Error ? 'Error' : typeof error,
-    });
-    
     if (error instanceof Error) {
       throw {
         message: error.message,

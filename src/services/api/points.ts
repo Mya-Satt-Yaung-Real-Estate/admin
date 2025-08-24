@@ -7,7 +7,9 @@ import {
   PointPurchaseRequest,
   CreatePointPurchaseRequestData,
   UpdatePointPurchaseRequestData,
-  ApproveRejectRequestData
+  ApproveRejectRequestData,
+  PointPurchaseRequestFilters,
+  PointPurchaseRequestsResponse
 } from '../../types/point';
 
 export const pointsAPI = {
@@ -51,8 +53,24 @@ export const pointsAPI = {
     }),
 
   // Point Purchase Requests
-  getPointPurchaseRequests: () => {
-    return apiRequest<PointPurchaseRequest[]>(`/point-purchase-requests`);
+  getPointPurchaseRequests: (params?: PointPurchaseRequestFilters) => {
+    if (!params) {
+      return apiRequest<PointPurchaseRequestsResponse>('/point-purchase-requests');
+    }
+    
+    // Filter out undefined values and convert numbers to strings
+    const queryParams: Record<string, string> = {};
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams[key] = String(value);
+      }
+    });
+    
+    const queryString = new URLSearchParams(queryParams).toString();
+    const url = queryString ? `/point-purchase-requests?${queryString}` : '/point-purchase-requests';
+    
+    return apiRequest<PointPurchaseRequestsResponse>(url);
   },
 
   getPointPurchaseRequest: (id: number) =>

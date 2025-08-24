@@ -106,6 +106,34 @@ export interface ApproveRejectRequestData {
   action: 'approve' | 'reject';
   notes?: string;
   rejection_reason?: string;
+  payment_method?: 'bank_transfer' | 'cash' | 'mobile_money' | 'other';
+  payment_reference?: string;
+}
+
+// API Response Types
+export interface PointPurchaseRequestSummary {
+  total_requests: number;
+  pending_requests: number;
+  approved_requests: number;
+  rejected_requests: number;
+  cancelled_requests: number;
+  total_revenue: number;
+}
+
+export interface PointPurchaseRequestsResponse {
+  success: boolean;
+  message: string;
+  data: PointPurchaseRequest[];
+  pagination?: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+    has_more_pages: boolean;
+  };
+  summary: PointPurchaseRequestSummary;
 }
 
 // Form data types for components

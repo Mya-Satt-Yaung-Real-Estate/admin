@@ -6,7 +6,9 @@ import {
   UpdatePointPackageData, 
   CreatePointPurchaseRequestData, 
   UpdatePointPurchaseRequestData,
-  ApproveRejectRequestData
+  ApproveRejectRequestData,
+  PointPurchaseRequestFilters,
+  PointPurchaseRequestsResponse
 } from '../../types/point';
 
 
@@ -106,10 +108,35 @@ export const useTogglePointPackageStatus = () => {
 };
 
 // Point Purchase Request hooks
-export const usePointPurchaseRequests = () => {
-  return useQuery({
-    queryKey: pointKeys.purchaseRequests(),
-    queryFn: () => pointsAPI.getPointPurchaseRequests(),
+export const usePointPurchaseRequests = (params?: PointPurchaseRequestFilters) => {
+  // Create a stable query key that only includes the actual filter values
+  const queryKey = [
+    ...pointKeys.purchaseRequests(),
+    {
+      search: params?.search,
+      status: params?.status,
+      payment_method: params?.payment_method,
+      page: params?.page,
+      per_page: params?.per_page,
+    }
+  ];
+
+  return useQuery<PointPurchaseRequestsResponse>({
+    queryKey,
+    queryFn: async () => {
+      const response = await pointsAPI.getPointPurchaseRequests(params);
+      // Return the structure that the component expects
+      return {
+        success: response.success,
+        message: response.message,
+        data: (response as any).data, // Cast to any to avoid type issues
+        pagination: (response as any).pagination,
+        summary: (response as any).summary,
+      } as PointPurchaseRequestsResponse;
+    },
+    // Add some options to prevent unnecessary refetches
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
