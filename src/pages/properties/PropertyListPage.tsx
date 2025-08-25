@@ -16,6 +16,7 @@ import {
   RestoreFromTrash as RestoreIcon,
   Visibility as ViewIcon,
   Home as HomeIcon,
+  Refresh as RefreshIcon,
 
   AttachMoney as PriceIcon,
   Bed as BedIcon,
@@ -30,9 +31,9 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert } from '../../components/ui';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { useProperties, useDeleteProperty, useRestoreProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
+import { useProperties, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
 import { formatDate } from '../../constants/dateFormats';
@@ -47,6 +48,7 @@ interface PropertyFilters extends FilterState {
   verificationFilter: string;
   propertyTypeFilter: string;
   listingTypeFilter: string;
+  expiredFilter: string;
 }
 
 // ============================================================================
@@ -115,6 +117,16 @@ const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterFi
       }))
     ],
   },
+  {
+    key: 'expiredFilter',
+    type: 'select',
+    label: 'Expiry Status',
+    options: [
+      { value: 'all', label: 'All Properties' },
+      { value: 'expired', label: 'Expired Only' },
+      { value: 'active', label: 'Active Only' },
+    ],
+  },
 ];
 
 // ============================================================================
@@ -136,6 +148,7 @@ const PropertyListPage: React.FC = () => {
     verificationFilter: 'all',
     propertyTypeFilter: 'all',
     listingTypeFilter: 'all',
+    expiredFilter: 'all',
   });
 
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
@@ -146,6 +159,10 @@ const PropertyListPage: React.FC = () => {
   // Restore confirmation state
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
   const [propertyToRestore, setPropertyToRestore] = useState<Property | null>(null);
+
+  // Renew confirmation state
+  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
+  const [propertyToRenew, setPropertyToRenew] = useState<Property | null>(null);
 
   // API Queries
   const { data: propertiesResponse, isLoading, error } = useProperties({
@@ -166,6 +183,7 @@ const PropertyListPage: React.FC = () => {
   // Delete and restore mutations
   const deletePropertyMutation = useDeleteProperty();
   const restorePropertyMutation = useRestoreProperty();
+  const renewPropertyMutation = useRenewProperty();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -224,7 +242,18 @@ const PropertyListPage: React.FC = () => {
       const matchesListingType = filters.listingTypeFilter === 'all' || 
         property.listing_type?.slug === filters.listingTypeFilter;
       
-      return matchesSearch && matchesStatus && matchesVerification && matchesPropertyType && matchesListingType;
+      // Apply expired filter
+      let matchesExpired = true;
+      if (filters.expiredFilter !== 'all') {
+        const isExpired = property.is_expired;
+        if (filters.expiredFilter === 'expired') {
+          matchesExpired = isExpired;
+        } else if (filters.expiredFilter === 'active') {
+          matchesExpired = !isExpired;
+        }
+      }
+      
+      return matchesSearch && matchesStatus && matchesVerification && matchesPropertyType && matchesListingType && matchesExpired;
     });
   }, [properties, filters, activeTab]);
 
@@ -501,6 +530,14 @@ const PropertyListPage: React.FC = () => {
                     <DeleteIcon />
                   </IconButton>
                 </Tooltip>
+                
+                {/* Renew button - only show for expired properties */}
+                {property.is_expired && (
+                  <RenewButton
+                    onClick={() => handleRenewProperty(property)}
+                    disabled={renewPropertyMutation.isPending}
+                  />
+                )}
               </>
             ) : (
               <Tooltip title="Restore">
@@ -551,6 +588,16 @@ const PropertyListPage: React.FC = () => {
           onClick: () => handleDeleteProperty(property),
         }
       );
+      
+      // Add renew action for expired properties
+      if (property.is_expired) {
+        baseActions.push({
+          icon: <RefreshIcon />,
+          tooltip: 'Renew Property',
+          color: 'warning' as const,
+          onClick: () => handleRenewProperty(property),
+        });
+      }
     } else {
       baseActions.push({
         icon: <RestoreIcon />,
@@ -597,6 +644,35 @@ const PropertyListPage: React.FC = () => {
       setPropertyToRestore(null);
     } catch (error: any) {
       showError(error.message || 'Failed to restore property. Please try again.', true);
+    }
+  };
+
+  const handleRenewProperty = (property: Property) => {
+    setPropertyToRenew(property);
+    setRenewConfirmOpen(true);
+  };
+
+  const handleConfirmRenew = async (notes?: string) => {
+    if (!propertyToRenew) return;
+    
+    try {
+      const response = await renewPropertyMutation.mutateAsync({ 
+        id: propertyToRenew.id, 
+        notes 
+      });
+      
+      // The response structure has property and renewal_info at the top level
+      const newExpiry = response.data?.renewal_info?.new_expiry;
+      const expiryDate = newExpiry ? new Date(newExpiry).toLocaleDateString() : 'N/A';
+      
+      showSuccess(
+        `${propertyToRenew.title_en} renewed successfully! New expiry: ${expiryDate}`, 
+        true
+      );
+      setRenewConfirmOpen(false);
+      setPropertyToRenew(null);
+    } catch (error: any) {
+      showError(error.message || 'Failed to renew property. Please try again.', true);
     }
   };
 
@@ -776,6 +852,19 @@ const PropertyListPage: React.FC = () => {
         action="restore"
         isLoading={restorePropertyMutation.isPending}
         error={restorePropertyMutation.error?.message}
+      />
+
+      {/* Renew Confirmation Dialog */}
+      <RenewConfirmationDialog
+        open={renewConfirmOpen}
+        onClose={() => {
+          setRenewConfirmOpen(false);
+          setPropertyToRenew(null);
+        }}
+        onConfirm={handleConfirmRenew}
+        property={propertyToRenew}
+        isLoading={renewPropertyMutation.isPending}
+        error={renewPropertyMutation.error?.message}
       />
     </Box>
   );

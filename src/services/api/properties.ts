@@ -1,6 +1,6 @@
 // Properties API functions
 import { apiRequest, QueryParams } from './base';
-import { Property, CreatePropertyData, UpdatePropertyData, PropertyType, PropertyListingType } from '../../types/property';
+import { Property, CreatePropertyData, UpdatePropertyData, PropertyType, PropertyListingType, PropertyRenewalResponse } from '../../types/property';
 
 export const propertiesAPI = {
   // Get list of properties
@@ -63,6 +63,13 @@ export const propertiesAPI = {
     apiRequest<Property>(`/properties/${id}/verification`, {
       method: 'POST',
       body: JSON.stringify({ action: 'reject', reason }),
+    }),
+
+  // Renew property
+  renew: (id: number, notes?: string) =>
+    apiRequest<PropertyRenewalResponse>(`/properties/${id}/renew`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
     }),
 
   // Property Types

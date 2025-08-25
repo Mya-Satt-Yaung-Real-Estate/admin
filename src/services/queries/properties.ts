@@ -243,6 +243,22 @@ export const useDeletePropertyType = () => {
   });
 };
 
+// Renew property
+export const useRenewProperty = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: number; notes?: string }) =>
+      propertiesAPI.renew(id, notes),
+    onSuccess: (_data, variables) => {
+      // Invalidate and refetch properties lists
+      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      // Invalidate the specific property to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: propertyKeys.detail(variables.id) });
+    },
+  });
+};
+
 // Get property listing type by slug
 export const usePropertyListingType = (slug: string) => {
   return useQuery({

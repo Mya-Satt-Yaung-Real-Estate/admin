@@ -43,6 +43,7 @@ export interface Property {
     expires_at?: string;
     created_at: string;
     verified_at?: string;
+    last_renewed_at?: string;
     deleted_at?: string;
   };
   rejection_reason?: string;
@@ -56,6 +57,10 @@ export interface Property {
   is_pending_approval: boolean;
   is_rejected: boolean;
   is_deleted: boolean;
+  renewal_info?: {
+    renewal_count: number;
+    renewal_notes?: string;
+  };
   media?: {
     images: Array<{
       id: number;
@@ -199,4 +204,23 @@ export interface UpdatePropertyListingTypeData {
 export interface PropertyVerificationData {
   action: 'approve' | 'reject';
   reason?: string;
+}
+
+// Property Renewal
+export interface PropertyRenewalData {
+  notes?: string;
+}
+
+export interface PropertyRenewalResponse {
+  property: Property;
+  renewal_info: {
+    previous_expiry: string | null;
+    new_expiry: string | null;
+    duration_days: number;
+    points_consumed: number;
+    renewed_by: 'admin' | 'user';
+    renewed_at: string;
+    notes: string | null;
+    property_owner_type: string;
+  };
 }

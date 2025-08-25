@@ -40,10 +40,10 @@ import {
   Diamond as DiamondIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useProperty, useDeleteProperty, useRestoreProperty } from '../../services/queries/properties';
+import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty } from '../../services/queries/properties';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 
 const PropertyDetailPage: React.FC = () => {
@@ -62,6 +62,7 @@ const PropertyDetailPage: React.FC = () => {
   const { data: propertyResponse, isLoading, isFetching, error } = useProperty(Number(id));
   const deletePropertyMutation = useDeleteProperty();
   const restorePropertyMutation = useRestoreProperty();
+  const renewPropertyMutation = useRenewProperty();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -76,6 +77,9 @@ const PropertyDetailPage: React.FC = () => {
 
   // Restore confirmation state
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+
+  // Renew confirmation state
+  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
 
   // Handle success message from URL
   React.useEffect(() => {
@@ -129,6 +133,34 @@ const PropertyDetailPage: React.FC = () => {
       window.location.reload();
     } catch (error: any) {
       showError(error.message || 'Failed to restore property. Please try again.', true);
+    }
+  };
+
+  const handleRenew = () => {
+    setRenewConfirmOpen(true);
+  };
+
+  const handleConfirmRenew = async (notes?: string) => {
+    if (!property) return;
+    
+    try {
+      const response = await renewPropertyMutation.mutateAsync({ 
+        id: property.id, 
+        notes 
+      });
+      
+      const newExpiry = response.data?.renewal_info?.new_expiry;
+      const expiryDate = newExpiry ? new Date(newExpiry).toLocaleDateString() : 'N/A';
+      
+      showSuccess(
+        `${property.title_en} renewed successfully! New expiry: ${expiryDate}`, 
+        true
+      );
+      setRenewConfirmOpen(false);
+      // Refresh the data to update the UI
+      window.location.reload();
+    } catch (error: any) {
+      showError(error.message || 'Failed to renew property. Please try again.', true);
     }
   };
 
@@ -247,6 +279,15 @@ const PropertyDetailPage: React.FC = () => {
                 <DeleteIcon />
               </IconButton>
             </Tooltip>
+            
+            {/* Renew button - only show for expired properties */}
+            {property.is_expired && (
+              <RenewButton
+                onClick={handleRenew}
+                disabled={renewPropertyMutation.isPending}
+                tooltip="Renew Property"
+              />
+            )}
           </>
         ) : (
           <Tooltip title="Restore Property">
@@ -1007,6 +1048,16 @@ const PropertyDetailPage: React.FC = () => {
         action="restore"
         isLoading={restorePropertyMutation.isPending}
         error={restorePropertyMutation.error?.message}
+      />
+
+      {/* Renew Confirmation Dialog */}
+      <RenewConfirmationDialog
+        open={renewConfirmOpen}
+        onClose={() => setRenewConfirmOpen(false)}
+        onConfirm={handleConfirmRenew}
+        property={property}
+        isLoading={renewPropertyMutation.isPending}
+        error={renewPropertyMutation.error?.message}
       />
     </Box>
   );
