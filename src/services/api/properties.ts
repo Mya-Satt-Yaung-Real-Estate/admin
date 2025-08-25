@@ -1,6 +1,6 @@
 // Properties API functions
 import { apiRequest, QueryParams } from './base';
-import { Property, CreatePropertyData, UpdatePropertyData } from '../../types/property';
+import { Property, CreatePropertyData, UpdatePropertyData, PropertyType, PropertyListingType } from '../../types/property';
 
 export const propertiesAPI = {
   // Get list of properties
@@ -25,6 +25,10 @@ export const propertiesAPI = {
   get: (id: number) =>
     apiRequest<Property>(`/properties/${id}`),
 
+  // Get single property by ID (alias for get)
+  getById: (id: number) =>
+    apiRequest<Property>(`/properties/${id}`),
+
   // Create new property
   create: (data: CreatePropertyData) =>
     apiRequest<Property>('/properties', {
@@ -43,6 +47,10 @@ export const propertiesAPI = {
   delete: (id: number) =>
     apiRequest(`/properties/${id}`, { method: 'DELETE' }),
 
+  // Restore property
+  restore: (id: number) =>
+    apiRequest<Property>(`/properties/${id}/restore`, { method: 'POST' }),
+
   // Approve property
   approve: (id: number) =>
     apiRequest<Property>(`/properties/${id}/verification`, {
@@ -56,5 +64,61 @@ export const propertiesAPI = {
       method: 'POST',
       body: JSON.stringify({ action: 'reject', reason }),
     }),
+
+  // Property Types
+  getPropertyTypes: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<PropertyType[]>(`/property-types${queryString}`);
+  },
+
+  // Property Listing Types
+  getPropertyListingTypes: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<PropertyListingType[]>(`/property-listing-types${queryString}`);
+  },
+
+  // Get Property Type by slug
+  getPropertyType: (slug: string) =>
+    apiRequest<PropertyType>(`/property-types/${slug}`),
+
+  // Create Property Type
+  createPropertyType: (data: any) =>
+    apiRequest<PropertyType>('/property-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update Property Type
+  updatePropertyType: (slug: string, data: any) =>
+    apiRequest<PropertyType>(`/property-types/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete Property Type
+  deletePropertyType: (slug: string) =>
+    apiRequest(`/property-types/${slug}`, { method: 'DELETE' }),
+
+  // Get Property Listing Type by slug
+  getPropertyListingType: (slug: string) =>
+    apiRequest<PropertyListingType>(`/property-listing-types/${slug}`),
+
+  // Create Property Listing Type
+  createPropertyListingType: (data: any) =>
+    apiRequest<PropertyListingType>('/property-listing-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update Property Listing Type
+  updatePropertyListingType: (slug: string, data: any) =>
+    apiRequest<PropertyListingType>(`/property-listing-types/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Delete Property Listing Type
+  deletePropertyListingType: (slug: string) =>
+    apiRequest(`/property-listing-types/${slug}`, { method: 'DELETE' }),
 };
 

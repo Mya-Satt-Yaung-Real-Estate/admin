@@ -6,14 +6,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
   Paper,
   Box,
   Typography,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { PAGINATION_CONFIG } from '../../constants/pagination';
+import { Pagination } from '../ui';
 
 export interface TableColumn<T> {
   id: keyof T | string;
@@ -117,14 +116,13 @@ export function StandardTable<T>({
             ))}
           </Box>
         )}
-        <TablePagination
-          rowsPerPageOptions={PAGINATION_CONFIG.options}
-          component="div"
-          count={totalCount}
-          rowsPerPage={rowsPerPage}
+        <Pagination
           page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={totalCount}
           onPageChange={onPageChange}
           onRowsPerPageChange={onRowsPerPageChange}
+          showResultsInfo={true}
         />
       </Box>
     );
@@ -185,14 +183,13 @@ export function StandardTable<T>({
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        rowsPerPageOptions={PAGINATION_CONFIG.options}
-        component="div"
-        count={totalCount}
-        rowsPerPage={rowsPerPage}
+      <Pagination
         page={page}
+        rowsPerPage={rowsPerPage}
+        totalCount={totalCount}
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
+        showResultsInfo={true}
       />
     </Paper>
   );

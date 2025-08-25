@@ -24,7 +24,7 @@ export interface CreateAdminUserData {
   email: string;
   password: string;
   password_confirmation: string;
-  user_type: string;
+  user_type?: string;
   is_active: boolean;
   role_ids: number[];
   member_level?: string;

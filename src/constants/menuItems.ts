@@ -5,20 +5,56 @@ export const MENU_ITEMS = [
     path: '/',
   },
   {
-    text: 'User Management',
+    text: 'Point Orders',
+    iconName: 'ShoppingCart',
+    path: '/points/purchase-requests',
+  },
+  {
+    text: 'Users',
     iconName: 'People',
     path: '/users',
   },
   {
-    text: 'Location',
-    iconName: 'LocationOn',
-    path: '/locations',
+    text: 'Properties',
+    iconName: 'Home',
+    path: '/properties',
   },
   {
-    text: 'Analytics',
+    text: 'Master Data',
     iconName: 'Assessment',
-    path: '/analytics',
+    children: [
+      {
+        text: 'Locations',
+        iconName: 'LocationOn',
+        path: '/locations',
+      },
+      {
+        text: 'Property Types',
+        iconName: 'Category',
+        path: '/property-types',
+      },
+      {
+        text: 'Listing Types',
+        iconName: 'List',
+        path: '/property-listing-types',
+      },
+      {
+        text: 'Point Packages',
+        iconName: 'Star',
+        path: '/points/packages',
+      },
+      {
+        text: 'Company Types',
+        iconName: 'Business',
+        path: '/company-types',
+      },
+    ],
   },
+  // {
+  //   text: 'Analytics',
+  //   iconName: 'Assessment',
+  //   path: '/analytics',
+  // },
   {
     text: 'Settings',
     iconName: 'Settings',

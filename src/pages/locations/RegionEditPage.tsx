@@ -2,76 +2,86 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
+  Typography,
   TextField,
   Button,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   Alert,
+  FormControlLabel,
+  Switch,
   Divider,
 } from '@mui/material';
 import {
   Save as SaveIcon,
+  Cancel as CancelIcon,
   ArrowBack as ArrowBackIcon,
-  Delete as DeleteIcon,
+  LocationOn as LocationIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
-import PageHeader from '../../components/layout/PageHeader';
-import { RegionFormData } from '../../types/location';
 import { useRegion, useUpdateRegion } from '../../services/queries/locations';
+import PageHeader from '../../components/layout/PageHeader';
+import { PageLoadingState, PageErrorState, ActionAlert } from '../../components/ui';
+import { UpdateRegionData } from '../../types/location';
+import { useAlertSystem } from '../../hooks';
 
 const RegionEditPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const [formData, setFormData] = useState<RegionFormData>({
-    name_en: '',
-    name_mm: '',
-    is_active: true,
-    description: '',
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegionFormData, string>>>({});
-
-  const { data: regionData, isLoading, error } = useRegion(id || '');
+  const { slug } = useParams<{ slug: string }>();
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
   const updateRegionMutation = useUpdateRegion();
 
+  // API Queries
+  const { data: regionData, isLoading, error } = useRegion(slug || '');
+  const region = regionData?.data;
+
+  // Form state
+  const [formData, setFormData] = useState<UpdateRegionData>({
+    name_en: '',
+    name_mm: '',
+    description: '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isActive, setIsActive] = useState(true);
+
+  // Populate form when data is loaded
   useEffect(() => {
-    if (regionData?.data) {
-      const region = regionData.data;
+    if (region) {
       setFormData({
         name_en: region.name_en,
         name_mm: region.name_mm,
-        is_active: region.is_active,
         description: region.description || '',
       });
+      setIsActive(region.is_active);
     }
-  }, [regionData]);
+  }, [region]);
 
-  const handleInputChange = (field: keyof RegionFormData, value: string | boolean) => {
-    setFormData((prev: RegionFormData) => ({
-      ...prev,
-      [field]: value,
-    }));
+  // Event handlers
+  const handleInputChange = (field: keyof UpdateRegionData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined,
-      }));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof RegionFormData, string>> = {};
+    const newErrors: Record<string, string> = {};
 
-    if (!formData.name_en.trim()) {
+    if (!formData.name_en?.trim()) {
       newErrors.name_en = 'English name is required';
     }
-    if (!formData.name_mm.trim()) {
+
+    if (!formData.name_mm?.trim()) {
       newErrors.name_mm = 'Myanmar name is required';
+    }
+
+    if (formData.description && formData.description.length > 500) {
+      newErrors.description = 'Description must be less than 500 characters';
     }
 
     setErrors(newErrors);
@@ -80,54 +90,105 @@ const RegionEditPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm() || !id) return;
+    
+    if (!validateForm() || !slug) {
+      return;
+    }
 
     try {
       await updateRegionMutation.mutateAsync({
-        slug: id,
-        data: formData,
+        slug,
+        data: {
+          ...formData,
+          description: formData.description || undefined,
+          is_active: isActive,
+        },
       });
-      navigate('/locations');
+      
+      // Navigate to region detail page on success
+      navigate(`/locations/regions/${slug}?success=${encodeURIComponent('Region updated successfully!')}`);
     } catch (error: any) {
-      console.error('Error updating region:', error);
+      // Handle API validation errors
+      if (error?.errors) {
+        const apiErrors: Record<string, string> = {};
+        Object.entries(error.data.errors).forEach(([field, messages]) => {
+          apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
+        });
+        setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to update region. Please try again.';
+        showError(errorMessage, true);
+      }
     }
   };
 
-  const handleDelete = () => {
-    // TODO: Implement delete functionality
-    console.log('Delete region:', id);
+  const handleCancel = () => {
+    navigate(`/locations/regions/${slug}`);
   };
 
   if (isLoading) {
-    return (
-      <Box>
-        <PageHeader title="Edit Region" />
-        <Paper sx={{ p: 3 }}>
-          <Typography>Loading region...</Typography>
-        </Paper>
-      </Box>
-    );
+    return <PageLoadingState title="Loading Region" />;
   }
 
   if (error) {
     return (
-      <Box>
-        <PageHeader title="Edit Region" />
-        <Paper sx={{ p: 3 }}>
-          <Alert severity="error">
-            Error loading region: {error.message}
-          </Alert>
-        </Paper>
+      <PageErrorState
+        error={error}
+        title="Error Loading Region"
+        message={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
+  if (!region) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 4 }}>
+        <Typography variant="h6" color="textSecondary" gutterBottom>
+          Region Not Found
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+          The region you're looking for doesn't exist or has been removed.
+        </Typography>
+        <Button variant="contained" onClick={() => navigate('/locations')}>
+          Back to Locations
+        </Button>
       </Box>
     );
   }
 
   return (
     <Box>
-      <PageHeader title="Edit Region" />
+      <PageHeader
+        title="Edit Region"
+        subtitle={`Editing: ${region.name_en}`}
+      />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
+
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleCancel}
+        >
+          Cancel
+        </Button>
+      </Box>
+
       <Paper sx={{ p: 3 }}>
-        <Box component="form" onSubmit={handleSubmit}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <LocationIcon sx={{ fontSize: 32, color: 'primary.main', mr: 2 }} />
+          <Typography variant="h6" fontWeight={600}>
+            Region Information
+          </Typography>
+        </Box>
+
+        <Divider sx={{ mb: 3 }} />
+
+        <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
+            {/* English Name */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -137,8 +198,11 @@ const RegionEditPage: React.FC = () => {
                 error={!!errors.name_en}
                 helperText={errors.name_en}
                 required
+                placeholder="Enter English name"
               />
             </Grid>
+
+            {/* Myanmar Name */}
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -148,50 +212,82 @@ const RegionEditPage: React.FC = () => {
                 error={!!errors.name_mm}
                 helperText={errors.name_mm}
                 required
+                placeholder="Enter Myanmar name"
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formData.is_active.toString()}
-                  onChange={(e) => handleInputChange('is_active', e.target.value === 'true')}
-                  label="Status"
-                >
-                  <MenuItem value="true">Active</MenuItem>
-                  <MenuItem value="false">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+
+            {/* Description */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
+                error={!!errors.description}
+                helperText={errors.description || `${formData.description?.length || 0}/500 characters`}
                 multiline
-                rows={3}
+                rows={4}
+                placeholder="Enter region description (optional)"
+                inputProps={{ maxLength: 500 }}
               />
+            </Grid>
+
+            {/* Status */}
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Active Region"
+              />
+              <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
+                Active regions will be available for selection in other parts of the system.
+              </Typography>
+            </Grid>
+
+            {/* Current Status Display */}
+            <Grid item xs={12}>
+              <Alert severity="info">
+                <Typography variant="body2">
+                  <strong>Current Status:</strong> {region.is_active ? 'Active' : 'Inactive'}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>Slug:</strong> {region.slug}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>Townships:</strong> {region.townships?.length || 0} townships in this region
+                </Typography>
+              </Alert>
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 3 }} />
+          {/* Error Alert */}
+          {updateRegionMutation.error && (
+            <Alert severity="error" sx={{ mt: 3 }}>
+              {updateRegionMutation.error.message || 'Failed to update region. Please try again.'}
+            </Alert>
+          )}
 
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          {/* Success Alert */}
+          {updateRegionMutation.isSuccess && (
+            <Alert severity="success" sx={{ mt: 3 }}>
+              Region updated successfully!
+            </Alert>
+          )}
+
+          {/* Action Buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
             <Button
               variant="outlined"
-              startIcon={<ArrowBackIcon />}
-              onClick={() => navigate('/locations')}
+              startIcon={<CancelIcon />}
+              onClick={handleCancel}
+              disabled={updateRegionMutation.isPending}
             >
               Cancel
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              onClick={handleDelete}
-            >
-              Delete
             </Button>
             <Button
               type="submit"
@@ -199,10 +295,10 @@ const RegionEditPage: React.FC = () => {
               startIcon={<SaveIcon />}
               disabled={updateRegionMutation.isPending}
             >
-              {updateRegionMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {updateRegionMutation.isPending ? 'Updating...' : 'Update Region'}
             </Button>
           </Box>
-        </Box>
+        </form>
       </Paper>
     </Box>
   );

@@ -24,12 +24,14 @@ export interface CreateRegionData {
   name_mm: string;
   name_en: string;
   description?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateRegionData {
   name_mm?: string;
   name_en?: string;
   description?: string;
+  is_active?: boolean;
 }
 
 export interface CreateTownshipData {
@@ -37,6 +39,7 @@ export interface CreateTownshipData {
   name_mm: string;
   name_en: string;
   description?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateTownshipData {
@@ -44,6 +47,7 @@ export interface UpdateTownshipData {
   name_mm?: string;
   name_en?: string;
   description?: string;
+  is_active?: boolean;
 }
 
 // Form data types for components

@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Box,
-  Paper,
   Typography,
   Avatar,
   Chip,
@@ -9,20 +8,11 @@ import {
   Card,
   CardContent,
   Button,
-  Divider,
   List,
   ListItem,
   ListItemText,
   ListItemIcon,
-  Badge,
-  Tabs,
-  Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Alert,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -30,417 +20,385 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Business as BusinessIcon,
-  Security as SecurityIcon,
-  AccessTime as AccessTimeIcon,
+  Person as PersonIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
+  Language as LanguageIcon,
+  Description as DescriptionIcon,
+  Visibility as VisibilityIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { 
+  PageLoadingState, 
+  PageErrorState, 
+  StatusChip,
+  UserPointStatistics,
+  UserPointPackages,
+  UserPointTransactions,
+  UserPropertyStatistics,
+  ActionAlert,
+} from '../../components/ui';
+import { useUser } from '../../services/queries/users';
+import { formatDate } from '../../constants/dateFormats';
+import { useAlertSystem } from '../../hooks';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'Normal User' | 'Company User';
-  status: 'active' | 'inactive' | 'pending';
-  avatar: string;
-  lastLogin: string;
-  createdAt: string;
-  phone?: string;
-  location?: string;
-  bio?: string;
-}
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
+const PAGE_CONFIG = {
+  title: 'User Details',
+  description: 'View detailed information about the user',
+  backButtonPath: '/users',
+} as const;
 
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`user-tabpanel-${index}`}
-      aria-labelledby={`user-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'JD',
-    lastLogin: '2024-01-15 10:30',
-    createdAt: '2023-06-15',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, NY',
-    bio: 'Real estate enthusiast looking for investment opportunities in the city.'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'JS',
-    lastLogin: '2024-01-14 15:45',
-    createdAt: '2023-08-20',
-    phone: '+1 (555) 234-5678',
-    location: 'Los Angeles, CA',
-    bio: 'Real estate agent specializing in luxury properties and commercial real estate.'
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike.johnson@example.com',
-    role: 'Company User',
-    status: 'inactive',
-    avatar: 'MJ',
-    lastLogin: '2024-01-10 09:15',
-    createdAt: '2023-09-10',
-    phone: '+1 (555) 345-6789',
-    location: 'Chicago, IL',
-    bio: 'Property owner and real estate investor with portfolio across multiple states.'
-  },
-  {
-    id: 4,
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@example.com',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: 'SW',
-    lastLogin: 'Never',
-    createdAt: '2024-01-12',
-    phone: '+1 (555) 456-7890',
-    location: 'Miami, FL',
-    bio: 'First-time homebuyer looking for family-friendly neighborhoods.'
-  },
-  {
-    id: 5,
-    name: 'David Brown',
-    email: 'david.brown@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'DB',
-    lastLogin: '2024-01-13 14:20',
-    createdAt: '2023-11-05',
-    phone: '+1 (555) 567-8901',
-    location: 'Seattle, WA',
-    bio: 'Tech professional seeking modern apartments in downtown area.'
-  }
-];
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const UserDetailPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const [user, setUser] = useState<User | null>(null);
-  const [tabValue, setTabValue] = useState(0);
+  const { slug } = useParams<{ slug: string }>();
 
-  useEffect(() => {
-    if (id) {
-      const foundUser = mockUsers.find(u => u.id === parseInt(id));
-      setUser(foundUser || null);
-    }
-  }, [id]);
+  // Hooks
+  const { alert } = useAlertSystem();
+  
+  // Queries
+  const { data: userData, isLoading, error } = useUser(slug || '');
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
-  };
+  // Computed values
+  const user = userData?.data?.user;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'error';
-      case 'pending':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
+  // Event handlers
+  const handleBack = () => navigate(PAGE_CONFIG.backButtonPath);
+  const handleEdit = () => navigate(`/users/${slug}/edit`);
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'Normal User':
-        return 'primary';
-      case 'Company User':
-        return 'secondary';
-      default:
-        return 'default';
-    }
-  };
+  // Loading state
+  if (isLoading) {
+    return <PageLoadingState title="Loading User Details" />;
+  }
 
-  if (!user) {
+  // Error state
+  if (error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6">User not found</Typography>
-      </Box>
+      <PageErrorState
+        error={error}
+        title="Error Loading User"
+        message={error.message}
+        onRetry={() => window.location.reload()}
+      />
     );
   }
 
+  // Not found state
+  if (!user) {
+    return (
+      <PageErrorState
+        error={new Error('User not found')}
+        title="User Not Found"
+        message="The requested user could not be found."
+        onRetry={handleBack}
+      />
+    );
+  }
+
+  const getUserTypeIcon = () => {
+    return user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />;
+  };
+
+  const getUserTypeColor = () => {
+    return user.user_type === 'company' ? 'primary.main' : 'secondary.main';
+  };
+
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
+      <ActionAlert {...alert} />
       <PageHeader
-        title="User Details"
+        title={PAGE_CONFIG.title}
         breadcrumbs="Dashboard / User Management / User Details"
         subtitle={`Viewing details for ${user.name}`}
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,
-          onClick: () => navigate('/users')
+          onClick: handleBack,
         }}
       />
 
       <Grid container spacing={3}>
         {/* User Profile Card */}
         <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Badge
-              overlap="circular"
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              badgeContent={
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: '50%',
-                    backgroundColor: user.status === 'active' ? '#4caf50' : user.status === 'inactive' ? '#f44336' : '#ff9800'
-                  }}
-                />
-              }
-            >
+          <Card>
+            <CardContent sx={{ textAlign: 'center', p: 3 }}>
               <Avatar
                 sx={{
                   width: 120,
                   height: 120,
-                  bgcolor: 'primary.main',
-                  fontSize: '2.5rem',
                   mx: 'auto',
-                  mb: 2
+                  mb: 2,
+                  bgcolor: getUserTypeColor(),
+                  fontSize: '2rem',
                 }}
               >
-                {user.avatar}
+                {getUserTypeIcon()}
               </Avatar>
-            </Badge>
-            
-            <Typography variant="h5" gutterBottom>
-              {user.name}
-            </Typography>
-            
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              {user.email}
-            </Typography>
-            
-            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', mb: 2 }}>
-              <Chip
-                label={user.role}
-                color={getRoleColor(user.role)}
-                size="small"
+              
+              <Typography variant="h5" gutterBottom>
+                {user.name}
+              </Typography>
+              
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                {user.email}
+              </Typography>
+              
+              <Box sx={{ mt: 2, mb: 2 }}>
+                <Chip
+                  label={user.user_type === 'company' ? 'Company' : 'Individual'}
+                  color={user.user_type === 'company' ? 'primary' : 'secondary'}
+                  size="small"
+                  sx={{ mr: 1, mb: 1 }}
+                />
+                <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+              </Box>
+              
+              <Button
                 variant="outlined"
-              />
-              <Chip
-                label={user.status}
-                color={getStatusColor(user.status)}
-                size="small"
-              />
-            </Box>
-            
-            <Divider sx={{ my: 2 }} />
-            
-            <Button
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={() => navigate(`/users/${user.id}/edit`)}
-              fullWidth
-            >
-              Edit User
-            </Button>
-          </Paper>
+                startIcon={<EditIcon />}
+                onClick={handleEdit}
+                sx={{ mt: 2 }}
+              >
+                Edit User
+              </Button>
+            </CardContent>
+          </Card>
         </Grid>
 
         {/* User Details */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ width: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <Tabs value={tabValue} onChange={handleTabChange}>
-                <Tab label="Overview" />
-                <Tab label="Activity" />
-                <Tab label="Settings" />
-              </Tabs>
-            </Box>
-
-            <TabPanel value={tabValue} index={0}>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>
-                    Contact Information
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <List>
-                    <ListItem>
-                      <ListItemIcon>
-                        <EmailIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Email"
-                        secondary={user.email}
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon>
-                        <PhoneIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Phone"
-                        secondary={user.phone || 'Not provided'}
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon>
-                        <LocationIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Location"
-                        secondary={user.location || 'Not provided'}
-                      />
-                    </ListItem>
-                  </List>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <List>
-                    <ListItem>
-                      <ListItemIcon>
-                        <BusinessIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Role"
-                        secondary={user.role}
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon>
-                        <SecurityIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Status"
-                        secondary={user.status}
-                      />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon>
-                        <CalendarIcon color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Member Since"
-                        secondary={user.createdAt}
-                      />
-                    </ListItem>
-                  </List>
-                </Grid>
-
-                {user.bio && (
-                  <Grid item xs={12}>
-                    <Card variant="outlined">
-                      <CardContent>
-                        <Typography variant="h6" gutterBottom>
-                          Bio
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          {user.bio}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                )}
-              </Grid>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={1}>
+          <Card>
+            <CardContent>
               <Typography variant="h6" gutterBottom>
-                Recent Activity
-              </Typography>
-              
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Activity</TableCell>
-                      <TableCell>Date</TableCell>
-                      <TableCell>Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>Last Login</TableCell>
-                      <TableCell>{user.lastLogin}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={user.status === 'active' ? 'Online' : 'Offline'}
-                          color={user.status === 'active' ? 'success' : 'default'}
-                          size="small"
-                        />
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>Account Created</TableCell>
-                      <TableCell>{user.createdAt}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label="Completed"
-                          color="success"
-                          size="small"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </TabPanel>
-
-            <TabPanel value={tabValue} index={2}>
-              <Typography variant="h6" gutterBottom>
-                Account Settings
+                User Information
               </Typography>
               
               <List>
                 <ListItem>
                   <ListItemIcon>
-                    <AccessTimeIcon color="primary" />
+                    <PersonIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Account Status"
-                    secondary={user.status === 'active' ? 'Active' : user.status === 'inactive' ? 'Inactive' : 'Pending'}
+                    primary="Name"
+                    secondary={user.name}
                   />
                 </ListItem>
+                
                 <ListItem>
                   <ListItemIcon>
-                    <SecurityIcon color="primary" />
+                    <EmailIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="User Type"
-                    secondary={user.role === 'Normal User' ? 'Real Estate Seeker' : 'Real Estate Professional'}
+                    primary="Email"
+                    secondary={user.email}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <StarIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Member Level"
+                    secondary={user.member_level}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <CalendarIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Created"
+                    secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
                   />
                 </ListItem>
               </List>
-            </TabPanel>
-          </Paper>
+            </CardContent>
+          </Card>
         </Grid>
+
+        {/* Property Statistics */}
+        <Grid item xs={12}>
+          <UserPropertyStatistics
+            totalProperties={user.property_statistics?.total_properties || user.property_count || 0}
+            activeProperties={user.property_statistics?.active_properties || 0}
+            soldProperties={user.property_statistics?.sold_properties || 0}
+            rentedProperties={user.property_statistics?.rented_properties || 0}
+            expiredProperties={user.property_statistics?.expired_properties || 0}
+            draftProperties={user.property_statistics?.draft_properties || 0}
+          />
+        </Grid>
+
+        {/* Point Statistics */}
+        <Grid item xs={12}>
+          <UserPointStatistics
+            pointBalance={user.point_balance || 0}
+            totalPointsAllocated={user.total_points_allocated || 0}
+            totalPointsConsumed={user.total_points_consumed || 0}
+            pointPackagesCount={user.point_packages_count || 0}
+          />
+        </Grid>
+
+        {/* Point Packages */}
+        <Grid item xs={12} md={6}>
+          <UserPointPackages pointPackages={user.point_packages || []} />
+        </Grid>
+
+        {/* Recent Transactions */}
+        <Grid item xs={12} md={6}>
+          <UserPointTransactions transactions={user.recent_transactions || []} />
+        </Grid>
+
+        {/* Company Profile (if company user) */}
+        {user.user_type === 'company' && user.company_profile && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Company Profile
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <List>
+                      <ListItem>
+                        <ListItemIcon>
+                          <BusinessIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Company Name"
+                          secondary={user.company_profile.company_name}
+                        />
+                      </ListItem>
+                      
+                      <ListItem>
+                        <ListItemIcon>
+                          <BusinessIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Company Type"
+                          secondary={user.company_profile.company_type_name}
+                        />
+                      </ListItem>
+                      
+                      <ListItem>
+                        <ListItemIcon>
+                          <PhoneIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Phone Number"
+                          secondary={user.company_profile.phone_number}
+                        />
+                      </ListItem>
+                    </List>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <List>
+                      <ListItem>
+                        <ListItemIcon>
+                          <LocationIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Location (English)"
+                          secondary={user.company_profile.location_en}
+                        />
+                      </ListItem>
+                      
+                      <ListItem>
+                        <ListItemIcon>
+                          <LocationIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Location (Myanmar)"
+                          secondary={user.company_profile.location_mm}
+                        />
+                      </ListItem>
+                      
+                      <ListItem>
+                        <ListItemIcon>
+                          <VisibilityIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="View Count"
+                          secondary={user.company_profile.view_count}
+                        />
+                      </ListItem>
+                    </List>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <ListItem>
+                      <ListItemIcon>
+                        <LocationIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Address"
+                        secondary={user.company_profile.address}
+                      />
+                    </ListItem>
+                    
+                    {user.company_profile.website && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <LanguageIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Website"
+                          secondary={
+                            <a 
+                              href={user.company_profile.website} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ color: 'inherit' }}
+                            >
+                              {user.company_profile.website}
+                            </a>
+                          }
+                        />
+                      </ListItem>
+                    )}
+                    
+                    {user.company_profile.description && (
+                      <ListItem>
+                        <ListItemIcon>
+                          <DescriptionIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Description"
+                          secondary={user.company_profile.description}
+                        />
+                      </ListItem>
+                    )}
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Data Availability Notice */}
+        {(!user.point_balance && !user.total_points_allocated && !user.total_points_consumed) && (
+          <Grid item xs={12}>
+            <Alert severity="info">
+              <Typography variant="body2">
+                <strong>Note:</strong> Point system data is not available for this user. 
+                This may indicate that the user hasn't purchased any point packages yet, 
+                or the point system integration is not fully configured.
+              </Typography>
+            </Alert>
+          </Grid>
+        )}
       </Grid>
     </Box>
   );

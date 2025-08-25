@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
-  TextField,
   Button,
   Typography,
   FormControl,
@@ -11,442 +10,359 @@ import {
   MenuItem,
   Grid,
   Avatar,
-  Divider,
-  Switch,
-  FormControlLabel,
+  Alert,
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
-  Delete as DeleteIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Business as BusinessIcon,
+  CalendarToday as CalendarIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { 
+  PageLoadingState, 
+  PageErrorState, 
+  StatusChip,
+  ActionAlert,
+} from '../../components/ui';
+import { useUser, useUpdateUser } from '../../services/queries/users';
+import { UpdateRegularUserData } from '../../types/user';
+import { formatDate } from '../../constants/dateFormats';
+import { useAlertSystem } from '../../hooks';
+import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
 
-interface UserFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: 'Normal User' | 'Company User';
-  status: 'active' | 'inactive' | 'pending';
-  avatar: string;
-  location: string;
-  bio: string;
-  isActive: boolean;
-  sendEmailNotification: boolean;
-}
+// ============================================================================
+// CONSTANTS & CONFIGURATION
+// ============================================================================
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: 'Normal User' | 'Company User';
-  status: 'active' | 'inactive' | 'pending';
-  avatar: string;
-  lastLogin: string;
-  createdAt: string;
-  phone?: string;
-  location?: string;
-  bio?: string;
-}
+const PAGE_CONFIG = {
+  title: 'Edit User Status',
+  description: 'Update user account status',
+  backButtonPath: '/users',
+} as const;
 
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'JD',
-    lastLogin: '2024-01-15 10:30',
-    createdAt: '2023-06-15',
-    phone: '+1 (555) 123-4567',
-    location: 'New York, NY',
-    bio: 'Real estate enthusiast looking for investment opportunities in the city.'
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'Company User',
-    status: 'active',
-    avatar: 'JS',
-    lastLogin: '2024-01-14 15:45',
-    createdAt: '2023-08-20',
-    phone: '+1 (555) 234-5678',
-    location: 'Los Angeles, CA',
-    bio: 'Real estate agent specializing in luxury properties and commercial real estate.'
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike.johnson@example.com',
-    role: 'Company User',
-    status: 'inactive',
-    avatar: 'MJ',
-    lastLogin: '2024-01-10 09:15',
-    createdAt: '2023-09-10',
-    phone: '+1 (555) 345-6789',
-    location: 'Chicago, IL',
-    bio: 'Property owner and real estate investor with portfolio across multiple states.'
-  },
-  {
-    id: 4,
-    name: 'Sarah Wilson',
-    email: 'sarah.wilson@example.com',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: 'SW',
-    lastLogin: 'Never',
-    createdAt: '2024-01-12',
-    phone: '+1 (555) 456-7890',
-    location: 'Miami, FL',
-    bio: 'First-time homebuyer looking for family-friendly neighborhoods.'
-  },
-  {
-    id: 5,
-    name: 'David Brown',
-    email: 'david.brown@example.com',
-    role: 'Normal User',
-    status: 'active',
-    avatar: 'DB',
-    lastLogin: '2024-01-13 14:20',
-    createdAt: '2023-11-05',
-    phone: '+1 (555) 567-8901',
-    location: 'Seattle, WA',
-    bio: 'Tech professional seeking modern apartments in downtown area.'
-  }
-];
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
 const UserEditPage: React.FC = () => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const [formData, setFormData] = useState<UserFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    role: 'Normal User',
-    status: 'pending',
-    avatar: '',
-    location: '',
-    bio: '',
-    isActive: true,
-    sendEmailNotification: false,
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof UserFormData, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { slug } = useParams<{ slug: string }>();
+  const [status, setStatus] = useState<boolean>(true);
+  const [memberLevel, setMemberLevel] = useState<string>('silver');
+  const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      const user = mockUsers.find(u => u.id === parseInt(id));
-      if (user) {
-        const [firstName, ...lastNameParts] = user.name.split(' ');
-        const lastName = lastNameParts.join(' ');
-        
-        setFormData({
-          firstName: firstName || '',
-          lastName: lastName || '',
-          email: user.email,
-          phone: user.phone || '',
-          role: user.role,
-          status: user.status,
-          avatar: user.avatar,
-          location: user.location || '',
-          bio: user.bio || '',
-          isActive: user.status === 'active',
-          sendEmailNotification: false,
-        });
-      }
-    }
-  }, [id]);
+  // Hooks
+  const { alert, showError } = useAlertSystem();
+  
+  // Queries and mutations
+  const { data: userData, isLoading, error } = useUser(slug || '');
+  const updateUserMutation = useUpdateUser();
 
-  const handleInputChange = (field: keyof UserFormData, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined,
-      }));
+  // Computed values
+  const user = userData?.data?.user;
+
+  // Initialize status when user data loads
+  React.useEffect(() => {
+    if (user) {
+      setStatus(user.is_active);
+      setMemberLevel(user.member_level);
+      setHasChanges(false);
     }
+  }, [user]);
+
+  // Event handlers
+  const handleBack = () => navigate(PAGE_CONFIG.backButtonPath);
+  
+  const handleStatusChange = (newStatus: boolean) => {
+    setStatus(newStatus);
+    checkForChanges();
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof UserFormData, string>> = {};
+  const handleMemberLevelChange = (newMemberLevel: string) => {
+    setMemberLevel(newMemberLevel);
+    checkForChanges();
+  };
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    }
-    if (!formData.role) {
-      newErrors.role = 'Role is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const checkForChanges = () => {
+    if (!user) return;
+    const statusChanged = status !== user.is_active;
+    const memberLevelChanged = memberLevel !== user.member_level;
+    setHasChanges(statusChanged || memberLevelChanged);
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
+    if (!user || !hasChanges) return;
+
+    const updateData: UpdateRegularUserData = {
+      is_active: status,
+      member_level: memberLevel as 'bronze' | 'silver' | 'gold' | 'platinum',
+    };
+
+    try {
+      await updateUserMutation.mutateAsync({
+        slug: slug!,
+        data: updateData,
+      });
+      
+      // Navigate back to user detail page with success message
+      navigate(`/users/${slug}?success=${encodeURIComponent('User status updated successfully!')}`);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to update user status. Please try again.';
+      showError(errorMessage, true);
     }
-
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Updating user:', formData);
-      setIsSubmitting(false);
-      navigate('/users');
-    }, 1500);
   };
 
-  const handleDelete = () => {
-    // Handle delete logic
-    console.log('Deleting user:', id);
-    navigate('/users');
+  const getUserTypeIcon = () => {
+    return user?.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />;
   };
 
-  const generateAvatar = () => {
-    const initials = `${formData.firstName.charAt(0)}${formData.lastName.charAt(0)}`.toUpperCase();
-    setFormData(prev => ({ ...prev, avatar: initials }));
+  const getUserTypeColor = () => {
+    return user?.user_type === 'company' ? 'primary.main' : 'secondary.main';
   };
+
+  // Loading state
+  if (isLoading) {
+    return <PageLoadingState title="Loading User Details" />;
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <PageErrorState
+        error={error}
+        title="Error Loading User"
+        message={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
+
+  // Not found state
+  if (!user) {
+    return (
+      <PageErrorState
+        error={new Error('User not found')}
+        title="User Not Found"
+        message="The requested user could not be found."
+        onRetry={handleBack}
+      />
+    );
+  }
 
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
+      <ActionAlert {...alert} />
       <PageHeader
-        title="Edit User"
-        breadcrumbs="Dashboard / User Management / Edit User"
-        subtitle="Update user information and settings"
+        title={PAGE_CONFIG.title}
+        breadcrumbs="Dashboard / User Management / Edit User Status"
+        subtitle={`Update status for ${user.name}`}
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,
-          onClick: () => navigate('/users')
+          onClick: handleBack,
         }}
       />
 
-      <Paper sx={{ p: 3 }}>
-        <Grid container spacing={3}>
-          {/* Basic Information */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Basic Information
-            </Typography>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="First Name"
-              value={formData.firstName}
-              onChange={(e) => handleInputChange('firstName', e.target.value)}
-              error={!!errors.firstName}
-              helperText={errors.firstName}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Last Name"
-              value={formData.lastName}
-              onChange={(e) => handleInputChange('lastName', e.target.value)}
-              error={!!errors.lastName}
-              helperText={errors.lastName}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Email Address"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              error={!!errors.email}
-              helperText={errors.email}
-              required
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Phone Number"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              error={!!errors.phone}
-              helperText={errors.phone}
-              required
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Grid container spacing={3}>
+        {/* User Overview Card */}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center', p: 3 }}>
               <Avatar
                 sx={{
-                  width: 64,
-                  height: 64,
-                  bgcolor: 'primary.main',
-                  fontSize: '1.5rem',
+                  width: 120,
+                  height: 120,
+                  mx: 'auto',
+                  mb: 2,
+                  bgcolor: getUserTypeColor(),
+                  fontSize: '2rem',
                 }}
               >
-                {formData.avatar || 'U'}
+                {getUserTypeIcon()}
               </Avatar>
-              <Button
-                variant="outlined"
-                onClick={generateAvatar}
-                disabled={!formData.firstName || !formData.lastName}
-              >
-                Generate Avatar
-              </Button>
+              
+              <Typography variant="h5" gutterBottom>
+                {user.name}
+              </Typography>
+              
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                {user.email}
+              </Typography>
+              
+              <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
+                {user.user_type === 'company' ? 'Company User' : 'Individual User'}
+              </Typography>
+
+              <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* User Information */}
+        <Grid item xs={12} md={8}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                User Information
+              </Typography>
+              
+              <List>
+                <ListItem>
+                  <ListItemIcon>
+                    <PersonIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Name"
+                    secondary={user.name}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <EmailIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Email"
+                    secondary={user.email}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <BusinessIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="User Type"
+                    secondary={user.user_type === 'company' ? 'Company' : 'Individual'}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <StarIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Member Level"
+                    secondary={user.member_level}
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <CalendarIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Created"
+                    secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
+                  />
+                </ListItem>
+              </List>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Status Edit Section */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Account Status
+            </Typography>
+            
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+              Change the user's account status. Active users can access the platform, 
+              while inactive users will be restricted from logging in.
+            </Typography>
+
+            <Box sx={{ mb: 3 }}>
+              <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                <InputLabel>Account Status</InputLabel>
+                <Select
+                  value={status ? 'active' : 'inactive'}
+                  label="Account Status"
+                  onChange={(e) => handleStatusChange(e.target.value === 'active')}
+                >
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
-          </Grid>
+          </Paper>
+        </Grid>
 
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
-
-          {/* Role & Status */}
-          <Grid item xs={12}>
+        {/* Member Level Edit Section */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Role & Status
+              Member Level
             </Typography>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required>
-              <InputLabel>Role</InputLabel>
-              <Select
-                value={formData.role}
-                label="Role"
-                onChange={(e) => handleInputChange('role', e.target.value)}
-                error={!!errors.role}
-              >
-                <MenuItem value="Normal User">Normal User (Real Estate Seeker)</MenuItem>
-                <MenuItem value="Company User">Company User (Agency/Owner)</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.status}
-                label="Status"
-                onChange={(e) => handleInputChange('status', e.target.value)}
-              >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
-                <MenuItem value="pending">Pending</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
-
-          {/* Additional Information */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Additional Information
+            
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+              Change the user's member level. Member levels determine the user's privileges 
+              and benefits within the platform.
             </Typography>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Location"
-              value={formData.location}
-              onChange={(e) => handleInputChange('location', e.target.value)}
-              placeholder="City, State"
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Bio"
-              value={formData.bio}
-              onChange={(e) => handleInputChange('bio', e.target.value)}
-              multiline
-              rows={3}
-              placeholder="Tell us about yourself..."
-            />
-          </Grid>
 
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
+            <Box sx={{ mb: 3 }}>
+              <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                <InputLabel>Member Level</InputLabel>
+                <Select
+                  value={memberLevel}
+                  label="Member Level"
+                  onChange={(e) => handleMemberLevelChange(e.target.value)}
+                >
+                  {MEMBER_LEVEL_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Paper>
+        </Grid>
 
-          {/* Settings */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Settings
-            </Typography>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.isActive}
-                  onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                />
-              }
-              label="Account Active"
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.sendEmailNotification}
-                  onChange={(e) => handleInputChange('sendEmailNotification', e.target.checked)}
-                />
-              }
-              label="Send Email Notifications"
-            />
-          </Grid>
+        {/* Actions Section */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            {hasChanges && (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                You have unsaved changes. Click "Save Changes" to apply the new settings.
+              </Alert>
+            )}
 
-          {/* Action Buttons */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', mt: 3 }}>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleDelete}
-                startIcon={<DeleteIcon />}
-              >
-                Delete User
-              </Button>
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              mt: 4,
+              pt: 3,
+              borderTop: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Box>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                  Current Status: <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Current Member Level: <strong>{user.member_level}</strong>
+                </Typography>
+              </Box>
               
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
-                  onClick={() => navigate('/users')}
+                  onClick={handleBack}
                   startIcon={<CancelIcon />}
                 >
                   Cancel
@@ -454,16 +370,16 @@ const UserEditPage: React.FC = () => {
                 <Button
                   variant="contained"
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
+                  disabled={!hasChanges || updateUserMutation.isPending}
                   startIcon={<SaveIcon />}
                 >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  {updateUserMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </Button>
               </Box>
             </Box>
-          </Grid>
+          </Paper>
         </Grid>
-      </Paper>
+      </Grid>
     </Box>
   );
 };

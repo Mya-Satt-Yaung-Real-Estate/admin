@@ -2,186 +2,241 @@ import React, { useState } from 'react';
 import {
   Box,
   Paper,
+  Typography,
   TextField,
   Button,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Grid,
   Alert,
+  FormControlLabel,
+  Switch,
   Divider,
 } from '@mui/material';
 import {
   Save as SaveIcon,
+  Cancel as CancelIcon,
   ArrowBack as ArrowBackIcon,
+  LocationOn as LocationIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useCreateRegion } from '../../services/queries/locations';
 import PageHeader from '../../components/layout/PageHeader';
-import { RegionFormData } from '../../types/location';
+import { PageLoadingState, ActionAlert } from '../../components/ui';
+import { CreateRegionData } from '../../types/location';
+import { useAlertSystem } from '../../hooks';
 
 const RegionCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<RegionFormData>({
+  
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
+  const createRegionMutation = useCreateRegion();
+
+  // Form state
+  const [formData, setFormData] = useState<CreateRegionData>({
     name_en: '',
     name_mm: '',
-    is_active: true,
     description: '',
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegionFormData, string>>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (field: keyof RegionFormData, value: string | boolean) => {
-    setFormData((prev: RegionFormData) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isActive, setIsActive] = useState(true);
+
+  // Event handlers
+  const handleInputChange = (field: keyof CreateRegionData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: undefined,
-      }));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<Record<keyof RegionFormData, string>> = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.name_en.trim()) {
       newErrors.name_en = 'English name is required';
     }
+
     if (!formData.name_mm.trim()) {
       newErrors.name_mm = 'Myanmar name is required';
+    }
+
+    if (formData.description && formData.description.length > 500) {
+      newErrors.description = 'Description must be less than 500 characters';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!validateForm()) {
       return;
     }
 
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Creating region:', formData);
-      setIsSubmitting(false);
-      navigate('/locations');
-    }, 1500);
+    try {
+      await createRegionMutation.mutateAsync({
+        ...formData,
+        description: formData.description || undefined,
+        is_active: isActive,
+      });
+      
+      // Navigate to locations list on success
+      navigate('/locations?success=' + encodeURIComponent('Region created successfully!'));
+    } catch (error: any) {
+      // Handle API validation errors
+      if (error?.errors) {
+        const apiErrors: Record<string, string> = {};
+        Object.entries(error.data.errors).forEach(([field, messages]) => {
+          apiErrors[field] = Array.isArray(messages) ? messages[0] : String(messages);
+        });
+        setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to create region. Please try again.';
+        showError(errorMessage, true);
+      }
+    }
   };
 
+  const handleCancel = () => {
+    navigate('/locations');
+  };
+
+  if (createRegionMutation.isPending) {
+    return <PageLoadingState title="Creating Region" />;
+  }
+
   return (
-    <Box sx={{ marginLeft: 0, width: '100%' }}>
+    <Box>
       <PageHeader
         title="Create Region"
-        breadcrumbs="Dashboard / Location Management / Create Region"
         subtitle="Add a new region to the system"
-        actionButton={{
-          text: 'Back to Locations',
-          icon: <ArrowBackIcon />,
-          onClick: () => navigate('/locations')
-        }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
+
+      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleCancel}
+        >
+          Cancel
+        </Button>
+      </Box>
 
       <Paper sx={{ p: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Region Information
-            </Typography>
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="English Name"
-              value={formData.name_en}
-              onChange={(e) => handleInputChange('name_en', e.target.value)}
-              error={!!errors.name_en}
-              helperText={errors.name_en}
-              required
-              placeholder="e.g., Yangon"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Myanmar Name"
-              value={formData.name_mm}
-              onChange={(e) => handleInputChange('name_mm', e.target.value)}
-              error={!!errors.name_mm}
-              helperText={errors.name_mm}
-              required
-              placeholder="e.g., ရန်ကုန်"
-            />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.is_active.toString()}
-                label="Status"
-                onChange={(e) => handleInputChange('is_active', e.target.value === 'true')}
-              >
-                <MenuItem value="true">Active</MenuItem>
-                <MenuItem value="false">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              multiline
-              rows={3}
-              placeholder="Describe the region (optional)"
-            />
-          </Grid>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <LocationIcon sx={{ fontSize: 32, color: 'primary.main', mr: 2 }} />
+          <Typography variant="h6" fontWeight={600}>
+            Region Information
+          </Typography>
+        </Box>
 
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-          </Grid>
+        <Divider sx={{ mb: 3 }} />
 
-          <Grid item xs={12}>
-            <Alert severity="info">
-              <Typography variant="body2">
-                <strong>Note:</strong> Regions are the top-level administrative divisions. Townships can be added to regions after creation.
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            {/* English Name */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="English Name"
+                value={formData.name_en}
+                onChange={(e) => handleInputChange('name_en', e.target.value)}
+                error={!!errors.name_en}
+                helperText={errors.name_en}
+                required
+                placeholder="Enter English name"
+              />
+            </Grid>
+
+            {/* Myanmar Name */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Myanmar Name"
+                value={formData.name_mm}
+                onChange={(e) => handleInputChange('name_mm', e.target.value)}
+                error={!!errors.name_mm}
+                helperText={errors.name_mm}
+                required
+                placeholder="Enter Myanmar name"
+              />
+            </Grid>
+
+            {/* Description */}
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                error={!!errors.description}
+                helperText={errors.description || `${formData.description?.length || 0}/500 characters`}
+                multiline
+                rows={4}
+                placeholder="Enter region description (optional)"
+                inputProps={{ maxLength: 500 }}
+              />
+            </Grid>
+
+            {/* Status */}
+            <Grid item xs={12}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Active Region"
+              />
+              <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
+                Active regions will be available for selection in other parts of the system.
               </Typography>
-            </Alert>
+            </Grid>
           </Grid>
+
+          {/* Error Alert */}
+          {createRegionMutation.error && (
+            <Alert severity="error" sx={{ mt: 3 }}>
+              {createRegionMutation.error.message || 'Failed to create region. Please try again.'}
+            </Alert>
+          )}
+
+          {/* Success Alert */}
+          {createRegionMutation.isSuccess && (
+            <Alert severity="success" sx={{ mt: 3 }}>
+              Region created successfully!
+            </Alert>
+          )}
 
           {/* Action Buttons */}
-          <Grid item xs={12}>
-            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 3 }}>
-              <Button
-                variant="outlined"
-                onClick={() => navigate('/locations')}
-                startIcon={<ArrowBackIcon />}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                startIcon={<SaveIcon />}
-              >
-                {isSubmitting ? 'Creating...' : 'Create Region'}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
+            <Button
+              variant="outlined"
+              startIcon={<CancelIcon />}
+              onClick={handleCancel}
+              disabled={createRegionMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<SaveIcon />}
+              disabled={createRegionMutation.isPending}
+            >
+              {createRegionMutation.isPending ? 'Creating...' : 'Create Region'}
+            </Button>
+          </Box>
+        </form>
       </Paper>
     </Box>
   );

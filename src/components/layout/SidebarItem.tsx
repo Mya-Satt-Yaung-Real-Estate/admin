@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ListItem,
   ListItemButton,
@@ -28,17 +28,30 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
   childrenItems = [],
   currentPath,
   onClick,
+  openDropdown,
+  onDropdownToggle,
 }) => {
-  const [open, setOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Check if any child is currently selected
+  const hasSelectedChild = childrenItems.some(child => child.path === currentPath);
+  
+  // Determine if this dropdown should be open
+  const isOpen = openDropdown === text || (hasSelectedChild && openDropdown === null);
+  
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setOpen((prev) => !prev);
+    if (onDropdownToggle) {
+      onDropdownToggle(text);
+    }
   };
+  
   // Collapse dropdown on mobile when a child is clicked
   const handleChildClick = (path: string) => {
-    if (isMobile) setOpen(false);
+    if (isMobile && onDropdownToggle) {
+      onDropdownToggle(text);
+    }
     onClick(path);
   };
 
@@ -46,9 +59,9 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
     <>
       <ListItem disablePadding sx={{ position: 'relative' }}>
         <ListItemButton
-          selected={isSelected || open}
+          selected={isSelected || isOpen}
           onClick={handleToggle}
-          aria-expanded={open}
+          aria-expanded={isOpen}
           aria-controls={`dropdown-list-${text}`}
           sx={{
             minHeight: 52,
@@ -57,9 +70,9 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
             marginRight: 1,
             marginLeft: 0,
             transition: 'all 0.2s ease-in-out',
-            backgroundColor: open ? 'rgba(59, 136, 128, 0.08)' : 'transparent',
-            color: open ? 'primary.main' : 'text.secondary',
-            fontWeight: open ? 600 : 400,
+            backgroundColor: isOpen ? 'rgba(59, 136, 128, 0.08)' : 'transparent',
+            color: isOpen ? 'primary.main' : 'text.secondary',
+            fontWeight: isOpen ? 600 : 400,
             '&:hover': {
               backgroundColor: 'rgba(59, 136, 128, 0.04)',
               color: 'primary.main',
@@ -80,7 +93,7 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
           <ListItemIcon
             sx={{
               minWidth: isCollapsed ? 32 : 40,
-              color: open ? 'primary.main' : 'inherit',
+              color: isOpen ? 'primary.main' : 'inherit',
               transition: 'color 0.2s ease-in-out',
             }}
           >
@@ -91,7 +104,7 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
               primary={text}
               sx={{
                 '& .MuiListItemText-primary': {
-                  fontWeight: open ? 600 : 400,
+                  fontWeight: isOpen ? 600 : 400,
                   fontSize: '0.95rem',
                   transition: 'all 0.2s ease-in-out',
                 },
@@ -103,16 +116,16 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
               size="small"
               onClick={handleToggle}
               edge="end"
-              aria-label={open ? `Collapse ${text}` : `Expand ${text}`}
+              aria-label={isOpen ? `Collapse ${text}` : `Expand ${text}`}
               sx={{ ml: 1, color: 'inherit' }}
               tabIndex={0}
             >
-              {open ? <ExpandLess /> : <ExpandMore />}
+              {isOpen ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
           )}
         </ListItemButton>
       </ListItem>
-      <Collapse in={open && !isCollapsed} timeout="auto" unmountOnExit>
+      <Collapse in={isOpen && !isCollapsed} timeout="auto" unmountOnExit>
         <List component="div" disablePadding id={`dropdown-list-${text}`}>
           {childrenItems.map((child) => (
             <SidebarItem
@@ -123,6 +136,7 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
               isSelected={currentPath === child.path}
               isCollapsed={isCollapsed}
               onClick={handleChildClick}
+              currentPath={currentPath}
               sx={{
                 pl: isCollapsed ? 2 : 5,
                 py: 1.2,
@@ -155,6 +169,8 @@ const SidebarItem: React.FC<SidebarItemProps & {
   onClick,
   childrenItems,
   currentPath,
+  openDropdown,
+  onDropdownToggle,
   sx,
 }) => {
   if (childrenItems && childrenItems.length > 0 && currentPath !== undefined) {
@@ -168,6 +184,8 @@ const SidebarItem: React.FC<SidebarItemProps & {
         currentPath={currentPath}
         onClick={onClick}
         path={path || ''}
+        openDropdown={openDropdown}
+        onDropdownToggle={onDropdownToggle}
       />
     );
   }

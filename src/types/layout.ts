@@ -27,6 +27,10 @@ export interface SidebarItemProps {
   isSelected: boolean;
   isCollapsed: boolean;
   onClick: (path: string) => void;
+  childrenItems?: MenuItem[];
+  currentPath: string;
+  openDropdown?: string | null;
+  onDropdownToggle?: (dropdownText: string) => void;
   sx?: any;
 }
 

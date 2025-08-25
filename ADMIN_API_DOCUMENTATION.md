@@ -48,6 +48,88 @@ All API responses follow a standardized format:
 }
 ```
 
+## Property Management Overview
+
+### Dual-Mode Property Creation
+
+The admin panel supports two modes for property creation and management:
+
+#### **Mode 1: Platform Properties**
+- **Purpose**: Admin creates properties owned by the platform
+- **Point System**: No points deducted from any account
+- **Ownership**: Property owned by admin user (user_type = 'admin')
+- **Use Case**: Featured properties, promotional listings, platform showcase
+
+#### **Mode 2: User Properties**
+- **Purpose**: Admin creates properties on behalf of users
+- **Point System**: Points deducted from the specified user's account
+- **Ownership**: Property owned by individual/company user
+- **Use Case**: Assisting users with property uploads, customer service
+
+### Point System Integration
+
+#### **Point Costs**
+- **Property Upload**: 10 points (when status = 'published')
+- **Property Upgrade**: 10 points (when changing from 'draft' to 'published')
+
+#### **Point Validation**
+- System validates user has sufficient points before creating/updating properties
+- Points are deducted from user's account, not admin's account
+- Detailed error messages include user information and point requirements
+
+#### **Property Type Detection**
+- **Platform Property**: `user.user_type === 'admin'`
+- **User Property**: `user.user_type === 'individual'` or `'company'`
+
+### Property Update Behavior
+
+#### **Automatic Mode Detection**
+- System automatically detects property type during updates
+- No need to specify `is_platform_property` or `user_id` in update requests
+- Property type cannot be changed during updates
+
+#### **Point Deduction Logic**
+- **Platform Properties**: Never deduct points
+- **User Properties**: Deduct points only when changing status to 'published'
+- **Status Changes**: Draft → Published (requires points), Published → Draft (no points)
+
+### User Types and Permissions
+
+#### **Admin Users (user_type = 'admin')**
+- Can create platform properties (no points required)
+- Can create properties on behalf of users (points deducted from user)
+- Can update any property (automatic mode detection)
+- Full system access
+
+#### **Individual Users (user_type = 'individual')**
+- Can own properties (points deducted when publishing)
+- Can have properties created by admin on their behalf
+- Standard user permissions
+
+#### **Company Users (user_type = 'company')**
+- Can own properties (points deducted when publishing)
+- Can have properties created by admin on their behalf
+- Enhanced features for business users
+
+### Error Handling
+
+#### **Insufficient Points Error**
+```json
+{
+  "success": false,
+  "message": "Insufficient points for this action",
+  "required_points": 10,
+  "current_balance": 5,
+  "user_name": "John Doe",
+  "user_email": "john@example.com"
+}
+```
+
+#### **Validation Errors**
+- Clear error messages for missing required fields
+- Specific validation for user_id when creating user properties
+- Property type validation during updates
+
 ## Authentication
 
 ### Login
@@ -279,6 +361,264 @@ All API responses follow a standardized format:
 }
 ```
 
+## Frontend Users Management
+
+### List Frontend Users
+**GET** `/users`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `per_page` (optional): Number of items per page (1-100, default: 10)
+- `page` (optional): Page number (default: 1)
+- `user_type` (optional): Filter by user type (`individual` or `company`)
+- `search` (optional): Search by name or email
+- `status` (optional): Filter by status (`active` or `inactive`)
+- `member_level` (optional): Filter by member level (`bronze`, `silver`, `gold`, `platinum`)
+- `point_balance_min` (optional): Minimum point balance filter
+- `point_balance_max` (optional): Maximum point balance filter
+- `property_count_min` (optional): Minimum property count filter
+- `property_count_max` (optional): Maximum property count filter
+- `sort_by` (optional): Sort field (`name`, `email`, `created_at`, `last_login_at`, `point_balance`, `property_count`)
+- `sort_direction` (optional): Sort direction (`asc` or `desc`)
+- `date_from` (optional): Filter from date (YYYY-MM-DD)
+- `date_to` (optional): Filter to date (YYYY-MM-DD)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Users retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "slug": "john-doe",
+      "email": "john@example.com",
+      "user_type": "individual",
+      "member_level": "silver",
+      "is_active": true,
+      "property_count": 5,
+      "point_balance": 150,
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "slug": "jane-smith",
+      "email": "jane@company.com",
+      "user_type": "company",
+      "member_level": "gold",
+      "is_active": true,
+      "last_login_at": "2024-01-15T10:30:00.000000Z",
+      "last_active_at": "2024-01-15T10:30:00.000000Z",
+      "email_verified_at": "2024-01-15T10:30:00.000000Z",
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "company_profile": {
+        "id": 1,
+        "company_name": "ABC Real Estate",
+        "company_type_id": 1,
+        "company_type_name": "Real Estate Agency(အိမ်ခြံမြေအေဂျင်စီ)",
+        "phone_number": "+959123456789",
+        "address": "123 Business Street",
+        "website": "https://abcrealestate.com",
+        "description": "Professional real estate services",
+        "view_count": 150,
+        "location_en": "Yangon,Sanchaung",
+        "location_mm": "ရန်ကုန်,စမ်းချောင်း"
+      },
+      "property_count": 12,
+      "point_balance": 250,
+      "total_points_allocated": 800,
+      "total_points_consumed": 550,
+      "point_packages_count": 5
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "per_page": 10,
+    "total": 50,
+    "last_page": 5,
+    "from": 1,
+    "to": 10,
+    "has_more_pages": true
+  }
+}
+```
+
+### Get Frontend User Details
+**GET** `/users/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User retrieved successfully",
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "slug": "john-doe",
+      "email": "john@example.com",
+      "user_type": "individual",
+      "member_level": "silver",
+      "is_active": true,
+      "last_login_at": "2024-01-15T10:30:00.000000Z",
+      "last_active_at": "2024-01-15T10:30:00.000000Z",
+      "email_verified_at": "2024-01-15T10:30:00.000000Z",
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "property_count": 5,
+      "point_balance": 150,
+      "total_points_allocated": 500,
+      "total_points_consumed": 350,
+      "point_packages": [
+        {
+          "id": 1,
+          "package_name": "Premium Package",
+          "points_allocated": 300,
+          "points_remaining": 150,
+          "points_consumed": 150,
+          "consumption_percentage": 50.0,
+          "allocated_at": "2024-01-15T10:30:00.000000Z",
+          "expires_at": "2025-01-15T10:30:00.000000Z",
+          "days_until_expiry": 45,
+          "is_expired": false,
+          "is_active": true,
+          "allocated_by": {
+            "id": 1,
+            "name": "Admin User",
+            "email": "admin@example.com"
+          }
+        }
+      ],
+      "recent_transactions": [
+        {
+          "id": 1,
+          "transaction_type": "DEBIT",
+          "points_amount": 10,
+          "balance_before": 160,
+          "balance_after": 150,
+          "reference_type": "property_upload",
+          "reference_id": 123,
+          "description": "Property upload fee",
+          "created_at": "2024-01-20T14:30:00.000000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+**Company User Response:**
+```json
+{
+  "success": true,
+  "message": "User retrieved successfully",
+  "data": {
+    "user": {
+      "id": 2,
+      "name": "Jane Smith",
+      "slug": "jane-smith",
+      "email": "jane@company.com",
+      "user_type": "company",
+      "member_level": "gold",
+      "is_active": true,
+      "last_login_at": "2024-01-15T10:30:00.000000Z",
+      "last_active_at": "2024-01-15T10:30:00.000000Z",
+      "email_verified_at": "2024-01-15T10:30:00.000000Z",
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "company_profile": {
+        "id": 1,
+        "company_name": "ABC Real Estate",
+        "company_type_id": 1,
+        "company_type_name": "Real Estate Agency(အိမ်ခြံမြေအေဂျင်စီ)",
+        "phone_number": "+959123456789",
+        "address": "123 Business Street",
+        "website": "https://abcrealestate.com",
+        "description": "Professional real estate services",
+        "view_count": 150,
+        "location_en": "Yangon,Sanchaung",
+        "location_mm": "ရန်ကုန်,စမ်းချောင်း"
+      },
+      "property_count": 12,
+      "point_balance": 250,
+      "total_points_allocated": 1000,
+      "total_points_consumed": 750,
+      "point_packages": [
+        {
+          "id": 2,
+          "package_name": "Business Package",
+          "points_allocated": 500,
+          "points_remaining": 250,
+          "points_consumed": 250,
+          "consumption_percentage": 50.0,
+          "allocated_at": "2024-01-10T10:30:00.000000Z",
+          "expires_at": "2025-01-10T10:30:00.000000Z",
+          "days_until_expiry": 40,
+          "is_expired": false,
+          "is_active": true,
+          "allocated_by": {
+            "id": 1,
+            "name": "Admin User",
+            "email": "admin@example.com"
+          }
+        }
+      ],
+      "recent_transactions": [
+        {
+          "id": 3,
+          "transaction_type": "DEBIT",
+          "points_amount": 25,
+          "balance_before": 275,
+          "balance_after": 250,
+          "reference_type": "featured_property",
+          "reference_id": 456,
+          "description": "Featured property upgrade",
+          "created_at": "2024-01-20T14:30:00.000000Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Update Frontend User Status
+**PUT** `/users/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "is_active": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User status updated successfully",
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "slug": "john-doe",
+      "email": "john@example.com",
+      "user_type": "individual",
+      "member_level": "silver",
+      "is_active": false,
+      "property_count": 5,
+      "point_balance": 150
+    }
+  }
+}
+```
+
 ## Property Management
 
 ### List All Properties
@@ -290,7 +630,18 @@ All API responses follow a standardized format:
 - `per_page` (optional): Number of items per page (1-100, default: 10)
 - `page` (optional): Page number (default: 1)
 - `search` (optional): Search by title, description, or address
-- `sort_by` (optional): Sort field (default: `created_at`)
+- `user_type` (optional): Filter by property owner type (`admin`, `individual`, `company`)
+- `status` (optional): Filter by status (`draft`, `published`, `sold`, `rented`)
+- `verification_status` (optional): Filter by verification status (`pending`, `approved`, `rejected`)
+- `property_type_id` (optional): Filter by property type
+- `listing_type_id` (optional): Filter by listing type
+- `region_id` (optional): Filter by region
+- `township_id` (optional): Filter by township
+- `price_min` (optional): Minimum price filter
+- `price_max` (optional): Maximum price filter
+- `date_from` (optional): Filter from date (YYYY-MM-DD)
+- `date_to` (optional): Filter to date (YYYY-MM-DD)
+- `sort_by` (optional): Sort field (`created_at`, `updated_at`, `price`, `area_sqft`, `title_en`)
 - `sort_direction` (optional): Sort direction (`asc` or `desc`)
 
 **Response:**
@@ -300,48 +651,306 @@ All API responses follow a standardized format:
   "message": "Properties retrieved successfully",
   "data": [
     {
-      "id": 1,
-      "title_en": "Beautiful House",
-      "title_mm": "လှပတဲ့ အိမ်",
-      "description": "A beautiful house for sale",
-      "price": 500000,
-      "area_sqft": 1500,
-      "bedrooms": 3,
-      "bathrooms": 2,
-      "property_condition": "good",
-      "status": "published",
-      "verification_status": "approved",
-      "is_featured": false,
-      "is_verified": true,
-      "published_at": "2024-01-15T10:30:00.000000Z",
-      "created_at": "2024-01-15T10:30:00.000000Z",
-      "updated_at": "2024-01-15T10:30:00.000000Z",
-      "user": {
-        "id": 1,
-        "name": "Property Owner",
-        "email": "owner@example.com"
-      },
-      "property_type": {
-        "id": 1,
-        "name_en": "House",
-        "name_mm": "အိမ်"
-      },
-      "listing_type": {
-        "id": 1,
-        "name_en": "For Sale",
-        "name_mm": "ရောင်းရန်"
-      },
-      "region": {
-        "id": 1,
-        "name_en": "Yangon",
-        "name_mm": "ရန်ကုန်"
-      },
-      "township": {
-        "id": 1,
-        "name_en": "Downtown",
-        "name_mm": "မြို့လယ်"
-      }
-    }
+            "id": 2,
+            "user_id": 7,
+            "user": {
+                "id": 7,
+                "name": "Yangon Properties",
+                "slug": "yangon-properties",
+                "email": "contact@yangonproperties.com",
+                "user_type": "company",
+                "member_level": "silver",
+                "is_active": true,
+                "company_profile": {
+                    "id": 2,
+                    "company_name": "Yangon Properties Ltd.",
+                    "company_type_id": 2,
+                    "company_type_name": "Construction Company(ဆောက်လုပ်ရေးကုမ္ပဏီ)",
+                    "phone_number": "+959987654321",
+                    "address": "Building A, Downtown Business Center",
+                    "website": null,
+                    "description": "Comprehensive property solutions for Yangon area",
+                    "view_count": 0,
+                    "location_en": "Mandalay,Amarapura",
+                    "location_mm": "မန္တလေး,အမရပူရ"
+                }
+            },
+            "property_type": {
+                "id": 1,
+                "name": "House(အိမ်)",
+                "slug": "house"
+            },
+            "listing_type": {
+                "id": 1,
+                "name": "For Sale(ရောင်းရန်)",
+                "slug": "for-sale"
+            },
+            "title_en": "Luxury Villa in Mandalay",
+            "title_mm": "မန္တလေးမှာ ဇိမ်ခံအိမ်ကြီး",
+            "description": "Exclusive luxury villa with premium finishes and amenities. Features include a swimming pool, home theater, and smart home automation. Located in the most prestigious area of Mandalay.",
+            "property_condition": "new",
+            "location": {
+                "region": {
+                    "id": 2,
+                    "name": "Mandalay(မန္တလေး)"
+                },
+                "township": {
+                    "id": 14,
+                    "name_en": "Pyigyidagun(ပြည်ကြီးတံခွန်)"
+                },
+                "address": "No. 177, Residential Lane, Pyigyidagun, Mandalay",
+                "latitude": "22.06400000",
+                "longitude": "96.18400000",
+                "location": "Pyigyidagun, Mandalay(ပြည်ကြီးတံခွန်, မန္တလေး)"
+            },
+            "price": "1200000000.00",
+            "formatted_price": "1,200,000,000 MMK",
+            "area_sqft": "4000.00",
+            "bedrooms": 5,
+            "bathrooms": 4,
+            "bank_installment_available": true,
+            "features": [
+                "swimming_pool",
+                "home_theater",
+                "smart_home",
+                "garden",
+                "parking"
+            ],
+            "contact_info": {
+                "owner_name": "Daw Su Su Win",
+                "phone_numbers": [
+                    "+959555123456"
+                ],
+                "email": "su.su.win@example.com"
+            },
+            "status": "published",
+            "is_featured": false,
+            "stats": {
+                "view_count": 0,
+                "contact_count": 0,
+                "favorite_count": 1
+            },
+            "dates": {
+                "published_at": "2025-08-16T01:05:31.000000Z",
+                "expires_at": "2025-09-19T10:49:46.000000Z",
+                "created_at": "2025-08-16T01:05:31.000000Z",
+                "verified_at": "2025-08-16T01:05:31.000000Z"
+            },
+            "verification_status": "approved",
+            "rejection_reason": null,
+            "verified_by": {
+                "id": 1,
+                "name": "Aung Min"
+            },
+            "is_published": true,
+            "is_draft": false,
+            "is_sold": false,
+            "is_rented": false,
+            "is_expired": false,
+            "can_be_published": false,
+            "is_approved": true,
+            "is_pending_approval": false,
+            "is_rejected": false,
+            "is_deleted": false,
+            "media": {
+                "images": [
+                    {
+                        "id": 6,
+                        "type": "image",
+                        "filename": "h6.jpg",
+                        "is_primary": true,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1ab141.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e197c8f_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1a302b_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e18a051_thumbnail.jpg"
+                    },
+                    {
+                        "id": 7,
+                        "type": "image",
+                        "filename": "h7.jpg",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb3d2ad.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb2b873_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb347e3_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75eb1f8b0_thumbnail.jpg"
+                    },
+                ],
+                "videos": [],
+                "primary_image": {
+                    "id": 6,
+                    "type": "image",
+                    "filename": "h6.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1ab141.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e197c8f_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e1a302b_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f75e18a051_thumbnail.jpg"
+                }
+            }
+        },
+        {
+            "id": 3,
+            "user_id": 7,
+            "user": {
+                "id": 7,
+                "name": "Yangon Properties",
+                "slug": "yangon-properties",
+                "email": "contact@yangonproperties.com",
+                "user_type": "company",
+                "member_level": "silver",
+                "is_active": true,
+                "company_profile": {
+                    "id": 2,
+                    "company_name": "Yangon Properties Ltd.",
+                    "company_type_id": 2,
+                    "company_type_name": "Construction Company(ဆောက်လုပ်ရေးကုမ္ပဏီ)",
+                    "phone_number": "+959987654321",
+                    "address": "Building A, Downtown Business Center",
+                    "website": null,
+                    "description": "Comprehensive property solutions for Yangon area",
+                    "view_count": 0,
+                    "location_en": "Mandalay,Amarapura",
+                    "location_mm": "မန္တလေး,အမရပူရ"
+                }
+            },
+            "property_type": {
+                "id": 2,
+                "name": "Apartment(တိုက်ခန်း)",
+                "slug": "apartment"
+            },
+            "listing_type": {
+                "id": 2,
+                "name": "For Rent(ငှားရန်)",
+                "slug": "for-rent"
+            },
+            "title_en": "Modern Apartment for Rent in Downtown",
+            "title_mm": "မြို့လယ်မှာ ခေတ်မီတိုက်ခန်း ငှားရန်",
+            "description": "Fully furnished modern apartment in the heart of downtown. Perfect for professionals or small families. Includes all utilities, 24/7 security, and access to gym and pool facilities.",
+            "property_condition": "good",
+            "location": {
+                "region": {
+                    "id": 1,
+                    "name": "Yangon(ရန်ကုန်)"
+                },
+                "township": {
+                    "id": 1,
+                    "name_en": "Downtown(မြို့ပြ)"
+                },
+                "address": "No. 43, Business Street, Downtown, Yangon",
+                "latitude": "16.89400000",
+                "longitude": "96.25800000",
+                "location": "Downtown, Yangon(မြို့ပြ, ရန်ကုန်)"
+            },
+            "price": "2500000.00",
+            "formatted_price": "2,500,000 MMK",
+            "area_sqft": "1200.00",
+            "bedrooms": 2,
+            "bathrooms": 2,
+            "bank_installment_available": false,
+            "features": [
+                "furnished",
+                "gym",
+                "pool",
+                "security",
+                "parking"
+            ],
+            "contact_info": {
+                "owner_name": "U Kyaw Zin",
+                "phone_numbers": [
+                    "+959777888999"
+                ],
+                "email": "kyaw.zin@example.com"
+            },
+            "status": "published",
+            "is_featured": false,
+            "stats": {
+                "view_count": 0,
+                "contact_count": 0,
+                "favorite_count": 1
+            },
+            "dates": {
+                "published_at": "2025-08-16T01:05:31.000000Z",
+                "expires_at": "2025-08-27T02:05:04.000000Z",
+                "created_at": "2025-08-16T01:05:31.000000Z",
+                "verified_at": "2025-08-16T01:05:31.000000Z"
+            },
+            "verification_status": "approved",
+            "rejection_reason": null,
+            "verified_by": {
+                "id": 1,
+                "name": "Aung Min"
+            },
+            "is_published": true,
+            "is_draft": false,
+            "is_sold": false,
+            "is_rented": false,
+            "is_expired": false,
+            "can_be_published": false,
+            "is_approved": true,
+            "is_pending_approval": false,
+            "is_rejected": false,
+            "media": {
+                "images": [
+                    {
+                        "id": 11,
+                        "type": "image",
+                        "filename": "h11.jpg",
+                        "is_primary": true,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+                    },
+                    {
+                        "id": 12,
+                        "type": "image",
+                        "filename": "h12.jpg",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761b02694.jpg",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ae40c3_small.jpg",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761aed563_medium.jpg",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ad8fb2_thumbnail.jpg"
+                    },
+                ],
+                "videos": [
+                    {
+                        "id": 15,
+                        "type": "video",
+                        "filename": "SampleVideo_1280x720_30mb.mp4",
+                        "is_primary": false,
+                        "status": "completed",
+                        "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7689d29a3.mp4",
+                        "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76893f4be_small.mp4",
+                        "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76898786d_medium.mp4",
+                        "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7688f2b33_thumbnail.mp4",
+                        "video_info": {
+                            "duration": 170,
+                            "resolution": "1280x720",
+                            "format": "mp4",
+                            "bitrate": 1474,
+                            "thumbnail_timestamp": null
+                        }
+                    }
+                ],
+                "primary_image": {
+                    "id": 11,
+                    "type": "image",
+                    "filename": "h11.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+                }
+            }
+        }
+
   ],
   "pagination": { ... }
 }
@@ -376,32 +985,267 @@ All API responses follow a standardized format:
   "success": true,
   "message": "Property retrieved successfully",
   "data": {
-    "id": 1,
-    "title_en": "Beautiful House",
-    "title_mm": "လှပတဲ့ အိမ်",
-    "description": "A beautiful house for sale",
-    "price": 500000,
-    "area_sqft": 1500,
-    "bedrooms": 3,
-    "bathrooms": 2,
-    "property_condition": "good",
+    "id": 3,
+        "user_id": 7,
+        "user": {
+            "id": 7,
+            "name": "Yangon Properties",
+            "slug": "yangon-properties",
+            "email": "contact@yangonproperties.com",
+            "user_type": "company",
+            "member_level": "silver",
+            "is_active": true,
+            "company_profile": {
+                "id": 2,
+                "company_name": "Yangon Properties Ltd.",
+                "company_type_id": 2,
+                "company_type_name": "Construction Company(ဆောက်လုပ်ရေးကုမ္ပဏီ)",
+                "phone_number": "+959987654321",
+                "address": "Building A, Downtown Business Center",
+                "website": null,
+                "description": "Comprehensive property solutions for Yangon area",
+                "view_count": 0,
+                "location_en": "Mandalay,Amarapura",
+                "location_mm": "မန္တလေး,အမရပူရ"
+            }
+        },
+        "property_type": {
+            "id": 2,
+            "name": "Apartment(တိုက်ခန်း)",
+            "slug": "apartment"
+        },
+        "listing_type": {
+            "id": 2,
+            "name": "For Rent(ငှားရန်)",
+            "slug": "for-rent"
+        },
+        "title_en": "Modern Apartment for Rent in Downtown",
+        "title_mm": "မြို့လယ်မှာ ခေတ်မီတိုက်ခန်း ငှားရန်",
+        "description": "Fully furnished modern apartment in the heart of downtown. Perfect for professionals or small families. Includes all utilities, 24/7 security, and access to gym and pool facilities.",
+        "property_condition": "good",
+        "location": {
+            "region": {
+                "id": 1,
+                "name": "Yangon(ရန်ကုန်)"
+            },
+            "township": {
+                "id": 1,
+                "name_en": "Downtown(မြို့ပြ)"
+            },
+            "address": "No. 43, Business Street, Downtown, Yangon",
+            "latitude": "16.89400000",
+            "longitude": "96.25800000",
+            "location": "Downtown, Yangon(မြို့ပြ, ရန်ကုန်)"
+        },
+        "price": "2500000.00",
+        "formatted_price": "2,500,000 MMK",
+        "area_sqft": "1200.00",
+        "bedrooms": 2,
+        "bathrooms": 2,
+        "bank_installment_available": false,
+        "features": [
+            "furnished",
+            "gym",
+            "pool",
+            "security",
+            "parking"
+        ],
+        "contact_info": {
+            "owner_name": "U Kyaw Zin",
+            "phone_numbers": [
+                "+959777888999"
+            ],
+            "email": "kyaw.zin@example.com"
+        },
+        "status": "published",
+        "is_featured": false,
+        "stats": {
+            "view_count": 0,
+            "contact_count": 0,
+            "favorite_count": 1
+        },
+        "dates": {
+            "published_at": "2025-08-16T01:05:31.000000Z",
+            "expires_at": "2025-08-27T02:05:04.000000Z",
+            "created_at": "2025-08-16T01:05:31.000000Z",
+            "verified_at": "2025-08-16T01:05:31.000000Z"
+        },
+        "verification_status": "approved",
+        "rejection_reason": null,
+        "verified_by": {
+            "id": 1,
+            "name": "Aung Min"
+        },
+        "is_published": true,
+        "is_draft": false,
+        "is_sold": false,
+        "is_rented": false,
+        "is_expired": false,
+        "can_be_published": false,
+        "is_approved": true,
+        "is_pending_approval": false,
+        "is_rejected": false,
+        "media": {
+            "images": [
+                {
+                    "id": 11,
+                    "type": "image",
+                    "filename": "h11.jpg",
+                    "is_primary": true,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+                },
+                {
+                    "id": 12,
+                    "type": "image",
+                    "filename": "h12.jpg",
+                    "is_primary": false,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761b02694.jpg",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ae40c3_small.jpg",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761aed563_medium.jpg",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761ad8fb2_thumbnail.jpg"
+                },
+            ],
+            "videos": [
+                {
+                    "id": 15,
+                    "type": "video",
+                    "filename": "SampleVideo_1280x720_30mb.mp4",
+                    "is_primary": false,
+                    "status": "completed",
+                    "url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7689d29a3.mp4",
+                    "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76893f4be_small.mp4",
+                    "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f76898786d_medium.mp4",
+                    "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/videos/2025/08/15/689f7688f2b33_thumbnail.mp4",
+                    "video_info": {
+                        "duration": 170,
+                        "resolution": "1280x720",
+                        "format": "mp4",
+                        "bitrate": 1474,
+                        "thumbnail_timestamp": null
+                    }
+                }
+            ],
+            "primary_image": {
+                "id": 11,
+                "type": "image",
+                "filename": "h11.jpg",
+                "is_primary": true,
+                "status": "completed",
+                "url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f761009c29.jpg",
+                "small_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fe71da_small.jpg",
+                "medium_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760feff59_medium.jpg",
+                "thumbnail_url": "https://d1fh9vvudcnn2n.cloudfront.net/images/2025/08/15/689f760fdac6a_thumbnail.jpg"
+            }
+        }
+  }
+}
+```
+
+### Create Property (Dual Mode)
+
+**POST** `/properties`
+
+**Headers:** `Authorization: Bearer {token}`
+
+#### **Mode 1: Platform Property (No Points Deducted)**
+```json
+{
+  "is_platform_property": true,
+  "property_type_id": 1,
+  "listing_type_id": 1,
+  "title_en": "Platform Featured Property",
+  "title_mm": "ပလပ်ဖောင်း ထူးခြားသော အိမ်",
+  "description": "A featured platform property",
+  "property_condition": "new",
+  "region_id": 1,
+  "township_id": 1,
+  "address": "456 Platform Street",
+  "latitude": 16.8661,
+  "longitude": 96.1951,
+  "price": 800000,
+  "area_sqft": 2500,
+  "bedrooms": 4,
+  "bathrooms": 3,
+  "bank_installment_available": true,
+  "features": ["garden", "parking", "security", "swimming_pool"],
+  "owner_name": "Platform Admin",
+  "phone_numbers": ["+959123456789"],
+  "email": "platform@example.com",
+  "status": "published",
+  "is_featured": true,
+  "is_verified": true,
+  "published_at": "2024-01-15T10:30:00.000000Z",
+  "expires_at": "2024-02-15T10:30:00.000000Z",
+  "media_ids": [1, 2, 3, 4, 5]
+}
+```
+
+#### **Mode 2: User Property (Points Deducted from User)**
+```json
+{
+  "is_platform_property": false,
+  "user_id": 123,
+  "property_type_id": 1,
+  "listing_type_id": 1,
+  "title_en": "User Property",
+  "title_mm": "အသုံးပြုသူ အိမ်",
+  "description": "A property created on behalf of user",
+  "property_condition": "good",
+  "region_id": 1,
+  "township_id": 1,
+  "address": "789 User Street",
+  "latitude": 16.8661,
+  "longitude": 96.1951,
+  "price": 600000,
+  "area_sqft": 2000,
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "bank_installment_available": false,
+  "features": ["garden", "parking"],
+  "owner_name": "John Doe",
+  "phone_numbers": ["+959987654321"],
+  "email": "john@example.com",
+  "status": "published",
+  "is_featured": false,
+  "is_verified": true,
+  "published_at": "2024-01-15T10:30:00.000000Z",
+  "expires_at": "2024-02-15T10:30:00.000000Z",
+  "media_ids": [6, 7, 8]
+}
+```
+
+**Response Examples:**
+
+#### **Platform Property Success**
+```json
+{
+  "success": true,
+  "message": "Platform property created successfully",
+  "data": {
+    "id": 2,
+    "title_en": "Platform Featured Property",
+    "title_mm": "ပလပ်ဖောင်း ထူးခြားသော အိမ်",
+    "description": "A featured platform property",
+    "price": 800000,
+    "area_sqft": 2500,
+    "bedrooms": 4,
+    "bathrooms": 3,
+    "property_condition": "new",
     "status": "published",
-    "verification_status": "approved",
-    "is_featured": false,
+    "verification_status": "pending",
+    "is_featured": true,
     "is_verified": true,
-    "address": "123 Main Street",
-    "latitude": 16.8661,
-    "longitude": 96.1951,
-    "bank_installment_available": true,
-    "features": ["garden", "parking"],
-    "owner_name": "John Doe",
-    "phone_numbers": ["+959123456789"],
-    "email": "owner@example.com",
-    "published_at": "2024-01-15T10:30:00.000000Z",
-    "expires_at": "2024-02-15T10:30:00.000000Z",
-    "created_at": "2024-01-15T10:30:00.000000Z",
-    "updated_at": "2024-01-15T10:30:00.000000Z",
-    "user": { ... },
+    "user": {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "user_type": "admin"
+    },
     "property_type": { ... },
     "listing_type": { ... },
     "region": { ... },
@@ -410,62 +1254,99 @@ All API responses follow a standardized format:
 }
 ```
 
-### Create Property
-**POST** `/properties`
+#### **User Property Success**
+```json
+{
+  "success": true,
+  "message": "Property created successfully on behalf of user",
+  "data": {
+    "id": 3,
+    "title_en": "User Property",
+    "title_mm": "အသုံးပြုသူ အိမ်",
+    "description": "A property created on behalf of user",
+    "price": 600000,
+    "area_sqft": 2000,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "property_condition": "good",
+    "status": "published",
+    "verification_status": "pending",
+    "is_featured": false,
+    "is_verified": true,
+    "user": {
+      "id": 123,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "user_type": "individual"
+    },
+    "property_type": { ... },
+    "listing_type": { ... },
+    "region": { ... },
+    "township": { ... }
+  }
+}
+```
+
+#### **Insufficient Points Error**
+```json
+{
+  "success": false,
+  "message": "Insufficient points for this action",
+  "required_points": 10,
+  "current_balance": 5,
+  "user_name": "John Doe",
+  "user_email": "john@example.com"
+}
+```
+
+### Update Property (Automatic Mode Detection)
+
+**PUT** `/properties/{id}`
 
 **Headers:** `Authorization: Bearer {token}`
 
 **Request:**
 ```json
 {
-  "property_type_id": 1,
-  "listing_type_id": 1,
-  "title_en": "New Property",
-  "title_mm": "အိမ်အသစ်",
-  "description": "A new property for sale",
-  "property_condition": "new",
-  "region_id": 1,
-  "township_id": 1,
-  "address": "456 New Street",
-  "latitude": 16.8661,
-  "longitude": 96.1951,
-  "price": 600000,
-  "area_sqft": 2000,
+  "title_en": "Updated Property Title",
+  "title_mm": "အပ်ဒိတ်အိမ်ခေါင်းစဉ်",
+  "description": "Updated property description",
+  "price": 750000,
+  "area_sqft": 2200,
   "bedrooms": 4,
   "bathrooms": 3,
-  "bank_installment_available": true,
-  "features": ["garden", "parking", "security"],
-  "owner_name": "Jane Doe",
-  "phone_numbers": ["+959987654321"],
-  "email": "jane@example.com",
   "status": "published",
-  "is_featured": false,
-  "is_verified": true,
-  "published_at": "2024-01-15T10:30:00.000000Z",
-  "expires_at": "2024-02-15T10:30:00.000000Z"
+  "is_featured": true,
+  "media_ids": [1, 2, 3, 4, 5]
 }
 ```
 
-**Response:**
+**Note:** No need to specify `is_platform_property` or `user_id` - system automatically detects property type!
+
+**Response Examples:**
+
+#### **Platform Property Update**
 ```json
 {
   "success": true,
-  "message": "Property created successfully",
+  "message": "Platform property updated successfully",
   "data": {
-    "id": 2,
-    "title_en": "New Property",
-    "title_mm": "အိမ်အသစ်",
-    "description": "A new property for sale",
-    "price": 600000,
-    "area_sqft": 2000,
+    "id": 1,
+    "title_en": "Updated Platform Property",
+    "title_mm": "အပ်ဒိတ်ပလပ်ဖောင်း အိမ်",
+    "description": "Updated platform property description",
+    "price": 750000,
+    "area_sqft": 2200,
     "bedrooms": 4,
     "bathrooms": 3,
-    "property_condition": "new",
     "status": "published",
-    "verification_status": "pending",
-    "is_featured": false,
-    "is_verified": true,
-    "user": { ... },
+    "is_featured": true,
+    "user": {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "user_type": "admin"
+    },
     "property_type": { ... },
     "listing_type": { ... },
     "region": { ... },
@@ -474,33 +1355,28 @@ All API responses follow a standardized format:
 }
 ```
 
-### Update Property
-**PUT** `/properties/{id}`
-
-**Headers:** `Authorization: Bearer {token}`
-
-**Request:** Same format as create property
-
-**Response:**
+#### **User Property Update (Points Deducted if Publishing)**
 ```json
 {
   "success": true,
-  "message": "Property updated successfully",
+  "message": "Property updated successfully on behalf of user",
   "data": {
-    "id": 1,
-    "title_en": "Updated Property",
-    "title_mm": "အိမ်အသစ်",
-    "description": "An updated property",
-    "price": 700000,
-    "area_sqft": 2500,
-    "bedrooms": 5,
-    "bathrooms": 4,
-    "property_condition": "good",
+    "id": 2,
+    "title_en": "Updated User Property",
+    "title_mm": "အပ်ဒိတ်အသုံးပြုသူ အိမ်",
+    "description": "Updated user property description",
+    "price": 750000,
+    "area_sqft": 2200,
+    "bedrooms": 4,
+    "bathrooms": 3,
     "status": "published",
-    "verification_status": "approved",
     "is_featured": true,
-    "is_verified": true,
-    "user": { ... },
+    "user": {
+      "id": 123,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "user_type": "individual"
+    },
     "property_type": { ... },
     "listing_type": { ... },
     "region": { ... },
@@ -520,6 +1396,28 @@ All API responses follow a standardized format:
   "success": true,
   "message": "Property deleted successfully",
   "data": null
+}
+```
+
+### Restore Property
+**POST** `/properties/{id}/restore`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Property restored successfully",
+  "data": {
+    "id": 1,
+    "title_en": "Restored Property",
+    "title_mm": "ပြန်လည်ထည့်သွင်းထားသော အိမ်",
+    "status": "draft",
+    "verification_status": "pending",
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
 }
 ```
 
@@ -561,6 +1459,62 @@ All API responses follow a standardized format:
     "region": { ... },
     "township": { ... }
   }
+}
+```
+
+## File Upload Management
+
+### Image or video upload
+**POST** `/media`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "file": // Image with multipart form,
+  "media_type": 'image'
+}
+```
+
+**Or for video:**
+```json
+{
+  "file": // video with multipart form,
+  "media_type": 'video'
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Media uploaded successfully",
+    "data": {
+        "id": 5,
+        "type": "image",
+        "filename": "SampleJPGImage_10mbmb.jpg",
+        "size": 10506316,
+        "formatted_size": "10.02 MB",
+        "mime_type": "image/jpeg",
+        "is_primary": null,
+        "status": "uploading",
+        "url": "https://msy-demo.s3.ap-southeast-1.amazonaws.com/temp/images/2025-08-10-17-36-08_0xw35SZWyeQt.jpg?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAYGSAGSQLQMB567PR%2F20250810%2Fap-southeast-1%2Fs3%2Faws4_request&X-Amz-Date=20250810T173611Z&X-Amz-SignedHeaders=host&X-Amz-Expires=7200&X-Amz-Signature=e3ae2cfbe4f5e7fbde8789d26de4e6a887411af6da9d447b0bb37d0654b33140",
+        "created_at": "2025-08-10T17:36:11.000000Z"
+    }
+}
+```
+
+### Image or video delete
+**POST** `/media/{media_id}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Media deleted successfully",
 }
 ```
 
@@ -1049,6 +2003,559 @@ All API responses follow a standardized format:
 }
 ```
 
+## Company Type Management
+
+### List Company Types
+**GET** `/company-types`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `status` (optional): Filter by status (`active` or `inactive`)
+- `sort_by` (optional): Sort field (`name_en`, `name_mm`, `created_at`, `updated_at`) - default: `name_en`
+- `sort_direction` (optional): Sort direction (`asc` or `desc`) - default: `asc`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Company types retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "name_mm": "အိမ်ခြံမြေအကျိုးဆောင်ကုမ္ပဏီ",
+      "name_en": "Real Estate Agency",
+      "slug": "real-estate-agency",
+      "description": "Companies that help buy, sell, and rent properties",
+      "is_active": true,
+      "companies_count": 5,
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z"
+    }
+  ]
+}
+```
+
+### Create Company Type
+**POST** `/company-types`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "name_mm": "ဘဏ်လုပ်ငန်း",
+  "name_en": "Banking",
+  "description": "Financial institutions and banking services",
+  "is_active": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Company type created successfully",
+  "data": {
+    "id": 2,
+    "name_mm": "ဘဏ်လုပ်ငန်း",
+    "name_en": "Banking",
+    "slug": "banking",
+    "description": "Financial institutions and banking services",
+    "is_active": true,
+    "companies_count": 0,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+### Get Company Type
+**GET** `/company-types/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Company type retrieved successfully",
+  "data": {
+    "id": 1,
+    "name_mm": "အိမ်ခြံမြေအကျိုးဆောင်ကုမ္ပဏီ",
+    "name_en": "Real Estate Agency",
+    "slug": "real-estate-agency",
+    "description": "Companies that help buy, sell, and rent properties",
+    "is_active": true,
+    "companies_count": 5,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+### Update Company Type
+**PUT** `/company-types/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "name_mm": "အိမ်ခြံမြေအကျိုးဆောင်ကုမ္ပဏီများ",
+  "name_en": "Real Estate Agencies",
+  "description": "Updated description for real estate agencies",
+  "is_active": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Company type updated successfully",
+  "data": {
+    "id": 1,
+    "name_mm": "အိမ်ခြံမြေအကျိုးဆောင်ကုမ္ပဏီများ",
+    "name_en": "Real Estate Agencies",
+    "slug": "real-estate-agencies",
+    "description": "Updated description for real estate agencies",
+    "is_active": true,
+    "companies_count": 5,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+### Delete Company Type
+**DELETE** `/company-types/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Company type deleted successfully",
+  "data": null
+}
+```
+
+**Note:** Company types cannot be deleted if they are being used by existing companies.
+
+**Note:** This API returns all company types (maximum 100 records) without pagination for better performance and simpler frontend implementation.
+
+## Point Package Management
+
+### List Point Packages
+**GET** `/point-packages`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `per_page` (optional): Number of items per page (1-100, default: 15)
+- `page` (optional): Page number (default: 1)
+- `status` (optional): Filter by status (`active`, `inactive`, `deleted`, `all`)
+- `search` (optional): Search by name (English or Myanmar) or slug
+- `sort_by` (optional): Sort field (`name_en`, `points`, `price_mmk`, `created_at`, `updated_at`)
+- `sort_direction` (optional): Sort direction (`asc` or `desc`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point packages retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "name_en": "Basic Package",
+      "name_mm": "အခြေခံ ပက်ကေ့ချ်",
+      "slug": "basic-package",
+      "points": 100,
+      "price_mmk": 5000,
+      "description_en": "Basic point package for new users",
+      "description_mm": "အသုံးပြုသူအသစ်များအတွက် အခြေခံ ပက်ကေ့ချ်",
+      "is_active": true,
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "purchase_requests_count": 25,
+      "user_points_count": 150
+    }
+  ],
+  "pagination": { ... }
+}
+```
+
+### Create Point Package
+**POST** `/point-packages`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "name_en": "Premium Package",
+  "name_mm": "ပရီမီယံ ပက်ကေ့ချ်",
+  "points": 500,
+  "price_mmk": 25000,
+  "description_en": "Premium point package with bonus points",
+  "description_mm": "ဘောနပ်စ်အမှတ်များပါဝင်သော ပရီမီယံ ပက်ကေ့ချ်",
+  "is_active": true
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package created successfully",
+  "data": {
+    "id": 2,
+    "name_en": "Premium Package",
+    "name_mm": "ပရီမီယံ ပက်ကေ့ချ်",
+    "slug": "premium-package",
+    "points": 500,
+    "price_mmk": 25000,
+    "description_en": "Premium point package with bonus points",
+    "description_mm": "ဘောနပ်စ်အမှတ်များပါဝင်သော ပရီမီယံ ပက်ကေ့ချ်",
+    "is_active": true,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:30:00.000000Z"
+  }
+}
+```
+
+### Get Point Package
+**GET** `/point-packages/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:** Same format as create response
+
+### Update Point Package
+**PUT** `/point-packages/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "name_en": "Updated Premium Package",
+  "name_mm": "အပ်ဒိတ်ပရီမီယံ ပက်ကေ့ချ်",
+  "points": 600,
+  "price_mmk": 30000,
+  "description_en": "Updated premium package with more points",
+  "description_mm": "အမှတ်များပါဝင်သော အပ်ဒိတ်ပရီမီယံ ပက်ကေ့ချ်",
+  "is_active": true
+}
+```
+
+**Note:** The validation now properly handles updates - if the name hasn't changed, it won't trigger a "name is already taken" error.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package updated successfully",
+  "data": {
+    "id": 2,
+    "name_en": "Updated Premium Package",
+    "name_mm": "အပ်ဒိတ်ပရီမီယံ ပက်ကေ့ချ်",
+    "slug": "updated-premium-package",
+    "points": 600,
+    "price_mmk": 30000,
+    "description_en": "Updated premium package with more points",
+    "description_mm": "အမှတ်များပါဝင်သော အပ်ဒိတ်ပရီမီယံ ပက်ကေ့ချ်",
+    "is_active": true,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T10:35:00.000000Z"
+  }
+}
+```
+
+### Delete Point Package (Soft Delete)
+**DELETE** `/point-packages/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "deletion_reason": "Package no longer available"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package deleted successfully",
+  "data": null
+}
+```
+
+**Note:** Packages cannot be deleted if they have active users with remaining points or pending purchase requests.
+
+### Restore Point Package
+**POST** `/point-packages/{slug}/restore`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package restored successfully",
+  "data": {
+    "id": 2,
+    "name_en": "Premium Pack",
+    "name_mm": "ပရီမီယံ ပက်ကေ့ချ်",
+    "slug": "premium-pack",
+    "is_active": true,
+    "deleted_at": null,
+    "deleted_by": null,
+    "deletion_reason": null
+  }
+}
+```
+
+### Permanently Delete Point Package
+**DELETE** `/point-packages/{slug}/force`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package permanently deleted",
+  "data": null
+}
+```
+
+**Note:** This action is irreversible and can only be performed on packages with no historical data.
+
+### Toggle Point Package Status
+**POST** `/point-packages/{slug}/toggle-status`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Point package status toggled successfully",
+  "data": {
+    "id": 1,
+    "name_en": "Starter Pack",
+    "name_mm": "စတင်သူများအတွက် ပက်ကေ့ချ်",
+    "slug": "starter-pack",
+    "is_active": false,
+    "is_available": false
+  }
+}
+```
+
+## Point Purchase Request Management
+
+### List Point Purchase Requests
+**GET** `/point-purchase-requests`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `per_page` (optional): Number of items per page (1-100, default: 10)
+- `page` (optional): Page number (default: 1)
+- `status` (optional): Filter by status (`pending`, `approved`, `rejected`, `cancelled`)
+- `payment_method` (optional): Filter by payment method
+- `date_from` (optional): Filter from date (YYYY-MM-DD)
+- `date_to` (optional): Filter to date (YYYY-MM-DD)
+- `sort_by` (optional): Sort field (`created_at`, `requested_at`, `price_mmk`)
+- `sort_direction` (optional): Sort direction (`asc` or `desc`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Purchase requests retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "status": "pending",
+      "status_label": "Pending",
+      "payment_method": "bank_transfer",
+      "formatted_payment_method": "Bank Transfer",
+      "payment_reference": "TEST123456",
+      "payment_date": "2024-01-15T00:00:00.000000Z",
+      "requested_at": "2024-01-15T10:30:00.000000Z",
+      "approved_at": null,
+      "user": {
+        "id": 6,
+        "name": "Golden Real Estate",
+        "email": "info@goldenrealestate.com",
+        "user_type": "company",
+        "current_point_balance": 0
+      },
+      "package": {
+        "id": 2,
+        "name_en": "Popular Pack",
+        "name_mm": "လူကြိုက်များသော ပက်ကေ့ချ်",
+        "slug": "popular-pack",
+        "points": 50,
+        "price_mmk": "35000.00",
+        "formatted_price": "35,000 MMK"
+      },
+      "points_requested": 50,
+      "price_mmk": "35000.00",
+      "formatted_price": "35,000 MMK",
+      "approved_by": null,
+      "admin_notes": null,
+      "rejected_reason": null,
+      "created_at": "2024-01-15T10:30:00.000000Z",
+      "updated_at": "2024-01-15T10:30:00.000000Z",
+      "can_approve": true,
+      "can_reject": true,
+      "is_pending": true,
+      "is_approved": false,
+      "is_rejected": false,
+      "is_cancelled": false
+    }
+  ],
+  "pagination": { ... },
+  "summary": {
+    "total_requests": 5,
+    "pending_requests": 2,
+    "approved_requests": 2,
+    "rejected_requests": 1,
+    "cancelled_requests": 0,
+    "total_revenue": "175000.00"
+  }
+}
+```
+
+### Approve/Reject Point Purchase Request
+**POST** `/point-purchase-requests/{id}/approve`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request for Approval:**
+```json
+{
+  "action": "approve",
+  "notes": "Payment verified, points allocated"
+}
+```
+
+**Request for Rejection:**
+```json
+{
+  "action": "reject",
+  "rejection_reason": "Payment proof not provided"
+}
+```
+
+**Response (Approval):**
+```json
+{
+  "success": true,
+  "message": "Purchase request approved and points allocated successfully",
+  "data": {
+    "id": 1,
+    "status": "approved",
+    "status_label": "Approved",
+    "payment_method": "bank_transfer",
+    "formatted_payment_method": "Bank Transfer",
+    "payment_reference": "TEST123456",
+    "payment_date": "2024-01-15T00:00:00.000000Z",
+    "requested_at": "2024-01-15T10:30:00.000000Z",
+    "approved_at": "2024-01-15T11:00:00.000000Z",
+    "user": {
+      "id": 6,
+      "name": "Golden Real Estate",
+      "email": "info@goldenrealestate.com",
+      "user_type": "company",
+      "current_point_balance": 50
+    },
+    "package": {
+      "id": 2,
+      "name_en": "Popular Pack",
+      "name_mm": "လူကြိုက်များသော ပက်ကေ့ချ်",
+      "slug": "popular-pack",
+      "points": 50,
+      "price_mmk": "35000.00",
+      "formatted_price": "35,000 MMK"
+    },
+    "points_requested": 50,
+    "price_mmk": "35000.00",
+    "formatted_price": "35,000 MMK",
+    "approved_by": {
+      "id": 11,
+      "name": "Super Admin"
+    },
+    "admin_notes": "Payment verified, points allocated",
+    "rejected_reason": null,
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T11:00:00.000000Z",
+    "can_approve": false,
+    "can_reject": false,
+    "is_pending": false,
+    "is_approved": true,
+    "is_rejected": false,
+    "is_cancelled": false
+  }
+}
+```
+
+**Response (Rejection):**
+```json
+{
+  "success": true,
+  "message": "Purchase request rejected successfully",
+  "data": {
+    "id": 1,
+    "status": "rejected",
+    "status_label": "Rejected",
+    "payment_method": "bank_transfer",
+    "formatted_payment_method": "Bank Transfer",
+    "payment_reference": "TEST123456",
+    "payment_date": "2024-01-15T00:00:00.000000Z",
+    "requested_at": "2024-01-15T10:30:00.000000Z",
+    "approved_at": null,
+    "user": {
+      "id": 6,
+      "name": "Golden Real Estate",
+      "email": "info@goldenrealestate.com",
+      "user_type": "company",
+      "current_point_balance": 0
+    },
+    "package": {
+      "id": 2,
+      "name_en": "Popular Pack",
+      "name_mm": "လူကြိုက်များသော ပက်ကေ့ချ်",
+      "slug": "popular-pack",
+      "points": 50,
+      "price_mmk": "35000.00",
+      "formatted_price": "35,000 MMK"
+    },
+    "points_requested": 50,
+    "price_mmk": "35000.00",
+    "formatted_price": "35,000 MMK",
+    "approved_by": null,
+    "admin_notes": null,
+    "rejected_reason": "Payment proof not provided",
+    "created_at": "2024-01-15T10:30:00.000000Z",
+    "updated_at": "2024-01-15T11:00:00.000000Z",
+    "can_approve": false,
+    "can_reject": false,
+    "is_pending": false,
+    "is_approved": false,
+    "is_rejected": true,
+    "is_cancelled": false
+  }
+}
+```
+
 ## Permission Management
 
 ### List Permissions
@@ -1169,6 +2676,9 @@ All API responses follow a standardized format:
 - `is_active`: Boolean
 - `role_ids`: Required, array, min 1 item, exists in roles table
 
+### Frontend User
+- `is_active`: Boolean (only field that can be updated by admin)
+
 ### Property
 - `property_type_id`: Required, exists in property_types table
 - `listing_type_id`: Required, exists in property_listing_types table
@@ -1186,6 +2696,7 @@ All API responses follow a standardized format:
 - `owner_name`: Required, string, max 255 characters
 - `phone_numbers`: Required, array, min 1 item
 - `email`: Required, valid email
+- `status`: Required, in: draft, published, sold, rented (default: draft)
 
 ### Region/Township/Property Type
 - `name_mm`: Required, string, max 255 characters, Myanmar characters only
@@ -1197,10 +2708,31 @@ All API responses follow a standardized format:
 - `description`: Optional, string, max 500 characters
 - `permissions`: Optional, array of permission IDs
 
+### Company Type
+- `name_mm`: Required, string, max 255 characters, Myanmar characters only
+- `name_en`: Required, string, max 255 characters, English characters, numbers, spaces, hyphens, dots only
+- `description`: Optional, string, max 500 characters
+- `is_active`: Boolean
+
 ### Permission
 - `name`: Required, string, max 255 characters, unique
 - `module`: Required, string, max 255 characters
 - `description`: Optional, string, max 500 characters
+
+### Point Package
+- `name_en`: Required, string, max 255 characters, English characters only, unique
+- `name_mm`: Required, string, max 255 characters, Myanmar characters only, unique
+- `points`: Required, integer, min 1, max 10000
+- `price_mmk`: Required, numeric, min 1000, max 10000000
+- `description_en`: Optional, string, max 500 characters
+- `description_mm`: Optional, string, max 500 characters
+- `is_active`: Boolean
+- `slug`: Auto-generated from `name_en`, unique, not required in request
+
+### Point Purchase Request Approval
+- `action`: Required, in: `approve`, `reject`
+- `notes`: Optional, string, max 500 characters (for approval)
+- `rejection_reason`: Required when action is `reject`, string, max 500 characters
 
 ## JavaScript Examples
 
@@ -1242,136 +2774,36 @@ const logout = async () => {
 };
 ```
 
-### API Helper
-```javascript
-// API helper function
-const apiCall = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('admin_token');
-  
-  const defaultOptions = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-  };
-  
-  const response = await fetch(`/api/v1/admin${endpoint}`, {
-    ...defaultOptions,
-    ...options,
-  });
-  
-  const data = await response.json();
-  
-  if (!data.success) {
-    throw new Error(data.message);
-  }
-  
-  return data;
-};
+## Point System Notes
 
-// Usage examples
-const getProperties = (params = {}) => {
-  const queryString = new URLSearchParams(params).toString();
-  return apiCall(`/properties?${queryString}`);
-};
+1. **Point Package Management**: 
+   - Use slug-based URLs for all point package operations
+   - Slugs are automatically generated from package names (English) and are unique
+   - Packages cannot be deleted if they have active users with remaining points
+   - Toggle status to activate/deactivate packages without deletion
+   - Monitor total purchases and revenue for each package
 
-const createProperty = (propertyData) => {
-  return apiCall('/properties', {
-    method: 'POST',
-    body: JSON.stringify(propertyData),
-  });
-};
+2. **Point Purchase Request Management**:
+   - Review pending requests and verify payment proofs
+   - Approve requests to automatically allocate points to users
+   - Reject requests with clear reasons for transparency
+   - Track approval/rejection statistics and total revenue
 
-const updateProperty = (id, propertyData) => {
-  return apiCall(`/properties/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(propertyData),
-  });
-};
+3. **Point Allocation**:
+   - Points are automatically allocated when requests are approved
+   - Points expire after 365 days (configurable)
+   - Users can view their current balance and transaction history
+   - Points are consumed when users upload properties or use premium features
 
-const deleteProperty = (id) => {
-  return apiCall(`/properties/${id}`, {
-    method: 'DELETE',
-  });
-};
+4. **Revenue Tracking**:
+   - Monitor total revenue from point package sales
+   - Track revenue by package type and time period
+   - Generate reports for financial analysis
 
-const approveProperty = (id) => {
-  return apiCall(`/properties/${id}/verification`, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'approve' }),
-  });
-};
-
-const rejectProperty = (id, reason) => {
-  return apiCall(`/properties/${id}/verification`, {
-    method: 'POST',
-    body: JSON.stringify({ action: 'reject', reason }),
-  });
-};
-```
-
-### React Hook Example
-```javascript
-import { useState, useEffect } from 'react';
-
-const useAdminAPI = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const callAPI = async (apiFunction, ...args) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await apiFunction(...args);
-      return result;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return { loading, error, callAPI };
-};
-
-// Usage in component
-const PropertyList = () => {
-  const [properties, setProperties] = useState([]);
-  const [pagination, setPagination] = useState({});
-  const { loading, error, callAPI } = useAdminAPI();
-
-  const fetchProperties = async (params = {}) => {
-    try {
-      const result = await callAPI(getProperties, params);
-      setProperties(result.data);
-      setPagination(result.pagination);
-    } catch (err) {
-      console.error('Failed to fetch properties:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchProperties();
-  }, []);
-
-  return (
-    <div>
-      {loading && <div>Loading...</div>}
-      {error && <div>Error: {error}</div>}
-      {properties.map(property => (
-        <div key={property.id}>
-          <h3>{property.title_en}</h3>
-          <p>{property.title_mm}</p>
-          <p>Price: ${property.price}</p>
-          <p>Status: {property.verification_status}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-```
+5. **Security Considerations**:
+   - Only admin users can manage point packages and approve requests
+   - All point transactions are logged for audit purposes
+   - Payment verification is required before point allocation
 
 ## Notes for Frontend Developer
 
@@ -1385,3 +2817,8 @@ const PropertyList = () => {
 8. **File Uploads**: For media uploads, use the frontend media upload endpoint and associate with properties
 9. **Real-time Updates**: Consider implementing WebSocket or polling for real-time property status updates
 10. **Search & Filtering**: Implement search and filtering using the provided query parameters
+11. **Point System**: Use slug-based URLs for point packages and ID-based URLs for purchase requests. Slugs are auto-generated from package names.
+12. **Revenue Tracking**: Monitor point package sales and purchase request statistics
+13. **Payment Verification**: Implement proper payment proof verification before approving requests
+
+

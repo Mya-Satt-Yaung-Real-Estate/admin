@@ -12,6 +12,8 @@ export const propertyKeys = {
   detail: (id: number) => [...propertyKeys.details(), id] as const,
   pending: () => [...propertyKeys.all, 'pending'] as const,
   published: () => [...propertyKeys.all, 'published'] as const,
+  propertyTypes: () => [...propertyKeys.all, 'propertyTypes'] as const,
+  listingTypes: () => [...propertyKeys.all, 'listingTypes'] as const,
 };
 
 // Get list of properties
@@ -61,6 +63,9 @@ export const useCreateProperty = () => {
       // Invalidate and refetch properties lists
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.pending() });
+      
+      // Invalidate users cache since property creation may affect user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };
@@ -72,14 +77,14 @@ export const useUpdateProperty = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdatePropertyData }) =>
       propertiesAPI.update(id, data),
-    onSuccess: (data, variables) => {
-      // Update the specific property in cache
-      queryClient.setQueryData(
-        propertyKeys.detail(variables.id),
-        data
-      );
+    onSuccess: (_data, variables) => {
       // Invalidate and refetch properties lists
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      // Invalidate the specific property to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: propertyKeys.detail(variables.id) });
+      
+      // Invalidate users cache since property updates may affect user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };
@@ -93,6 +98,24 @@ export const useDeleteProperty = () => {
     onSuccess: (_, id) => {
       // Remove the specific property from cache
       queryClient.removeQueries({ queryKey: propertyKeys.detail(id) });
+      // Invalidate and refetch properties lists
+      queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+    },
+  });
+};
+
+// Restore property
+export const useRestoreProperty = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => propertiesAPI.restore(id),
+    onSuccess: (data, id) => {
+      // Update the specific property in cache
+      queryClient.setQueryData(
+        propertyKeys.detail(id),
+        data
+      );
       // Invalidate and refetch properties lists
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
     },
@@ -115,6 +138,9 @@ export const useApproveProperty = () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.pending() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.published() });
+      
+      // Invalidate users cache since property approval may affect user point balance
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };
@@ -136,6 +162,138 @@ export const useRejectProperty = () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.pending() });
       queryClient.invalidateQueries({ queryKey: propertyKeys.published() });
+    },
+  });
+};
+
+// Get property types
+export const usePropertyTypes = (params?: QueryParams) => {
+  return useQuery({
+    queryKey: [...propertyKeys.propertyTypes(), params],
+    queryFn: () => propertiesAPI.getPropertyTypes(params),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
+  });
+};
+
+// Get property listing types
+export const usePropertyListingTypes = (params?: QueryParams) => {
+  return useQuery({
+    queryKey: [...propertyKeys.listingTypes(), params],
+    queryFn: () => propertiesAPI.getPropertyListingTypes(params),
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
+  });
+};
+
+
+
+// Get property type by slug
+export const usePropertyType = (slug: string) => {
+  return useQuery({
+    queryKey: [...propertyKeys.propertyTypes(), 'detail', slug],
+    queryFn: () => propertiesAPI.getPropertyType(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Create property type
+export const useCreatePropertyType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => propertiesAPI.createPropertyType(data),
+    onSuccess: () => {
+      // Invalidate and refetch property types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.propertyTypes() });
+    },
+  });
+};
+
+// Update property type
+export const useUpdatePropertyType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: any }) =>
+      propertiesAPI.updatePropertyType(slug, data),
+    onSuccess: (data, variables) => {
+      // Update the specific property type in cache
+      queryClient.setQueryData(
+        [...propertyKeys.propertyTypes(), 'detail', variables.slug],
+        data
+      );
+      // Invalidate and refetch property types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.propertyTypes() });
+    },
+  });
+};
+
+// Delete property type
+export const useDeletePropertyType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (slug: string) => propertiesAPI.deletePropertyType(slug),
+    onSuccess: () => {
+      // Invalidate and refetch property types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.propertyTypes() });
+    },
+  });
+};
+
+// Get property listing type by slug
+export const usePropertyListingType = (slug: string) => {
+  return useQuery({
+    queryKey: [...propertyKeys.listingTypes(), 'detail', slug],
+    queryFn: () => propertiesAPI.getPropertyListingType(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Create property listing type
+export const useCreatePropertyListingType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: any) => propertiesAPI.createPropertyListingType(data),
+    onSuccess: () => {
+      // Invalidate and refetch listing types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.listingTypes() });
+    },
+  });
+};
+
+// Update property listing type
+export const useUpdatePropertyListingType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: any }) =>
+      propertiesAPI.updatePropertyListingType(slug, data),
+    onSuccess: (data, variables) => {
+      // Update the specific listing type in cache
+      queryClient.setQueryData(
+        [...propertyKeys.listingTypes(), 'detail', variables.slug],
+        data
+      );
+      // Invalidate and refetch listing types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.listingTypes() });
+    },
+  });
+};
+
+// Delete property listing type
+export const useDeletePropertyListingType = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (slug: string) => propertiesAPI.deletePropertyListingType(slug),
+    onSuccess: () => {
+      // Invalidate and refetch listing types
+      queryClient.invalidateQueries({ queryKey: propertyKeys.listingTypes() });
     },
   });
 };

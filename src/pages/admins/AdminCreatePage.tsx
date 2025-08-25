@@ -9,16 +9,16 @@ import {
   Select,
   MenuItem,
   Grid,
-  Divider,
 } from '@mui/material';
-import {
-  Save as SaveIcon,
-  ArrowBack as ArrowBackIcon,
-} from '@mui/icons-material';
+import { Save as SaveIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-import { CreateAdminUserData } from '../../types/admin';
+import { PageLoadingState, PageErrorState, EnhancedMultiSelect } from '../../components/ui';
 import { useCreateAdminUser } from '../../services/queries/adminUsers';
+import { useRoles } from '../../services/queries/roles';
+import { CreateAdminUserData } from '../../types/admin';
+import { useAlertSystem } from '../../hooks';
+import { ActionAlert } from '../../components/ui';
 
 const AdminCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,14 +27,21 @@ const AdminCreatePage: React.FC = () => {
     email: '',
     password: '',
     password_confirmation: '',
-    user_type: 'admin',
     is_active: true,
     role_ids: [],
-    member_level: 'silver',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof CreateAdminUserData, string>>>({});
 
+  // Alert system hook
+  const { alert, showError, clearAlert } = useAlertSystem();
+  
+  // Queries
   const createAdminMutation = useCreateAdminUser();
+  const { data: rolesData, isLoading: rolesLoading, error: rolesError } = useRoles({
+    per_page: 100, // Get all roles for selection
+    sort_by: 'name',
+    sort_direction: 'asc',
+  });
 
   const handleInputChange = (field: keyof CreateAdminUserData, value: string | boolean | number[]) => {
     setFormData(prev => ({
@@ -84,16 +91,71 @@ const AdminCreatePage: React.FC = () => {
 
     try {
       await createAdminMutation.mutateAsync(formData);
-      navigate('/admins');
+      navigate('/admins?success=' + encodeURIComponent('Admin user created successfully!'));
     } catch (error: any) {
       console.error('Error creating admin:', error);
+      
+      // Handle API validation errors
+      if (error.errors) {
+        const apiErrors: Partial<Record<keyof CreateAdminUserData, string>> = {};
+        Object.entries(error.errors).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            apiErrors[key as keyof CreateAdminUserData] = value[0] as string;
+          }
+        });
+        setErrors(apiErrors);
+      } else {
+        const errorMessage = error?.message || 'Failed to create admin user. Please try again.';
+        showError(errorMessage, true);
+      }
     }
   };
 
+  // Loading state for roles
+  if (rolesLoading) {
+    return (
+      <Box>
+        <PageHeader title="Create Admin Users" />
+        <PageLoadingState 
+          title="Loading Roles"
+          message="Please wait while we load available roles..."
+        />
+      </Box>
+    );
+  }
+
+  // Error state for roles
+  if (rolesError) {
+    return (
+      <Box>
+        <PageHeader title="Create Admin Users" />
+        <PageErrorState 
+          error={rolesError}
+          title="Failed to Load Roles"
+          message="Unable to load roles. Please try again."
+        />
+      </Box>
+    );
+  }
+
+  const roles = rolesData?.data || [];
+
   return (
     <Box>
-      <PageHeader title="Create Admin User" />
+      <PageHeader 
+        title="Create Admin Users"
+        subtitle="Add a new administrator to the system"
+        actionButton={{
+          text: 'Back to Admins',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/admins')
+        }}
+      />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
+      
       <Paper sx={{ p: 3 }}>
+
         <Box component="form" onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
@@ -107,6 +169,7 @@ const AdminCreatePage: React.FC = () => {
                 required
               />
             </Grid>
+            
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -119,6 +182,7 @@ const AdminCreatePage: React.FC = () => {
                 required
               />
             </Grid>
+            
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -131,6 +195,7 @@ const AdminCreatePage: React.FC = () => {
                 required
               />
             </Grid>
+            
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -143,34 +208,19 @@ const AdminCreatePage: React.FC = () => {
                 required
               />
             </Grid>
+            
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>User Type</InputLabel>
-                <Select
-                  value={formData.user_type}
-                  onChange={(e) => handleInputChange('user_type', e.target.value)}
-                  label="User Type"
-                >
-                  <MenuItem value="admin">Admin</MenuItem>
-                  <MenuItem value="user">User</MenuItem>
-                </Select>
-              </FormControl>
+              <EnhancedMultiSelect
+                label="Roles"
+                value={formData.role_ids}
+                onChange={(selected) => handleInputChange('role_ids', selected)}
+                options={roles}
+                error={!!errors.role_ids}
+                helperText={errors.role_ids}
+                required
+              />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Member Level</InputLabel>
-                <Select
-                  value={formData.member_level}
-                  onChange={(e) => handleInputChange('member_level', e.target.value)}
-                  label="Member Level"
-                >
-                  <MenuItem value="bronze">Bronze</MenuItem>
-                  <MenuItem value="silver">Silver</MenuItem>
-                  <MenuItem value="gold">Gold</MenuItem>
-                  <MenuItem value="platinum">Platinum</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+            
             <Grid item xs={12} md={6}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
@@ -186,13 +236,12 @@ const AdminCreatePage: React.FC = () => {
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 3 }} />
-
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
             <Button
               variant="outlined"
               startIcon={<ArrowBackIcon />}
               onClick={() => navigate('/admins')}
+              disabled={createAdminMutation.isPending}
             >
               Cancel
             </Button>

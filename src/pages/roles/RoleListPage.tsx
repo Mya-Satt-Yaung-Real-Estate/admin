@@ -7,7 +7,6 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
-  Paper,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -23,83 +22,19 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { MobilePagination } from '../../components/common/MobilePagination';
-import { usePagination } from '../../hooks/usePagination';
-import { useFilters } from '../../hooks/useFilters';
+import { Pagination } from '../../components/ui';
+import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, StatusChip, ActionAlert } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
+import { useRoles, useDeleteRole } from '../../services/queries/roles';
 import { formatDate } from '../../constants/dateFormats';
-import { FilterState } from '../../constants/filters';
 
-interface Role {
-  id: number;
-  name: string;
-  permissions: string[];
-  createdAt: string;
-  status: 'active' | 'inactive';
-}
+import { FilterState } from '../../constants/filters';
+import { Role } from '../../types/role';
 
 interface RoleFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
 }
-
-const mockRoles: Role[] = [
-  { 
-    id: 1, 
-    name: 'Super Admin', 
-    permissions: ['manage users', 'manage roles', 'manage permissions', 'manage admins', 'view analytics'], 
-    createdAt: '2023-01-01',
-    status: 'active'
-  },
-  { 
-    id: 2, 
-    name: 'Admin', 
-    permissions: ['manage users', 'view analytics'], 
-    createdAt: '2023-03-12',
-    status: 'active'
-  },
-  { 
-    id: 3, 
-    name: 'Editor', 
-    permissions: ['edit content', 'view reports'], 
-    createdAt: '2023-05-20',
-    status: 'active'
-  },
-  { 
-    id: 4, 
-    name: 'Viewer', 
-    permissions: ['view content', 'view reports'], 
-    createdAt: '2023-06-15',
-    status: 'active'
-  },
-  { 
-    id: 5, 
-    name: 'Moderator', 
-    permissions: ['moderate content', 'view reports'], 
-    createdAt: '2023-07-22',
-    status: 'inactive'
-  },
-  { 
-    id: 6, 
-    name: 'Analyst', 
-    permissions: ['view analytics', 'export data'], 
-    createdAt: '2023-08-10',
-    status: 'active'
-  },
-  { 
-    id: 7, 
-    name: 'Manager', 
-    permissions: ['manage content', 'approve content', 'view reports'], 
-    createdAt: '2023-09-05',
-    status: 'active'
-  },
-  { 
-    id: 8, 
-    name: 'Support', 
-    permissions: ['view users', 'view reports'], 
-    createdAt: '2023-10-18',
-    status: 'active'
-  },
-];
 
 const RoleListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -112,18 +47,49 @@ const RoleListPage: React.FC = () => {
   });
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
-  // Filter roles using standardized logic
+  // Fetch roles data
+  const { data: rolesResponse, isLoading, error } = useRoles({
+    per_page: 100, // Get all roles for client-side filtering
+    sort_by: 'created_at',
+    sort_direction: 'desc'
+  });
+
+  // Delete role mutation
+  const deleteRoleMutation = useDeleteRole();
+
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  
+  // Delete confirmation hook
+  const {
+    deleteState,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    handleConfirmDelete,
+  } = useDeleteConfirmation();
+
+  // Extract roles data
+  const roles = rolesResponse?.data || [];
+
+  // Filter roles using client-side filtering
   const filteredRoles = useMemo(() => {
-    return mockRoles.filter(role => {
+    if (!roles || roles.length === 0) return [];
+    
+    const validRoles = roles.filter(role => role != null);
+    
+    return validRoles.filter(role => {
       const matchesSearch = 
         role.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        role.permissions.some(permission => 
-          permission.toLowerCase().includes(filters.searchTerm.toLowerCase())
+        role.description?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        role.permissions?.some(permission => 
+          permission.name.toLowerCase().includes(filters.searchTerm.toLowerCase())
         );
-      const matchesStatus = filters.statusFilter === 'all' || role.status === filters.statusFilter;
+      const matchesStatus = filters.statusFilter === 'all' || 
+        (filters.statusFilter === 'active' && role.is_active) ||
+        (filters.statusFilter === 'inactive' && !role.is_active);
       return matchesSearch && matchesStatus;
     });
-  }, [filters]);
+  }, [roles, filters]);
 
   // Paginate data
   const paginatedRoles = useMemo(() => {
@@ -134,29 +100,31 @@ const RoleListPage: React.FC = () => {
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Roles',
-      value: mockRoles.length,
+      value: roles.length,
       color: 'primary',
       icon: <SecurityIcon />,
     },
     {
       title: 'Active Roles',
-      value: mockRoles.filter(role => role.status === 'active').length,
+      value: roles.filter(role => role.is_active).length,
       color: 'success',
       icon: <SecurityIcon />,
     },
     {
       title: 'Admin Roles',
-      value: mockRoles.filter(role => role.name.toLowerCase().includes('admin')).length,
+      value: roles.filter(role => role.name.toLowerCase().includes('admin')).length,
       color: 'warning',
       icon: <AdminIcon />,
     },
     {
       title: 'Average Permissions',
-      value: Math.round(mockRoles.reduce((acc, role) => acc + role.permissions.length, 0) / mockRoles.length),
+      value: roles.length > 0 
+        ? Math.round(roles.reduce((acc, role) => acc + (role.permissions?.length || 0), 0) / roles.length)
+        : 0,
       color: 'info',
       icon: <SecurityIcon />,
     },
-  ], []);
+  ], [roles]);
 
   // Filter fields configuration
   const filterFields: FilterField[] = [
@@ -164,7 +132,7 @@ const RoleListPage: React.FC = () => {
       key: 'searchTerm',
       type: 'search',
       label: 'Search',
-      placeholder: 'Search roles by name or permissions...',
+      placeholder: 'Search roles by name, description, or permissions...',
     },
     {
       key: 'statusFilter',
@@ -183,101 +151,125 @@ const RoleListPage: React.FC = () => {
     {
       id: 'name',
       label: 'Role Name',
-      render: (_, role) => (
-        <Box>
-          <Typography variant="subtitle2" fontWeight="600">
-            {role.name}
+      render: (_value, role, _index) => {
+        if (!role) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box>
+            <Typography variant="subtitle2" fontWeight="600">
+              {role.name}
+            </Typography>
+            <StatusChip status={role.is_active} />
+          </Box>
+        );
+      },
+    },
+    {
+      id: 'description',
+      label: 'Description',
+      render: (_value, role, _index) => {
+        if (!role) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Typography variant="body2" color="textSecondary">
+            {role.description || 'No description'}
           </Typography>
-          <Chip
-            label={role.status}
-            size="small"
-            color={role.status === 'active' ? 'success' : 'default'}
-            variant="outlined"
-            sx={{ mt: 0.5 }}
-          />
-        </Box>
-      ),
+        );
+      },
+      hidden: isMobile,
     },
     {
       id: 'permissions',
       label: 'Permissions',
-      render: (_, role) => (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-          {role.permissions.slice(0, 3).map((permission, index) => (
-            <Chip
-              key={index}
-              label={permission}
-              size="small"
-              variant="outlined"
-              color="primary"
-            />
-          ))}
-          {role.permissions.length > 3 && (
-            <Chip
-              label={`+${role.permissions.length - 3} more`}
-              size="small"
-              variant="outlined"
-              color="secondary"
-            />
-          )}
-        </Box>
-      ),
+      render: (_value, role, _index) => {
+        if (!role) return <Typography variant="body2">No data</Typography>;
+        const permissions = role.permissions || [];
+        return (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {permissions.slice(0, 3).map((permission) => (
+              <Chip
+                key={permission.id}
+                label={permission.name}
+                size="small"
+                variant="outlined"
+                color="primary"
+              />
+            ))}
+            {permissions.length > 3 && (
+              <Chip
+                label={`+${permissions.length - 3} more`}
+                size="small"
+                variant="outlined"
+                color="secondary"
+              />
+            )}
+          </Box>
+        );
+      },
     },
     {
       id: 'permissionCount',
       label: 'Permission Count',
-      render: (_, role) => (
-        <Typography variant="body2" color="textSecondary">
-          {role.permissions.length} permissions
-        </Typography>
-      ),
+      render: (_value, role, _index) => {
+        if (!role) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Typography variant="body2" color="textSecondary">
+            {role.permissions?.length || 0} permissions
+          </Typography>
+        );
+      },
       hidden: isMobile,
     },
     {
       id: 'createdAt',
       label: 'Created',
-      render: (_, role) => (
-        <Typography variant="body2" color="textSecondary">
-          {formatDate(role.createdAt, 'display')}
-        </Typography>
-      ),
+      render: (_value, role, _index) => {
+        if (!role) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Typography variant="body2" color="textSecondary">
+            {formatDate(role.created_at, 'display')}
+          </Typography>
+        );
+      },
       hidden: isMobile,
     },
     {
       id: 'actions',
       label: 'Actions',
       align: 'center',
-      render: (_, role) => (
-        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-          <Tooltip title="View Details">
-            <IconButton
-              size="small"
-              onClick={() => navigate(`/roles/${role.id}`)}
-              color="primary"
-            >
-              <ViewIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit">
-            <IconButton
-              size="small"
-              onClick={() => navigate(`/roles/${role.id}/edit`)}
-              color="secondary"
-            >
-              <EditIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              size="small"
-              onClick={() => handleDeleteRole(role)}
-              color="error"
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      ),
+      render: (_value, role, _index) => {
+        if (!role) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+            <Tooltip title="View Details">
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/roles/${role.slug}`)}
+                color="primary"
+              >
+                <ViewIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Edit">
+              <IconButton
+                size="small"
+                onClick={() => navigate(`/roles/${role.slug}/edit`)}
+                color="secondary"
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete">
+              <IconButton
+                size="small"
+                onClick={() => handleDeleteRole(role)}
+                color="error"
+                disabled={deleteRoleMutation.isPending}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        );
+      },
     },
   ];
 
@@ -287,13 +279,13 @@ const RoleListPage: React.FC = () => {
       icon: <ViewIcon />,
       tooltip: 'View Details',
       color: 'primary',
-      onClick: () => navigate(`/roles/${role.id}`),
+      onClick: () => navigate(`/roles/${role.slug}`),
     },
     {
       icon: <EditIcon />,
       tooltip: 'Edit',
       color: 'secondary',
-      onClick: () => navigate(`/roles/${role.id}/edit`),
+      onClick: () => navigate(`/roles/${role.slug}/edit`),
     },
     {
       icon: <DeleteIcon />,
@@ -305,12 +297,40 @@ const RoleListPage: React.FC = () => {
 
   // Event handlers
   const handleDeleteRole = (role: Role) => {
-    console.log('Delete role:', role);
+    openDeleteConfirmation(
+      role.name,
+      'role',
+      async () => {
+        try {
+          await deleteRoleMutation.mutateAsync(role.slug);
+          showSuccess(`${role.name} deleted successfully!`, true);
+        } catch (error) {
+          showError('Failed to delete role. Please try again.', true);
+        }
+      }
+    );
   };
 
   const handleAddRole = () => {
     navigate('/roles/create');
   };
+
+  // Loading state
+  if (isLoading) {
+    return <PageLoadingState title="Loading Roles" />;
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <PageErrorState
+        error={error}
+        title="Error Loading Roles"
+        message={error.message}
+        onRetry={() => window.location.reload()}
+      />
+    );
+  }
 
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
@@ -324,6 +344,8 @@ const RoleListPage: React.FC = () => {
           onClick: handleAddRole
         }}
       />
+      
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       {/* Statistics Cards */}
       <StatisticsCards cards={statsCards} />
@@ -335,85 +357,105 @@ const RoleListPage: React.FC = () => {
         fields={filterFields}
       />
 
+      {/* Empty state */}
+      {filteredRoles.length === 0 && !isLoading && (
+        <PageEmptyState
+          title="No Roles Found"
+          message={filters.searchTerm || filters.statusFilter !== 'all' 
+            ? "No roles match your current filters. Try adjusting your search criteria."
+            : "No roles have been created yet. Create your first role to get started."
+          }
+          actionButton={{
+            text: 'Add Role',
+            icon: <AddIcon />,
+            onClick: handleAddRole
+          }}
+        />
+      )}
+
       {/* Mobile Card Layout */}
-      {isMobile ? (
+      {isMobile && filteredRoles.length > 0 ? (
         <Box>
-          {paginatedRoles.length === 0 ? (
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="textSecondary">
-                No data available
-              </Typography>
-            </Paper>
-          ) : (
-            <Box>
-              {paginatedRoles.map((role) => (
-                <MobileCard
-                  key={role.id}
-                  title={role.name}
-                  avatar={<SecurityIcon />}
-                  avatarColor={role.name.toLowerCase().includes('admin') ? 'warning.main' : 'primary.main'}
-                  status={{
-                    label: role.status,
-                    color: role.status === 'active' ? 'success' : 'default',
-                  }}
-                  chips={[
-                    {
-                      label: `${role.permissions.length} permissions`,
-                      color: 'primary',
-                      variant: 'outlined',
-                    },
-                  ]}
-                  actions={createMobileCardActions(role)}
-                  children={
-                    <Box>
-                      <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {role.permissions.slice(0, 2).map((permission, index) => (
-                          <Chip
-                            key={index}
-                            label={permission}
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                          />
-                        ))}
-                        {role.permissions.length > 2 && (
-                          <Chip
-                            label={`+${role.permissions.length - 2} more`}
-                            size="small"
-                            variant="outlined"
-                            color="secondary"
-                          />
-                        )}
-                      </Box>
-                      <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
-                        Created: {formatDate(role.createdAt, 'display')}
-                      </Typography>
-                    </Box>
-                  }
-                />
-              ))}
-            </Box>
-          )}
-          <MobilePagination
+          {paginatedRoles.map((role) => (
+            <MobileCard
+              key={role.id}
+              title={role.name}
+              avatar={<SecurityIcon />}
+              avatarColor={role.name.toLowerCase().includes('admin') ? 'warning.main' : 'primary.main'}
+              status={{
+                label: role.is_active ? 'Active' : 'Inactive',
+                color: 'default',
+              }}
+              chips={[
+                {
+                  label: `${role.permissions?.length || 0} permissions`,
+                  color: 'primary',
+                  variant: 'outlined',
+                },
+              ]}
+              actions={createMobileCardActions(role)}
+              children={
+                <Box>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                    {role.description || 'No description'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(role.permissions || []).slice(0, 2).map((permission) => (
+                      <Chip
+                        key={permission.id}
+                        label={permission.name}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                      />
+                    ))}
+                    {(role.permissions || []).length > 2 && (
+                      <Chip
+                        label={`+${(role.permissions || []).length - 2} more`}
+                        size="small"
+                        variant="outlined"
+                        color="secondary"
+                      />
+                    )}
+                  </Box>
+                  <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                    Created: {formatDate(role.created_at, 'display')}
+                  </Typography>
+                </Box>
+              }
+            />
+          ))}
+          <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
             totalCount={filteredRoles.length}
             onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            showResultsInfo={true}
           />
         </Box>
       ) : (
         /* Desktop Table Layout */
-        <StandardTable
-          columns={columns}
-          data={paginatedRoles}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          totalCount={filteredRoles.length}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          getRowKey={(role) => role.id}
-        />
+        filteredRoles.length > 0 && (
+          <StandardTable
+            columns={columns}
+            data={paginatedRoles}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredRoles.length}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            getRowKey={(role) => role.id}
+          />
+        )
       )}
+      <DeleteConfirmationDialog
+        open={deleteState.open}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteState.itemName}
+        itemType={deleteState.itemType}
+      />
     </Box>
   );
 };
