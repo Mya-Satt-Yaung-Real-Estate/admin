@@ -5,42 +5,10 @@ import {
   Card,
   CardContent,
   Typography,
-  TextField,
-  Button,
-  Grid,
-  FormControlLabel,
-  Switch,
-  Divider,
-  Autocomplete,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormHelperText,
-  InputAdornment,
-  Chip,
   Alert,
-  CircularProgress,
-  Paper,
-  Dialog,
-  DialogContent,
-  Avatar,
-  useTheme,
+  Grid,
 } from '@mui/material';
-import {
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Business as BusinessIcon,
-  Person as PersonIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Image as ImageIcon,
-  PlayArrow as PlayIcon,
-  ArrowBack as ArrowBackIcon,
-} from '@mui/icons-material';
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import { useQuery } from '@tanstack/react-query';
 
 import PageHeader from '../../components/layout/PageHeader';
@@ -54,129 +22,66 @@ import { useProperty, useUpdateProperty } from '../../services/queries/propertie
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { CreatePropertyData } from '../../types/property';
 import { Media } from '../../types/media';
-import { RegularUser } from '../../types/user';
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
-const PROPERTY_CONDITIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
-  { value: 'poor', label: 'Poor' },
-];
-
-const PROPERTY_FEATURES = [
-  'garden',
-  'parking',
-  'security',
-  'swimming_pool',
-  'gym',
-  'furnished',
-  'air_conditioning',
-  'balcony',
-  'elevator',
-  'backup_power',
-  'internet',
-  'cable_tv',
-  'water_heater',
-  'kitchen',
-  'laundry',
-];
+import { propertyEditSchema, PropertyFeature } from '../../validations';
+import {
+  PropertyModeSection,
+  BasicInformationSection,
+  LocationSection,
+  ContactSection,
+  FeaturesSection,
+  StatusSection,
+} from '../../components/forms/property';
+import { FormActions } from '../../components/forms/shared/FormActions';
 
 // ============================================================================
 // VALIDATION SCHEMA
 // ============================================================================
 
-const validationSchema = Yup.object({
-  // Dual-mode fields
-  is_platform_property: Yup.boolean().required(),
-  user_id: Yup.number().when('is_platform_property', {
-    is: false,
-    then: (schema) => schema.required('User is required for user properties'),
-    otherwise: (schema) => schema.optional(),
-  }),
+const validationSchema = propertyEditSchema;
 
-  // Basic property information
-  property_type_id: Yup.number().required('Property type is required'),
-  listing_type_id: Yup.number().required('Listing type is required'),
-  title_en: Yup.string().required('English title is required').max(255, 'Title must be 255 characters or less'),
-  title_mm: Yup.string().required('Myanmar title is required').max(255, 'Title must be 255 characters or less'),
-  description: Yup.string().required('Description is required').max(5000, 'Description must be 5000 characters or less'),
-  property_condition: Yup.string().oneOf(['new', 'good', 'fair', 'poor'], 'Invalid property condition').required('Property condition is required'),
+// ============================================================================
+// COMPONENT
+// ============================================================================
 
-  // Location information
-  region_id: Yup.number().required('Region is required'),
-  township_id: Yup.number().required('Township is required'),
-  address: Yup.string().required('Address is required').max(500, 'Address must be 500 characters or less'),
-  latitude: Yup.number().min(-90).max(90).optional(),
-  longitude: Yup.number().min(-180).max(180).optional(),
-
-  // Property details
-  price: Yup.number().min(0, 'Price must be positive').required('Price is required'),
-  area_sqft: Yup.number().min(0, 'Area must be positive').required('Area is required'),
-  bedrooms: Yup.number().min(0, 'Bedrooms must be positive').optional(),
-  bathrooms: Yup.number().min(0, 'Bathrooms must be positive').optional(),
-  bank_installment_available: Yup.boolean().optional(),
-
-  // Contact information
-  owner_name: Yup.string().required('Owner name is required').max(255, 'Owner name must be 255 characters or less'),
-  phone_numbers: Yup.array().of(Yup.string()).min(1, 'At least one phone number is required').required('Phone numbers are required'),
-  email: Yup.string().email('Invalid email format').required('Email is required'),
-
-  // Status and settings
-  status: Yup.string().oneOf(['draft', 'published', 'sold', 'rented'], 'Invalid status').default('draft'),
-  is_featured: Yup.boolean().default(false),
-  is_verified: Yup.boolean().default(false),
-});
-
-export default function PropertyEditPage() {
+const PropertyEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
-  const theme = useTheme();
   
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
   const [existingMedia, setExistingMedia] = useState<Media[]>([]);
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const [selectedFeatures, setSelectedFeatures] = useState<PropertyFeature[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
-  
-  // Media viewer state
-  const [selectedImage, setSelectedImage] = useState<any>(null);
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<any>(null);
-  const [videoViewerOpen, setVideoViewerOpen] = useState(false);
 
   // Fetch property details
   const { data: property, isLoading: isLoadingProperty } = useProperty(Number(id));
 
   // Fetch users for dropdown
-  const { data: usersResponse } = useQuery({
+  const { data: usersResponse, isLoading: usersLoading } = useQuery({
     queryKey: ['users'],
     queryFn: usersAPI.getUsers,
   });
 
   // Fetch property types
-  const { data: propertyTypesResponse } = useQuery({
+  const { data: propertyTypesResponse, isLoading: propertyTypesLoading } = useQuery({
     queryKey: ['property-types'],
     queryFn: propertiesAPI.getPropertyTypes,
   });
 
   // Fetch listing types
-  const { data: listingTypesResponse } = useQuery({
+  const { data: listingTypesResponse, isLoading: listingTypesLoading } = useQuery({
     queryKey: ['listing-types'],
     queryFn: propertiesAPI.getPropertyListingTypes,
   });
 
   // Fetch regions
-  const { data: regionsResponse } = useQuery({
+  const { data: regionsResponse, isLoading: regionsLoading } = useQuery({
     queryKey: ['regions'],
     queryFn: locationsAPI.getRegions,
   });
 
   // Fetch townships
-  const { data: townshipsResponse } = useQuery({
+  const { data: townshipsResponse, isLoading: townshipsLoading } = useQuery({
     queryKey: ['townships'],
     queryFn: locationsAPI.getTownships,
   });
@@ -241,7 +146,7 @@ export default function PropertyEditPage() {
 
       // Initialize features
       if (property.data.features && property.data.features.length > 0) {
-        setSelectedFeatures(property.data.features);
+        setSelectedFeatures(property.data.features as PropertyFeature[]);
       } else {
         setSelectedFeatures([]);
       }
@@ -263,14 +168,9 @@ export default function PropertyEditPage() {
   const regions = regionsResponse?.data || [];
   const townships = townshipsResponse?.data || [];
 
-  // Filter townships based on selected region (will be used inside Formik)
-  const getFilteredTownships = (selectedRegionId: number) => {
-    return townships.filter((township) => township.region_id === selectedRegionId);
-  };
-
   const initialValues = {
     // Dual-mode fields
-    is_platform_property: propertyData.property_mode === 'platform', // Use the property_mode field directly
+    is_platform_property: propertyData.property_mode === 'platform',
     user_id: propertyData.property_mode === 'user' ? propertyData.user_id : undefined,
     
     // Basic property information
@@ -301,9 +201,8 @@ export default function PropertyEditPage() {
     email: propertyData.contact_info?.email || '',
     
     // Status and settings
-    status: propertyData.status || 'draft',
-    is_featured: propertyData.is_featured || false,
-    is_verified: propertyData.verification_status === 'approved' || false,
+    status: propertyData.status || undefined,
+    is_featured: Boolean(propertyData.is_featured) || false,
   };
 
   const handleSubmit = async (values: any) => {
@@ -322,7 +221,7 @@ export default function PropertyEditPage() {
 
       await updatePropertyMutation.mutateAsync({ id: Number(id), data: updateData });
       
-      // Navigate to property detail page with success message (consistent with other edit pages)
+      // Navigate to property detail page with success message
       navigate(`/properties/${id}?success=${encodeURIComponent('Property updated successfully!')}`);
     } catch (error: any) {
       showError(error.message || 'Failed to update property');
@@ -367,42 +266,12 @@ export default function PropertyEditPage() {
   };
 
   // Handle feature selection
-  const handleFeatureToggle = (feature: string) => {
-    const isAdding = !selectedFeatures.includes(feature);
+  const handleFeatureToggle = (feature: PropertyFeature) => {
     setSelectedFeatures(prev =>
       prev.includes(feature)
         ? prev.filter(f => f !== feature)
         : [...prev, feature]
     );
-    
-    const featureName = feature.replace('_', ' ').toUpperCase();
-    if (isAdding) {
-      showSuccess(`${featureName} feature added`);
-    } else {
-      showSuccess(`${featureName} feature removed`);
-    }
-  };
-
-  // Image viewer handlers
-  const handleImageClick = (image: any) => {
-    setSelectedImage(image);
-    setImageViewerOpen(true);
-  };
-
-  const handleCloseImageViewer = () => {
-    setImageViewerOpen(false);
-    setSelectedImage(null);
-  };
-
-  // Video viewer handlers
-  const handleVideoClick = (video: any) => {
-    setSelectedVideo(video);
-    setVideoViewerOpen(true);
-  };
-
-  const handleCloseVideoViewer = () => {
-    setVideoViewerOpen(false);
-    setSelectedVideo(null);
   };
 
   return (
@@ -438,748 +307,88 @@ export default function PropertyEditPage() {
             <Grid container spacing={3}>
               {/* Left Column */}
               <Grid item xs={12} lg={8}>
-                {/* Property Mode Display (Read-only) */}
+                {/* Property Mode Section (Read-only for edit) */}
+                <PropertyModeSection
+                  isPlatformProperty={values.is_platform_property}
+                  onPlatformPropertyChange={() => {}} // Read-only in edit mode
+                  userId={values.user_id}
+                  onUserIdChange={() => {}} // Read-only in edit mode
+                  users={users}
+                  usersLoading={usersLoading}
+                  disabled={true}
+                />
+
+                {/* Basic Information Section */}
+                <BasicInformationSection
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleChange={handleChange}
+                  propertyTypes={propertyTypes}
+                  listingTypes={listingTypes}
+                  propertyTypesLoading={propertyTypesLoading}
+                  listingTypesLoading={listingTypesLoading}
+                />
+
+                {/* Location Section */}
+                <LocationSection
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleChange={handleChange}
+                  setFieldValue={setFieldValue}
+                  regions={regions}
+                  townships={townships}
+                  regionsLoading={regionsLoading}
+                  townshipsLoading={townshipsLoading}
+                />
+
+                {/* Features Section */}
+                <FeaturesSection
+                  values={values}
+                  handleChange={handleChange}
+                  selectedFeatures={selectedFeatures}
+                  onFeatureToggle={handleFeatureToggle}
+                />
+
+                {/* Media Upload */}
                 <Card sx={{ mb: 2 }}>
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Property Mode
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      {values.is_platform_property ? (
-                        <>
-                          <BusinessIcon color="primary" />
-                          <Typography variant="body1" fontWeight={500}>
-                            Platform Property
-                          </Typography>
-                        </>
-                      ) : (
-                        <>
-                          <PersonIcon color="primary" />
-                          <Typography variant="body1" fontWeight={500}>
-                            User Property
-                          </Typography>
-                        </>
-                      )}
-                    </Box>
-
-                    {!values.is_platform_property && values.user_id && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" color="textSecondary" gutterBottom>
-                          Property Owner
-                        </Typography>
-                        <Box sx={{ 
-                          p: 2, 
-                          bgcolor: 'grey.50', 
-                          borderRadius: 1,
-                          border: '1px solid',
-                          borderColor: 'grey.200'
-                        }}>
-                          {(() => {
-                            const user = users?.find((u: RegularUser) => u.id === values.user_id);
-                            return user ? (
-                              <Typography variant="body2">
-                                {user.name} ({user.email}) - {user.user_type}
-                              </Typography>
-                            ) : (
-                              <Typography variant="body2" color="textSecondary">
-                                User information not available
-                              </Typography>
-                            );
-                          })()}
-                        </Box>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Basic Information */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Basic Information
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Grid container spacing={1.5}>
-                      {/* Property Type and Listing Type */}
-                      <Grid item xs={12} sm={6}>
-                        <Autocomplete
-                          size="small"
-                          options={propertyTypes || []}
-                          getOptionLabel={(option) => 
-                            `${option.name_en} (${option.name_mm})`
-                          }
-                          value={propertyTypes?.find(type => type.id === values.property_type_id) || null}
-                          onChange={(_, newValue) => {
-                            setFieldValue('property_type_id', newValue?.id || 0);
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Property Type"
-                              error={touched.property_type_id && Boolean(errors.property_type_id)}
-                              helperText={touched.property_type_id && errors.property_type_id}
-                            />
-                          )}
-                          filterOptions={(options, { inputValue }) => {
-                            const searchTerm = inputValue.toLowerCase();
-                            return options.filter((option) =>
-                              option.name_en.toLowerCase().includes(searchTerm) ||
-                              option.name_mm.toLowerCase().includes(searchTerm)
-                            );
-                          }}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <Autocomplete
-                          size="small"
-                          options={listingTypes || []}
-                          getOptionLabel={(option) => 
-                            `${option.name_en} (${option.name_mm})`
-                          }
-                          value={listingTypes?.find(type => type.id === values.listing_type_id) || null}
-                          onChange={(_, newValue) => {
-                            setFieldValue('listing_type_id', newValue?.id || 0);
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Listing Type"
-                              error={touched.listing_type_id && Boolean(errors.listing_type_id)}
-                              helperText={touched.listing_type_id && errors.listing_type_id}
-                            />
-                          )}
-                          filterOptions={(options, { inputValue }) => {
-                            const searchTerm = inputValue.toLowerCase();
-                            return options.filter((option) =>
-                              option.name_en.toLowerCase().includes(searchTerm) ||
-                              option.name_mm.toLowerCase().includes(searchTerm)
-                            );
-                          }}
-                        />
-                      </Grid>
-
-                      {/* Titles */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="title_en"
-                          label="Title (English)"
-                          value={values.title_en}
-                          onChange={handleChange}
-                          error={touched.title_en && Boolean(errors.title_en)}
-                          helperText={touched.title_en && errors.title_en}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="title_mm"
-                          label="Title (Myanmar)"
-                          value={values.title_mm}
-                          onChange={handleChange}
-                          error={touched.title_mm && Boolean(errors.title_mm)}
-                          helperText={touched.title_mm && errors.title_mm}
-                        />
-                      </Grid>
-
-                      {/* Description */}
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="description"
-                          label="Description"
-                          multiline
-                          rows={3}
-                          value={values.description}
-                          onChange={handleChange}
-                          error={touched.description && Boolean(errors.description)}
-                          helperText={touched.description && errors.description}
-                        />
-                      </Grid>
-
-                      {/* Price and Area */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="price"
-                          label="Price"
-                          type="number"
-                          value={values.price}
-                          onChange={handleChange}
-                          error={touched.price && Boolean(errors.price)}
-                          helperText={touched.price && errors.price}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="area_sqft"
-                          label="Area (sq ft)"
-                          type="number"
-                          value={values.area_sqft}
-                          onChange={handleChange}
-                          error={touched.area_sqft && Boolean(errors.area_sqft)}
-                          helperText={touched.area_sqft && errors.area_sqft}
-                        />
-                      </Grid>
-
-                      {/* Bedrooms and Bathrooms */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="bedrooms"
-                          label="Bedrooms"
-                          type="number"
-                          value={values.bedrooms}
-                          onChange={handleChange}
-                          error={touched.bedrooms && Boolean(errors.bedrooms)}
-                          helperText={touched.bedrooms && errors.bedrooms}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="bathrooms"
-                          label="Bathrooms"
-                          type="number"
-                          value={values.bathrooms}
-                          onChange={handleChange}
-                          error={touched.bathrooms && Boolean(errors.bathrooms)}
-                          helperText={touched.bathrooms && errors.bathrooms}
-                        />
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Location Information */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Location Information
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Grid container spacing={1.5}>
-                      {/* Region and Township */}
-                      <Grid item xs={12} sm={6}>
-                        <Autocomplete
-                          size="small"
-                          options={regions || []}
-                          getOptionLabel={(option) => 
-                            `${option.name_en} (${option.name_mm})`
-                          }
-                          value={regions?.find(region => region.id === values.region_id) || null}
-                          onChange={(_, newValue) => {
-                            setFieldValue('region_id', newValue?.id || 0);
-                            setFieldValue('township_id', '');
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Region"
-                              error={touched.region_id && Boolean(errors.region_id)}
-                              helperText={touched.region_id && errors.region_id}
-                            />
-                          )}
-                          filterOptions={(options, { inputValue }) => {
-                            const searchTerm = inputValue.toLowerCase();
-                            return options.filter((option) =>
-                              option.name_en.toLowerCase().includes(searchTerm) ||
-                              option.name_mm.toLowerCase().includes(searchTerm)
-                            );
-                          }}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <Autocomplete
-                          size="small"
-                          options={getFilteredTownships(Number(values.region_id))}
-                          getOptionLabel={(option) => 
-                            `${option.name_en} (${option.name_mm})`
-                          }
-                          value={getFilteredTownships(Number(values.region_id)).find(township => township.id === values.township_id) || null}
-                          onChange={(_, newValue) => {
-                            setFieldValue('township_id', newValue?.id || '');
-                          }}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              label="Township"
-                              error={touched.township_id && Boolean(errors.township_id)}
-                              helperText={touched.township_id && errors.township_id}
-                              disabled={!values.region_id}
-                            />
-                          )}
-                          filterOptions={(options, { inputValue }) => {
-                            const searchTerm = inputValue.toLowerCase();
-                            return options.filter((option) =>
-                              option.name_en.toLowerCase().includes(searchTerm) ||
-                              option.name_mm.toLowerCase().includes(searchTerm)
-                            );
-                          }}
-                        />
-                      </Grid>
-
-                      {/* Address */}
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="address"
-                          label="Address"
-                          value={values.address}
-                          onChange={handleChange}
-                          error={touched.address && Boolean(errors.address)}
-                          helperText={touched.address && errors.address}
-                        />
-                      </Grid>
-
-                      {/* Latitude and Longitude */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="latitude"
-                          label="Latitude"
-                          type="number"
-                          value={values.latitude || ''}
-                          onChange={handleChange}
-                          error={touched.latitude && Boolean(errors.latitude)}
-                          helperText={touched.latitude && errors.latitude}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="longitude"
-                          label="Longitude"
-                          type="number"
-                          value={values.longitude || ''}
-                          onChange={handleChange}
-                          error={touched.longitude && Boolean(errors.longitude)}
-                          helperText={touched.longitude && errors.longitude}
-                        />
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Property Details */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Property Details
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Grid container spacing={1.5}>
-                      {/* Price and Area */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="price"
-                          label="Price"
-                          type="number"
-                          value={values.price}
-                          onChange={handleChange}
-                          error={touched.price && Boolean(errors.price)}
-                          helperText={touched.price && errors.price}
-                          InputProps={{
-                            startAdornment: <InputAdornment position="start">MMK</InputAdornment>,
-                          }}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="area_sqft"
-                          label="Area (sq ft)"
-                          type="number"
-                          value={values.area_sqft}
-                          onChange={handleChange}
-                          error={touched.area_sqft && Boolean(errors.area_sqft)}
-                          helperText={touched.area_sqft && errors.area_sqft}
-                        />
-                      </Grid>
-
-                      {/* Bedrooms and Bathrooms */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="bedrooms"
-                          label="Bedrooms"
-                          type="number"
-                          value={values.bedrooms || ''}
-                          onChange={handleChange}
-                          error={touched.bedrooms && Boolean(errors.bedrooms)}
-                          helperText={touched.bedrooms && errors.bedrooms}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="bathrooms"
-                          label="Bathrooms"
-                          type="number"
-                          value={values.bathrooms || ''}
-                          onChange={handleChange}
-                          error={touched.bathrooms && Boolean(errors.bathrooms)}
-                          helperText={touched.bathrooms && errors.bathrooms}
-                        />
-                      </Grid>
-
-                      {/* Property Condition */}
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Property Condition</InputLabel>
-                          <Select
-                            name="property_condition"
-                            label="Property Condition"
-                            value={values.property_condition}
-                            onChange={handleChange}
-                            error={touched.property_condition && Boolean(errors.property_condition)}
-                          >
-                            {PROPERTY_CONDITIONS.map((condition) => (
-                              <MenuItem key={condition.value} value={condition.value}>
-                                {condition.label}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                          {touched.property_condition && errors.property_condition && (
-                            <FormHelperText error>{errors.property_condition}</FormHelperText>
-                          )}
-                        </FormControl>
-                      </Grid>
-
-                      {/* Bank Installment */}
-                      <Grid item xs={12}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              name="bank_installment_available"
-                              checked={values.bank_installment_available}
-                              onChange={handleChange}
-                            />
-                          }
-                          label="Bank Installment Available"
-                        />
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Features */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Features
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {PROPERTY_FEATURES.map((feature) => (
-                        <Chip
-                          key={feature}
-                          label={feature.replace('_', ' ').toUpperCase()}
-                          onClick={() => handleFeatureToggle(feature)}
-                          color={selectedFeatures.includes(feature) ? 'primary' : 'default'}
-                          variant={selectedFeatures.includes(feature) ? 'filled' : 'outlined'}
-                        />
-                      ))}
-                    </Box>
-                  </CardContent>
-                </Card>
-
-                {/* Contact Information */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Contact Information
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Grid container spacing={1.5}>
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="owner_name"
-                          label="Owner Name"
-                          value={values.owner_name}
-                          onChange={handleChange}
-                          error={touched.owner_name && Boolean(errors.owner_name)}
-                          helperText={touched.owner_name && errors.owner_name}
-                        />
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <Typography variant="subtitle2" gutterBottom>
-                          Phone Numbers
-                        </Typography>
-                        {phoneNumbers.map((phone, index) => (
-                          <Box key={index} sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={phone}
-                              onChange={(e) => handlePhoneNumberChange(index, e.target.value)}
-                              placeholder="Phone number"
-                            />
-                            {phoneNumbers.length > 1 && (
-                              <Button
-                                variant="outlined"
-                                color="error"
-                                onClick={() => removePhoneNumber(index)}
-                                startIcon={<DeleteIcon />}
-                              >
-                                Remove
-                              </Button>
-                            )}
-                          </Box>
-                        ))}
-                        <Button
-                          variant="outlined"
-                          onClick={addPhoneNumber}
-                          startIcon={<AddIcon />}
-                        >
-                          Add Phone Number
-                        </Button>
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          name="email"
-                          label="Email"
-                          type="email"
-                          value={values.email}
-                          onChange={handleChange}
-                          error={touched.email && Boolean(errors.email)}
-                          helperText={touched.email && errors.email}
-                        />
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
-
-                {/* Media Management */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                        <ImageIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                          Media Management
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          Manage existing media and upload new photos/videos
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Divider sx={{ mb: 2 }} />
-                    
-                    {/* Existing Media Display */}
-                    {existingMedia.length > 0 && (
-                      <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle2" gutterBottom>
-                          Existing Media ({existingMedia.length} files)
-                        </Typography>
-                        <Grid container spacing={2}>
-                          {existingMedia.map((media) => (
-                            <Grid item xs={12} sm={6} md={4} lg={3} key={media.id}>
-                              <Paper
-                                sx={{
-                                  p: 1,
-                                  textAlign: 'center',
-                                  border: media.is_primary ? '2px solid' : '1px solid',
-                                  borderColor: media.is_primary ? 'primary.main' : 'divider',
-                                  cursor: 'pointer',
-                                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                                  '&:hover': {
-                                    transform: 'scale(1.02)',
-                                    boxShadow: theme.shadows[4],
-                                  },
-                                  position: 'relative',
-                                }}
-                                onClick={() => media.type === 'image' ? handleImageClick(media) : handleVideoClick(media)}
-                              >
-                                {media.type === 'image' ? (
-                                  <>
-                                    <img
-                                      src={media.url}
-                                      alt={media.filename}
-                                      style={{
-                                        width: '100%',
-                                        height: '150px',
-                                        objectFit: 'cover',
-                                        borderRadius: '4px',
-                                      }}
-                                    />
-                                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                                      {media.is_primary ? 'Primary Image' : 'Gallery Image'}
-                                    </Typography>
-                                    <Typography variant="caption" display="block" color="textSecondary">
-                                      Click to view
-                                    </Typography>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Box sx={{ position: 'relative' }}>
-                                      <img
-                                        src={media.url}
-                                        alt={media.filename}
-                                        style={{
-                                          width: '100%',
-                                          height: '150px',
-                                          objectFit: 'cover',
-                                          borderRadius: '4px',
-                                        }}
-                                      />
-                                      <Box
-                                        sx={{
-                                          position: 'absolute',
-                                          top: '50%',
-                                          left: '50%',
-                                          transform: 'translate(-50%, -50%)',
-                                          bgcolor: 'rgba(0, 0, 0, 0.7)',
-                                          borderRadius: '50%',
-                                          width: 48,
-                                          height: 48,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                        }}
-                                      >
-                                        <PlayIcon sx={{ color: 'white', fontSize: 24 }} />
-                                      </Box>
-                                    </Box>
-                                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                                      Video
-                                    </Typography>
-                                    <Typography variant="caption" display="block" color="textSecondary">
-                                      Click to play
-                                    </Typography>
-                                  </>
-                                )}
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 8,
-                                    right: 8,
-                                    bgcolor: 'rgba(255, 255, 255, 0.8)',
-                                    '&:hover': {
-                                      bgcolor: 'rgba(255, 255, 255, 0.9)',
-                                    }
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleExistingMediaDelete(media.id);
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Paper>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </Box>
-                    )}
-
-                    {/* New Media Upload */}
-                    <MediaUpload 
-                      uploadedMedia={uploadedMedia}
+                    <MediaUpload
+                      uploadedMedia={[...existingMedia, ...uploadedMedia]}
                       onMediaUpload={handleMediaUpload}
-                      onMediaDelete={handleNewMediaDelete}
+                      onMediaDelete={(mediaId) => {
+                        if (existingMedia.find(m => m.id === mediaId)) {
+                          handleExistingMediaDelete(mediaId);
+                        } else {
+                          handleNewMediaDelete(mediaId);
+                        }
+                      }}
+                      maxFiles={10}
                     />
                   </CardContent>
                 </Card>
+
+                {/* Contact Section */}
+                <ContactSection
+                  values={values}
+                  errors={errors}
+                  touched={touched}
+                  handleChange={handleChange}
+                  phoneNumbers={phoneNumbers}
+                  onPhoneNumberChange={handlePhoneNumberChange}
+                  onAddPhoneNumber={addPhoneNumber}
+                  onRemovePhoneNumber={removePhoneNumber}
+                />
               </Grid>
 
               {/* Right Column */}
               <Grid item xs={12} lg={4}>
-                {/* Status and Settings */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Status & Settings
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-
-                    <Grid container spacing={1.5}>
-                      <Grid item xs={12}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Status</InputLabel>
-                          <Select
-                            name="status"
-                            label="Status"
-                            value={values.status}
-                            onChange={handleChange}
-                          >
-                            <MenuItem value="draft">Draft</MenuItem>
-                            <MenuItem value="published">Published</MenuItem>
-                            <MenuItem value="sold">Sold</MenuItem>
-                            <MenuItem value="rented">Rented</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              name="is_featured"
-                              checked={values.is_featured}
-                              onChange={handleChange}
-                            />
-                          }
-                          label="Featured Property"
-                        />
-                      </Grid>
-
-                      <Grid item xs={12}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              name="is_verified"
-                              checked={values.is_verified}
-                              onChange={handleChange}
-                            />
-                          }
-                          label="Verified Property"
-                        />
-                      </Grid>
-                    </Grid>
-                  </CardContent>
-                </Card>
+                {/* Status Section */}
+                <StatusSection
+                  values={values}
+                  handleChange={handleChange}
+                />
 
                 {/* Point System Information */}
                 {!values.is_platform_property && (
@@ -1188,171 +397,30 @@ export default function PropertyEditPage() {
                       <Typography variant="h6" gutterBottom>
                         Point System
                       </Typography>
-                      <Divider sx={{ mb: 2 }} />
+                      <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mb: 2 }} />
 
                       <Alert severity="info">
                         <Typography variant="body2">
-                          Updating a property on behalf of a user will not affect their point balance.
+                          Updating a user property will not affect the user's points. Points are only deducted when properties are initially published.
                         </Typography>
                       </Alert>
                     </CardContent>
                   </Card>
                 )}
 
-                {/* Actions */}
-                <Card sx={{ position: 'sticky', top: 24 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Actions
-                    </Typography>
-                    <Divider sx={{ mb: 2 }} />
-                    
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        fullWidth
-                        startIcon={updatePropertyMutation.isPending ? <CircularProgress size={20} /> : <SaveIcon />}
-                        disabled={updatePropertyMutation.isPending}
-                      >
-                        {updatePropertyMutation.isPending ? 'Updating...' : 'Update Property'}
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        fullWidth
-                        startIcon={<CancelIcon />}
-                        onClick={() => navigate('/properties')}
-                        disabled={updatePropertyMutation.isPending}
-                      >
-                        Cancel
-                      </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
+                {/* Form Actions */}
+                <FormActions
+                  onCancel={() => navigate(`/properties/${id}`)}
+                  submitText="Update Property"
+                  isSubmitting={updatePropertyMutation.isPending}
+                />
               </Grid>
             </Grid>
           </Form>
         )}
       </Formik>
-
-      {/* Image Viewer Modal */}
-      <Dialog
-        open={imageViewerOpen}
-        onClose={handleCloseImageViewer}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: 'rgba(0, 0, 0, 0.9)',
-            boxShadow: 'none',
-          },
-        }}
-      >
-        <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-          {selectedImage && (
-            <Box sx={{ position: 'relative', textAlign: 'center' }}>
-              <img
-                src={selectedImage.url}
-                alt={selectedImage.filename}
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '80vh',
-                  objectFit: 'contain',
-                }}
-              />
-              <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-                <IconButton
-                  onClick={handleCloseImageViewer}
-                  sx={{
-                    bgcolor: 'rgba(0, 0, 0, 0.5)',
-                    color: 'white',
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 0, 0, 0.7)',
-                    },
-                  }}
-                >
-                  <ArrowBackIcon />
-                </IconButton>
-              </Box>
-              <Box sx={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
-                <Paper sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.7)', color: 'white' }}>
-                  <Typography variant="body2">
-                    {selectedImage.filename}
-                  </Typography>
-                  {selectedImage.is_primary && (
-                    <Chip
-                      label="Primary Image"
-                      size="small"
-                      color="primary"
-                      sx={{ mt: 1 }}
-                    />
-                  )}
-                </Paper>
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Video Viewer Modal */}
-      <Dialog
-        open={videoViewerOpen}
-        onClose={handleCloseVideoViewer}
-        maxWidth="lg"
-        fullWidth
-        PaperProps={{
-          sx: {
-            bgcolor: 'rgba(0, 0, 0, 0.9)',
-            boxShadow: 'none',
-          },
-        }}
-      >
-        <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-          {selectedVideo && (
-            <Box sx={{ position: 'relative', textAlign: 'center', width: '100%' }}>
-              <video
-                src={selectedVideo.url}
-                controls
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '80vh',
-                  borderRadius: '8px',
-                }}
-                autoPlay
-              >
-                Your browser does not support the video tag.
-              </video>
-              <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
-                <IconButton
-                  onClick={handleCloseVideoViewer}
-                  sx={{
-                    bgcolor: 'rgba(0, 0, 0, 0.5)',
-                    color: 'white',
-                    '&:hover': {
-                      bgcolor: 'rgba(0, 0, 0, 0.7)',
-                    },
-                  }}
-                >
-                  <ArrowBackIcon />
-                </IconButton>
-              </Box>
-              <Box sx={{ position: 'absolute', bottom: 16, left: 16, right: 16 }}>
-                <Paper sx={{ p: 2, bgcolor: 'rgba(0, 0, 0, 0.7)', color: 'white' }}>
-                  <Typography variant="body2">
-                    {selectedVideo.filename}
-                  </Typography>
-                  <Chip
-                    label="Video"
-                    size="small"
-                    color="primary"
-                    sx={{ mt: 1 }}
-                  />
-                </Paper>
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
     </Box>
   );
-}
+};
+
+export default PropertyEditPage;
