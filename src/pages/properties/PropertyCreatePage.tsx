@@ -44,6 +44,12 @@ const PropertyCreatePage: React.FC = () => {
   const [selectedFeatures, setSelectedFeatures] = useState<PropertyFeature[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
+  const [uploadState, setUploadState] = useState({
+    isUploading: false,
+    totalFiles: 0,
+    uploadedFiles: 0,
+    failedFiles: 0
+  });
 
   // Alert system hook
   const { alert, showError, clearAlert } = useAlertSystem();
@@ -174,6 +180,42 @@ const PropertyCreatePage: React.FC = () => {
     setUploadedMedia(prev => [...prev, media]);
   };
 
+  // Handle upload start
+  const handleUploadStart = () => {
+    setUploadState(prev => ({
+      ...prev,
+      isUploading: true,
+      uploadedFiles: 0,
+      failedFiles: 0
+    }));
+  };
+
+  // Handle upload progress
+  const handleUploadProgress = (uploaded: number, total: number) => {
+    setUploadState(prev => ({
+      ...prev,
+      totalFiles: total,
+      uploadedFiles: uploaded
+    }));
+  };
+
+  // Handle upload complete
+  const handleUploadComplete = () => {
+    setUploadState(prev => ({
+      ...prev,
+      isUploading: false
+    }));
+  };
+
+  // Handle upload error
+  const handleUploadError = (error: string) => {
+    setUploadState(prev => ({
+      ...prev,
+      failedFiles: prev.failedFiles + 1
+    }));
+    showError(error);
+  };
+
   // Handle media delete
   const handleMediaDelete = (mediaId: number) => {
     setUploadedMedia(prev => prev.filter(media => media.id !== mediaId));
@@ -283,6 +325,10 @@ const PropertyCreatePage: React.FC = () => {
                   onMediaUpload={handleMediaUpload}
                   onMediaDelete={handleMediaDelete}
                   maxFiles={10}
+                  onUploadStart={handleUploadStart}
+                  onUploadProgress={handleUploadProgress}
+                  onUploadComplete={handleUploadComplete}
+                  onUploadError={handleUploadError}
                 />
               </CardContent>
             </Card>
@@ -331,8 +377,9 @@ const PropertyCreatePage: React.FC = () => {
             <FormActions
               onSubmit={formik.handleSubmit}
               onCancel={() => navigate('/properties')}
-              submitText="Create Property"
+              submitText={uploadState.isUploading ? `Uploading... (${uploadState.uploadedFiles}/${uploadState.totalFiles})` : "Create Property"}
               isSubmitting={createPropertyMutation.isPending}
+              isDisabled={uploadState.isUploading}
             />
           </Grid>
         </Grid>

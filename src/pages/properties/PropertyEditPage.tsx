@@ -52,6 +52,12 @@ const PropertyEditPage: React.FC = () => {
   const [existingMedia, setExistingMedia] = useState<Media[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<PropertyFeature[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
+  const [uploadState, setUploadState] = useState({
+    isUploading: false,
+    totalFiles: 0,
+    uploadedFiles: 0,
+    failedFiles: 0
+  });
 
   // Fetch property details
   const { data: property, isLoading: isLoadingProperty } = useProperty(Number(id));
@@ -233,6 +239,42 @@ const PropertyEditPage: React.FC = () => {
     showSuccess(`${media.type === 'image' ? 'Image' : 'Video'} uploaded successfully!`);
   };
 
+  // Handle upload start
+  const handleUploadStart = () => {
+    setUploadState(prev => ({
+      ...prev,
+      isUploading: true,
+      uploadedFiles: 0,
+      failedFiles: 0
+    }));
+  };
+
+  // Handle upload progress
+  const handleUploadProgress = (uploaded: number, total: number) => {
+    setUploadState(prev => ({
+      ...prev,
+      totalFiles: total,
+      uploadedFiles: uploaded
+    }));
+  };
+
+  // Handle upload complete
+  const handleUploadComplete = () => {
+    setUploadState(prev => ({
+      ...prev,
+      isUploading: false
+    }));
+  };
+
+  // Handle upload error
+  const handleUploadError = (error: string) => {
+    setUploadState(prev => ({
+      ...prev,
+      failedFiles: prev.failedFiles + 1
+    }));
+    showError(error);
+  };
+
   const handleExistingMediaDelete = (mediaId: number) => {
     const mediaToDelete = existingMedia.find(m => m.id === mediaId);
     setExistingMedia(prev => prev.filter(media => media.id !== mediaId));
@@ -365,6 +407,10 @@ const PropertyEditPage: React.FC = () => {
                         }
                       }}
                       maxFiles={10}
+                      onUploadStart={handleUploadStart}
+                      onUploadProgress={handleUploadProgress}
+                      onUploadComplete={handleUploadComplete}
+                      onUploadError={handleUploadError}
                     />
                   </CardContent>
                 </Card>
@@ -411,8 +457,9 @@ const PropertyEditPage: React.FC = () => {
                 {/* Form Actions */}
                 <FormActions
                   onCancel={() => navigate(`/properties/${id}`)}
-                  submitText="Update Property"
+                  submitText={uploadState.isUploading ? `Uploading... (${uploadState.uploadedFiles}/${uploadState.totalFiles})` : "Update Property"}
                   isSubmitting={updatePropertyMutation.isPending}
+                  isDisabled={uploadState.isUploading}
                 />
               </Grid>
             </Grid>
