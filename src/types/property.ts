@@ -129,9 +129,6 @@ export interface CreatePropertyData {
   // Status and settings
   status?: 'published' | 'draft' | 'sold' | 'rented';
   is_featured?: boolean;
-  is_verified?: boolean;
-  published_at?: string;
-  expires_at?: string;
   
   // Media
   media_ids?: number[];

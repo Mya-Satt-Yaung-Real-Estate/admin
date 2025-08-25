@@ -31,6 +31,10 @@ interface MediaUploadProps {
     'image/*': string[];
     'video/*': string[];
   };
+  onUploadStart?: () => void;
+  onUploadProgress?: (uploaded: number, total: number) => void;
+  onUploadComplete?: () => void;
+  onUploadError?: (error: string) => void;
 }
 
 const MediaUpload: React.FC<MediaUploadProps> = ({
@@ -42,6 +46,10 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
     'video/*': ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm'],
   },
+  onUploadStart,
+  onUploadProgress,
+  onUploadComplete,
+  onUploadError,
 }) => {
   const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set());
   const uploadMediaMutation = useUploadMedia();
@@ -51,6 +59,14 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
     async (acceptedFiles: File[]) => {
       const remainingSlots = maxFiles - uploadedMedia.length;
       const filesToUpload = acceptedFiles.slice(0, remainingSlots);
+
+      if (filesToUpload.length === 0) return;
+
+      // Notify upload start
+      onUploadStart?.();
+
+      let uploadedCount = 0;
+      let failedCount = 0;
 
       for (const file of filesToUpload) {
         const fileId = `${file.name}-${Date.now()}`;
@@ -64,8 +80,14 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
           });
 
           onMediaUpload(result.data);
+          uploadedCount++;
+          
+          // Notify progress
+          onUploadProgress?.(uploadedCount, filesToUpload.length);
         } catch (error) {
           console.error('Upload failed:', error);
+          failedCount++;
+          onUploadError?.(`Failed to upload ${file.name}`);
         } finally {
           setUploadingFiles(prev => {
             const newSet = new Set(prev);
@@ -74,8 +96,13 @@ const MediaUpload: React.FC<MediaUploadProps> = ({
           });
         }
       }
+
+      // Notify upload complete
+      if (uploadedCount + failedCount === filesToUpload.length) {
+        onUploadComplete?.();
+      }
     },
-    [uploadedMedia.length, maxFiles, uploadMediaMutation, onMediaUpload]
+    [uploadedMedia.length, maxFiles, uploadMediaMutation, onMediaUpload, onUploadStart, onUploadProgress, onUploadComplete, onUploadError]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
