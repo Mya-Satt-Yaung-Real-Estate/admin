@@ -431,6 +431,25 @@ const PropertyListPage: React.FC = () => {
       hidden: isMobile,
     },
     {
+      id: 'expiresAt',
+      label: 'Expires At',
+      render: (_value, property) => {
+        if (!property) return <Typography variant="body2">No data</Typography>;
+        
+        // Only show expiration date for approved properties
+        if (property.verification_status !== 'approved') {
+          return <Typography variant="body2" color="textSecondary">-</Typography>;
+        }
+        
+        return (
+          <Typography variant="body2" color="textSecondary">
+            {property.dates?.expires_at ? formatDate(property.dates.expires_at, 'display') : 'N/A'}
+          </Typography>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
       id: 'actions',
       label: 'Actions',
       align: 'center',
@@ -697,6 +716,11 @@ const PropertyListPage: React.FC = () => {
                   label: `${property.stats?.view_count || 0} views`,
                   color: 'info',
                 },
+                // Add expiration date chip for approved properties
+                ...(property.verification_status === 'approved' && property.dates?.expires_at ? [{
+                  label: `Expires: ${formatDate(property.dates.expires_at, 'display')}`,
+                  color: 'warning' as const,
+                }] : []),
               ]}
               actions={createMobileCardActions(property)}
               onClick={() => navigate(`/properties/${property.id}`)}
