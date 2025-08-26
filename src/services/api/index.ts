@@ -8,4 +8,5 @@ export * from './permissions';
 export * from './locations';
 export * from './properties';
 export * from './points';
+export * from './systemConfiguration';
 

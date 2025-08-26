@@ -7,6 +7,7 @@ export { default as LogoutDialog } from './LogoutDialog';
 export { default as DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 export { default as ConfirmationDialog } from './ConfirmationDialog';
 export { default as ActionAlert } from './ActionAlert';
+export { default as ConfigurationCategoryCard } from './ConfigurationCategoryCard';
 export { default as EnhancedMultiSelect } from './EnhancedMultiSelect';
 export { default as Pagination } from './Pagination';
 export { default as StatusChip } from './StatusChip';

@@ -58,7 +58,18 @@ export const MENU_ITEMS = [
   {
     text: 'Settings',
     iconName: 'Settings',
-    path: '/settings',
+    children: [
+      {
+        text: 'System Configurations',
+        iconName: 'Settings',
+        path: '/system-configurations',
+      },
+      {
+        text: 'General Settings',
+        iconName: 'Settings',
+        path: '/settings',
+      },
+    ],
   },
   {
     text: 'Admins',

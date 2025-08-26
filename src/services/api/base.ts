@@ -68,6 +68,8 @@ export async function apiRequest<T>(
   // Get auth token
   const token = getAuthToken();
   
+  console.log('🌐 API Request:', { url, token: token ? 'Present' : 'Missing', endpoint });
+  
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -120,6 +122,14 @@ export async function apiRequest<T>(
     }
 
     const data = await response.json();
+    
+    console.log('📡 API Response:', { 
+      url, 
+      status: response.status, 
+      success: data.success, 
+      dataKeys: Object.keys(data),
+      hasData: !!data.data 
+    });
 
     // Handle API error responses (success: false)
     if (!data.success) {
