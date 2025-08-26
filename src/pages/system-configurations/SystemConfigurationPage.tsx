@@ -37,6 +37,7 @@ import {
   Business as BusinessIcon,
   Home as HomeIcon,
   Warning as WarningIcon,
+  Security as SecurityIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -78,6 +79,12 @@ const CONFIG_CATEGORIES = {
     description: 'Manage system cache settings',
     icon: <StorageIcon />,
     color: '#d32f2f',
+  },
+  validation: {
+    name: 'Validation',
+    description: 'Manage validation rules and limits',
+    icon: <SecurityIcon />,
+    color: '#7b1fa2',
   },
 } as const;
 

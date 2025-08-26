@@ -90,8 +90,10 @@ const PointPackageEditPage: React.FC = () => {
       newErrors.points = 'Points is required';
     } else {
       const points = parseInt(formData.points);
-      if (isNaN(points) || points <= 0) {
-        newErrors.points = 'Points must be a positive number';
+      if (isNaN(points) || points < 1) {
+        newErrors.points = 'Points must be at least 1';
+      } else if (points > 10000) {
+        newErrors.points = 'Points cannot exceed 10,000';
       }
     }
 
@@ -99,8 +101,10 @@ const PointPackageEditPage: React.FC = () => {
       newErrors.price_mmk = 'Price is required';
     } else {
       const price = parseInt(formData.price_mmk);
-      if (isNaN(price) || price <= 0) {
-        newErrors.price_mmk = 'Price must be a positive number';
+      if (isNaN(price) || price < 1000) {
+        newErrors.price_mmk = 'Price must be at least 1,000 MMK';
+      } else if (price > 10000000) {
+        newErrors.price_mmk = 'Price cannot exceed 10,000,000 MMK';
       }
     }
 
@@ -263,7 +267,7 @@ const PointPackageEditPage: React.FC = () => {
                 helperText={errors.points}
                 required
                 placeholder="Enter points amount"
-                inputProps={{ min: 1 }}
+                inputProps={{ min: 1, max: 10000 }}
               />
             </Grid>
 
@@ -279,7 +283,7 @@ const PointPackageEditPage: React.FC = () => {
                 helperText={errors.price_mmk}
                 required
                 placeholder="Enter price in MMK"
-                inputProps={{ min: 1 }}
+                inputProps={{ min: 1000, max: 10000000 }}
               />
             </Grid>
 
