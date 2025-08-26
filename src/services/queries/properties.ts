@@ -255,6 +255,9 @@ export const useRenewProperty = () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
       // Invalidate the specific property to force a fresh fetch
       queryClient.invalidateQueries({ queryKey: propertyKeys.detail(variables.id) });
+      
+      // Invalidate users cache since property renewal consumes user points
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 };

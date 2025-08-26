@@ -18,8 +18,10 @@ export const useUsers = (params?: QueryParams) => {
   return useQuery({
     queryKey: userKeys.list(params),
     queryFn: () => usersAPI.getUsers(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds - data becomes stale quickly
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: true, // Always refetch when component mounts (page navigation)
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 };
 
@@ -29,8 +31,10 @@ export const useUser = (slug: string) => {
     queryKey: userKeys.detail(slug),
     queryFn: () => usersAPI.getUser(slug),
     enabled: !!slug,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds - data becomes stale quickly
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: true, // Always refetch when component mounts (page navigation)
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 };
 
@@ -40,9 +44,14 @@ export const useCreateUser = () => {
 
   return useMutation({
     mutationFn: usersAPI.createUser,
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       // Invalidate and refetch users lists
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      
+      // If user was created successfully and has a slug, invalidate specific user detail
+      if (response?.data?.user?.slug) {
+        queryClient.invalidateQueries({ queryKey: userKeys.detail(response.data.user.slug) });
+      }
     },
   });
 };
