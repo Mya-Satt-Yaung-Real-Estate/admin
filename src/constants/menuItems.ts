@@ -20,6 +20,11 @@ export const MENU_ITEMS = [
     path: '/properties',
   },
   {
+    text: 'Advertisements',
+    iconName: 'Campaign',
+    path: '/advertisements',
+  },
+  {
     text: 'Master Data',
     iconName: 'Assessment',
     children: [
@@ -63,11 +68,6 @@ export const MENU_ITEMS = [
         text: 'System Configurations',
         iconName: 'Settings',
         path: '/system-configurations',
-      },
-      {
-        text: 'General Settings',
-        iconName: 'Settings',
-        path: '/settings',
       },
     ],
   },

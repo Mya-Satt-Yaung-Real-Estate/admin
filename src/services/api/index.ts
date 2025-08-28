@@ -9,4 +9,5 @@ export * from './locations';
 export * from './properties';
 export * from './points';
 export * from './systemConfiguration';
+export * from './advertisements';
 

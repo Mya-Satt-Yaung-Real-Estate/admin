@@ -111,6 +111,7 @@ export const CONFIGURATION_CATEGORIES = [
   'property',
   'features',
   'media',
+  'advertisement',
 ] as const;
 
 export type ConfigurationCategory = typeof CONFIGURATION_CATEGORIES[number];

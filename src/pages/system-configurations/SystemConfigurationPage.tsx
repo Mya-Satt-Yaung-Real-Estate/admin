@@ -68,6 +68,12 @@ const CONFIG_CATEGORIES = {
     icon: <HomeIcon />,
     color: '#ed6c02',
   },
+  advertisement: {
+    name: 'Advertisement',
+    description: 'Configure advertisement system settings and costs',
+    icon: <BusinessIcon />,
+    color: '#ff6b35',
+  },
   media: {
     name: 'Media',
     description: 'Manage media upload and processing settings',

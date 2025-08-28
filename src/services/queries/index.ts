@@ -10,6 +10,7 @@ export * from './points';
 export * from './companies';
 export * from './media';
 export * from './systemConfiguration';
+export * from './advertisements';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -19,4 +20,5 @@ export { propertyKeys } from './properties';
 export { roleKeys } from './roles';
 export { permissionKeys } from './permissions';
 export { systemConfigurationKeys } from './systemConfiguration';
+export { advertisementKeys } from './advertisements';
 

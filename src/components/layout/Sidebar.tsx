@@ -16,6 +16,7 @@ import {
   Assessment as AssessmentIcon,
   Settings as SettingsIcon,
   LocationOn as LocationOnIcon,
+  Campaign as CampaignIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -45,6 +46,8 @@ const getIconComponent = (iconName: string): React.ReactNode => {
       return <SettingsIcon />;
     case 'LocationOn':
       return <LocationOnIcon />;
+    case 'Campaign':
+      return <CampaignIcon />;
     default:
       return <DashboardIcon />;
   }
