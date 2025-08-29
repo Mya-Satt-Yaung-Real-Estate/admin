@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Card,
@@ -112,14 +112,14 @@ const AdvertisementCreatePage: React.FC = () => {
           township_id: values.township_id || null,
           phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
           media_ids: uploadedMedia.map(media => media.id),
-          verification_status: 'approved', // Automatically approve
+          // verification_status: 'approved', // Automatically approve - removed as not in form data
         };
 
         console.log('Advertisement data to submit:', advertisementData);
         const response = await createAdvertisementMutation.mutateAsync(advertisementData);
         
         // Navigate to advertisement detail page with success message (consistent with other create pages)
-        const advertisementId = response.data?.id;
+        const advertisementId = response.data?.data?.id;
         if (advertisementId) {
           navigate(`/advertisements/${advertisementId}?success=${encodeURIComponent('Advertisement created successfully!')}`);
         } else {
@@ -343,7 +343,7 @@ const AdvertisementCreatePage: React.FC = () => {
               onPhoneNumberChange={handlePhoneNumberChange}
               onAddPhoneNumber={addPhoneNumber}
               onRemovePhoneNumber={removePhoneNumber}
-              phoneNumbersTouched={formik.touched.phone_numbers}
+              phoneNumbersTouched={!!formik.touched.phone_numbers}
             />
           </Grid>
 

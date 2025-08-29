@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { PRICE_TYPES, ADVERTISEMENT_STATUSES, VERIFICATION_STATUSES } from '../../types/advertisement';
+import { ADVERTISEMENT_STATUSES, VERIFICATION_STATUSES } from '../../types/advertisement';
 
 // Base advertisement validation schema
 export const advertisementBaseSchema = yup.object({
@@ -23,15 +23,15 @@ export const advertisementBaseSchema = yup.object({
     .min(0, 'Price must be at least 0')
     .optional()
     .nullable(),
-  price_type: yup
-    .string()
-    .oneOf(PRICE_TYPES.map(type => type.value), 'Invalid price type')
-    .optional(),
-  region_id: yup.number().required('Region is required'),
-  township_id: yup.number().required('Township is required'),
+  // price_type: yup
+  //   .string()
+  //   .oneOf(PRICE_TYPES.map(type => type.value), 'Invalid price type')
+  //   .optional(), // Removed as PRICE_TYPES no longer exists
+  region_id: yup.number().nullable().optional(), // Made optional and nullable
+  township_id: yup.number().nullable().optional(), // Made optional and nullable
   address: yup
     .string()
-    .required('Address is required')
+    .optional() // Made optional
     .max(500, 'Address must not exceed 500 characters'),
   contact_name: yup
     .string()
@@ -141,22 +141,22 @@ export const advertisementFilterSchema = yup.object({
   listing_type_id: yup.number().optional(),
   region_id: yup.number().optional(),
   township_id: yup.number().optional(),
-  price_min: yup.number().min(0, 'Minimum price must be at least 0').optional(),
-  price_max: yup
-    .number()
-    .min(0, 'Maximum price must be at least 0')
-    .test('price-range', 'Maximum price must be greater than or equal to minimum price', function (value) {
-      const { price_min } = this.parent;
-      if (price_min && value && value < price_min) {
-        return false;
-      }
-      return true;
-    })
-    .optional(),
-  price_type: yup
-    .string()
-    .oneOf(PRICE_TYPES.map(type => type.value), 'Invalid price type')
-    .optional(),
+  // price_min: yup.number().min(0, 'Minimum price must be at least 0').optional(), // Removed as price fields no longer exist
+  // price_max: yup
+  //   .number()
+  //   .min(0, 'Maximum price must be at least 0')
+  //   .test('price-range', 'Maximum price must be greater than or equal to minimum price', function (value) {
+  //     const { price_min } = this.parent;
+  //     if (price_min && value && value < price_min) {
+  //       return false;
+  //     }
+  //     return true;
+  //   })
+  //   .optional(), // Removed as price fields no longer exist
+  // price_type: yup
+  //   .string()
+  //   .oneOf(PRICE_TYPES.map(type => type.value), 'Invalid price type')
+  //   .optional(), // Removed as PRICE_TYPES no longer exists
   date_from: yup.date().optional(),
   date_to: yup
     .date()
@@ -165,7 +165,7 @@ export const advertisementFilterSchema = yup.object({
   expiring_soon: yup.boolean().optional(),
   sort_by: yup
     .string()
-    .oneOf(['created_at', 'updated_at', 'published_at', 'expires_at', 'view_count', 'favorite_count', 'contact_count', 'price', 'title_en'], 'Invalid sort field')
+    .oneOf(['created_at', 'updated_at', 'published_at', 'expires_at', 'view_count', 'favorite_count', 'contact_count', 'title_en'], 'Invalid sort field') // Removed 'price' as it no longer exists
     .optional(),
   sort_order: yup
     .string()

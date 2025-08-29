@@ -20,8 +20,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
-  Home as HomeIcon,
-  LocationOn as LocationIcon,
+
   Visibility as ViewCountIcon,
   Phone as PhoneIcon,
   Star as StarIcon,
@@ -33,6 +32,7 @@ import {
   Email as EmailIcon,
   Diamond as DiamondIcon,
   CheckCircle as CheckCircleIcon,
+  Restore as RestoreIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAdvertisement, useDeleteAdvertisement, useRestoreAdvertisement } from '../../services/queries/advertisements';
@@ -570,8 +570,8 @@ const AdvertisementDetailPage: React.FC = () => {
         </Grid>
 
         {/* Media Section */}
-        {(advertisement.media?.images?.length > 0 || 
-          advertisement.media?.videos?.length > 0 || 
+                {((advertisement.media?.images && advertisement.media.images.length > 0) ||
+          (advertisement.media?.videos && advertisement.media.videos.length > 0) || 
           (advertisement.media && Array.isArray(advertisement.media) && advertisement.media.length > 0)) && (
           <Grid item xs={12}>
             <Card>

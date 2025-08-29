@@ -8,7 +8,7 @@ import {
   Box,
   SelectChangeEvent,
   Autocomplete,
-  FormHelperText,
+
 } from '@mui/material';
 
 interface LocationSectionProps {

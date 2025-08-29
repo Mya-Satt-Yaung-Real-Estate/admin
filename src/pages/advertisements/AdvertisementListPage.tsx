@@ -138,9 +138,7 @@ const AdvertisementListPage: React.FC = () => {
   const [advertisementToRestore, setAdvertisementToRestore] = useState<Advertisement | null>(null);
 
   // Action confirmation states
-  const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
-  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
-  const [selectedAdvertisement, setSelectedAdvertisement] = useState<Advertisement | null>(null);
+
 
   // API Queries
   const { data: advertisementsResponse, isLoading, error, refetch } = useAdvertisements({

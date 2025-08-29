@@ -102,7 +102,7 @@ const AdvertisementEditPage: React.FC = () => {
         advertisement.data.media.images.forEach(img => {
           allMedia.push({
             id: img.id,
-            filename: img.filename,
+            filename: img.file_name || '',
             url: img.url,
             type: 'image',
             size: 0, // Default value
@@ -120,7 +120,7 @@ const AdvertisementEditPage: React.FC = () => {
         advertisement.data.media.videos.forEach(video => {
           allMedia.push({
             id: video.id,
-            filename: video.filename,
+            filename: video.file_name || '',
             url: video.url,
             type: 'video',
             size: 0, // Default value
@@ -285,7 +285,7 @@ const AdvertisementEditPage: React.FC = () => {
       };
 
       console.log('Advertisement data to submit:', advertisementData);
-      const response = await updateAdvertisementMutation.mutateAsync({
+      await updateAdvertisementMutation.mutateAsync({
         id: Number(id),
         data: advertisementData
       });
@@ -327,7 +327,7 @@ const AdvertisementEditPage: React.FC = () => {
         onSubmit={handleSubmit}
         enableReinitialize={false}
       >
-        {({ values, errors, touched, handleChange, setFieldValue, isValid }) => (
+        {({ values, errors, touched, handleChange, setFieldValue }) => (
           <Form>
             <Grid container spacing={3}>
               {/* Left Column */}
@@ -414,7 +414,7 @@ const AdvertisementEditPage: React.FC = () => {
                   onPhoneNumberChange={handlePhoneNumberChange}
                   onAddPhoneNumber={addPhoneNumber}
                   onRemovePhoneNumber={removePhoneNumber}
-                  phoneNumbersTouched={touched.phone_numbers}
+                  phoneNumbersTouched={!!(touched as any).phone_numbers}
                 />
               </Grid>
 

@@ -31,7 +31,7 @@ interface AdvertisementVerificationActionsProps {
 export const AdvertisementVerificationActions: React.FC<AdvertisementVerificationActionsProps> = ({
   advertisementId,
   advertisementTitle,
-  verificationStatus,
+
   onSuccess,
   onShowSuccess,
   onShowError,
