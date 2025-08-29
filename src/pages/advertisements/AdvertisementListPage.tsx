@@ -16,11 +16,12 @@ import {
   RestoreFromTrash as RestoreIcon,
   Visibility as ViewIcon,
   Business as BusinessIcon,
-  AttachMoney as PriceIcon,
   Visibility as ViewCountIcon,
   Favorite as FavoriteIcon,
+  CheckCircle as ApproveIcon,
+  Cancel as RejectIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
@@ -32,11 +33,12 @@ import {
   PageErrorState, 
   PageEmptyState, 
   DeleteConfirmationDialog, 
-  ConfirmationDialog, 
+  ConfirmationDialog,
   ActionAlert 
 } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { useAdvertisements, useDeleteAdvertisement, useRejectAdvertisement, useRenewAdvertisement } from '../../services/queries/advertisements';
+import { useAdvertisements, useDeleteAdvertisement, useApproveAdvertisement, useRejectAdvertisement, useRestoreAdvertisement } from '../../services/queries/advertisements';
+import { AdvertisementVerificationActions } from '../../components/ui/AdvertisementVerificationActions';
 import { FilterState } from '../../constants/filters';
 import { Advertisement } from '../../types/advertisement';
 import { formatDate } from '../../constants/dateFormats';
@@ -49,7 +51,6 @@ interface AdvertisementFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
   verificationFilter: string;
-  priceTypeFilter: string;
   expiringFilter: string;
 }
 
@@ -94,21 +95,6 @@ const createFilterFields = (): FilterField[] => [
       { value: 'rejected', label: 'Rejected' },
     ],
   },
-
-  {
-    key: 'priceTypeFilter',
-    type: 'select',
-    label: 'Price Type',
-    options: [
-      { value: 'all', label: 'All Price Types' },
-      { value: 'monthly_rent', label: 'Monthly Rent' },
-      { value: 'yearly_rent', label: 'Yearly Rent' },
-      { value: 'sale_price', label: 'Sale Price' },
-      { value: 'negotiable', label: 'Negotiable' },
-      { value: 'contact_for_price', label: 'Contact for Price' },
-      { value: 'free', label: 'Free' },
-    ],
-  },
   {
     key: 'expiringFilter',
     type: 'select',
@@ -127,6 +113,7 @@ const createFilterFields = (): FilterField[] => [
 
 const AdvertisementListPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -138,7 +125,6 @@ const AdvertisementListPage: React.FC = () => {
     searchTerm: '',
     statusFilter: 'all',
     verificationFilter: 'all',
-    priceTypeFilter: 'all',
     expiringFilter: 'all',
   });
 
@@ -146,6 +132,10 @@ const AdvertisementListPage: React.FC = () => {
 
   // Tab state for active/deleted advertisements
   const [activeTab, setActiveTab] = useState(0); // 0 = Active, 1 = Deleted
+
+  // Restore confirmation state
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [advertisementToRestore, setAdvertisementToRestore] = useState<Advertisement | null>(null);
 
   // Action confirmation states
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
@@ -163,8 +153,9 @@ const AdvertisementListPage: React.FC = () => {
 
   // Mutations
   const deleteAdvertisementMutation = useDeleteAdvertisement();
+  const approveAdvertisementMutation = useApproveAdvertisement();
   const rejectAdvertisementMutation = useRejectAdvertisement();
-  const renewAdvertisementMutation = useRenewAdvertisement();
+  const restoreAdvertisementMutation = useRestoreAdvertisement();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -176,6 +167,19 @@ const AdvertisementListPage: React.FC = () => {
     closeDeleteConfirmation,
     handleConfirmDelete: handleDeleteConfirm,
   } = useDeleteConfirmation();
+
+  // Handle success message from URL
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const successMessage = searchParams.get('success');
+    if (successMessage) {
+      showSuccess(decodeURIComponent(successMessage));
+      // Clear the success parameter from URL
+      const newSearch = new URLSearchParams(location.search);
+      newSearch.delete('success');
+      navigate(`${location.pathname}${newSearch.toString() ? '?' + newSearch.toString() : ''}`, { replace: true });
+    }
+  }, [location.search, navigate, showSuccess]);
 
   // ========================================================================
   // DATA PROCESSING
@@ -213,9 +217,6 @@ const AdvertisementListPage: React.FC = () => {
       const matchesVerification = filters.verificationFilter === 'all' || 
         advertisement.verification_status === filters.verificationFilter;
       
-      const matchesPriceType = filters.priceTypeFilter === 'all' || 
-        advertisement.price?.type === filters.priceTypeFilter;
-      
       // Apply expiring filter
       let matchesExpiring = true;
       if (filters.expiringFilter !== 'all') {
@@ -227,7 +228,7 @@ const AdvertisementListPage: React.FC = () => {
         }
       }
       
-      return matchesSearch && matchesStatus && matchesVerification && matchesPriceType && matchesExpiring;
+      return matchesSearch && matchesStatus && matchesVerification && matchesExpiring;
     });
   }, [advertisements, filters, activeTab]);
 
@@ -297,10 +298,10 @@ const AdvertisementListPage: React.FC = () => {
         return (
           <Box>
             <Typography variant="body2" fontWeight="500">
-              {advertisement.user || 'Unknown'}
+              {typeof advertisement.user === 'string' ? advertisement.user : advertisement.user?.name || 'Unknown'}
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              {advertisement.user_type || 'Unknown'}
+              {typeof advertisement.user === 'string' ? advertisement.user_type || 'Unknown' : advertisement.user?.user_type || 'Unknown'}
             </Typography>
           </Box>
         );
@@ -312,39 +313,40 @@ const AdvertisementListPage: React.FC = () => {
       label: 'Location',
       render: (_value, advertisement) => {
         if (!advertisement) return <Typography variant="body2">No data</Typography>;
+        
+        const region = advertisement.location?.region || advertisement.region;
+        const township = advertisement.location?.township || advertisement.township;
+        
         return (
           <Box>
-            <Typography variant="body2" fontWeight="500">
-              {advertisement.location?.region?.name_en || 'N/A'}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {advertisement.location?.region?.name_mm || ''}
-            </Typography>
-            <Typography variant="body2" fontWeight="500" sx={{ mt: 0.5 }}>
-              {advertisement.location?.township?.name_en || 'N/A'}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {advertisement.location?.township?.name_mm || ''}
-            </Typography>
+            {region ? (
+              <>
+                <Typography variant="body2" fontWeight="500">
+                  {region.name_en}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  {region.name_mm}
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                No region
+              </Typography>
+            )}
+            {township && (
+              <>
+                <Typography variant="body2" fontWeight="500" sx={{ mt: 0.5 }}>
+                  {township.name_en}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  {township.name_mm}
+                </Typography>
+              </>
+            )}
           </Box>
         );
       },
       hidden: isMobile,
-    },
-    {
-      id: 'price',
-      label: 'Price',
-      render: (_value, advertisement) => {
-        if (!advertisement) return <Typography variant="body2">No data</Typography>;
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <PriceIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            <Typography variant="body2" fontWeight="500">
-              {advertisement.price?.formatted || 'Contact for price'}
-            </Typography>
-          </Box>
-        );
-      },
     },
     {
       id: 'verificationStatus',
@@ -371,14 +373,13 @@ const AdvertisementListPage: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <ViewCountIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             <Typography variant="body2" fontWeight="500">
-              {advertisement.stats?.view_count || 0}
+              {advertisement.stats?.view_count || advertisement.view_count || 0}
             </Typography>
           </Box>
         );
       },
       hidden: isMobile,
     },
-
     {
       id: 'favorites',
       label: 'Favorites',
@@ -388,7 +389,7 @@ const AdvertisementListPage: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <FavoriteIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             <Typography variant="body2" fontWeight="500">
-              {advertisement.stats?.favorite_count || 0}
+              {advertisement.stats?.favorite_count || advertisement.favorite_count || 0}
             </Typography>
           </Box>
         );
@@ -451,6 +452,18 @@ const AdvertisementListPage: React.FC = () => {
             {/* Show different actions based on deleted status */}
             {!isDeleted ? (
               <>
+                {/* Verification Actions - Only show for pending advertisements */}
+                {advertisement.verification_status === 'pending' && (
+                  <AdvertisementVerificationActions
+                    advertisementId={advertisement.id}
+                    advertisementTitle={advertisement.title_en}
+                    verificationStatus={advertisement.verification_status}
+                    onShowSuccess={showSuccess}
+                    onShowError={showError}
+                    size="small"
+                  />
+                )}
+                
                 <Tooltip title="Edit">
                   <IconButton
                     size="small"
@@ -493,26 +506,67 @@ const AdvertisementListPage: React.FC = () => {
   // MOBILE CARD ACTIONS
   // ========================================================================
 
-  const getMobileCardActions = (advertisement: Advertisement): MobileCardAction[] => [
-    {
-      tooltip: 'View',
-      icon: <ViewIcon />,
-      onClick: () => handleView(advertisement),
-      color: 'primary',
-    },
-    {
-      tooltip: 'Edit',
-      icon: <EditIcon />,
-      onClick: () => handleEdit(advertisement),
-      color: 'primary',
-    },
-    {
-      tooltip: 'Delete',
-      icon: <DeleteIcon />,
-      onClick: () => handleDelete(advertisement),
-      color: 'error',
-    },
-  ];
+  const getMobileCardActions = (advertisement: Advertisement): MobileCardAction[] => {
+    const actions: MobileCardAction[] = [
+      {
+        tooltip: 'View',
+        icon: <ViewIcon />,
+        onClick: () => handleView(advertisement),
+        color: 'primary',
+      },
+    ];
+
+    // Check if advertisement is deleted
+    const isDeleted = advertisement.is_deleted;
+
+    if (!isDeleted) {
+      // Add verification actions for pending advertisements
+      if (advertisement.verification_status === 'pending') {
+        actions.push(
+          {
+            tooltip: 'Approve',
+            icon: <ApproveIcon />,
+            onClick: () => handleApprove(advertisement),
+            color: 'success',
+          },
+          {
+            tooltip: 'Reject',
+            icon: <RejectIcon />,
+            onClick: () => handleRejectSimple(advertisement),
+            color: 'error',
+          }
+        );
+      }
+
+      // Add other actions for non-deleted advertisements
+      actions.push(
+        {
+          tooltip: 'Edit',
+          icon: <EditIcon />,
+          onClick: () => handleEdit(advertisement),
+          color: 'primary',
+        },
+        {
+          tooltip: 'Delete',
+          icon: <DeleteIcon />,
+          onClick: () => handleDelete(advertisement),
+          color: 'error',
+        }
+      );
+    } else {
+      // Add restore action for deleted advertisements
+      actions.push(
+        {
+          tooltip: 'Restore',
+          icon: <RestoreIcon />,
+          onClick: () => handleRestore(advertisement),
+          color: 'success',
+        }
+      );
+    }
+
+    return actions;
+  };
 
   // ========================================================================
   // HANDLERS
@@ -549,38 +603,45 @@ const AdvertisementListPage: React.FC = () => {
 
 
 
-  const handleReject = async (reason?: string) => {
-    if (!selectedAdvertisement) return;
-    
+  const handleApprove = async (advertisement: Advertisement) => {
+    try {
+      await approveAdvertisementMutation.mutateAsync(advertisement.id);
+      showSuccess('Advertisement approved successfully');
+    } catch (error) {
+      showError('Failed to approve advertisement');
+    }
+  };
+
+  const handleRejectSimple = async (advertisement: Advertisement) => {
     try {
       await rejectAdvertisementMutation.mutateAsync({ 
-        id: selectedAdvertisement.id, 
-        reason: reason || 'Rejected by admin'
+        id: advertisement.id, 
+        reason: 'Rejected by admin'
       });
       showSuccess('Advertisement rejected successfully');
-      setRejectConfirmOpen(false);
-      setSelectedAdvertisement(null);
     } catch (error) {
       showError('Failed to reject advertisement');
     }
   };
 
-  const handleRenew = async () => {
-    if (!selectedAdvertisement) return;
-    
-    try {
-      await renewAdvertisementMutation.mutateAsync(selectedAdvertisement.id);
-      showSuccess('Advertisement renewed successfully');
-      setRenewConfirmOpen(false);
-      setSelectedAdvertisement(null);
-    } catch (error) {
-      showError('Failed to renew advertisement');
-    }
+
+
+  const handleRestore = (advertisement: Advertisement) => {
+    setAdvertisementToRestore(advertisement);
+    setRestoreConfirmOpen(true);
   };
 
-  const handleRestore = (_advertisement: Advertisement) => {
-    // TODO: Implement restore functionality when API is available
-    showError('Restore functionality not yet implemented');
+  const handleConfirmRestore = async () => {
+    if (!advertisementToRestore) return;
+    
+    try {
+      await restoreAdvertisementMutation.mutateAsync(advertisementToRestore.id);
+      showSuccess(`${advertisementToRestore.title_en} restored successfully`);
+      setRestoreConfirmOpen(false);
+      setAdvertisementToRestore(null);
+    } catch (error: any) {
+      showError(error.message || 'Failed to restore advertisement');
+    }
   };
 
   // ========================================================================
@@ -684,27 +745,21 @@ const AdvertisementListPage: React.FC = () => {
         message={`Are you sure you want to delete "${deleteState.itemName}"? This action cannot be undone.`}
       />
 
+      {/* Restore Confirmation Dialog */}
       <ConfirmationDialog
-        open={rejectConfirmOpen}
-        onConfirm={handleReject}
+        open={restoreConfirmOpen}
         onClose={() => {
-          setRejectConfirmOpen(false);
-          setSelectedAdvertisement(null);
+          setRestoreConfirmOpen(false);
+          setAdvertisementToRestore(null);
         }}
-        title="Reject Advertisement"
-        message="Please provide a reason for rejecting this advertisement:"
+        onConfirm={handleConfirmRestore}
+        itemName={advertisementToRestore?.title_en}
+        itemType="advertisement"
+        action="restore"
+        isLoading={restoreAdvertisementMutation.isPending}
+        error={restoreAdvertisementMutation.error?.message}
       />
 
-      <ConfirmationDialog
-        open={renewConfirmOpen}
-        onConfirm={handleRenew}
-        onClose={() => {
-          setRenewConfirmOpen(false);
-          setSelectedAdvertisement(null);
-        }}
-        title="Renew Advertisement"
-        message="Are you sure you want to renew this advertisement? It will extend the expiration date by 30 days."
-      />
     </Box>
   );
 };

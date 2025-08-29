@@ -31,8 +31,8 @@ export const advertisementAPI = {
   },
 
   // Get specific advertisement by ID
-  getAdvertisement: (id: number): Promise<ApiResponse<AdvertisementResponse>> =>
-    apiRequest<AdvertisementResponse>(`/advertisements/${id}`),
+  getAdvertisement: (id: number): Promise<ApiResponse<Advertisement>> =>
+    apiRequest<Advertisement>(`/advertisements/${id}`),
 
   // Create new advertisement
   createAdvertisement: (data: AdvertisementFormData): Promise<ApiResponse<AdvertisementResponse>> =>
@@ -52,6 +52,12 @@ export const advertisementAPI = {
   deleteAdvertisement: (id: number): Promise<{ success: boolean; message: string; data: null }> =>
     apiRequest(`/advertisements/${id}`, {
       method: 'DELETE',
+    }),
+
+  // Restore advertisement
+  restoreAdvertisement: (id: number): Promise<ApiResponse<AdvertisementResponse>> =>
+    apiRequest<AdvertisementResponse>(`/advertisements/${id}/restore`, {
+      method: 'POST',
     }),
 
   // Approve advertisement

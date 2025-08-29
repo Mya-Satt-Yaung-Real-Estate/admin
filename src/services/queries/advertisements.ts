@@ -91,6 +91,23 @@ export const useDeleteAdvertisement = () => {
   });
 };
 
+// Restore advertisement
+export const useRestoreAdvertisement = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => advertisementAPI.restoreAdvertisement(id),
+    onSuccess: (_data, id) => {
+      // Invalidate and refetch advertisements lists
+      queryClient.invalidateQueries({ queryKey: advertisementKeys.lists() });
+      // Invalidate the specific advertisement
+      queryClient.invalidateQueries({ queryKey: advertisementKeys.detail(id) });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: advertisementKeys.statistics() });
+    },
+  });
+};
+
 // Approve advertisement
 export const useApproveAdvertisement = () => {
   const queryClient = useQueryClient();

@@ -1,20 +1,12 @@
-// Advertisement Types based on API documentation
+// Advertisement Types based on updated API documentation
 export interface Advertisement {
   id: number;
   user_id: number;
-  property_type_id: number;
-  listing_type_id: number;
   title_en: string;
   title_mm: string;
   description: string;
-  price: {
-    amount: number;
-    type: string;
-    type_label: string;
-    formatted: string;
-  } | null;
-  region_id: number;
-  township_id: number;
+  region_id: number | null;
+  township_id: number | null;
   address: string;
   contact_name: string;
   phone_numbers: string[];
@@ -38,30 +30,31 @@ export interface Advertisement {
   is_deleted?: boolean;
 
   // User info (simplified in list response)
-  user?: string;
+  user?: {
+    id: number;
+    name: string;
+    slug: string;
+    email: string;
+    user_type: 'individual' | 'company';
+    member_level: string;
+    is_active: boolean;
+    point_balance: number;
+    property_count: number | null;
+    deleted_at: string | null;
+  };
   user_type?: string;
-  propertyType?: {
-    id: number;
-    name_en: string;
-    name_mm: string;
-    slug?: string;
-  };
-  listingType?: {
-    id: number;
-    name_en: string;
-    name_mm: string;
-    slug?: string;
-  };
+
+  // Location objects (nullable)
   region?: {
     id: number;
     name_en: string;
     name_mm: string;
-  };
+  } | null;
   township?: {
     id: number;
     name_en: string;
     name_mm: string;
-  };
+  } | null;
   verifiedBy?: {
     id: number;
     name: string;
@@ -78,13 +71,15 @@ export interface Advertisement {
   // Location object (simplified in list response)
   location?: {
     region: {
+      id: number;
       name_en: string;
       name_mm: string;
-    };
+    } | null;
     township: {
+      id: number;
       name_en: string;
       name_mm: string;
-    };
+    } | null;
     address: string;
   };
 
@@ -153,13 +148,8 @@ export interface AdvertisementFilters {
   verification_status?: string;
   featured?: boolean;
   user_id?: number;
-  property_type_id?: number;
-  listing_type_id?: number;
   region_id?: number;
   township_id?: number;
-  price_min?: number;
-  price_max?: number;
-  price_type?: string;
   date_from?: string;
   date_to?: string;
   expiring_soon?: boolean;
@@ -172,9 +162,6 @@ export interface AdvertisementFilters {
   searchTerm?: string;
   statusFilter?: string;
   verificationFilter?: string;
-  propertyTypeFilter?: string;
-  listingTypeFilter?: string;
-  priceTypeFilter?: string;
   featuredFilter?: string;
   
   [key: string]: any;
@@ -223,42 +210,24 @@ export interface AdvertisementStatisticsResponse {
   data: AdvertisementStatistics;
 }
 
-
-
 export interface AdvertisementFormData {
+  is_platform_advertisement?: boolean;
   user_id?: number;
-  property_type_id: number;
-  listing_type_id: number;
   title_en: string;
   title_mm: string;
   description: string;
-  price?: number;
-  price_type?: string;
-  region_id: number;
-  township_id: number;
+  region_id?: number | null;
+  township_id?: number | null;
   address: string;
   contact_name: string;
   phone_numbers: string[];
   email: string;
   status?: string;
-  verification_status?: string;
   rejection_reason?: string;
   is_featured?: boolean;
   expires_at?: string;
   media_ids?: number[];
 }
-
-// Price type options
-export const PRICE_TYPES = [
-  { value: 'monthly_rent', label: 'Monthly Rent' },
-  { value: 'yearly_rent', label: 'Yearly Rent' },
-  { value: 'sale_price', label: 'Sale Price' },
-  { value: 'negotiable', label: 'Negotiable' },
-  { value: 'contact_for_price', label: 'Contact for Price' },
-  { value: 'free', label: 'Free' },
-] as const;
-
-export type PriceType = typeof PRICE_TYPES[number]['value'];
 
 // Status options
 export const ADVERTISEMENT_STATUSES = [
@@ -288,7 +257,6 @@ export const SORT_OPTIONS = [
   { value: 'view_count', label: 'Views' },
   { value: 'favorite_count', label: 'Favorites' },
   { value: 'contact_count', label: 'Contacts' },
-  { value: 'price', label: 'Price' },
   { value: 'title_en', label: 'Title' },
 ] as const;
 
