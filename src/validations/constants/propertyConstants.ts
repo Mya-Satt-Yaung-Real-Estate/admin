@@ -1,10 +1,9 @@
 // Property-related constants extracted from PropertyCreatePage and PropertyEditPage
 
 export const PROPERTY_CONDITIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
-  { value: 'poor', label: 'Poor' },
+  { value: 'ready', label: 'Ready Decoration' },
+  { value: 'some', label: 'Some Decoration' },
+  { value: 'no', label: 'No Decoration' },
 ] as const;
 
 export const PROPERTY_FEATURES = [

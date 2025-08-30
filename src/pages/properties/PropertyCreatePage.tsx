@@ -78,7 +78,7 @@ const PropertyCreatePage: React.FC = () => {
       title_en: '',
       title_mm: '',
       description: '',
-      property_condition: 'new' as const,
+      property_condition: 'ready' as const,
       region_id: undefined as number | undefined,
       township_id: undefined as number | undefined,
       address: '',

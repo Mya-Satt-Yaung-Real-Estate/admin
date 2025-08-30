@@ -8,7 +8,7 @@ export interface Property {
   title_en: string;
   title_mm: string;
   description: string;
-  property_condition: 'new' | 'good' | 'fair' | 'poor';
+  property_condition: 'ready' | 'some' | 'no';
   status: 'published' | 'draft' | 'sold' | 'rented';
   verification_status: 'pending' | 'approved' | 'rejected';
   is_featured: boolean;
@@ -109,7 +109,7 @@ export interface CreatePropertyData {
   title_en: string;
   title_mm: string;
   description: string;
-  property_condition: 'new' | 'good' | 'fair' | 'poor';
+  property_condition: 'ready' | 'some' | 'no';
   
   // Location information
   region_id: number;

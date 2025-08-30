@@ -185,7 +185,7 @@ const PropertyEditPage: React.FC = () => {
     title_en: propertyData.title_en || '',
     title_mm: propertyData.title_mm || '',
     description: propertyData.description || '',
-    property_condition: propertyData.property_condition || 'new',
+    property_condition: propertyData.property_condition || 'ready',
     
     // Location information
     region_id: propertyData.location?.region?.id || 0,

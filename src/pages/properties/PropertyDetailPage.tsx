@@ -45,6 +45,7 @@ import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
+import { formatPropertyCondition } from '../../utils/propertyUtils';
 
 const PropertyDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -402,7 +403,7 @@ const PropertyDetailPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <CheckCircleIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                       <Typography variant="body2" fontWeight="500">
-                        Condition: {property.property_condition}
+                        Condition: {formatPropertyCondition(property.property_condition)}
                       </Typography>
                     </Box>
                   </Grid>
