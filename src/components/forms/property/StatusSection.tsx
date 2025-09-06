@@ -15,11 +15,13 @@ import { PROPERTY_STATUSES } from '../../../validations';
 interface StatusSectionProps {
   values: any;
   handleChange: (e: React.ChangeEvent<any> | SelectChangeEvent<any>) => void;
+  setFieldValue?: (field: string, value: any) => void;
 }
 
 export const StatusSection: React.FC<StatusSectionProps> = ({
   values,
   handleChange,
+  setFieldValue,
 }) => {
   return (
     <FormSection 
@@ -48,21 +50,25 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
           </FormControl>
         </Grid>
 
-        {/* Featured Property */}
+        {/* Tan Tan Tan */}
         <Grid item xs={12}>
           <FormControlLabel
             control={
               <Switch
-                name="is_featured"
-                checked={Boolean(values.is_featured)}
+                name="tan_tan_tan"
+                checked={Boolean(values.tan_tan_tan)}
                 onChange={(e) => {
-                  console.log('is_featured switch changed:', e.target.checked);
-                  console.log('Current values.is_featured:', values.is_featured, typeof values.is_featured);
-                  handleChange(e);
+                  console.log('tan_tan_tan switch changed:', e.target.checked);
+                  console.log('Current values.tan_tan_tan:', values.tan_tan_tan, typeof values.tan_tan_tan);
+                  if (setFieldValue) {
+                    setFieldValue('tan_tan_tan', e.target.checked);
+                  } else {
+                    handleChange(e);
+                  }
                 }}
               />
             }
-            label="Featured Property"
+            label="Tan Tan Tan"
           />
         </Grid>
       </Grid>

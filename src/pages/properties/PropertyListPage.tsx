@@ -23,6 +23,9 @@ import {
   Bathtub as BathIcon,
   SquareFoot as AreaIcon,
   Visibility as ViewCountIcon,
+  Favorite as FavoriteIcon,
+  ThumbUp as LikeIcon,
+  Comment as CommentIcon,
 
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -31,7 +34,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog } from '../../components/ui';
+import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useProperties, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
@@ -164,6 +167,10 @@ const PropertyListPage: React.FC = () => {
   const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
   const [propertyToRenew, setPropertyToRenew] = useState<Property | null>(null);
 
+  // Comments modal state
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
+  const [selectedPropertyForComments, setSelectedPropertyForComments] = useState<Property | null>(null);
+
   // API Queries
   const { data: propertiesResponse, isLoading, error } = useProperties({
     per_page: 100, // Get all properties for client-side filtering
@@ -195,6 +202,21 @@ const PropertyListPage: React.FC = () => {
     closeDeleteConfirmation,
     handleConfirmDelete,
   } = useDeleteConfirmation();
+
+  // ========================================================================
+  // COMMENTS MODAL FUNCTIONS
+  // ========================================================================
+
+  const handleOpenCommentsModal = (property: Property) => {
+    setSelectedPropertyForComments(property);
+    setCommentsModalOpen(true);
+  };
+
+  const handleCloseCommentsModal = () => {
+    setCommentsModalOpen(false);
+    setSelectedPropertyForComments(null);
+  };
+
 
   // ========================================================================
   // DATA PROCESSING
@@ -290,6 +312,24 @@ const PropertyListPage: React.FC = () => {
       value: properties.filter(property => property.status === 'published' && !property.is_deleted).length,
       color: 'info',
       icon: <HomeIcon />,
+    },
+    {
+      title: 'Total Likes',
+      value: properties.reduce((sum, property) => sum + (property.stats?.like_count || 0), 0),
+      color: 'warning',
+      icon: <LikeIcon />,
+    },
+    {
+      title: 'Total Comments',
+      value: properties.reduce((sum, property) => sum + (property.stats?.comment_count || 0), 0),
+      color: 'secondary',
+      icon: <CommentIcon />,
+    },
+    {
+      title: 'Total Favorites',
+      value: properties.reduce((sum, property) => sum + (property.stats?.favorite_count || 0), 0),
+      color: 'error',
+      icon: <FavoriteIcon />,
     },
   ], [properties]);
 
@@ -447,6 +487,65 @@ const PropertyListPage: React.FC = () => {
       hidden: isMobile,
     },
     {
+      id: 'favoriteCount',
+      label: 'Favorites',
+      render: (_value, property) => {
+        if (!property) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <FavoriteIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight="500">
+              {property.stats?.favorite_count || 0}
+            </Typography>
+          </Box>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'likeCount',
+      label: 'Likes',
+      render: (_value, property) => {
+        if (!property) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <LikeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight="500">
+              {property.stats?.like_count || 0}
+            </Typography>
+          </Box>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'commentCount',
+      label: 'Comments',
+      render: (_value, property) => {
+        if (!property) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 0.5,
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
+            onClick={() => handleOpenCommentsModal(property)}
+          >
+            <CommentIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="body2" fontWeight="500">
+              {property.stats?.comment_count || 0}
+            </Typography>
+          </Box>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
       id: 'createdAt',
       label: 'Created',
       render: (_value, property) => {
@@ -570,6 +669,12 @@ const PropertyListPage: React.FC = () => {
         tooltip: 'View Details',
         color: 'primary' as const,
         onClick: () => navigate(`/properties/${property.id}`),
+      },
+      {
+        icon: <CommentIcon />,
+        tooltip: 'View Comments',
+        color: 'secondary' as const,
+        onClick: () => handleOpenCommentsModal(property),
       },
     ];
     
@@ -792,6 +897,18 @@ const PropertyListPage: React.FC = () => {
                   label: `${property.stats?.view_count || 0} views`,
                   color: 'info',
                 },
+                {
+                  label: `${property.stats?.favorite_count || 0} favorites`,
+                  color: 'error',
+                },
+                {
+                  label: `${property.stats?.like_count || 0} likes`,
+                  color: 'warning',
+                },
+                {
+                  label: `${property.stats?.comment_count || 0} comments`,
+                  color: 'secondary',
+                },
                 // Add expiration date chip for approved properties
                 ...(property.verification_status === 'approved' && property.dates?.expires_at ? [{
                   label: `Expires: ${formatDate(property.dates.expires_at, 'display')}`,
@@ -865,6 +982,15 @@ const PropertyListPage: React.FC = () => {
         property={propertyToRenew}
         isLoading={renewPropertyMutation.isPending}
         error={renewPropertyMutation.error?.message}
+      />
+
+      {/* Comments Modal */}
+      <CommentsModal
+        open={commentsModalOpen}
+        onClose={handleCloseCommentsModal}
+        title={`Comments for ${selectedPropertyForComments?.title_en || 'Property'}`}
+        propertyId={selectedPropertyForComments?.id || 0}
+        canDelete={true}
       />
     </Box>
   );

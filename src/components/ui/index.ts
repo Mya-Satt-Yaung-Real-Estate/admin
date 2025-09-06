@@ -36,3 +36,6 @@ export { default as MediaUpload } from './MediaUpload';
 // Property Renewal
 export { default as RenewButton } from './RenewButton';
 export { default as RenewConfirmationDialog } from './RenewConfirmationDialog';
+
+// Comments
+export { CommentsModal } from './comments/CommentsModal';

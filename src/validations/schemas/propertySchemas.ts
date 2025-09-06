@@ -41,11 +41,14 @@ export const propertyBaseSchema = Yup.object({
     .oneOf(PROPERTY_STATUSES.map(s => s.value), 'Invalid status')
     .optional(),
 
-  is_featured: Yup.boolean().optional(),
-
-  // Media and features - Added to match API requirements
+  // Media and tan_tan_tan - Added to match API requirements
   media_ids: Yup.array().of(Yup.number()).nullable().optional(),
-  features: Yup.array().of(Yup.string()).nullable().optional(),
+  tan_tan_tan: Yup.boolean().transform((value) => {
+    if (typeof value === 'string') {
+      return value === 'true' || value === 'on';
+    }
+    return Boolean(value);
+  }).optional(),
 });
 
 // Dual-mode fields schema (for create/edit forms)

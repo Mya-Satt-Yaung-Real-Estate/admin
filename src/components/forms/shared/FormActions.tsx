@@ -12,6 +12,7 @@ interface FormActionsProps {
 }
 
 export const FormActions: React.FC<FormActionsProps> = ({
+  onSubmit,
   onCancel,
   submitText,
   cancelText = 'Cancel',
@@ -37,6 +38,9 @@ export const FormActions: React.FC<FormActionsProps> = ({
               console.log('Submit button clicked');
               console.log('isSubmitting:', isSubmitting);
               console.log('isDisabled:', isDisabled);
+              if (onSubmit) {
+                onSubmit();
+              }
             }}
           >
             {isSubmitting ? `${submitText}...` : submitText}

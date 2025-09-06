@@ -29,7 +29,6 @@ import {
   SquareFoot as AreaIcon,
   Visibility as ViewCountIcon,
   Phone as PhoneIcon,
-  Star as StarIcon,
   CheckCircle as CheckCircleIcon,
   Schedule as ScheduleIcon,
   Image as ImageIcon,
@@ -38,12 +37,13 @@ import {
   Business as BusinessIcon,
   Email as EmailIcon,
   Diamond as DiamondIcon,
+  PriceChange as PriceChangeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty } from '../../services/queries/properties';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 import { formatPropertyCondition } from '../../utils/propertyUtils';
 
@@ -82,6 +82,10 @@ const PropertyDetailPage: React.FC = () => {
   // Renew confirmation state
   const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
 
+  // Comments modal state
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
+
+
   // Handle success message from URL
   React.useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -97,6 +101,19 @@ const PropertyDetailPage: React.FC = () => {
 
   // Extract property data
   const property = propertyResponse?.data;
+
+  // ========================================================================
+  // COMMENTS MODAL FUNCTIONS
+  // ========================================================================
+
+  const handleOpenCommentsModal = () => {
+    setCommentsModalOpen(true);
+  };
+
+  const handleCloseCommentsModal = () => {
+    setCommentsModalOpen(false);
+  };
+
 
   // Event handlers
   const handleBack = () => navigate('/properties');
@@ -319,12 +336,12 @@ const PropertyDetailPage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                     <StatusChip status={property.status} />
                     <StatusChip status={property.verification_status} statusType="verification_status" />
-                    {property.is_featured && (
+                    {property.tan_tan_tan && (
                       <Chip
-                        label="Featured"
-                        color="warning"
+                        label="Tan Tan Tan"
+                        color="success"
                         size="small"
-                        icon={<StarIcon />}
+                        icon={<PriceChangeIcon />}
                       />
                     )}
                   </Box>
@@ -410,25 +427,6 @@ const PropertyDetailPage: React.FC = () => {
                 </Grid>
               </Box>
 
-              {/* Features */}
-              {property.features && property.features.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" gutterBottom>
-                    Features
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {property.features.map((feature, index) => (
-                      <Chip
-                        key={index}
-                        label={feature}
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
 
               {/* Location Information */}
               <Box sx={{ mb: 3 }}>
@@ -677,6 +675,41 @@ const PropertyDetailPage: React.FC = () => {
                     </Typography>
                     <Typography variant="caption" color="textSecondary">
                       Favorites
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'error.50', borderRadius: 1 }}>
+                    <Typography variant="h4" color="error.main" fontWeight={600}>
+                      {property.stats?.like_count || 0}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Likes
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={4}>
+                  <Box 
+                    sx={{ 
+                      textAlign: 'center', 
+                      p: 2, 
+                      bgcolor: 'secondary.50', 
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        bgcolor: 'secondary.100',
+                        transform: 'translateY(-2px)',
+                        boxShadow: 2,
+                      },
+                    }}
+                    onClick={handleOpenCommentsModal}
+                  >
+                    <Typography variant="h4" color="secondary.main" fontWeight={600}>
+                      {property.stats?.comment_count || 0}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary">
+                      Comments
                     </Typography>
                   </Box>
                 </Grid>
@@ -1059,6 +1092,15 @@ const PropertyDetailPage: React.FC = () => {
         property={property}
         isLoading={renewPropertyMutation.isPending}
         error={renewPropertyMutation.error?.message}
+      />
+
+      {/* Comments Modal */}
+      <CommentsModal
+        open={commentsModalOpen}
+        onClose={handleCloseCommentsModal}
+        title={`Comments for ${property?.title_en || 'Property'}`}
+        propertyId={property?.id || 0}
+        canDelete={true}
       />
     </Box>
   );

@@ -11,6 +11,7 @@ export * from './companies';
 export * from './media';
 export * from './systemConfiguration';
 export * from './advertisements';
+export * from './comments';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -21,4 +22,5 @@ export { roleKeys } from './roles';
 export { permissionKeys } from './permissions';
 export { systemConfigurationKeys } from './systemConfiguration';
 export { advertisementKeys } from './advertisements';
+export { commentKeys } from './comments';
 

@@ -22,13 +22,12 @@ import { useProperty, useUpdateProperty } from '../../services/queries/propertie
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { CreatePropertyData } from '../../types/property';
 import { Media } from '../../types/media';
-import { propertyEditSchema, PropertyFeature } from '../../validations';
+import { propertyEditSchema } from '../../validations';
 import {
   PropertyModeSection,
   BasicInformationSection,
   LocationSection,
   ContactSection,
-  FeaturesSection,
   StatusSection,
 } from '../../components/forms/property';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -50,7 +49,6 @@ const PropertyEditPage: React.FC = () => {
   
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
   const [existingMedia, setExistingMedia] = useState<Media[]>([]);
-  const [selectedFeatures, setSelectedFeatures] = useState<PropertyFeature[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
   const [uploadState, setUploadState] = useState({
     isUploading: false,
@@ -140,7 +138,7 @@ const PropertyEditPage: React.FC = () => {
     }
   }, [property]);
 
-  // Initialize phone numbers and features when property loads
+  // Initialize phone numbers when property loads
   useEffect(() => {
     if (property?.data) {
       // Initialize phone numbers
@@ -148,13 +146,6 @@ const PropertyEditPage: React.FC = () => {
         setPhoneNumbers(property.data.contact_info.phone_numbers);
       } else {
         setPhoneNumbers(['']);
-      }
-
-      // Initialize features
-      if (property.data.features && property.data.features.length > 0) {
-        setSelectedFeatures(property.data.features as PropertyFeature[]);
-      } else {
-        setSelectedFeatures([]);
       }
     }
   }, [property?.data]);
@@ -200,6 +191,7 @@ const PropertyEditPage: React.FC = () => {
     bedrooms: propertyData.bedrooms || undefined,
     bathrooms: propertyData.bathrooms || undefined,
     bank_installment_available: propertyData.bank_installment_available || false,
+    tan_tan_tan: propertyData.tan_tan_tan || false,
     
     // Contact information
     owner_name: propertyData.contact_info?.owner_name || '',
@@ -208,7 +200,6 @@ const PropertyEditPage: React.FC = () => {
     
     // Status and settings
     status: propertyData.status || undefined,
-    is_featured: Boolean(propertyData.is_featured) || false,
   };
 
   const handleSubmit = async (values: any) => {
@@ -220,7 +211,7 @@ const PropertyEditPage: React.FC = () => {
 
       const updateData: CreatePropertyData = {
         ...values,
-        features: selectedFeatures,
+        tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
         phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
         media_ids: mediaIds,
       };
@@ -307,14 +298,6 @@ const PropertyEditPage: React.FC = () => {
     }
   };
 
-  // Handle feature selection
-  const handleFeatureToggle = (feature: PropertyFeature) => {
-    setSelectedFeatures(prev =>
-      prev.includes(feature)
-        ? prev.filter(f => f !== feature)
-        : [...prev, feature]
-    );
-  };
 
   return (
     <Box>
@@ -385,13 +368,6 @@ const PropertyEditPage: React.FC = () => {
                   townshipsLoading={townshipsLoading}
                 />
 
-                {/* Features Section */}
-                <FeaturesSection
-                  values={values}
-                  handleChange={handleChange}
-                  selectedFeatures={selectedFeatures}
-                  onFeatureToggle={handleFeatureToggle}
-                />
 
                 {/* Media Upload */}
                 <Card sx={{ mb: 2 }}>
@@ -434,6 +410,7 @@ const PropertyEditPage: React.FC = () => {
                 <StatusSection
                   values={values}
                   handleChange={handleChange}
+                  setFieldValue={setFieldValue}
                 />
 
                 {/* Point System Information */}

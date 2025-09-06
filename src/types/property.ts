@@ -11,13 +11,13 @@ export interface Property {
   property_condition: 'ready' | 'some' | 'no';
   status: 'published' | 'draft' | 'sold' | 'rented';
   verification_status: 'pending' | 'approved' | 'rejected';
-  is_featured: boolean;
   price: string;
   formatted_price: string;
   area_sqft: string;
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;
+  tan_tan_tan?: boolean;
   features?: string[];
   location: {
     region: Region;
@@ -37,6 +37,8 @@ export interface Property {
     view_count: number;
     contact_count: number;
     favorite_count: number;
+    like_count: number;
+    comment_count: number;
   };
   dates: {
     published_at?: string;
@@ -124,6 +126,7 @@ export interface CreatePropertyData {
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;
+  tan_tan_tan?: boolean;
   features?: string[];
   
   // Contact information

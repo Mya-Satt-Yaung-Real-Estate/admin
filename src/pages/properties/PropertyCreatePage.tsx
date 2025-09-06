@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Card,
@@ -18,13 +18,12 @@ import { usePropertyTypes, usePropertyListingTypes } from '../../services/querie
 import { useRegions, useTownships } from '../../services/queries/locations';
 import { CreatePropertyData } from '../../types/property';
 import { Media } from '../../types/media';
-import { propertyCreateSchema, PropertyFeature } from '../../validations';
+import { propertyCreateSchema } from '../../validations';
 import {
   PropertyModeSection,
   BasicInformationSection,
   LocationSection,
   ContactSection,
-  FeaturesSection,
   StatusSection,
 } from '../../components/forms/property';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -41,7 +40,6 @@ const validationSchema = propertyCreateSchema;
 
 const PropertyCreatePage: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedFeatures, setSelectedFeatures] = useState<PropertyFeature[]>([]);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
   const [uploadState, setUploadState] = useState({
@@ -89,18 +87,18 @@ const PropertyCreatePage: React.FC = () => {
       bedrooms: undefined as number | undefined,
       bathrooms: undefined as number | undefined,
       bank_installment_available: false,
+      tan_tan_tan: false,
       owner_name: '',
       phone_numbers: [''],
       email: '',
       status: undefined as 'draft' | 'published' | 'sold' | 'rented' | undefined,
-      is_featured: false,
     },
     validationSchema,
     onSubmit: async (values) => {
       try {
         console.log('Form submission started');
         console.log('Form values:', values);
-        console.log('Selected features:', selectedFeatures);
+        console.log('tan_tan_tan value:', values.tan_tan_tan, typeof values.tan_tan_tan);
         
         // Filter out undefined values and ensure required fields are present
         const propertyData: CreatePropertyData = {
@@ -111,12 +109,13 @@ const PropertyCreatePage: React.FC = () => {
           township_id: values.township_id || 0,
           price: values.price || 0,
           area_sqft: values.area_sqft || 0,
-          features: selectedFeatures,
+          tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
           phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
           media_ids: uploadedMedia.map(media => media.id),
         };
 
         console.log('Property data to submit:', propertyData);
+        console.log('tan_tan_tan in API data:', propertyData.tan_tan_tan, typeof propertyData.tan_tan_tan);
         const response = await createPropertyMutation.mutateAsync(propertyData);
         // Navigate to property detail page with success message (consistent with other create pages)
         const propertyId = response.data?.id;
@@ -163,17 +162,6 @@ const PropertyCreatePage: React.FC = () => {
     }
   };
 
-  // Handle feature selection
-  const handleFeatureToggle = (feature: PropertyFeature) => {
-    console.log('handleFeatureToggle called with:', feature);
-    setSelectedFeatures(prev => {
-      const newFeatures = prev.includes(feature)
-        ? prev.filter(f => f !== feature)
-        : [...prev, feature];
-      console.log('New selected features:', newFeatures);
-      return newFeatures;
-    });
-  };
 
   // Handle media upload
   const handleMediaUpload = (media: Media) => {
@@ -221,10 +209,6 @@ const PropertyCreatePage: React.FC = () => {
     setUploadedMedia(prev => prev.filter(media => media.id !== mediaId));
   };
 
-  // Debug: Monitor is_featured field
-  useEffect(() => {
-    console.log('is_featured value changed:', formik.values.is_featured, typeof formik.values.is_featured);
-  }, [formik.values.is_featured]);
 
   // Loading state
   if (usersLoading || propertyTypesLoading || listingTypesLoading || regionsLoading || townshipsLoading) {
@@ -309,13 +293,6 @@ const PropertyCreatePage: React.FC = () => {
               townshipsLoading={townshipsLoading}
             />
 
-            {/* Features Section */}
-            <FeaturesSection
-              values={formik.values}
-              handleChange={formik.handleChange}
-              selectedFeatures={selectedFeatures}
-              onFeatureToggle={handleFeatureToggle}
-            />
 
             {/* Media Upload */}
             <Card sx={{ mb: 2 }}>
@@ -353,6 +330,7 @@ const PropertyCreatePage: React.FC = () => {
             <StatusSection
               values={formik.values}
               handleChange={formik.handleChange}
+              setFieldValue={formik.setFieldValue}
             />
 
             {/* Point System Information */}
