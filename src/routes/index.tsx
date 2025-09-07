@@ -19,6 +19,7 @@ import { analyticsRoutes } from './analytics';
 import { settingsRoutes } from './settings';
 import { systemConfigurationRoutes } from './system-configurations';
 import { advertisementRoutes } from './advertisements';
+import { eventRoutes } from './events';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
   ...settingsRoutes,
   ...systemConfigurationRoutes,
   ...advertisementRoutes,
+  ...eventRoutes,
   
   // Catch-all route
   {

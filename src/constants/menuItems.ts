@@ -25,6 +25,22 @@ export const MENU_ITEMS = [
     path: '/advertisements',
   },
   {
+    text: 'Events',
+    iconName: 'Event',
+    children: [
+      {
+        text: 'Event Categories',
+        iconName: 'Category',
+        path: '/events/categories',
+      },
+      {
+        text: 'Events',
+        iconName: 'Event',
+        path: '/events',
+      },
+    ],
+  },
+  {
     text: 'Master Data',
     iconName: 'Assessment',
     children: [
