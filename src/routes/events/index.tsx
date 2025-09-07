@@ -3,16 +3,17 @@ import { PageLoader } from '../shared';
 import { ProtectedRoute } from '../shared';
 
 // Lazy load event category pages (only the ones that exist)
-const EventCategoryListPage = lazy(() => import('@/pages/events/EventCategoryListPage'));
-const EventCategoryCreatePage = lazy(() => import('@/pages/events/EventCategoryCreatePage'));
-const EventCategoryEditPage = lazy(() => import('@/pages/events/EventCategoryEditPage'));
+const EventCategoryListPage = lazy(() => import('../../pages/events/EventCategoryListPage'));
+const EventCategoryCreatePage = lazy(() => import('../../pages/events/EventCategoryCreatePage'));
+const EventCategoryEditPage = lazy(() => import('../../pages/events/EventCategoryEditPage'));
+
+// Lazy load event pages (only the ones that exist)
+const EventListPage = lazy(() => import('../../pages/events/EventListPage'));
+const EventDetailPage = lazy(() => import('../../pages/events/EventDetailPage'));
+const EventCreatePage = lazy(() => import('../../pages/events/EventCreatePage'));
+const EventEditPage = lazy(() => import('../../pages/events/EventEditPage'));
 
 // TODO: Create these pages when needed
-// const EventListPage = lazy(() => import('@/pages/events/EventListPage'));
-// const EventCreatePage = lazy(() => import('@/pages/events/EventCreatePage'));
-// const EventDetailPage = lazy(() => import('@/pages/events/EventDetailPage'));
-// const EventEditPage = lazy(() => import('@/pages/events/EventEditPage'));
-// const EventCategoryCreatePage = lazy(() => import('@/pages/events/EventCategoryCreatePage'));
 // const EventCategoryDetailPage = lazy(() => import('@/pages/events/EventCategoryDetailPage'));
 
 export const eventRoutes = [
@@ -23,6 +24,54 @@ export const eventRoutes = [
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <EventCategoryListPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  
+  // Event List Page
+  {
+    path: '/events',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <EventListPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  
+  // Event Detail Page
+  {
+    path: '/events/:slug',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <EventDetailPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  
+  // Event Create Page
+  {
+    path: '/events/create',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <EventCreatePage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  
+  // Event Edit Page
+  {
+    path: '/events/:slug/edit',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <EventEditPage />
         </Suspense>
       </ProtectedRoute>
     ),

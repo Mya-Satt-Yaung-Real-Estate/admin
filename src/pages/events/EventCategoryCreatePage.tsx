@@ -255,3 +255,4 @@ const EventCategoryCreatePage: React.FC = () => {
 };
 
 export default EventCategoryCreatePage;
+

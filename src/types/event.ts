@@ -1,4 +1,3 @@
-import { Region, Township, RegularUser } from './index';
 
 // Event Category Types
 export interface HousingEventCategory {
@@ -42,18 +41,14 @@ export interface HousingEvent {
   slug: string;
   description?: string;
   tag?: string[];
-  housing_event_category_id: number;
   event_type?: string;
   date: string;
   start_time: string;
   end_time: string;
   location?: string;
-  region_id: number;
-  township_id: number;
-  host_user_id: number;
   host_contact_number: string;
   is_free: boolean;
-  price?: number;
+  price?: string;
   need_registration: boolean;
   is_online: boolean;
   status: 'draft' | 'published' | 'cancelled' | 'done';
@@ -62,21 +57,51 @@ export interface HousingEvent {
   user_capacity?: number;
   is_active: boolean;
   created_at: string;
-  updated_at: string;
   deleted_at?: string;
   
+  // Additional fields for edit form
+  housing_event_category_id: number;
+  region_id?: number;
+  township_id?: number;
+  
   // Relationships
-  housing_event_category?: HousingEventCategory;
-  region?: Region;
-  township?: Township;
-  host_user?: RegularUser;
-  media?: Media[];
+  host_user?: {
+    user_id: number;
+    company_name: string;
+  };
+  category?: {
+    id: number;
+    name_en: string;
+    name_mm: string;
+  };
+  region?: {
+    id: number;
+    name_en: string;
+    name_mm: string;
+  };
+  township?: {
+    id: number;
+    name_en: string;
+    name_mm: string;
+  };
+  images?: {
+    id: number;
+    type: string;
+    filename: string;
+    is_primary: boolean;
+    status: string;
+    url: string;
+    small_url: string;
+    medium_url: string;
+    thumbnail_url: string;
+  };
 }
 
 export interface CreateHousingEventData {
   name_en: string;
   name_mm: string;
-  description?: string;
+  slug?: string;
+  description: string;
   tag?: string[];
   housing_event_category_id: number;
   event_type?: string;
@@ -84,8 +109,8 @@ export interface CreateHousingEventData {
   start_time: string;
   end_time: string;
   location?: string;
-  region_id: number;
-  township_id: number;
+  region_id?: number;
+  township_id?: number;
   host_user_id: number;
   host_contact_number: string;
   is_free?: boolean;
@@ -93,8 +118,10 @@ export interface CreateHousingEventData {
   need_registration?: boolean;
   is_online?: boolean;
   status?: 'draft' | 'published' | 'cancelled' | 'done';
+  published_at?: string;
+  registration_user_count?: number;
   user_capacity?: number;
-  media_ids?: number[];
+  media_ids: number[];
   is_active?: boolean;
 }
 
