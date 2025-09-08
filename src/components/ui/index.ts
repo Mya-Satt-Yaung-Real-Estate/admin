@@ -39,3 +39,7 @@ export { default as RenewConfirmationDialog } from './RenewConfirmationDialog';
 
 // Comments
 export { CommentsModal } from './comments/CommentsModal';
+
+// Interactive Map
+export { InteractiveMap } from './InteractiveMap';
+export { MapSelectionModal } from './MapSelectionModal';

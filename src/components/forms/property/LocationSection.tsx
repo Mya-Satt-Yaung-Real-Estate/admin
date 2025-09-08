@@ -5,6 +5,7 @@ import {
   Autocomplete,
 } from '@mui/material';
 import { FormSection } from '../shared/FormSection';
+import { InteractiveMap } from '../../ui/InteractiveMap';
 
 interface LocationSectionProps {
   values: any;
@@ -103,32 +104,28 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
           />
         </Grid>
 
-        {/* Latitude and Longitude */}
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            size="small"
-            name="latitude"
-            label="Latitude"
-            type="number"
-            value={values.latitude || ''}
-            onChange={handleChange}
-            error={touched.latitude && Boolean(errors.latitude)}
-            helperText={touched.latitude && errors.latitude}
-          />
-        </Grid>
+               {/* Hidden Latitude and Longitude fields for API */}
+               <input
+                 type="hidden"
+                 name="latitude"
+                 value={values.latitude || ''}
+               />
+               <input
+                 type="hidden"
+                 name="longitude"
+                 value={values.longitude || ''}
+               />
 
-        <Grid item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            size="small"
-            name="longitude"
-            label="Longitude"
-            type="number"
-            value={values.longitude || ''}
-            onChange={handleChange}
-            error={touched.longitude && Boolean(errors.longitude)}
-            helperText={touched.longitude && errors.longitude}
+        {/* Interactive Map */}
+        <Grid item xs={12}>
+          <InteractiveMap
+            latitude={values.latitude}
+            longitude={values.longitude}
+            onLocationSelect={(lat: number, lng: number) => {
+              setFieldValue('latitude', lat);
+              setFieldValue('longitude', lng);
+            }}
+            height={300}
           />
         </Grid>
       </Grid>
