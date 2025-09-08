@@ -369,27 +369,17 @@ const PropertyDetailPage: React.FC = () => {
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <HomeIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="body2" fontWeight="500">
-                          Property Type: {property.property_type?.name_en || 'N/A'}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {property.property_type?.name_mm || ''}
-                        </Typography>
-                      </Box>
+                      <Typography variant="body2" fontWeight="500">
+                        Property Type: {property.property_type?.name_en || 'N/A'} ({property.property_type?.name_mm || ''})
+                      </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <LocationIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
-                      <Box>
-                        <Typography variant="body2" fontWeight="500">
-                          Listing Type: {property.listing_type?.name_en || 'N/A'}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          {property.listing_type?.name_mm || ''}
-                        </Typography>
-                      </Box>
+                      <Typography variant="body2" fontWeight="500">
+                        Listing Type: {property.listing_type?.name_en || 'N/A'} ({property.listing_type?.name_mm || ''})
+                      </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -436,12 +426,12 @@ const PropertyDetailPage: React.FC = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" color="textSecondary">
-                      Region: {property.location?.region?.name_en || 'N/A'}
+                      Region: {property.location?.region?.name_en || 'N/A'} ({property.location?.region?.name_mm || 'N/A'})
                     </Typography>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="body2" color="textSecondary">
-                      Township: {property.location?.township?.name_en || 'N/A'}
+                      Township: {property.location?.township?.name_en || 'N/A'} ({property.location?.township?.name_mm || 'N/A'})
                     </Typography>
                   </Grid>
                   <Grid item xs={12}>
@@ -449,17 +439,56 @@ const PropertyDetailPage: React.FC = () => {
                       Address: {property.location?.address || 'N/A'}
                     </Typography>
                   </Grid>
-                  {property.location?.latitude && property.location?.longitude && (
+                  {/* {property.location?.latitude && property.location?.longitude && (
                     <Grid item xs={12}>
                       <Typography variant="body2" color="textSecondary">
                         Coordinates: {property.location.latitude}, {property.location.longitude}
                       </Typography>
                     </Grid>
-                  )}
+                  )} */}
                 </Grid>
               </Box>
             </CardContent>
           </Card>
+
+          {/* Property Location Map Card */}
+          {property.location?.latitude && property.location?.longitude && (
+            <Card sx={{ mb: 3, mt:3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
+                    <LocationIcon />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h6" fontWeight={600}>
+                      Property's Location Map
+                    </Typography>
+                    {/* <Typography variant="body2" color="textSecondary">
+                      Interactive map showing property location
+                    </Typography> */}
+                  </Box>
+                </Box>
+
+                <Divider sx={{ mb: 2 }} />
+
+                <Box sx={{ mb: 2 }}>
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${property.location.latitude},${property.location.longitude}&z=15&output=embed`}
+                    width="100%"
+                    height="300"
+                    style={{ border: 0, borderRadius: '8px' }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </Box>
+
+                <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center' }}>
+                  Coordinates: {property.location.latitude}, {property.location.longitude}
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
 
           {/* User Information Card */}
           {property.user && (
