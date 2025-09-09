@@ -32,6 +32,7 @@ export { VerificationActions } from './VerificationActions';
 
 // Media Upload
 export { default as MediaUpload } from './MediaUpload';
+export { default as SingleImageUpload } from './SingleImageUpload';
 
 // Property Renewal
 export { default as RenewButton } from './RenewButton';

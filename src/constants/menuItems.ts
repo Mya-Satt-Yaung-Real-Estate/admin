@@ -54,6 +54,11 @@ export const MENU_ITEMS = [
         iconName: 'Article',
         path: '/news-and-updates',
       },
+      {
+        text: 'Knowledge Hub',
+        iconName: 'Article',
+        path: '/knowledge-hub',
+      },
     ],
   },
   {

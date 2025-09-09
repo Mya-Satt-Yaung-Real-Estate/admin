@@ -23,17 +23,16 @@ import { StatisticsCards, StatCard } from '../../components/common/StatisticsCar
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
-import { useNewsAndUpdates, useDeleteNewsAndUpdate } from '../../services/queries/news-and-updates';
-import { useNewsArticleCategories } from '../../services/queries/news-article-categories';
+import { useKnowledgeHubs, useDeleteKnowledgeHub, useKnowledgeHubCategories } from '../../services/queries/knowledge-hub';
 import { FilterState } from '../../constants/filters';
-import { NewsAndUpdate } from '../../types/newsAndUpdate';
+import { KnowledgeHub } from '../../types/knowledgeHub';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
 // TYPES & INTERFACES
 // ============================================================================
 
-interface NewsAndUpdateFilters extends FilterState {
+interface KnowledgeHubFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
   categoryFilter: string;
@@ -44,10 +43,10 @@ interface NewsAndUpdateFilters extends FilterState {
 // ============================================================================
 
 const PAGE_CONFIG = {
-  title: 'News & Updates Management',
-  description: 'Manage all news and updates in the system',
-  createButtonText: 'Add News & Update',
-  createButtonPath: '/news-and-updates/create',
+  title: 'Knowledge Hub Management',
+  description: 'Manage all knowledge hub articles in the system',
+  createButtonText: 'Add Knowledge Hub',
+  createButtonPath: '/knowledge-hub/create',
 } as const;
 
 const createFilterFields = (categories: any[]): FilterField[] => [
@@ -85,7 +84,7 @@ const createFilterFields = (categories: any[]): FilterField[] => [
 // MAIN COMPONENT
 // ============================================================================
 
-const NewsAndUpdateListPage: React.FC = () => {
+const KnowledgeHubListPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const theme = useTheme();
@@ -99,12 +98,11 @@ const NewsAndUpdateListPage: React.FC = () => {
     handleChangeRowsPerPage,
   } = usePagination();
 
-
   // Filters hook
   const {
     filters,
     setFilter,
-  } = useFilters<NewsAndUpdateFilters>({
+  } = useFilters<KnowledgeHubFilters>({
     searchTerm: '',
     statusFilter: 'all',
     categoryFilter: 'all',
@@ -126,64 +124,64 @@ const NewsAndUpdateListPage: React.FC = () => {
   }, [searchParams, navigate, showSuccess]);
 
   // API Queries
-  const { data: newsAndUpdatesResponse, isLoading, error, refetch } = useNewsAndUpdates({
-    per_page: 100, // Get all news for client-side filtering
+  const { data: knowledgeHubsResponse, isLoading, error, refetch } = useKnowledgeHubs({
+    per_page: 100, // Get all knowledge hubs for client-side filtering
     sort_by: 'created_at',
     sort_direction: 'desc',
   });
 
-  const { data: categoriesResponse } = useNewsArticleCategories({
-    type: 'news_update',
+  const { data: categoriesResponse } = useKnowledgeHubCategories({
+    type: 'knowledge_hub',
     per_page: 100,
   });
 
   // Delete mutation
-  const deleteNewsAndUpdateMutation = useDeleteNewsAndUpdate();
+  const deleteKnowledgeHubMutation = useDeleteKnowledgeHub();
 
   // Extract data
-  const newsAndUpdates = newsAndUpdatesResponse?.data || [];
+  const knowledgeHubs = knowledgeHubsResponse?.data || [];
   const allCategories = categoriesResponse?.data || [];
   
-  // Filter categories to show only news_update type and non-deleted
+  // Filter categories to show only knowledge_hub type and non-deleted
   const categories = allCategories.filter(category => 
-    category.type === 'news_update' && 
+    category.type === 'knowledge_hub' && 
     !category.deleted_at
   );
 
   // Create filter fields
   const filterFields = createFilterFields(categories);
 
-  // Filter news using client-side filtering (only active news)
-  const filteredNews = useMemo(() => {
-    if (!newsAndUpdates || newsAndUpdates.length === 0) return [];
+  // Filter knowledge hubs using client-side filtering (only active knowledge hubs)
+  const filteredKnowledgeHubs = useMemo(() => {
+    if (!knowledgeHubs || knowledgeHubs.length === 0) return [];
     
-    const validNews = newsAndUpdates.filter(news => news != null);
+    const validKnowledgeHubs = knowledgeHubs.filter(kh => kh != null);
     
-    return validNews.filter((news) => {
-      // Only show active news (not deleted)
-      if (news.deleted_at) return false;
+    return validKnowledgeHubs.filter((kh) => {
+      // Only show active knowledge hubs (not deleted)
+      if (kh.deleted_at) return false;
       
       const matchesSearch = !filters.searchTerm || 
-        news.title_en.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        news.title_mm.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        news.short_description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        news.main_content.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        kh.title_en.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        kh.title_mm.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        (kh.short_description && kh.short_description.toLowerCase().includes(filters.searchTerm.toLowerCase())) ||
+        kh.main_content.toLowerCase().includes(filters.searchTerm.toLowerCase());
       
       const matchesStatus = filters.statusFilter === 'all' || 
-        (filters.statusFilter === 'active' && news.is_active) ||
-        (filters.statusFilter === 'inactive' && !news.is_active);
+        (filters.statusFilter === 'active' && kh.is_active) ||
+        (filters.statusFilter === 'inactive' && !kh.is_active);
       
       const matchesCategory = filters.categoryFilter === 'all' || 
-        news.category.id.toString() === filters.categoryFilter;
+        kh.category?.id.toString() === filters.categoryFilter;
       
       return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [newsAndUpdates, filters]);
+  }, [knowledgeHubs, filters]);
 
   // Paginate data
-  const paginatedNews = useMemo(() => {
-    return filteredNews.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  }, [filteredNews, page, rowsPerPage]);
+  const paginatedKnowledgeHubs = useMemo(() => {
+    return filteredKnowledgeHubs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  }, [filteredKnowledgeHubs, page, rowsPerPage]);
 
   // ========================================================================
   // STATISTICS
@@ -191,48 +189,48 @@ const NewsAndUpdateListPage: React.FC = () => {
 
   const statsCards: StatCard[] = useMemo(() => [
     {
-      title: 'Total News & Updates',
-      value: newsAndUpdates.filter(news => !news.deleted_at).length,
+      title: 'Total Knowledge Hubs',
+      value: knowledgeHubs.filter(kh => !kh.deleted_at).length,
       color: 'primary',
       icon: <ArticleIcon />,
     },
     {
-      title: 'Active News',
-      value: newsAndUpdates.filter(news => news.is_active && !news.deleted_at).length,
+      title: 'Active Knowledge Hubs',
+      value: knowledgeHubs.filter(kh => kh.is_active && !kh.deleted_at).length,
       color: 'success',
       icon: <ArticleIcon />,
     },
     {
       title: 'Total Views',
-      value: newsAndUpdates.filter(news => !news.deleted_at).reduce((sum, news) => sum + news.view_count, 0),
+      value: knowledgeHubs.filter(kh => !kh.deleted_at).reduce((sum, kh) => sum + kh.view_count, 0),
       color: 'info',
       icon: <ArticleIcon />,
     },
     {
       title: 'Total Likes',
-      value: newsAndUpdates.filter(news => !news.deleted_at).reduce((sum, news) => sum + news.like_count, 0),
+      value: knowledgeHubs.filter(kh => !kh.deleted_at).reduce((sum, kh) => sum + kh.like_count, 0),
       color: 'secondary',
       icon: <ArticleIcon />,
     },
-  ], [newsAndUpdates]);
+  ], [knowledgeHubs]);
 
   // ========================================================================
   // TABLE COLUMNS
   // ========================================================================
 
-  const columns: TableColumn<NewsAndUpdate>[] = useMemo(() => [
+  const columns: TableColumn<KnowledgeHub>[] = useMemo(() => [
     {
       id: 'title',
       label: 'Title',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
+      render: (_value, kh) => {
+        if (!kh) return <Typography variant="body2">No data</Typography>;
         return (
           <Box>
             <Typography variant="subtitle2" fontWeight="600">
-              {news.title_en}
+              {kh.title_en}
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              {news.title_mm}
+              {kh.title_mm}
             </Typography>
           </Box>
         );
@@ -241,12 +239,12 @@ const NewsAndUpdateListPage: React.FC = () => {
     {
       id: 'category',
       label: 'Category',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
-        if (!news.category) return <Typography variant="body2" color="textSecondary">No category</Typography>;
+      render: (_value, kh) => {
+        if (!kh) return <Typography variant="body2">No data</Typography>;
+        if (!kh.category) return <Typography variant="body2" color="textSecondary">No category</Typography>;
         return (
           <Chip
-            label={news.category.name_en}
+            label={kh.category.name_en}
             size="small"
             color="primary"
             variant="outlined"
@@ -256,30 +254,17 @@ const NewsAndUpdateListPage: React.FC = () => {
       hidden: isMobile,
     },
     {
-      id: 'writer',
-      label: 'Writer',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
-        return (
-          <Typography variant="body2" color="textSecondary">
-            {news.writer_name}
-          </Typography>
-        );
-      },
-      hidden: isMobile,
-    },
-    {
       id: 'stats',
       label: 'Views / Likes',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
+      render: (_value, kh) => {
+        if (!kh) return <Typography variant="body2">No data</Typography>;
         return (
           <Box>
             <Typography variant="body2" color="textSecondary">
-              {news.view_count} views
+              {kh.view_count} views
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              {news.like_count} likes
+              {kh.like_count} likes
             </Typography>
           </Box>
         );
@@ -289,11 +274,11 @@ const NewsAndUpdateListPage: React.FC = () => {
     {
       id: 'status',
       label: 'Status',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
+      render: (_value, kh) => {
+        if (!kh) return <Typography variant="body2">No data</Typography>;
         return (
           <StatusChip 
-            status={news.is_active ? 'active' : 'inactive'} 
+            status={kh.is_active ? 'active' : 'inactive'} 
             size="small" 
           />
         );
@@ -302,11 +287,11 @@ const NewsAndUpdateListPage: React.FC = () => {
     {
       id: 'createdAt',
       label: 'Created',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
+      render: (_value, kh) => {
+        if (!kh) return <Typography variant="body2">No data</Typography>;
         return (
           <Typography variant="body2" color="textSecondary">
-            {formatDate(news.created_at, 'display')}
+            {formatDate(kh.created_at, 'display')}
           </Typography>
         );
       },
@@ -316,15 +301,15 @@ const NewsAndUpdateListPage: React.FC = () => {
       id: 'actions',
       label: 'Actions',
       align: 'center',
-      render: (_value, news) => {
-        if (!news) return <Typography variant="body2">No data</Typography>;
+      render: (_value, kh) => {
+        if (!kh) return <Typography variant="body2">No data</Typography>;
         
         return (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
             <Tooltip title="View">
               <IconButton
                 size="small"
-                onClick={() => handleView(news)}
+                onClick={() => handleView(kh)}
                 color="primary"
               >
                 <ViewIcon />
@@ -334,7 +319,7 @@ const NewsAndUpdateListPage: React.FC = () => {
             <Tooltip title="Edit">
               <IconButton
                 size="small"
-                onClick={() => navigate(`/news-and-updates/${news.slug}/edit`)}
+                onClick={() => navigate(`/knowledge-hub/${kh.slug}/edit`)}
                 color="secondary"
               >
                 <EditIcon />
@@ -344,9 +329,9 @@ const NewsAndUpdateListPage: React.FC = () => {
             <Tooltip title="Delete">
               <IconButton
                 size="small"
-                onClick={() => handleDeleteNews(news)}
+                onClick={() => handleDeleteKnowledgeHub(kh)}
                 color="error"
-                disabled={deleteNewsAndUpdateMutation.isPending}
+                disabled={deleteKnowledgeHubMutation.isPending}
               >
                 <DeleteIcon />
               </IconButton>
@@ -355,31 +340,31 @@ const NewsAndUpdateListPage: React.FC = () => {
         );
       },
     },
-  ], [isMobile, navigate, deleteNewsAndUpdateMutation.isPending]);
+  ], [isMobile, navigate, deleteKnowledgeHubMutation.isPending]);
 
   // ========================================================================
   // MOBILE CARD ACTIONS
   // ========================================================================
 
-  const createMobileCardActions = (news: NewsAndUpdate): MobileCardAction[] => {
+  const createMobileCardActions = (kh: KnowledgeHub): MobileCardAction[] => {
     return [
       {
         icon: <ViewIcon />,
         tooltip: 'View',
         color: 'primary' as const,
-        onClick: () => handleView(news),
+        onClick: () => handleView(kh),
       },
       {
         icon: <EditIcon />,
         tooltip: 'Edit',
         color: 'secondary' as const,
-        onClick: () => navigate(`/news-and-updates/${news.slug}/edit`),
+        onClick: () => navigate(`/knowledge-hub/${kh.slug}/edit`),
       },
       {
         icon: <DeleteIcon />,
         tooltip: 'Delete',
         color: 'error' as const,
-        onClick: () => handleDeleteNews(news),
+        onClick: () => handleDeleteKnowledgeHub(kh),
       },
     ];
   };
@@ -388,34 +373,32 @@ const NewsAndUpdateListPage: React.FC = () => {
   // EVENT HANDLERS
   // ========================================================================
 
-
-  const handleDeleteNews = (news: NewsAndUpdate) => {
+  const handleDeleteKnowledgeHub = (kh: KnowledgeHub) => {
     openDeleteConfirmation(
-      `${news.title_en} (${news.title_mm})`,
-      'news & update',
+      `${kh.title_en} (${kh.title_mm})`,
+      'knowledge hub',
       async () => {
         try {
-          await deleteNewsAndUpdateMutation.mutateAsync(news.slug);
-          showSuccess(`${news.title_en} deleted successfully!`, true);
+          await deleteKnowledgeHubMutation.mutateAsync(kh.slug);
+          showSuccess(`${kh.title_en} deleted successfully!`, true);
         } catch (error: any) {
           // Show API response error message if available, otherwise show generic message
           const errorMessage = error?.response?.data?.message || 
                               error?.message || 
-                              'Failed to delete news & update. Please try again.';
+                              'Failed to delete knowledge hub. Please try again.';
           showError(errorMessage, true);
         }
       }
     );
   };
 
-  const handleAddNews = () => {
-    navigate('/news-and-updates/create');
+  const handleAddKnowledgeHub = () => {
+    navigate('/knowledge-hub/create');
   };
 
-  const handleView = (news: NewsAndUpdate) => {
-    navigate(`/news-and-updates/${news.slug}`);
+  const handleView = (kh: KnowledgeHub) => {
+    navigate(`/knowledge-hub/${kh.slug}`);
   };
-
 
   // Delete confirmation hook
   const {
@@ -449,7 +432,7 @@ const NewsAndUpdateListPage: React.FC = () => {
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,
-          onClick: handleAddNews,
+          onClick: handleAddKnowledgeHub,
         }}
       />
 
@@ -459,42 +442,41 @@ const NewsAndUpdateListPage: React.FC = () => {
       {/* Filters */}
       <StandardFilters
         filters={filters}
-        onFilterChange={(key, value) => setFilter(key as keyof NewsAndUpdateFilters, value)}
+        onFilterChange={(key, value) => setFilter(key as keyof KnowledgeHubFilters, value)}
         fields={filterFields}
       />
 
-
       {/* Empty state */}
-      {filteredNews.length === 0 && !isLoading && (
+      {filteredKnowledgeHubs.length === 0 && !isLoading && (
         <PageEmptyState
-          title="No News & Updates Found"
+          title="No Knowledge Hubs Found"
           message={filters.searchTerm || filters.statusFilter !== 'all' || filters.categoryFilter !== 'all'
-            ? "No news & updates match your current filters. Try adjusting your search criteria."
-            : "No news & updates found. Create your first news & update to get started."}
+            ? "No knowledge hubs match your current filters. Try adjusting your search criteria."
+            : "No knowledge hubs found. Create your first knowledge hub to get started."}
           actionButton={{
-            text: 'Add News & Update',
+            text: 'Add Knowledge Hub',
             icon: <AddIcon />,
-            onClick: handleAddNews,
+            onClick: handleAddKnowledgeHub,
           }}
         />
       )}
 
       {/* Content */}
-      {filteredNews.length > 0 && (
+      {filteredKnowledgeHubs.length > 0 && (
         isMobile ? (
           // Mobile Cards
           <Box>
-            {paginatedNews.map((news: NewsAndUpdate) => (
+            {paginatedKnowledgeHubs.map((kh: KnowledgeHub) => (
               <MobileCard
-                key={news.id}
-                title={news.title_en}
-                subtitle={news.title_mm}
-                description={news.short_description}
-                actions={createMobileCardActions(news)}
+                key={kh.id}
+                title={kh.title_en}
+                subtitle={kh.title_mm}
+                description={kh.short_description}
+                actions={createMobileCardActions(kh)}
                 chips={[
-                  { label: news.category?.name_en || 'No category', color: 'primary' },
-                  { label: `${news.view_count} views`, color: 'info' },
-                  { label: `${news.like_count} likes`, color: 'secondary' },
+                  { label: kh.category?.name_en || 'No category', color: 'primary' },
+                  { label: `${kh.view_count} views`, color: 'info' },
+                  { label: `${kh.like_count} likes`, color: 'secondary' },
                 ]}
               />
             ))}
@@ -503,13 +485,13 @@ const NewsAndUpdateListPage: React.FC = () => {
           // Desktop Table
           <StandardTable
             columns={columns}
-            data={paginatedNews}
+            data={paginatedKnowledgeHubs}
             page={page}
             rowsPerPage={rowsPerPage}
-            totalCount={filteredNews.length}
+            totalCount={filteredKnowledgeHubs.length}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            getRowKey={(news) => news.id}
+            getRowKey={(kh) => kh.id}
           />
         )
       )}
@@ -521,12 +503,12 @@ const NewsAndUpdateListPage: React.FC = () => {
         onConfirm={handleDeleteConfirm}
         itemName={deleteState.itemName}
         itemType={deleteState.itemType}
-        isLoading={deleteNewsAndUpdateMutation.isPending}
-        error={deleteNewsAndUpdateMutation.error?.message}
+        isLoading={deleteKnowledgeHubMutation.isPending}
+        error={deleteKnowledgeHubMutation.error?.message}
       />
 
     </Box>
   );
 };
 
-export default NewsAndUpdateListPage;
+export default KnowledgeHubListPage;

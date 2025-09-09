@@ -12,6 +12,7 @@ export * from './media';
 export * from './systemConfiguration';
 export * from './advertisements';
 export * from './comments';
+export * from './knowledge-hub';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -23,4 +24,5 @@ export { permissionKeys } from './permissions';
 export { systemConfigurationKeys } from './systemConfiguration';
 export { advertisementKeys } from './advertisements';
 export { commentKeys } from './comments';
+export { knowledgeHubKeys } from './knowledge-hub';
 

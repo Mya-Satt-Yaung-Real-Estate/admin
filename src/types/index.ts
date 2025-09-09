@@ -14,6 +14,7 @@ export * from './media';
 export * from './systemConfiguration';
 export * from './newsArticleCategory';
 export * from './newsAndUpdate';
+export * from './knowledgeHub';
 
 // Global types that don't fit into specific categories
 export interface BaseEntity {

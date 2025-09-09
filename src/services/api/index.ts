@@ -10,4 +10,5 @@ export * from './properties';
 export * from './points';
 export * from './systemConfiguration';
 export * from './advertisements';
+export * from './knowledge-hub';
 
