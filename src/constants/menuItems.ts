@@ -41,6 +41,22 @@ export const MENU_ITEMS = [
     ],
   },
   {
+    text: 'CMS',
+    iconName: 'Article',
+    children: [
+      {
+        text: 'Categories',
+        iconName: 'Category',
+        path: '/news-article-categories',
+      },
+      {
+        text: 'News & Updates',
+        iconName: 'Article',
+        path: '/news-and-updates',
+      },
+    ],
+  },
+  {
     text: 'Master Data',
     iconName: 'Assessment',
     children: [
@@ -68,11 +84,6 @@ export const MENU_ITEMS = [
         text: 'Company Types',
         iconName: 'Business',
         path: '/company-types',
-      },
-      {
-        text: 'Content Categories',
-        iconName: 'Category',
-        path: '/news-article-categories',
       },
     ],
   },
