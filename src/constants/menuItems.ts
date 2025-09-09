@@ -6,7 +6,7 @@ export const MENU_ITEMS = [
   },
   {
     text: 'Point Orders',
-    iconName: 'ShoppingCart',
+    iconName: 'RequestQuote',
     path: '/points/purchase-requests',
   },
   {
@@ -16,7 +16,7 @@ export const MENU_ITEMS = [
   },
   {
     text: 'Properties',
-    iconName: 'Home',
+    iconName: 'HomeWork',
     path: '/properties',
   },
   {
@@ -26,23 +26,23 @@ export const MENU_ITEMS = [
   },
   {
     text: 'Events',
-    iconName: 'Event',
+    iconName: 'EventNote',
     children: [
       {
         text: 'Event Categories',
-        iconName: 'Category',
+        iconName: 'EventAvailable',
         path: '/events/categories',
       },
       {
         text: 'Events',
-        iconName: 'Event',
+        iconName: 'EventNote',
         path: '/events',
       },
     ],
   },
   {
     text: 'CMS',
-    iconName: 'Article',
+    iconName: 'DynamicFeed',
     children: [
       {
         text: 'Categories',
@@ -51,12 +51,12 @@ export const MENU_ITEMS = [
       },
       {
         text: 'News & Updates',
-        iconName: 'Article',
+        iconName: 'Newspaper',
         path: '/news-and-updates',
       },
       {
         text: 'Knowledge Hub',
-        iconName: 'Article',
+        iconName: 'School',
         path: '/knowledge-hub',
       },
     ],
@@ -110,7 +110,7 @@ export const MENU_ITEMS = [
   },
   {
     text: 'Admins',
-    iconName: 'People',
+    iconName: 'AdminPanelSettings',
     children: [
       {
         text: 'Admin Users',
@@ -119,14 +119,19 @@ export const MENU_ITEMS = [
       },
       {
         text: 'Roles',
-        iconName: 'People',
+        iconName: 'Security',
         path: '/roles',
       },
       {
         text: 'Permissions',
-        iconName: 'People',
+        iconName: 'Key',
         path: '/permissions',
       },
     ],
+  },
+  {
+    text: 'Feedback',
+    iconName: 'Feedback',
+    path: '/feedback',
   },
 ]; 

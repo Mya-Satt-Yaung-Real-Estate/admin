@@ -12,6 +12,7 @@ export * from './point';
 export * from './company';
 export * from './media';
 export * from './systemConfiguration';
+export * from './feedback';
 export * from './newsArticleCategory';
 export * from './newsAndUpdate';
 export * from './knowledgeHub';

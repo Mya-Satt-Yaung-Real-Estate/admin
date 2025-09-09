@@ -17,6 +17,22 @@ import {
   Settings as SettingsIcon,
   LocationOn as LocationOnIcon,
   Campaign as CampaignIcon,
+  RequestQuote as RequestQuoteIcon,
+  HomeWork as HomeWorkIcon,
+  EventNote as EventNoteIcon,
+  EventAvailable as EventAvailableIcon,
+  DynamicFeed as DynamicFeedIcon,
+  Category as CategoryIcon,
+  Newspaper as NewspaperIcon,
+  School as SchoolIcon,
+  Home as HomeIcon,
+  List as ListIcon,
+  Star as StarIcon,
+  Business as BusinessIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
+  Security as SecurityIcon,
+  Key as KeyIcon,
+  Feedback as FeedbackIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -36,18 +52,68 @@ interface SidebarProps {
 
 const getIconComponent = (iconName: string): React.ReactNode => {
   switch (iconName) {
+    // Main navigation icons
     case 'Dashboard':
       return <DashboardIcon />;
+    case 'RequestQuote':
+      return <RequestQuoteIcon />;
     case 'People':
       return <PeopleIcon />;
-    case 'Assessment':
-      return <AssessmentIcon />;
-    case 'Settings':
-      return <SettingsIcon />;
-    case 'LocationOn':
-      return <LocationOnIcon />;
+    case 'Feedback':
+      return <FeedbackIcon />;
+    case 'HomeWork':
+      return <HomeWorkIcon />;
     case 'Campaign':
       return <CampaignIcon />;
+    
+    // Event icons
+    case 'EventNote':
+      return <EventNoteIcon />;
+    case 'EventAvailable':
+      return <EventAvailableIcon />;
+    
+    // CMS icons
+    case 'DynamicFeed':
+      return <DynamicFeedIcon />;
+    case 'Category':
+      return <CategoryIcon />;
+    case 'Newspaper':
+      return <NewspaperIcon />;
+    case 'School':
+      return <SchoolIcon />;
+    
+    // Master data icons
+    case 'Assessment':
+      return <AssessmentIcon />;
+    case 'LocationOn':
+      return <LocationOnIcon />;
+    case 'Home':
+      return <HomeIcon />;
+    case 'List':
+      return <ListIcon />;
+    case 'Star':
+      return <StarIcon />;
+    case 'Business':
+      return <BusinessIcon />;
+    
+    // Settings and admin icons
+    case 'Settings':
+      return <SettingsIcon />;
+    case 'AdminPanelSettings':
+      return <AdminPanelSettingsIcon />;
+    case 'Security':
+      return <SecurityIcon />;
+    case 'Key':
+      return <KeyIcon />;
+    
+    // Legacy icons (for backward compatibility)
+    case 'Event':
+      return <EventNoteIcon />;
+    case 'Article':
+      return <NewspaperIcon />;
+    case 'ShoppingCart':
+      return <RequestQuoteIcon />;
+    
     default:
       return <DashboardIcon />;
   }

@@ -23,6 +23,7 @@ import { eventRoutes } from './events';
 import { newsArticleCategoryRoutes } from './news-article-categories';
 import { newsAndUpdateRoutes } from './news-and-updates';
 import { knowledgeHubRoutes } from './knowledge-hub';
+import { feedbackRoutes } from './feedback';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
   ...newsArticleCategoryRoutes,
   ...newsAndUpdateRoutes,
   ...knowledgeHubRoutes,
+  ...feedbackRoutes,
   
   // Catch-all route
   {
