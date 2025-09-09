@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Paper,
+  Card,
+  CardContent,
   TextField,
   Button,
   FormControl,
@@ -68,7 +69,12 @@ const NewsAndUpdateCreatePage: React.FC = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [tagInput, setTagInput] = useState('');
 
-  const categories = categoriesResponse?.data || [];
+  // Filter categories to show only active, non-deleted news_update categories
+  const categories = (categoriesResponse?.data || []).filter(category => 
+    category.type === 'news_update' && 
+    category.is_active && 
+    !category.deleted_at
+  );
 
   // Handle form field changes
   const handleFieldChange = (field: keyof FormData, value: any) => {
@@ -216,166 +222,219 @@ const NewsAndUpdateCreatePage: React.FC = () => {
       
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
-      <Paper sx={{ p: 4, mb: 3 }}>
-        <Grid container spacing={3}>
-          {/* English Title */}
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="English Title"
-              value={formData.title_en}
-              onChange={(e) => handleFieldChange('title_en', e.target.value)}
-              error={!!errors.title_en}
-              helperText={errors.title_en}
-              required
-            />
-          </Grid>
-
-          {/* Myanmar Title */}
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Myanmar Title (မြန်မာခေါင်းစဉ်)"
-              value={formData.title_mm}
-              onChange={(e) => handleFieldChange('title_mm', e.target.value)}
-              error={!!errors.title_mm}
-              helperText={errors.title_mm}
-              required
-            />
-          </Grid>
-
-          {/* Category */}
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth required error={!!errors.news_article_category_id}>
-              <InputLabel>Category</InputLabel>
-              <Select
-                value={formData.news_article_category_id}
-                label="Category"
-                onChange={(e) => handleFieldChange('news_article_category_id', Number(e.target.value))}
-              >
-                {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    {category.name_en}
-                  </MenuItem>
-                ))}
-              </Select>
-              {errors.news_article_category_id && (
-                <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 1.75 }}>
-                  {errors.news_article_category_id}
-                </Box>
-              )}
-            </FormControl>
-          </Grid>
-
-          {/* Writer Name */}
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Writer Name"
-              value={formData.writer_name}
-              onChange={(e) => handleFieldChange('writer_name', e.target.value)}
-              error={!!errors.writer_name}
-              helperText={errors.writer_name}
-              required
-            />
-          </Grid>
-
-          {/* Short Description */}
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Short Description"
-              value={formData.short_description}
-              onChange={(e) => handleFieldChange('short_description', e.target.value)}
-              error={!!errors.short_description}
-              helperText={errors.short_description}
-              multiline
-              rows={3}
-              required
-            />
-          </Grid>
-
-          {/* Main Content */}
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Main Content"
-              value={formData.main_content}
-              onChange={(e) => handleFieldChange('main_content', e.target.value)}
-              error={!!errors.main_content}
-              helperText={errors.main_content}
-              multiline
-              rows={8}
-              required
-            />
-          </Grid>
-
-          {/* Tags */}
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>Tags</InputLabel>
-              <OutlinedInput
-                value={tagInput}
-                onChange={handleTagInputChange}
-                onKeyPress={handleTagInputKeyPress}
-                label="Tags"
-                placeholder="Type a tag and press Enter"
-              />
-              {formData.tag.length > 0 && (
-                <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {formData.tag.map((tag, index) => (
-                    <Chip
-                      key={index}
-                      label={tag}
-                      onDelete={() => removeTag(tag)}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  ))}
-                </Box>
-              )}
-            </FormControl>
-          </Grid>
-
-          {/* Media Upload Section */}
-          <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom sx={{ mt: 2, mb: 1 }}>
-              News Image
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Card 1: Article Information */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+              Article Information
             </Typography>
-            <SingleImageUpload
-              uploadedImage={uploadedMedia.length > 0 ? uploadedMedia[0] : null}
-              onImageUpload={handleMediaUpload}
-              onImageDelete={handleMediaDelete}
-              onUploadStart={handleUploadStart}
-              onUploadProgress={handleUploadProgress}
-              onUploadComplete={handleUploadComplete}
-              onUploadError={handleUploadError}
-            />
-            {errors.media_id && (
-              <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
-                {errors.media_id}
-              </Typography>
-            )}
-          </Grid>
+            <Grid container spacing={3}>
+              {/* English Title */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="English Title"
+                  value={formData.title_en}
+                  onChange={(e) => handleFieldChange('title_en', e.target.value)}
+                  error={!!errors.title_en}
+                  helperText={errors.title_en}
+                  required
+                />
+              </Grid>
 
-          {/* Status */}
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.is_active ? 'true' : 'false'}
-                onChange={(e) => handleFieldChange('is_active', e.target.value === 'true')}
-                label="Status"
-              >
-                <MenuItem value="true">Active</MenuItem>
-                <MenuItem value="false">Inactive</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+              {/* Myanmar Title */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Myanmar Title (မြန်မာခေါင်းစဉ်)"
+                  value={formData.title_mm}
+                  onChange={(e) => handleFieldChange('title_mm', e.target.value)}
+                  error={!!errors.title_mm}
+                  helperText={errors.title_mm}
+                  required
+                />
+              </Grid>
 
-          {/* Action Buttons */}
-          <Grid item xs={12}>
+              {/* Category */}
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small" required error={!!errors.news_article_category_id}>
+                  <InputLabel>Category</InputLabel>
+                  <Select
+                    value={formData.news_article_category_id}
+                    label="Category"
+                    onChange={(e) => handleFieldChange('news_article_category_id', Number(e.target.value))}
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category.id} value={category.id}>
+                        {category.name_en}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {errors.news_article_category_id && (
+                    <Box sx={{ color: 'error.main', fontSize: '0.75rem', mt: 0.5, ml: 1.75 }}>
+                      {errors.news_article_category_id}
+                    </Box>
+                  )}
+                </FormControl>
+              </Grid>
+
+              {/* Writer Name */}
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Writer Name"
+                  value={formData.writer_name}
+                  onChange={(e) => handleFieldChange('writer_name', e.target.value)}
+                  error={!!errors.writer_name}
+                  helperText={errors.writer_name}
+                  required
+                />
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Card 2: Content */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+              Content
+            </Typography>
+            <Grid container spacing={3}>
+              {/* Short Description */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Short Description"
+                  value={formData.short_description}
+                  onChange={(e) => handleFieldChange('short_description', e.target.value)}
+                  error={!!errors.short_description}
+                  helperText={errors.short_description}
+                  multiline
+                  rows={3}
+                  required
+                />
+              </Grid>
+
+              {/* Main Content */}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Main Content"
+                  value={formData.main_content}
+                  onChange={(e) => handleFieldChange('main_content', e.target.value)}
+                  error={!!errors.main_content}
+                  helperText={errors.main_content}
+                  multiline
+                  minRows={16}
+                  maxRows={40}
+                  required
+                  sx={{
+                    '& .MuiInputBase-input': {
+                      resize: 'vertical',
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Media & Settings */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+              Media & Settings
+            </Typography>
+            <Grid container spacing={3}>
+              {/* Left Side: Tags and Status */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}>
+                  Status & Tags
+                </Typography>
+                
+                {/* Status */}
+                <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={formData.is_active ? 'true' : 'false'}
+                    onChange={(e) => handleFieldChange('is_active', e.target.value === 'true')}
+                    label="Status"
+                  >
+                    <MenuItem value="true">Active</MenuItem>
+                    <MenuItem value="false">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* Tags */}
+                <FormControl fullWidth size="small">
+                  <InputLabel>Tags</InputLabel>
+                  <OutlinedInput
+                    value={tagInput}
+                    onChange={handleTagInputChange}
+                    onKeyPress={handleTagInputKeyPress}
+                    label="Tags"
+                    placeholder="Type a tag and press Enter"
+                  />
+                  {formData.tag.length > 0 && (
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {formData.tag.map((tag, index) => (
+                        <Chip
+                          key={index}
+                          label={tag}
+                          onDelete={() => removeTag(tag)}
+                          color="primary"
+                          variant="outlined"
+                          sx={{
+                            '& .MuiChip-deleteIcon': {
+                              color: 'red',
+                              fontSize: '18px',
+                              '&:hover': {
+                                color: 'darkred',
+                                backgroundColor: 'rgba(255, 0, 0, 0.1)',
+                              },
+                            },
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  )}
+                </FormControl>
+              </Grid>
+
+              {/* Right Side: News Image */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" gutterBottom sx={{ mb: 1 }}>
+                  News Image
+                </Typography>
+                <SingleImageUpload
+                  uploadedImage={uploadedMedia.length > 0 ? uploadedMedia[0] : null}
+                  onImageUpload={handleMediaUpload}
+                  onImageDelete={handleMediaDelete}
+                  onUploadStart={handleUploadStart}
+                  onUploadProgress={handleUploadProgress}
+                  onUploadComplete={handleUploadComplete}
+                  onUploadError={handleUploadError}
+                />
+                {errors.media_id && (
+                  <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                    {errors.media_id}
+                  </Typography>
+                )}
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Actions */}
+        <Card>
+          <CardContent>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
               <Button
                 variant="outlined"
@@ -394,9 +453,9 @@ const NewsAndUpdateCreatePage: React.FC = () => {
                 {createNewsAndUpdateMutation.isPending ? 'Creating...' : 'Create News & Update'}
               </Button>
             </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+          </CardContent>
+        </Card>
+      </Box>
     </Box>
   );
 };

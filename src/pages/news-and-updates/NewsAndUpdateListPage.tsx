@@ -237,6 +237,7 @@ const NewsAndUpdateListPage: React.FC = () => {
       label: 'Category',
       render: (_value, news) => {
         if (!news) return <Typography variant="body2">No data</Typography>;
+        if (!news.category) return <Typography variant="body2" color="textSecondary">No category</Typography>;
         return (
           <Chip
             label={news.category.name_en}
@@ -485,7 +486,7 @@ const NewsAndUpdateListPage: React.FC = () => {
                 description={news.short_description}
                 actions={createMobileCardActions(news)}
                 chips={[
-                  { label: news.category.name_en, color: 'primary' },
+                  { label: news.category?.name_en || 'No category', color: 'primary' },
                   { label: `${news.view_count} views`, color: 'info' },
                   { label: `${news.like_count} likes`, color: 'secondary' },
                 ]}
