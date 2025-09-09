@@ -45,6 +45,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         rented: 'Rented',
         pending: 'Pending',
         rejected: 'Rejected',
+        deleted: 'Deleted',
       };
       return statusMap[status] || status;
     }
@@ -147,6 +148,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           hoverBorder: '#B45309',
         },
         rejected: {
+          text: '#DC2626', // Red
+          border: '#DC2626',
+          hoverBg: '#FEF2F2',
+          hoverBorder: '#B91C1C',
+        },
+        deleted: {
           text: '#DC2626', // Red
           border: '#DC2626',
           hoverBg: '#FEF2F2',

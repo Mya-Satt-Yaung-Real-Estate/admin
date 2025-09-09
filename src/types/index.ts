@@ -12,6 +12,7 @@ export * from './point';
 export * from './company';
 export * from './media';
 export * from './systemConfiguration';
+export * from './newsArticleCategory';
 
 // Global types that don't fit into specific categories
 export interface BaseEntity {

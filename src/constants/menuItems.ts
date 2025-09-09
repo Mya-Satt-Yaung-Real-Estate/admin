@@ -69,6 +69,11 @@ export const MENU_ITEMS = [
         iconName: 'Business',
         path: '/company-types',
       },
+      {
+        text: 'Content Categories',
+        iconName: 'Category',
+        path: '/news-article-categories',
+      },
     ],
   },
   // {
