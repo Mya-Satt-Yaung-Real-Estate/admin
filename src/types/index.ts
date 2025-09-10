@@ -16,6 +16,7 @@ export * from './feedback';
 export * from './newsArticleCategory';
 export * from './newsAndUpdate';
 export * from './knowledgeHub';
+export * from './eventRegistration';
 
 // Global types that don't fit into specific categories
 export interface BaseEntity {

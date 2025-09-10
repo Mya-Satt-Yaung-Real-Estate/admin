@@ -14,6 +14,7 @@ export * from './advertisements';
 export * from './comments';
 export * from './knowledge-hub';
 export * from './feedback';
+export * from './eventRegistration';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -27,4 +28,5 @@ export { advertisementKeys } from './advertisements';
 export { commentKeys } from './comments';
 export { knowledgeHubKeys } from './knowledge-hub';
 export { feedbackKeys } from './feedback';
+export { eventRegistrationKeys } from './eventRegistration';
 

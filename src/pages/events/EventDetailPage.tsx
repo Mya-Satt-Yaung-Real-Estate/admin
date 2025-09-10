@@ -11,6 +11,7 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -31,9 +32,10 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useEvent, useDeleteEvent, useRestoreEvent } from '../../services/queries/events';
-import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
+import { useDeleteConfirmation, useAlertSystem, useEventRegistrationModal } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert } from '../../components/ui';
+import EventRegistrationModal from '../../components/modals/EventRegistrationModal';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -94,6 +96,21 @@ const EventDetailPage: React.FC = () => {
   // Extract event data
   const event = eventResponse?.data;
 
+  // Event registration modal hook
+  const {
+    modalOpen: registrationModalOpen,
+    registrationData,
+    registrationLoading,
+    registrationError,
+    currentPage,
+    perPage,
+    pagination,
+    openModal: openRegistrationModal,
+    closeModal: closeRegistrationModal,
+    handlePageChange,
+    handlePerPageChange,
+  } = useEventRegistrationModal({ event });
+
   // Event handlers
   const handleBack = () => navigate(PAGE_CONFIG.backButtonPath);
   const handleEdit = () => navigate(`/events/${slug}/edit`);
@@ -137,6 +154,12 @@ const EventDetailPage: React.FC = () => {
   const handleCloseImageViewer = () => {
     setImageViewerOpen(false);
     setSelectedImage(null);
+  };
+
+  const handleViewRegistrations = () => {
+    if (event?.slug) {
+      openRegistrationModal(event.slug);
+    }
   };
 
   // Check if event is deleted
@@ -414,9 +437,63 @@ const EventDetailPage: React.FC = () => {
                   </Typography>
                 </Grid>
                 <Grid item xs={7}>
-                  <Typography variant="body2" fontWeight="600" sx={{ mb: 0.5 }}>
-                    {event.user_capacity ? `${event.registration_user_count}/${event.user_capacity}` : 'Unlimited'}
-                  </Typography>
+                  <Box sx={{ mb: 0.5 }}>
+                    {event.need_registration && event.user_capacity ? (
+                      <Tooltip title="View all registration users" arrow>
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={handleViewRegistrations}
+                          sx={{
+                            p: 0,
+                            minWidth: 'auto',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            color: 'primary.main',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            '&:hover': {
+                              backgroundColor: 'transparent',
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight="600">
+                            {event.registration_user_count}/{event.user_capacity}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {Math.round((event.registration_user_count / event.user_capacity) * 100)}% full
+                          </Typography>
+                        </Button>
+                      </Tooltip>
+                    ) : event.need_registration ? (
+                      <Tooltip title="View all registration users" arrow>
+                        <Button
+                          variant="text"
+                          size="small"
+                          onClick={handleViewRegistrations}
+                          sx={{
+                            p: 0,
+                            minWidth: 'auto',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            color: 'primary.main',
+                            '&:hover': {
+                              backgroundColor: 'transparent',
+                              textDecoration: 'underline',
+                            },
+                          }}
+                        >
+                          {event.registration_user_count} registered
+                        </Button>
+                      </Tooltip>
+                    ) : (
+                      <Typography variant="body2" fontWeight="600">
+                        Unlimited
+                      </Typography>
+                    )}
+                  </Box>
                 </Grid>
 
                 <Grid item xs={5}>
@@ -653,6 +730,20 @@ const EventDetailPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Event Registration Modal */}
+      <EventRegistrationModal
+        open={registrationModalOpen}
+        onClose={closeRegistrationModal}
+        data={registrationData}
+        loading={registrationLoading}
+        error={registrationError}
+        currentPage={currentPage}
+        perPage={perPage}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onPerPageChange={handlePerPageChange}
+      />
     </Box>
   );
 };

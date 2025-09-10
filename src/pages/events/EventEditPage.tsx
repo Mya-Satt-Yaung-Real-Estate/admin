@@ -128,16 +128,16 @@ const EventEditPage: React.FC = () => {
       start_time: event?.start_time || '',
       end_time: event?.end_time || '',
       location: event?.location || '',
-      region_id: undefined as number | undefined,
-      township_id: undefined as number | undefined,
+      region_id: event?.region?.id || undefined,
+      township_id: event?.township?.id || undefined,
       host_user_id: event?.host_user?.user_id || 0,
       host_contact_number: event?.host_contact_number || '',
       is_free: event?.is_free ?? true,
-      price: undefined as number | undefined,
+      price: event?.price || undefined,
       need_registration: event?.need_registration ?? false,
       is_online: event?.is_online ?? false,
       status: 'draft' as const,
-      user_capacity: undefined as number | undefined,
+      user_capacity: event?.user_capacity || undefined,
       media_ids: uploadedMedia.map(media => media.id),
       is_active: event?.is_active ?? true,
     },
@@ -150,6 +150,8 @@ const EventEditPage: React.FC = () => {
         // Prepare form data
         const updateData: UpdateHousingEventData = {
           ...values,
+          price: values.price ? Number(values.price) : undefined,
+          user_capacity: values.user_capacity ? Number(values.user_capacity) : undefined,
           tag: tags.length > 0 ? tags : undefined,
           media_ids: uploadedMedia.map(media => media.id),
         };
@@ -278,7 +280,11 @@ const EventEditPage: React.FC = () => {
         <Grid container spacing={3} sx={{ mt: 0 }}>
           <Grid item xs={12} md={6}>
             <EventSettingsSection
-              values={formik.values}
+              values={{
+                ...formik.values,
+                price: formik.values.price ? Number(formik.values.price) : undefined,
+                user_capacity: formik.values.user_capacity ? Number(formik.values.user_capacity) : undefined,
+              }}
               errors={formik.errors}
               touched={formik.touched}
               handleChange={formik.handleChange}

@@ -33,13 +33,14 @@ import {
   ConfirmationDialog,
   ActionAlert
 } from '../../components/ui';
-import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useEventRegistrationModal } from '../../hooks';
 import {
   useEvents,
   useDeleteEvent,
   useRestoreEvent,
   useEventCategories
 } from '../../services/queries/events';
+import EventRegistrationModal from '../../components/modals/EventRegistrationModal';
 import { FilterState } from '../../constants/filters';
 import { HousingEvent } from '../../types/event';
 import { formatDate } from '../../constants/dateFormats';
@@ -141,6 +142,24 @@ const EventListPage: React.FC = () => {
     sort_direction: 'asc',
   });
 
+  // Get events data
+  const events = eventsResponse?.data || [];
+
+  // Registration modal hook
+  const {
+    modalOpen: registrationModalOpen,
+    registrationData,
+    registrationLoading,
+    registrationError,
+    currentPage,
+    perPage,
+    pagination,
+    openModal: openRegistrationModal,
+    closeModal: closeRegistrationModal,
+    handlePageChange,
+    handlePerPageChange,
+  } = useEventRegistrationModal({ events });
+
   // Mutations
   const deleteEventMutation = useDeleteEvent();
   const restoreEventMutation = useRestoreEvent();
@@ -173,8 +192,7 @@ const EventListPage: React.FC = () => {
   // DATA PROCESSING
   // ========================================================================
 
-  // Extract events data
-  const events = eventsResponse?.data || [];
+  // Extract categories data
   const categories = categoriesResponse?.data || [];
 
   // Create filter fields
@@ -397,6 +415,65 @@ const EventListPage: React.FC = () => {
       },
     },
     {
+      id: 'need_registration',
+      label: 'Registration',
+      render: (_value, event) => {
+        if (!event) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Chip
+            label={event.need_registration ? 'Required' : 'Not Required'}
+            size="small"
+            color={event.need_registration ? 'info' : 'default'}
+            variant="outlined"
+          />
+        );
+      },
+    },
+    {
+      id: 'registration_info',
+      label: 'Registrations',
+      render: (_value, event) => {
+        if (!event) return <Typography variant="body2">No data</Typography>;
+        
+        if (!event.need_registration) {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              -
+            </Typography>
+          );
+        }
+        
+        const currentCount = event.registration_user_count || 0;
+        const capacity = event.user_capacity || 0;
+        
+        return (
+          <Tooltip title="View all registration users" arrow>
+            <Box
+              sx={{
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  borderRadius: 1,
+                  p: 0.5,
+                  mx: -0.5,
+                },
+              }}
+              onClick={() => handleViewRegistrations(event)}
+            >
+              <Typography variant="body2" fontWeight="500" color="primary">
+                {currentCount}/{capacity || '∞'}
+              </Typography>
+              {capacity > 0 && (
+                <Typography variant="caption" color="textSecondary">
+                  {Math.round((currentCount / capacity) * 100)}% full
+                </Typography>
+              )}
+            </Box>
+          </Tooltip>
+        );
+      },
+    },
+    {
       id: 'actions',
       label: 'Actions',
       align: 'center',
@@ -561,6 +638,13 @@ const EventListPage: React.FC = () => {
     }
   };
 
+  // Registration modal handlers
+  const handleViewRegistrations = (event: HousingEvent) => {
+    if (event.need_registration) {
+      openRegistrationModal(event.slug);
+    }
+  };
+
   // ========================================================================
   // RENDER
   // ========================================================================
@@ -637,6 +721,14 @@ const EventListPage: React.FC = () => {
                 { label: event.category?.name_en || 'Unknown', color: 'primary' },
                 { label: event.is_online ? 'Yes' : 'No', color: event.is_online ? 'info' : 'default' },
                 { label: event.is_free ? 'Yes' : 'No', color: event.is_free ? 'info' : 'warning' },
+                { 
+                  label: event.need_registration ? 'Registration Required' : 'No Registration', 
+                  color: event.need_registration ? 'info' : 'default' 
+                },
+                ...(event.need_registration ? [{
+                  label: `${event.registration_user_count || 0}/${event.user_capacity || '∞'}`,
+                  color: 'secondary' as const
+                }] : [])
               ]}
             />
           ))}
@@ -676,6 +768,20 @@ const EventListPage: React.FC = () => {
         action="restore"
         isLoading={restoreEventMutation.isPending}
         error={restoreEventMutation.error?.message}
+      />
+
+      {/* Registration Modal */}
+      <EventRegistrationModal
+        open={registrationModalOpen}
+        onClose={closeRegistrationModal}
+        data={registrationData}
+        loading={registrationLoading}
+        error={registrationError}
+        currentPage={currentPage}
+        perPage={perPage}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onPerPageChange={handlePerPageChange}
       />
 
     </Box>

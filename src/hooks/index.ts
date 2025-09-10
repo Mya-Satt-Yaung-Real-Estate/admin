@@ -4,3 +4,4 @@ export { useLayout } from './useLayout';
 export { useDeleteConfirmation } from './useDeleteConfirmation';
 export { useAlertSystem } from './useAlertSystem';
 export type { UseAlertSystemReturn } from './useAlertSystem';
+export { useEventRegistrationModal } from './useEventRegistrationModal';
