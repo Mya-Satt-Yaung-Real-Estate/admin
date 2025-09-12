@@ -173,7 +173,7 @@ const PropertyListPage: React.FC = () => {
 
   // API Queries
   const { data: propertiesResponse, isLoading, error } = useProperties({
-    per_page: 100, // Get all properties for client-side filtering
+    per_page: 10, // Get all properties for client-side filtering
     sort_by: 'created_at',
     sort_direction: 'desc',
   });
@@ -341,6 +341,7 @@ const PropertyListPage: React.FC = () => {
     {
       id: 'title',
       label: 'Title',
+      width: '500px',
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
@@ -493,7 +494,7 @@ const PropertyListPage: React.FC = () => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <FavoriteIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />
             <Typography variant="body2" fontWeight="500">
               {property.stats?.favorite_count || 0}
             </Typography>
@@ -509,7 +510,7 @@ const PropertyListPage: React.FC = () => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <LikeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <LikeIcon sx={{ fontSize: 16, color: 'primary.main' }} />
             <Typography variant="body2" fontWeight="500">
               {property.stats?.like_count || 0}
             </Typography>
@@ -536,7 +537,7 @@ const PropertyListPage: React.FC = () => {
             }}
             onClick={() => handleOpenCommentsModal(property)}
           >
-            <CommentIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <CommentIcon sx={{ fontSize: 16, color: 'secondary.main' }} />
             <Typography variant="body2" fontWeight="500">
               {property.stats?.comment_count || 0}
             </Typography>
