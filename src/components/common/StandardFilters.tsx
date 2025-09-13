@@ -9,7 +9,7 @@ import {
   InputAdornment,
   IconButton,
 } from '@mui/material';
-import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { FILTER_CONFIG } from '../../constants/filters';
 
 export interface FilterOption {
@@ -155,7 +155,7 @@ export function StandardFilters({
             }}
             title="Clear all filters"
           >
-            <ClearIcon />
+            <RefreshIcon />
           </IconButton>
         )}
       </Box>

@@ -17,6 +17,7 @@ import {
   Visibility as ViewIcon,
   Home as HomeIcon,
   Refresh as RefreshIcon,
+  Cancel as CancelIcon,
 
   AttachMoney as PriceIcon,
   Bed as BedIcon,
@@ -36,7 +37,7 @@ import { StatisticsCards, StatCard } from '../../components/common/StatisticsCar
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
-import { useProperties, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
+import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
 import { formatDate } from '../../constants/dateFormats';
@@ -196,6 +197,9 @@ const PropertyListPage: React.FC = () => {
     sort_direction: 'desc',
   });
 
+  // Property statistics for dashboard cards
+  const { data: statistics } = usePropertyStatistics();
+
   // Master data queries
   const { data: propertyTypesResponse } = usePropertyTypes({
     per_page: 100, // Get all property types
@@ -262,31 +266,29 @@ const PropertyListPage: React.FC = () => {
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Properties',
-      value: pagination?.total || 0,
+      value: statistics?.data?.total_count || 0,
       color: 'primary',
       icon: <HomeIcon />,
     },
     {
-      title: 'Current Page',
-      value: `${((pagination?.current_page || 1) - 1) * (pagination?.per_page || 10) + 1}-${Math.min((pagination?.current_page || 1) * (pagination?.per_page || 10), pagination?.total || 0)} of ${pagination?.total || 0}`,
-      color: 'info',
-      icon: <HomeIcon />,
-    },
-    {
-      title: 'Page Size',
-      value: pagination?.per_page || 0,
-      color: 'secondary',
-      icon: <HomeIcon />,
-    },
-    {
-      title: 'Total Pages',
-      value: pagination?.last_page || 0,
+      title: 'Pending Verification',
+      value: statistics?.data?.pending_count || 0,
       color: 'warning',
-      icon: <HomeIcon />,
+      icon: <EditIcon />,
     },
-    // Note: For detailed statistics (likes, comments, etc.), we would need a separate statistics API endpoint
-    // These would be calculated on the server side for better performance
-  ], [pagination]);
+    {
+      title: 'Published',
+      value: statistics?.data?.published_count || 0,
+      color: 'success',
+      icon: <ViewIcon />,
+    },
+    {
+      title: 'Rejected',
+      value: statistics?.data?.rejected_count || 0,
+      color: 'error',
+      icon: <CancelIcon />,
+    },
+  ], [statistics]);
 
   // ========================================================================
   // TABLE COLUMNS

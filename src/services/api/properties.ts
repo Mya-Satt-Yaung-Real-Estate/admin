@@ -25,6 +25,19 @@ export function buildCleanQueryString(params?: Record<string, any>): string {
 }
 
 export const propertiesAPI = {
+  // Get property statistics
+  statistics: () => {
+    return apiRequest<{
+      total_count: number;
+      pending_count: number;
+      published_count: number;
+      deleted_count: number;
+      approved_count: number;
+      rejected_count: number;
+      active_count: number;
+    }>('/properties/statistics');
+  },
+
   // Get list of properties
   list: (params?: PropertyQueryParams) => {
     const queryString = buildCleanQueryString(params);

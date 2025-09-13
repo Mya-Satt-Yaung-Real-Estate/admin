@@ -12,8 +12,18 @@ export const propertyKeys = {
   detail: (id: number) => [...propertyKeys.details(), id] as const,
   pending: () => [...propertyKeys.all, 'pending'] as const,
   published: () => [...propertyKeys.all, 'published'] as const,
+  statistics: () => [...propertyKeys.all, 'statistics'] as const,
   propertyTypes: () => [...propertyKeys.all, 'propertyTypes'] as const,
   listingTypes: () => [...propertyKeys.all, 'listingTypes'] as const,
+};
+
+// Get property statistics
+export const usePropertyStatistics = () => {
+  return useQuery({
+    queryKey: propertyKeys.statistics(),
+    queryFn: () => propertiesAPI.statistics(),
+    staleTime: 2 * 60 * 1000, // 2 minutes - statistics can be cached longer
+  });
 };
 
 // Get list of properties
