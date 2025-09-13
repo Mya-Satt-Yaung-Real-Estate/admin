@@ -2,22 +2,44 @@
 import { apiRequest, QueryParams } from './base';
 import { Property, CreatePropertyData, UpdatePropertyData, PropertyType, PropertyListingType, PropertyRenewalResponse } from '../../types/property';
 
+// Properties-specific query parameters interface
+export interface PropertyQueryParams extends QueryParams {
+  status?: string;
+  verification_status?: string;
+  property_type?: string;
+  listing_type?: string;
+  expired?: string | boolean;
+  deleted?: string | boolean;
+}
+
+// Reusable utility function to filter out undefined/null/empty values from query params
+// This can be used by any API service that needs clean query strings
+export function buildCleanQueryString(params?: Record<string, any>): string {
+  if (!params) return '';
+  
+  const filteredParams = Object.fromEntries(
+    Object.entries(params).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+  );
+  
+  return Object.keys(filteredParams).length > 0 ? '?' + new URLSearchParams(filteredParams as any).toString() : '';
+}
+
 export const propertiesAPI = {
   // Get list of properties
-  list: (params?: QueryParams) => {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+  list: (params?: PropertyQueryParams) => {
+    const queryString = buildCleanQueryString(params);
     return apiRequest<Property[]>(`/properties${queryString}`);
   },
 
   // Get list of pending properties
-  listPending: (params?: QueryParams) => {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+  listPending: (params?: PropertyQueryParams) => {
+    const queryString = buildCleanQueryString(params);
     return apiRequest<Property[]>(`/properties/pending${queryString}`);
   },
 
   // Get list of published properties
-  listPublished: (params?: QueryParams) => {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+  listPublished: (params?: PropertyQueryParams) => {
+    const queryString = buildCleanQueryString(params);
     return apiRequest<Property[]>(`/properties/published${queryString}`);
   },
 
@@ -74,13 +96,13 @@ export const propertiesAPI = {
 
   // Property Types
   getPropertyTypes: (params?: QueryParams) => {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    const queryString = buildCleanQueryString(params);
     return apiRequest<PropertyType[]>(`/property-types${queryString}`);
   },
 
   // Property Listing Types
   getPropertyListingTypes: (params?: QueryParams) => {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    const queryString = buildCleanQueryString(params);
     return apiRequest<PropertyListingType[]>(`/property-listing-types${queryString}`);
   },
 

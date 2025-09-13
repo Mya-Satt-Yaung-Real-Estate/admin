@@ -34,8 +34,8 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
-import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
@@ -145,8 +145,18 @@ const PropertyListPage: React.FC = () => {
   // HOOKS & STATE
   // ========================================================================
 
+  // Manual search: only triggers on Enter key or search button click
+  const {
+    searchValue,
+    searchTerm,
+    handleInputChange,
+    triggerSearch,
+    clearSearch,
+    handleKeyPress,
+  } = useManualSearch('');
+
   const { filters, setFilter } = useFilters<PropertyFilters>({
-    searchTerm: '',
+    searchTerm: '', // This will be overridden by manual search
     statusFilter: 'all',
     verificationFilter: 'all',
     propertyTypeFilter: 'all',
@@ -171,9 +181,17 @@ const PropertyListPage: React.FC = () => {
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedPropertyForComments, setSelectedPropertyForComments] = useState<Property | null>(null);
 
-  // API Queries
+  // API Queries - Server-side filtering and pagination
   const { data: propertiesResponse, isLoading, error } = useProperties({
-    per_page: 10, // Get all properties for client-side filtering
+    page: page + 1, // API uses 1-based pagination
+    per_page: rowsPerPage,
+    search: searchTerm || undefined, // Use manual search term
+    status: filters.statusFilter !== 'all' ? filters.statusFilter : undefined,
+    verification_status: filters.verificationFilter !== 'all' ? filters.verificationFilter : undefined,
+    property_type: filters.propertyTypeFilter !== 'all' ? filters.propertyTypeFilter : undefined,
+    listing_type: filters.listingTypeFilter !== 'all' ? filters.listingTypeFilter : undefined,
+    expired: filters.expiredFilter === 'expired' ? 'true' : undefined,
+    deleted: activeTab === 1 ? 'true' : undefined, // Show deleted properties when tab 1 is active, undefined for all properties
     sort_by: 'created_at',
     sort_direction: 'desc',
   });
@@ -222,8 +240,9 @@ const PropertyListPage: React.FC = () => {
   // DATA PROCESSING
   // ========================================================================
 
-  // Extract properties data
+  // Extract properties data (already filtered and paginated by server)
   const properties = propertiesResponse?.data || [];
+  const pagination = propertiesResponse?.pagination;
   
   // Extract master data
   const propertyTypes = propertyTypesResponse?.data || [];
@@ -232,57 +251,9 @@ const PropertyListPage: React.FC = () => {
   // Create dynamic filter fields
   const filterFields = createFilterFields(propertyTypes, listingTypes);
 
-  // Filter properties using client-side filtering
-  const filteredProperties = useMemo(() => {
-    if (!properties || properties.length === 0) return [];
-    
-    const validProperties = properties.filter(property => property != null);
-    
-    return validProperties.filter(property => {
-      // Check if property is deleted using is_deleted field
-      const isDeleted = property.is_deleted;
-      
-      // Apply tab filter (0 = Active, 1 = Deleted)
-      if (activeTab === 0 && isDeleted) return false;
-      if (activeTab === 1 && !isDeleted) return false;
-      
-      const matchesSearch = 
-        property.title_en.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        property.title_mm.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        property.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        (property.location?.address || '').toLowerCase().includes(filters.searchTerm.toLowerCase());
-      
-      const matchesStatus = filters.statusFilter === 'all' || 
-        property.status === filters.statusFilter;
-      
-      const matchesVerification = filters.verificationFilter === 'all' || 
-        property.verification_status === filters.verificationFilter;
-      
-      const matchesPropertyType = filters.propertyTypeFilter === 'all' || 
-        property.property_type?.slug === filters.propertyTypeFilter;
-      
-      const matchesListingType = filters.listingTypeFilter === 'all' || 
-        property.listing_type?.slug === filters.listingTypeFilter;
-      
-      // Apply expired filter
-      let matchesExpired = true;
-      if (filters.expiredFilter !== 'all') {
-        const isExpired = property.is_expired;
-        if (filters.expiredFilter === 'expired') {
-          matchesExpired = isExpired;
-        } else if (filters.expiredFilter === 'active') {
-          matchesExpired = !isExpired;
-        }
-      }
-      
-      return matchesSearch && matchesStatus && matchesVerification && matchesPropertyType && matchesListingType && matchesExpired;
-    });
-  }, [properties, filters, activeTab]);
-
-  // Paginate data
-  const paginatedProperties = useMemo(() => {
-    return filteredProperties.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  }, [filteredProperties, page, rowsPerPage]);
+  // Server-side filtering and pagination - no client-side processing needed
+  const filteredProperties = properties;
+  const paginatedProperties = properties; // Already paginated by server
 
   // ========================================================================
   // STATISTICS
@@ -291,47 +262,31 @@ const PropertyListPage: React.FC = () => {
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Properties',
-      value: properties.length,
+      value: pagination?.total || 0,
       color: 'primary',
       icon: <HomeIcon />,
     },
     {
-      title: 'Active Properties',
-      value: properties.filter(property => !property.is_deleted).length,
-      color: 'success',
-      icon: <HomeIcon />,
-    },
-    {
-      title: 'Deleted Properties',
-      value: properties.filter(property => property.is_deleted).length,
-      color: 'error',
-      icon: <HomeIcon />,
-    },
-    {
-      title: 'Published',
-      value: properties.filter(property => property.status === 'published' && !property.is_deleted).length,
+      title: 'Current Page',
+      value: `${((pagination?.current_page || 1) - 1) * (pagination?.per_page || 10) + 1}-${Math.min((pagination?.current_page || 1) * (pagination?.per_page || 10), pagination?.total || 0)} of ${pagination?.total || 0}`,
       color: 'info',
       icon: <HomeIcon />,
     },
     {
-      title: 'Total Likes',
-      value: properties.reduce((sum, property) => sum + (property.stats?.like_count || 0), 0),
-      color: 'warning',
-      icon: <LikeIcon />,
-    },
-    {
-      title: 'Total Comments',
-      value: properties.reduce((sum, property) => sum + (property.stats?.comment_count || 0), 0),
+      title: 'Page Size',
+      value: pagination?.per_page || 0,
       color: 'secondary',
-      icon: <CommentIcon />,
+      icon: <HomeIcon />,
     },
     {
-      title: 'Total Favorites',
-      value: properties.reduce((sum, property) => sum + (property.stats?.favorite_count || 0), 0),
-      color: 'error',
-      icon: <FavoriteIcon />,
+      title: 'Total Pages',
+      value: pagination?.last_page || 0,
+      color: 'warning',
+      icon: <HomeIcon />,
     },
-  ], [properties]);
+    // Note: For detailed statistics (likes, comments, etc.), we would need a separate statistics API endpoint
+    // These would be calculated on the server side for better performance
+  ], [pagination]);
 
   // ========================================================================
   // TABLE COLUMNS
@@ -786,24 +741,65 @@ const PropertyListPage: React.FC = () => {
     navigate('/properties/create');
   };
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+    // Reset to first page when switching tabs
+    handleChangePage(event, 0);
+  };
+
+  // Custom filter change handler that handles search input specially
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === 'searchTerm') {
+      // Use manual search for search input
+      handleInputChange(value);
+    } else {
+      // Use regular filter for other inputs
+      setFilter(key as keyof PropertyFilters, value);
+    }
+  };
+
+  // Clear all filters function
+  const handleClearFilters = () => {
+    // Clear search
+    clearSearch();
+    
+    // Reset all filters to default values
+    setFilter('statusFilter', 'all');
+    setFilter('verificationFilter', 'all');
+    setFilter('propertyTypeFilter', 'all');
+    setFilter('listingTypeFilter', 'all');
+    setFilter('expiredFilter', 'all');
+    
+    // Reset to first page
+    handleChangePage({} as any, 0);
+  };
+
   // ========================================================================
   // RENDER
   // ========================================================================
 
-  // Loading state
-  if (isLoading) {
-    return <PageLoadingState title="Loading Properties" />;
-  }
-
-  // Error state
+  // Error state - show inline error instead of full page error
   if (error) {
     return (
-      <PageErrorState
-        error={error}
-        title="Error Loading Properties"
-        message={error.message}
-        onRetry={() => window.location.reload()}
-      />
+      <Box sx={{ p: 3 }}>
+        <PageHeader
+          title="Properties"
+          subtitle="Manage property listings"
+          actionButton={{
+            text: "Refresh",
+            icon: <RefreshIcon />,
+            onClick: () => window.location.reload()
+          }}
+        />
+        <Box sx={{ mt: 2 }}>
+          <PageErrorState
+            error={error}
+            title="Error Loading Properties"
+            message={error.message}
+            onRetry={() => window.location.reload()}
+          />
+        </Box>
+      </Box>
     );
   }
 
@@ -827,50 +823,59 @@ const PropertyListPage: React.FC = () => {
 
       {/* Filters */}
       <StandardFilters
-        filters={filters}
-        onFilterChange={(key, value) => setFilter(key as keyof PropertyFilters, value)}
+        filters={{
+          ...filters,
+          searchTerm: searchValue, // Use current search value for immediate UI feedback
+        }}
+        onFilterChange={handleFilterChange}
         fields={filterFields}
+        searchHelperText={undefined}
+        onSearchKeyPress={handleKeyPress}
+        onSearchClick={triggerSearch}
+        showSearchButton={true}
+        onClearFilters={handleClearFilters}
+        showClearButton={true}
       />
 
       {/* Active/Deleted Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs 
           value={activeTab} 
-          onChange={(_, newValue) => setActiveTab(newValue)}
+          onChange={handleTabChange}
           aria-label="property status tabs"
         >
           <Tab 
-            label={`Active Properties (${properties.filter(p => !p.is_deleted).length})`} 
+            label={`Active Properties`} 
             id="property-tab-0"
             aria-controls="property-tabpanel-0"
           />
           <Tab 
-            label={`Deleted Properties (${properties.filter(p => p.is_deleted).length})`} 
+            label={`Deleted Properties`} 
             id="property-tab-1"
             aria-controls="property-tabpanel-1"
           />
         </Tabs>
       </Box>
 
-      {/* Empty state */}
-      {filteredProperties.length === 0 && !isLoading && (
-        <PageEmptyState
-          title="No Properties Found"
-          message={filters.searchTerm || filters.statusFilter !== 'all' || filters.verificationFilter !== 'all' || filters.propertyTypeFilter !== 'all' || filters.listingTypeFilter !== 'all'
-            ? "No properties match your current filters. Try adjusting your search criteria."
-            : "No properties have been created yet."
-          }
-        />
-      )}
 
       {/* Mobile Card Layout */}
-      {isMobile && filteredProperties.length > 0 ? (
+      {isMobile ? (
         <Box>
-          {paginatedProperties.map((property) => (
-            <MobileCard
-              key={property.id}
-              title={property.title_en}
-              subtitle={property.title_mm}
+          {isLoading ? (
+            // Loading skeleton cards for mobile
+            Array.from({ length: rowsPerPage }).map((_, index) => (
+              <MobileCard
+                key={`skeleton-${index}`}
+                title=""
+                loading={true}
+              />
+            ))
+          ) : filteredProperties.length > 0 ? (
+            paginatedProperties.map((property) => (
+              <MobileCard
+                key={property.id}
+                title={property.title_en}
+                subtitle={property.title_mm}
               description={property.description}
               avatar={<HomeIcon />}
               avatarColor="primary.main"
@@ -920,11 +925,17 @@ const PropertyListPage: React.FC = () => {
               onClick={() => navigate(`/properties/${property.id}`)}
               clickable={true}
             />
-          ))}
+          ))
+          ) : (
+            <PageEmptyState
+              title="No Properties Found"
+              message="No properties match your current filters. Try adjusting your search criteria."
+            />
+          )}
           <Pagination
             page={page}
             rowsPerPage={rowsPerPage}
-            totalCount={filteredProperties.length}
+            totalCount={pagination?.total || 0}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             showResultsInfo={true}
@@ -932,16 +943,25 @@ const PropertyListPage: React.FC = () => {
         </Box>
       ) : (
         /* Desktop Table Layout */
-        filteredProperties.length > 0 && (
+        filteredProperties.length === 0 && !isLoading ? (
+          <PageEmptyState
+            title="No Properties Found"
+            message={searchTerm || filters.statusFilter !== 'all' || filters.verificationFilter !== 'all' || filters.propertyTypeFilter !== 'all' || filters.listingTypeFilter !== 'all'
+              ? "No properties match your current filters. Try adjusting your search criteria."
+              : "No properties have been created yet."
+            }
+          />
+        ) : (
           <StandardTable
             columns={columns}
             data={paginatedProperties}
             page={page}
             rowsPerPage={rowsPerPage}
-            totalCount={filteredProperties.length}
+            totalCount={pagination?.total || 0}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             getRowKey={(property) => property.id}
+            loading={isLoading}
           />
         )
       )}

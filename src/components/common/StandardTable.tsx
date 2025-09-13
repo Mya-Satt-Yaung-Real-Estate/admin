@@ -11,6 +11,7 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
+  Skeleton,
 } from '@mui/material';
 import { Pagination } from '../ui';
 
@@ -38,6 +39,7 @@ export interface StandardTableProps<T> {
   hover?: boolean;
   stickyHeader?: boolean;
   maxHeight?: string | number;
+  loading?: boolean;
 }
 
 export function StandardTable<T>({
@@ -54,6 +56,7 @@ export function StandardTable<T>({
   hover = true,
   stickyHeader = true,
   maxHeight,
+  loading = false,
 }: StandardTableProps<T>) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -150,7 +153,18 @@ export function StandardTable<T>({
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.length === 0 ? (
+            {loading ? (
+              // Loading skeleton rows
+              Array.from({ length: rowsPerPage }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  {visibleColumns.map((column) => (
+                    <TableCell key={`skeleton-${index}-${String(column.id)}`} align={column.align || 'left'}>
+                      <Skeleton variant="text" width="80%" height={24} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={visibleColumns.length} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="textSecondary">

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { propertiesAPI } from '../api/properties';
+import { propertiesAPI, PropertyQueryParams } from '../api/properties';
 import { CreatePropertyData, UpdatePropertyData } from '../../types/property';
 import { QueryParams } from '../api/base';
 
@@ -17,7 +17,7 @@ export const propertyKeys = {
 };
 
 // Get list of properties
-export const useProperties = (params?: QueryParams) => {
+export const useProperties = (params?: PropertyQueryParams) => {
   return useQuery({
     queryKey: propertyKeys.list(params),
     queryFn: () => propertiesAPI.list(params),
@@ -26,7 +26,7 @@ export const useProperties = (params?: QueryParams) => {
 };
 
 // Get list of pending properties
-export const usePendingProperties = (params?: QueryParams) => {
+export const usePendingProperties = (params?: PropertyQueryParams) => {
   return useQuery({
     queryKey: [...propertyKeys.pending(), params],
     queryFn: () => propertiesAPI.listPending(params),
@@ -35,7 +35,7 @@ export const usePendingProperties = (params?: QueryParams) => {
 };
 
 // Get list of published properties
-export const usePublishedProperties = (params?: QueryParams) => {
+export const usePublishedProperties = (params?: PropertyQueryParams) => {
   return useQuery({
     queryKey: [...propertyKeys.published(), params],
     queryFn: () => propertiesAPI.listPublished(params),

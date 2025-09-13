@@ -8,6 +8,7 @@ import {
   Tooltip,
   Avatar,
   Badge,
+  Skeleton,
 } from '@mui/material';
 import { SxProps, Theme } from '@mui/material/styles';
 
@@ -49,6 +50,9 @@ export interface MobileCardProps {
   onClick?: () => void;
   clickable?: boolean;
   
+  // Loading state
+  loading?: boolean;
+  
   // Styling
   sx?: SxProps<Theme>;
   
@@ -68,6 +72,7 @@ export const MobileCard: React.FC<MobileCardProps> = ({
   actions = [],
   onClick,
   clickable = false,
+  loading = false,
   sx = {},
   children,
 }) => {
@@ -81,6 +86,37 @@ export const MobileCard: React.FC<MobileCardProps> = ({
     e.stopPropagation();
     action.onClick();
   };
+
+  if (loading) {
+    return (
+      <Paper
+        sx={{
+          p: 2,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          mb: 2,
+          ...sx,
+        }}
+      >
+        {/* Loading Avatar */}
+        <Skeleton variant="circular" width={48} height={48} />
+        
+        {/* Loading Content */}
+        <Box sx={{ flex: 1 }}>
+          <Skeleton variant="text" width="60%" height={24} sx={{ mb: 1 }} />
+          <Skeleton variant="text" width="40%" height={20} sx={{ mb: 1 }} />
+          <Skeleton variant="text" width="80%" height={16} />
+        </Box>
+        
+        {/* Loading Actions */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Skeleton variant="circular" width={32} height={32} />
+          <Skeleton variant="circular" width={32} height={32} />
+        </Box>
+      </Paper>
+    );
+  }
 
   return (
     <Paper

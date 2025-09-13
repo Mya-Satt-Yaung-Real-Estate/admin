@@ -7,8 +7,9 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  IconButton,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 import { FILTER_CONFIG } from '../../constants/filters';
 
 export interface FilterOption {
@@ -31,6 +32,12 @@ export interface StandardFiltersProps {
   onFilterChange: (key: string, value: string) => void;
   fields: FilterField[];
   searchPlaceholder?: string;
+  searchHelperText?: string;
+  onSearchKeyPress?: (event: React.KeyboardEvent) => void;
+  onSearchClick?: () => void;
+  showSearchButton?: boolean;
+  onClearFilters?: () => void;
+  showClearButton?: boolean;
 }
 
 export function StandardFilters({
@@ -38,6 +45,12 @@ export function StandardFilters({
   onFilterChange,
   fields,
   searchPlaceholder = FILTER_CONFIG.searchPlaceholder,
+  searchHelperText,
+  onSearchKeyPress,
+  onSearchClick,
+  showSearchButton = false,
+  onClearFilters,
+  showClearButton = false,
 }: StandardFiltersProps) {
   const handleFilterChange = (key: string, value: string) => {
     onFilterChange(key, value);
@@ -54,12 +67,25 @@ export function StandardFilters({
             placeholder={field.placeholder || searchPlaceholder}
             value={value}
             onChange={(e) => handleFilterChange(field.key, e.target.value)}
+            onKeyPress={field.key === 'searchTerm' ? onSearchKeyPress : undefined}
+            helperText={field.key === 'searchTerm' ? searchHelperText : undefined}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon />
                 </InputAdornment>
               ),
+              endAdornment: field.key === 'searchTerm' && showSearchButton ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={onSearchClick}
+                    edge="end"
+                    size="small"
+                    sx={{ mr: -1 }}
+                  >
+                    <SearchIcon />
+                  </IconButton>
+                </InputAdornment>
+              ) : undefined,
             }}
             sx={{
               minWidth: { xs: 250, sm: 350 },
@@ -111,6 +137,27 @@ export function StandardFilters({
         }}
       >
         {fields.map(renderField)}
+        
+        {/* Clear Filters Button */}
+        {showClearButton && onClearFilters && (
+          <IconButton
+            onClick={onClearFilters}
+            color="error"
+            sx={{
+              height: 56, // Match TextField height
+              width: 56,
+              border: '1px solid',
+              borderColor: 'divider',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+                borderColor: 'primary.main',
+              },
+            }}
+            title="Clear all filters"
+          >
+            <ClearIcon />
+          </IconButton>
+        )}
       </Box>
     </Paper>
   );

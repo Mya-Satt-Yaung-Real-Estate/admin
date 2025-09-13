@@ -26,12 +26,13 @@ export interface ApiErrorResponse {
   };
 }
 
-// Simple query parameters
+// Simple query parameters - generic interface for all API services
 export interface QueryParams {
   page?: number;
   per_page?: number;
   search?: string;
-  status?: string;
+  sort_by?: string;
+  sort_direction?: 'asc' | 'desc';
   [key: string]: any;
 }
 
