@@ -46,6 +46,8 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         pending: 'Pending',
         rejected: 'Rejected',
         deleted: 'Deleted',
+        approved: 'Approved',
+        under_review: 'Under Review',
       };
       return statusMap[status] || status;
     }
