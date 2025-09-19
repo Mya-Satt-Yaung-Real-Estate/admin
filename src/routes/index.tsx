@@ -24,6 +24,7 @@ import { newsArticleCategoryRoutes } from './news-article-categories';
 import { newsAndUpdateRoutes } from './news-and-updates';
 import { knowledgeHubRoutes } from './knowledge-hub';
 import { feedbackRoutes } from './feedback';
+import { loanRequestRoutes } from './loan-requests';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
   ...newsAndUpdateRoutes,
   ...knowledgeHubRoutes,
   ...feedbackRoutes,
+  ...loanRequestRoutes,
   
   // Catch-all route
   {

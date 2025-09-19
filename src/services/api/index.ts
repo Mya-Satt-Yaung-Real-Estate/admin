@@ -13,4 +13,5 @@ export * from './advertisements';
 export * from './knowledge-hub';
 export * from './feedback';
 export * from './eventRegistration';
+export * from './loan-requests';
 

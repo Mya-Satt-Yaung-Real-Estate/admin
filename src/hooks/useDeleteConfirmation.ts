@@ -5,6 +5,7 @@ export interface DeleteConfirmationState {
   itemName?: string;
   itemType?: string;
   onConfirm?: (reason?: string) => void;
+  actionType?: 'delete' | 'restore'; // Add action type
 }
 
 export const useDeleteConfirmation = () => {
@@ -15,13 +16,15 @@ export const useDeleteConfirmation = () => {
   const openDeleteConfirmation = (
     itemName: string,
     itemType: string = 'item',
-    onConfirm: (reason?: string) => void
+    onConfirm: (reason?: string) => void,
+    actionType: 'delete' | 'restore' = 'delete' // Add action type parameter
   ) => {
     setDeleteState({
       open: true,
       itemName,
       itemType,
       onConfirm,
+      actionType,
     });
   };
 

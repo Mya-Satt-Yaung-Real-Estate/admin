@@ -134,4 +134,9 @@ export const MENU_ITEMS = [
     iconName: 'Feedback',
     path: '/feedback',
   },
+  {
+    text: 'Loan Requests',
+    iconName: 'RequestQuote',
+    path: '/loan-requests',
+  },
 ]; 

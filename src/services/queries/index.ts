@@ -15,6 +15,7 @@ export * from './comments';
 export * from './knowledge-hub';
 export * from './feedback';
 export * from './eventRegistration';
+export * from './loan-requests';
 
 // Export query keys for external use
 export { authKeys } from './auth';
