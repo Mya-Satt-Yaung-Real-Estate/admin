@@ -870,14 +870,17 @@ const PropertyListPage: React.FC = () => {
                 key={`skeleton-${index}`}
                 title=""
                 loading={true}
+                showRowNumber={true}
               />
             ))
           ) : filteredProperties.length > 0 ? (
-            paginatedProperties.map((property) => (
+            paginatedProperties.map((property, index) => (
               <MobileCard
                 key={property.id}
                 title={property.title_en}
                 subtitle={property.title_mm}
+                rowNumber={(page * rowsPerPage) + index + 1}
+                showRowNumber={true}
               description={property.description}
               avatar={<HomeIcon />}
               avatarColor="primary.main"
@@ -954,17 +957,19 @@ const PropertyListPage: React.FC = () => {
             }
           />
         ) : (
-          <StandardTable
-            columns={columns}
-            data={paginatedProperties}
-            page={page}
-            rowsPerPage={rowsPerPage}
-            totalCount={pagination?.total || 0}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            getRowKey={(property) => property.id}
-            loading={isLoading}
-          />
+        <StandardTable
+          columns={columns}
+          data={paginatedProperties}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={pagination?.total || 0}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          getRowKey={(property) => property.id}
+          loading={isLoading}
+          showRowNumbers={true}
+          rowNumberLabel="No."
+        />
         )
       )}
 
