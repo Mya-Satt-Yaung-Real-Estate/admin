@@ -48,21 +48,6 @@ export const useBooking = (id: number) => {
   });
 };
 
-// Create booking
-export const useCreateBooking = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: CreateBookingData) => bookingsAPI.create(data),
-    onSuccess: () => {
-      // Invalidate and refetch bookings lists
-      queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
-      // Invalidate statistics
-      queryClient.invalidateQueries({ queryKey: bookingKeys.statistics() });
-    },
-  });
-};
-
 // Update booking
 export const useUpdateBooking = () => {
   const queryClient = useQueryClient();
@@ -90,6 +75,21 @@ export const useDeleteBooking = () => {
     onSuccess: (_, id) => {
       // Remove the specific booking from cache
       queryClient.removeQueries({ queryKey: bookingKeys.detail(id) });
+      // Invalidate and refetch bookings lists
+      queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: bookingKeys.statistics() });
+    },
+  });
+};
+
+// Create booking
+export const useCreateBooking = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateBookingData) => bookingsAPI.create(data),
+    onSuccess: () => {
       // Invalidate and refetch bookings lists
       queryClient.invalidateQueries({ queryKey: bookingKeys.lists() });
       // Invalidate statistics

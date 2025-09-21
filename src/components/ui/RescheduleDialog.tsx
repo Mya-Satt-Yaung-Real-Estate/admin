@@ -19,8 +19,8 @@ import {
 } from '@mui/icons-material';
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { format } from 'date-fns';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
 
 export interface RescheduleDialogProps {
   open: boolean;
@@ -47,8 +47,8 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   isLoading = false,
   error = null,
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
+  const [selectedTime, setSelectedTime] = useState<dayjs.Dayjs | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -56,22 +56,17 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   useEffect(() => {
     if (open && currentDate && currentTime) {
       try {
-        const currentDateTime = new Date(`${currentDate}T${currentTime}`);
-        if (!isNaN(currentDateTime.getTime())) {
-          setSelectedDate(currentDateTime);
-          setSelectedTime(currentDateTime);
-        } else {
-          // Fallback to current date/time if invalid
-          setSelectedDate(new Date());
-          setSelectedTime(new Date());
-        }
+        const date = dayjs(currentDate);
+        const time = dayjs(`2000-01-01T${currentTime}`);
+        setSelectedDate(date);
+        setSelectedTime(time);
         setAdminNotes('');
         setHasChanges(false);
       } catch (error) {
         console.error('Error setting initial date/time:', error);
         // Fallback to current date/time
-        setSelectedDate(new Date());
-        setSelectedTime(new Date());
+        setSelectedDate(dayjs());
+        setSelectedTime(dayjs());
         setAdminNotes('');
         setHasChanges(false);
       }
@@ -81,8 +76,8 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   // Check if there are changes
   useEffect(() => {
     if (selectedDate && selectedTime) {
-      const newDate = format(selectedDate, 'yyyy-MM-dd');
-      const newTime = format(selectedTime, 'HH:mm');
+      const newDate = dayjs(selectedDate).format('YYYY-MM-DD');
+      const newTime = dayjs(selectedTime).format('HH:mm');
       const hasDateChanged = newDate !== currentDate;
       const hasTimeChanged = newTime !== currentTime;
       setHasChanges(hasDateChanged || hasTimeChanged);
@@ -93,8 +88,8 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
     if (!selectedDate || !selectedTime || !hasChanges) return;
 
     const rescheduleData: RescheduleData = {
-      appointment_date: format(selectedDate, 'yyyy-MM-dd'),
-      appointment_time: format(selectedTime, 'HH:mm'),
+      appointment_date: dayjs(selectedDate).format('YYYY-MM-DD'),
+      appointment_time: dayjs(selectedTime).format('HH:mm'),
       admin_notes: adminNotes.trim() || undefined,
     };
 
@@ -114,7 +109,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
       return 'No date set';
     }
     try {
-      return format(new Date(date), 'MMM dd, yyyy');
+      return dayjs(date).format('MMM DD, YYYY');
     } catch (error) {
       return 'Invalid date';
     }
@@ -125,25 +120,22 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
       return 'No time set';
     }
     try {
-      const [hours, minutes] = time.split(':');
-      const date = new Date();
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return format(date, 'h:mm a');
+      return dayjs(`2000-01-01T${time}`).format('h:mm A');
     } catch (error) {
       return 'Invalid time';
     }
   };
 
   const getNewDisplayDate = () => {
-    return selectedDate ? format(selectedDate, 'MMM dd, yyyy') : '';
+    return selectedDate ? dayjs(selectedDate).format('MMM DD, YYYY') : '';
   };
 
   const getNewDisplayTime = () => {
-    return selectedTime ? format(selectedTime, 'h:mm a') : '';
+    return selectedTime ? dayjs(selectedTime).format('h:mm A') : '';
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog
         open={open}
         onClose={handleClose}
@@ -209,8 +201,8 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
                   label="Appointment Date"
                   value={selectedDate}
                   onChange={(newValue) => setSelectedDate(newValue)}
-                  minDate={new Date()}
-                  maxDate={new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000)} // 6 months from now
+                  minDate={dayjs()}
+                  maxDate={dayjs().add(6, 'months')} // 6 months from now
                   slotProps={{
                     textField: {
                       fullWidth: true,

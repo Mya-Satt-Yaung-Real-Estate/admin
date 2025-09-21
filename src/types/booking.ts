@@ -48,11 +48,14 @@ export interface Booking {
 }
 
 export interface CreateBookingData {
+  user_id: number;
   property_id?: number;
   booking_type: 'property_consultation' | 'general_service';
   appointment_date: string;
   appointment_time: string;
   user_notes?: string;
+  admin_notes?: string;
+  assigned_admin_id?: number;
 }
 
 export interface UpdateBookingData extends Partial<CreateBookingData> {}

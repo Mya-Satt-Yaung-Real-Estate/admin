@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   CheckCircle as AcceptIcon,
   Schedule as RescheduleIcon,
@@ -34,7 +33,7 @@ import {
   AdminPanelSettings as AdminIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, ActionAlert, DeleteConfirmationDialog, ConfirmationDialog, RescheduleDialog, AssignAdminDialog } from '../../components/ui';
 import { useBooking, useDeleteBooking, useAcceptBooking, useRescheduleBooking, useCancelBooking, useAssignBooking, useAdminUsers } from '../../services/queries/bookings';
@@ -48,6 +47,7 @@ import { formatDate } from '../../constants/dateFormats';
 const BookingDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
 
   // ========================================================================
   // HOOKS & STATE
@@ -72,6 +72,19 @@ const BookingDetailPage: React.FC = () => {
 
   // Alert system
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+
+  // Handle success message from URL
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const successMessage = searchParams.get('success');
+    if (successMessage) {
+      showSuccess(decodeURIComponent(successMessage));
+      // Clear the success parameter from URL
+      const newSearch = new URLSearchParams(location.search);
+      newSearch.delete('success');
+      navigate(`${location.pathname}${newSearch.toString() ? '?' + newSearch.toString() : ''}`, { replace: true });
+    }
+  }, [location.search, navigate, showSuccess]);
 
   // Delete confirmation
   const {
@@ -99,9 +112,6 @@ const BookingDetailPage: React.FC = () => {
     navigate('/bookings');
   };
 
-  const handleEdit = () => {
-    navigate(`/bookings/${bookingId}/edit`);
-  };
 
   const handleDelete = () => {
     if (!booking) return;
@@ -315,11 +325,6 @@ const BookingDetailPage: React.FC = () => {
                 Booking Information
               </Typography>
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Tooltip title="Edit Booking">
-                  <IconButton onClick={handleEdit} color="primary">
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
                 <Tooltip title="Delete Booking">
                   <IconButton onClick={handleDelete} color="error">
                     <DeleteIcon />
