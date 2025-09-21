@@ -24,7 +24,7 @@ const Logo: React.FC<LogoProps> = ({
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       <Box
         component="img"
-        src="/project_logo.png"
+        src="/jade.png"
         alt="Project Logo"
         sx={{
           width: logoSize,

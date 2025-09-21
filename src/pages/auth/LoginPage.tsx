@@ -150,7 +150,7 @@ const LoginPage: React.FC = () => {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Box
             component="img"
-            src="/project_logo.png"
+            src="/jade.png"
             alt="Logo"
             sx={{
               width: 80,
