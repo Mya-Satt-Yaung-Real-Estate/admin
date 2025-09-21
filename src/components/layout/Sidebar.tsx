@@ -33,6 +33,8 @@ import {
   Security as SecurityIcon,
   Key as KeyIcon,
   Feedback as FeedbackIcon,
+  LiveHelp as LiveHelpIcon,
+
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -113,6 +115,8 @@ const getIconComponent = (iconName: string): React.ReactNode => {
       return <NewspaperIcon />;
     case 'ShoppingCart':
       return <RequestQuoteIcon />;
+    case 'QuestionMarkIcon':
+      return <LiveHelpIcon />;
     
     default:
       return <DashboardIcon />;

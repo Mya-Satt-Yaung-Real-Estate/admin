@@ -139,4 +139,9 @@ export const MENU_ITEMS = [
     iconName: 'RequestQuote',
     path: '/loan-requests',
   },
+  {
+    text: 'FAQs',
+    iconName: 'QuestionMarkIcon',
+    path: '/faqs',
+  },
 ]; 
