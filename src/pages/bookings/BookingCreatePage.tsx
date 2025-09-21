@@ -76,6 +76,11 @@ const BookingCreatePage: React.FC = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
+      // Prevent double submission
+      if (createBookingMutation.isPending) {
+        return;
+      }
+      
       try {
         const response = await createBookingMutation.mutateAsync(values);
         // Navigate to booking detail page with success message (consistent with other create pages)
@@ -127,8 +132,7 @@ const BookingCreatePage: React.FC = () => {
           />
         )}
 
-        <form onSubmit={formik.handleSubmit}>
-          <Grid container spacing={3}>
+        <Grid container spacing={3}>
             {/* Left Column */}
             <Grid item xs={12} lg={8}>
               {/* Basic Information Section */}
@@ -415,7 +419,6 @@ const BookingCreatePage: React.FC = () => {
               />
             </Grid>
           </Grid>
-        </form>
 
         {createBookingMutation.isPending && <LoadingSpinner />}
       </Box>

@@ -184,6 +184,19 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           hoverBg: '#FEF2F2',
           hoverBorder: '#B91C1C',
         },
+        // Loan request statuses
+        approved: {
+          text: '#059669', // Green
+          border: '#059669',
+          hoverBg: '#ECFDF5',
+          hoverBorder: '#047857',
+        },
+        under_review: {
+          text: '#0891B2', // Cyan
+          border: '#0891B2',
+          hoverBg: '#ECFEFF',
+          hoverBorder: '#0E7490',
+        },
       };
       return statusColorMap[status] || statusColorMap.inactive;
     }
