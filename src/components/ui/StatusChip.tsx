@@ -48,6 +48,10 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         deleted: 'Deleted',
         approved: 'Approved',
         under_review: 'Under Review',
+        // Booking statuses
+        accepted: 'Accepted',
+        rescheduled: 'Rescheduled',
+        cancelled: 'Cancelled',
       };
       return statusMap[status] || status;
     }
@@ -156,6 +160,25 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           hoverBorder: '#B91C1C',
         },
         deleted: {
+          text: '#DC2626', // Red
+          border: '#DC2626',
+          hoverBg: '#FEF2F2',
+          hoverBorder: '#B91C1C',
+        },
+        // Booking statuses
+        accepted: {
+          text: '#059669', // Green
+          border: '#059669',
+          hoverBg: '#ECFDF5',
+          hoverBorder: '#047857',
+        },
+        rescheduled: {
+          text: '#0891B2', // Cyan
+          border: '#0891B2',
+          hoverBg: '#ECFEFF',
+          hoverBorder: '#0E7490',
+        },
+        cancelled: {
           text: '#DC2626', // Red
           border: '#DC2626',
           hoverBg: '#FEF2F2',

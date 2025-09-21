@@ -25,6 +25,16 @@ export const MENU_ITEMS = [
     path: '/advertisements',
   },
   {
+    text: 'Bookings',
+    iconName: 'EventNote',
+    path: '/bookings',
+  },
+  {
+    text: 'Loan Requests',
+    iconName: 'RequestQuote',
+    path: '/loan-requests',
+  },
+  {
     text: 'Events',
     iconName: 'EventNote',
     children: [
@@ -133,11 +143,6 @@ export const MENU_ITEMS = [
     text: 'Feedback',
     iconName: 'Feedback',
     path: '/feedback',
-  },
-  {
-    text: 'Loan Requests',
-    iconName: 'RequestQuote',
-    path: '/loan-requests',
   },
   {
     text: 'FAQs',

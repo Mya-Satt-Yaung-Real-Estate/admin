@@ -19,7 +19,7 @@ export interface FilterOption {
 
 export interface FilterField {
   key: string;
-  type: 'search' | 'select' | 'multiselect';
+  type: 'search' | 'select' | 'multiselect' | 'date';
   label: string;
   options?: FilterOption[];
   placeholder?: string;
@@ -118,6 +118,24 @@ export function StandardFilters({
               ))}
             </Select>
           </FormControl>
+        );
+
+      case 'date':
+        return (
+          <TextField
+            key={field.key}
+            type="date"
+            label={field.label}
+            value={value}
+            onChange={(e) => handleFilterChange(field.key, e.target.value)}
+            InputLabelProps={{
+              shrink: true,
+            }}
+            sx={{
+              minWidth: { xs: 200, sm: 150 },
+              width: field.width,
+            }}
+          />
         );
 
       default:

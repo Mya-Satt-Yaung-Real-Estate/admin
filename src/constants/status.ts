@@ -6,6 +6,10 @@ export const STATUS_VALUES = {
   draft: 'draft',
   published: 'published',
   archived: 'archived',
+  // Booking statuses
+  accepted: 'accepted',
+  rescheduled: 'rescheduled',
+  cancelled: 'cancelled',
 } as const;
 
 export type StatusValue = typeof STATUS_VALUES[keyof typeof STATUS_VALUES];
@@ -41,6 +45,22 @@ export const STATUS_CONFIG = {
     label: 'Archived',
     color: 'default' as const,
     icon: 'archive',
+  },
+  // Booking statuses
+  [STATUS_VALUES.accepted]: {
+    label: 'Accepted',
+    color: 'success' as const,
+    icon: 'check_circle',
+  },
+  [STATUS_VALUES.rescheduled]: {
+    label: 'Rescheduled',
+    color: 'info' as const,
+    icon: 'schedule',
+  },
+  [STATUS_VALUES.cancelled]: {
+    label: 'Cancelled',
+    color: 'error' as const,
+    icon: 'cancel',
   },
 } as const;
 
