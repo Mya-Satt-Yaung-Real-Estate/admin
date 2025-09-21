@@ -40,6 +40,8 @@ export interface StandardTableProps<T> {
   stickyHeader?: boolean;
   maxHeight?: string | number;
   loading?: boolean;
+  showRowNumbers?: boolean;
+  rowNumberLabel?: string;
 }
 
 export function StandardTable<T>({
@@ -57,12 +59,19 @@ export function StandardTable<T>({
   stickyHeader = true,
   maxHeight,
   loading = false,
+  showRowNumbers = false,
+  rowNumberLabel = 'No.',
 }: StandardTableProps<T>) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Filter out hidden columns
   const visibleColumns = columns.filter(col => !col.hidden);
+
+  // Calculate row number based on pagination
+  const calculateRowNumber = (index: number) => {
+    return (page * rowsPerPage) + index + 1;
+  };
 
   const handleRowClick = (row: T, index: number) => {
     if (onRowClick) {
@@ -137,6 +146,20 @@ export function StandardTable<T>({
         <Table stickyHeader={stickyHeader}>
           <TableHead>
             <TableRow>
+              {showRowNumbers && (
+                <TableCell
+                  align="center"
+                  sx={{
+                    width: '60px',
+                    fontWeight: 600,
+                    backgroundColor: theme.palette.background.paper,
+                    fontSize: '0.875rem',
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {rowNumberLabel}
+                </TableCell>
+              )}
               {visibleColumns.map((column) => (
                 <TableCell
                   key={column.id as string}
@@ -157,6 +180,11 @@ export function StandardTable<T>({
               // Loading skeleton rows
               Array.from({ length: rowsPerPage }).map((_, index) => (
                 <TableRow key={`skeleton-${index}`}>
+                  {showRowNumbers && (
+                    <TableCell align="center" sx={{ width: '60px' }}>
+                      <Skeleton variant="text" width="40px" height={24} />
+                    </TableCell>
+                  )}
                   {visibleColumns.map((column) => (
                     <TableCell key={`skeleton-${index}-${String(column.id)}`} align={column.align || 'left'}>
                       <Skeleton variant="text" width="80%" height={24} />
@@ -166,7 +194,7 @@ export function StandardTable<T>({
               ))
             ) : data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={visibleColumns.length + (showRowNumbers ? 1 : 0)} align="center" sx={{ py: 4 }}>
                   <Typography variant="body1" color="textSecondary">
                     {emptyMessage}
                   </Typography>
@@ -182,6 +210,19 @@ export function StandardTable<T>({
                     cursor: onRowClick ? 'pointer' : 'default',
                   }}
                 >
+                  {showRowNumbers && (
+                    <TableCell 
+                      align="center" 
+                      sx={{ 
+                        width: '60px',
+                        fontSize: '0.875rem',
+                        color: 'text.secondary',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {calculateRowNumber(index)}
+                    </TableCell>
+                  )}
                   {visibleColumns.map((column) => (
                     <TableCell
                       key={column.id as string}

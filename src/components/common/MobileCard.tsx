@@ -53,6 +53,10 @@ export interface MobileCardProps {
   // Loading state
   loading?: boolean;
   
+  // Row number
+  rowNumber?: number;
+  showRowNumber?: boolean;
+  
   // Styling
   sx?: SxProps<Theme>;
   
@@ -73,6 +77,8 @@ export const MobileCard: React.FC<MobileCardProps> = ({
   onClick,
   clickable = false,
   loading = false,
+  rowNumber,
+  showRowNumber = false,
   sx = {},
   children,
 }) => {
@@ -96,9 +102,24 @@ export const MobileCard: React.FC<MobileCardProps> = ({
           alignItems: 'center',
           gap: 2,
           mb: 2,
+          position: 'relative',
           ...sx,
         }}
       >
+        {/* Loading Row Number Badge */}
+        {showRowNumber && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 1,
+            }}
+          >
+            <Skeleton variant="circular" width={24} height={24} />
+          </Box>
+        )}
+        
         {/* Loading Avatar */}
         <Skeleton variant="circular" width={48} height={48} />
         
@@ -127,6 +148,7 @@ export const MobileCard: React.FC<MobileCardProps> = ({
         gap: 2,
         mb: 2,
         cursor: clickable ? 'pointer' : 'default',
+        position: 'relative',
         '&:hover': clickable ? {
           backgroundColor: 'action.hover',
           transition: 'background-color 0.2s'
@@ -135,6 +157,32 @@ export const MobileCard: React.FC<MobileCardProps> = ({
       }}
       onClick={handleClick}
     >
+      {/* Row Number Badge */}
+      {showRowNumber && rowNumber && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 1,
+          }}
+        >
+          <Chip
+            label={rowNumber}
+            size="small"
+            sx={{
+              height: 24,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              backgroundColor: 'primary.main',
+              color: 'white',
+              '& .MuiChip-label': {
+                px: 1,
+              },
+            }}
+          />
+        </Box>
+      )}
       {/* Avatar Section */}
       {(avatar || avatarText) && (
         <Badge
