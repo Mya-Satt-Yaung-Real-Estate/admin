@@ -6,14 +6,10 @@ import {
 } from '../api/appointments';
 import { 
   Appointment, 
-  CreateAppointmentData, 
-  UpdateAppointmentData,
   AppointmentActionData,
   AppointmentRescheduleData,
   AppointmentCancelData,
-  AppointmentCompleteData,
-  AppointmentListResponse,
-  AppointmentStatisticsResponse
+  AppointmentCompleteData
 } from '../../types/appointment';
 
 // Query Keys
@@ -32,13 +28,11 @@ export const appointmentKeys = {
 
 // Get appointment statistics
 export const useAppointmentStatistics = () => {
-  return useQuery<AppointmentStatisticsResponse>({
+  return useQuery({
     queryKey: appointmentKeys.statistics(),
     queryFn: async () => {
       const response = await appointmentsAPI.statistics();
-      return {
-        data: response.data // Extract the statistics data from the API response
-      };
+      return response.data; // Return the statistics data
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -58,14 +52,11 @@ export const useAppointmentTimeSlots = () => {
 
 // Get list of appointments
 export const useAppointments = (params: AppointmentQueryParams = {}) => {
-  return useQuery<AppointmentListResponse>({
+  return useQuery({
     queryKey: appointmentKeys.list(params),
     queryFn: async () => {
       const response = await appointmentsAPI.list(params);
-      return {
-        data: response.data, // Extract the appointments array
-        pagination: response.pagination // Extract the pagination object
-      };
+      return response; // Return the full response with data and pagination
     },
     staleTime: 30 * 1000, // 30 seconds
   });

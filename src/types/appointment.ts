@@ -101,10 +101,11 @@ export interface AppointmentActionData {
   schedule_end_time?: string;
 }
 
-export interface AppointmentRescheduleData extends AppointmentActionData {
+export interface AppointmentRescheduleData {
   schedule_date: string;
   schedule_start_time: string;
   schedule_end_time: string;
+  admin_notes?: string;
 }
 
 // Time Slot interface
@@ -113,6 +114,8 @@ export interface TimeSlot {
   name: string;
   start_time: string;
   end_time: string;
+  time_range?: string;
+  display_name?: string;
 }
 
 // Property Type interface

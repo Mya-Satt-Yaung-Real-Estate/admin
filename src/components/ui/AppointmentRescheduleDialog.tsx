@@ -22,7 +22,6 @@ import {
   CalendarToday as CalendarIcon,
   AccessTime as TimeIcon,
   CheckCircle as CheckIcon,
-  Error as ErrorIcon,
 } from '@mui/icons-material';
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -40,13 +39,15 @@ export interface AppointmentRescheduleDialogProps {
     name: string;
     start_time: string;
     end_time: string;
+    time_range?: string;
+    display_name?: string;
   }>;
   isLoading?: boolean;
   error?: string | null;
 }
 
 export interface AppointmentRescheduleData {
-  date: string;
+  schedule_date: string;
   schedule_start_time: string;
   schedule_end_time: string;
   admin_notes?: string;
@@ -134,7 +135,6 @@ const AppointmentRescheduleDialog: React.FC<AppointmentRescheduleDialogProps> = 
     if (selectedDate && selectedStartTime && selectedEndTime) {
       const newDate = dayjs(selectedDate).format('YYYY-MM-DD');
       const newStartTime = dayjs(selectedStartTime).format('HH:mm:ss');
-      const newEndTime = dayjs(selectedEndTime).format('HH:mm:ss');
       const hasDateChanged = newDate !== currentDate;
       const hasTimeChanged = newStartTime !== currentTime;
       setHasChanges(hasDateChanged || hasTimeChanged);

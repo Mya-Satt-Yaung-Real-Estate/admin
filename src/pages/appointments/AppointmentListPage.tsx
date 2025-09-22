@@ -32,11 +32,11 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, RescheduleDialog, AppointmentRescheduleDialog, ActionAlert } from '../../components/ui';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, AppointmentRescheduleDialog, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useAppointments, useAppointmentStatistics, useDeleteAppointment, useAcceptAppointment, useRescheduleAppointment, useCancelAppointment, useCompleteAppointment, useAppointmentTimeSlots } from '../../services/queries/appointments';
 import { FilterState } from '../../constants/filters';
-import { Appointment } from '../../types/appointment';
+import { Appointment, AppointmentRescheduleData } from '../../types/appointment';
 import { formatDate } from '../../constants/dateFormats';
 import dayjs from 'dayjs';
 
@@ -166,16 +166,10 @@ const AppointmentListPage: React.FC = () => {
   });
 
   // Appointment statistics for dashboard cards
-  const { data: statistics } = useAppointmentStatistics({
-    staleTime: 60000, // 1 minute - statistics don't change frequently
-    cacheTime: 600000, // 10 minutes
-  });
+  const { data: statistics } = useAppointmentStatistics();
   
   // Time slots for reschedule dialog
-  const { data: timeSlots } = useAppointmentTimeSlots({
-    staleTime: 300000, // 5 minutes - time slots rarely change
-    cacheTime: 1800000, // 30 minutes
-  });
+  const { data: timeSlots } = useAppointmentTimeSlots();
 
   // Delete and action mutations
   const deleteAppointmentMutation = useDeleteAppointment();
@@ -214,25 +208,25 @@ const AppointmentListPage: React.FC = () => {
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Appointments',
-      value: (statistics?.data as any)?.total_appointments || 0,
+      value: statistics?.data?.total_appointments || 0,
       color: 'primary',
       icon: <EventIcon />,
     },
     {
       title: 'Pending Appointments',
-      value: (statistics?.data as any)?.pending_appointments || 0,
+      value: statistics?.data?.pending_appointments || 0,
       color: 'warning',
       icon: <TimeIcon />,
     },
     {
       title: 'Confirmed',
-      value: (statistics?.data as any)?.confirmed_appointments || 0,
+      value: statistics?.data?.confirmed_appointments || 0,
       color: 'success',
       icon: <AcceptIcon />,
     },
     {
       title: 'Completed',
-      value: (statistics?.data as any)?.completed_appointments || 0,
+      value: statistics?.data?.completed_appointments || 0,
       color: 'info',
       icon: <CompleteIcon />,
     },
@@ -616,7 +610,7 @@ const AppointmentListPage: React.FC = () => {
           await rescheduleAppointmentMutation.mutateAsync({ 
             id: appointmentToAction.id, 
             data: { 
-              date: actionData?.date || appointmentToAction.date,
+              schedule_date: actionData?.schedule_date || appointmentToAction.date,
               schedule_start_time: actionData?.schedule_start_time || '09:00:00',
               schedule_end_time: actionData?.schedule_end_time || '11:00:00',
               admin_notes: actionData?.admin_notes 
@@ -651,7 +645,7 @@ const AppointmentListPage: React.FC = () => {
   };
 
   // Reschedule dialog handlers
-  const handleRescheduleConfirm = async (data: { schedule_date: string; schedule_start_time: string; schedule_end_time: string; admin_notes?: string }) => {
+  const handleRescheduleConfirm = async (data: AppointmentRescheduleData) => {
     if (!appointmentToAction) return;
     
     try {

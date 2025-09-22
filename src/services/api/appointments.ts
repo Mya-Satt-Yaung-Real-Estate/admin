@@ -2,8 +2,6 @@
 import { apiRequest, QueryParams } from './base';
 import { 
   Appointment, 
-  CreateAppointmentData, 
-  UpdateAppointmentData, 
   AppointmentActionData,
   AppointmentRescheduleData,
   AppointmentCancelData,

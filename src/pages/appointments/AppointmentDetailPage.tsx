@@ -8,10 +8,6 @@ import {
   Button,
   Grid,
   Divider,
-  IconButton,
-  Tooltip,
-  useTheme,
-  useMediaQuery,
   Paper,
   Avatar,
   List,
@@ -43,6 +39,7 @@ import AppointmentRescheduleDialog from '../../components/ui/AppointmentReschedu
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useAppointment, useDeleteAppointment, useAcceptAppointment, useRescheduleAppointment, useCancelAppointment, useCompleteAppointment, useAppointmentTimeSlots } from '../../services/queries/appointments';
 import { formatDate } from '../../constants/dateFormats';
+import { AppointmentRescheduleData } from '../../types/appointment';
 import dayjs from 'dayjs';
 
 // ============================================================================
@@ -52,8 +49,6 @@ import dayjs from 'dayjs';
 const AppointmentDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   // ========================================================================
   // HOOKS & STATE
@@ -150,7 +145,7 @@ const AppointmentDetailPage: React.FC = () => {
           await rescheduleAppointmentMutation.mutateAsync({ 
             id: appointment.id, 
             data: { 
-              date: actionData?.date || appointment.date,
+              schedule_date: actionData?.schedule_date || appointment.date,
               schedule_start_time: actionData?.schedule_start_time || '09:00:00',
               schedule_end_time: actionData?.schedule_end_time || '11:00:00',
               admin_notes: actionData?.admin_notes 
@@ -184,7 +179,7 @@ const AppointmentDetailPage: React.FC = () => {
   };
 
   // Reschedule dialog handlers
-  const handleRescheduleConfirm = async (data: { schedule_date: string; schedule_start_time: string; schedule_end_time: string; admin_notes?: string }) => {
+  const handleRescheduleConfirm = async (data: AppointmentRescheduleData) => {
     if (!appointment) return;
     
     try {
