@@ -161,13 +161,21 @@ const AppointmentListPage: React.FC = () => {
     date_to: filters.dateToFilter || undefined,
     sort_by: 'created_at',
     sort_direction: 'desc',
+    staleTime: 30000, // 30 seconds - prevent aggressive refetching
+    cacheTime: 300000, // 5 minutes
   });
 
   // Appointment statistics for dashboard cards
-  const { data: statistics } = useAppointmentStatistics();
+  const { data: statistics } = useAppointmentStatistics({
+    staleTime: 60000, // 1 minute - statistics don't change frequently
+    cacheTime: 600000, // 10 minutes
+  });
   
   // Time slots for reschedule dialog
-  const { data: timeSlots } = useAppointmentTimeSlots();
+  const { data: timeSlots } = useAppointmentTimeSlots({
+    staleTime: 300000, // 5 minutes - time slots rarely change
+    cacheTime: 1800000, // 30 minutes
+  });
 
   // Delete and action mutations
   const deleteAppointmentMutation = useDeleteAppointment();
@@ -468,7 +476,7 @@ const AppointmentListPage: React.FC = () => {
         );
       },
     },
-  ], [isMobile, navigate, acceptAppointmentMutation.isPending, rescheduleAppointmentMutation.isPending, cancelAppointmentMutation.isPending, completeAppointmentMutation.isPending, deleteAppointmentMutation.isPending, actionMenuAnchor, selectedAppointmentForMenu]);
+  ], [isMobile, navigate, actionMenuAnchor, selectedAppointmentForMenu]);
 
   // ========================================================================
   // MOBILE CARD ACTIONS

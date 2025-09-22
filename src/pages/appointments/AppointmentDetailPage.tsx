@@ -594,26 +594,31 @@ const AppointmentDetailPage: React.FC = () => {
                 
                 <Divider sx={{ my: 1 }} />
                 
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<EditIcon />}
-                  onClick={handleEdit}
-                  fullWidth
-                >
-                  Edit Appointment
-                </Button>
-                
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={handleDelete}
-                  disabled={deleteAppointmentMutation.isPending}
-                  fullWidth
-                >
-                  Delete Appointment
-                </Button>
+                {/* Hide edit and delete buttons for completed and cancelled appointments */}
+                {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<EditIcon />}
+                      onClick={handleEdit}
+                      fullWidth
+                    >
+                      Edit Appointment
+                    </Button>
+                    
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={handleDelete}
+                      disabled={deleteAppointmentMutation.isPending}
+                      fullWidth
+                    >
+                      Delete Appointment
+                    </Button>
+                  </>
+                )}
               </Box>
             </CardContent>
           </Card>

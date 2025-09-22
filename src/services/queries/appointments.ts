@@ -95,12 +95,13 @@ export const useDeleteAppointment = () => {
   return useMutation({
     mutationFn: (id: number) => appointmentsAPI.delete(id),
     onSuccess: (_, id) => {
-      // Invalidate and refetch appointments list
+      // Only invalidate critical queries - appointments list
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
       
       // Remove the specific appointment from cache
       queryClient.removeQueries({ queryKey: appointmentKeys.detail(id) });
+      
+      // Statistics will update naturally or can be invalidated separately if needed
     },
   });
 };
@@ -118,9 +119,10 @@ export const useAcceptAppointment = () => {
       // Update the specific appointment in cache
       queryClient.setQueryData(appointmentKeys.detail(id), updatedAppointment);
       
-      // Invalidate lists to refetch with updated data
+      // Only invalidate critical queries - appointments list
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
+      
+      // Statistics will update naturally or can be invalidated separately if needed
     },
   });
 };
@@ -138,9 +140,10 @@ export const useRescheduleAppointment = () => {
       // Update the specific appointment in cache
       queryClient.setQueryData(appointmentKeys.detail(id), updatedAppointment);
       
-      // Invalidate lists to refetch with updated data
+      // Only invalidate critical queries - appointments list
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
+      
+      // Statistics will update naturally or can be invalidated separately if needed
     },
   });
 };
@@ -158,9 +161,10 @@ export const useCancelAppointment = () => {
       // Update the specific appointment in cache
       queryClient.setQueryData(appointmentKeys.detail(id), updatedAppointment);
       
-      // Invalidate lists to refetch with updated data
+      // Only invalidate critical queries - appointments list
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
+      
+      // Statistics will update naturally or can be invalidated separately if needed
     },
   });
 };
@@ -178,9 +182,10 @@ export const useCompleteAppointment = () => {
       // Update the specific appointment in cache
       queryClient.setQueryData(appointmentKeys.detail(id), updatedAppointment);
       
-      // Invalidate lists to refetch with updated data
+      // Only invalidate critical queries - appointments list
       queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
+      
+      // Statistics will update naturally or can be invalidated separately if needed
     },
   });
 };
