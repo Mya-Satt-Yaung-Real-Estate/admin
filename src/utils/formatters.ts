@@ -42,3 +42,17 @@ export const formatNumber = (value: number): string => {
   
   return value.toLocaleString();
 };
+
+export const formatDate = (value: string | Date | null | undefined): string => {
+  if (!value) return 'N/A';
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (isNaN(date.getTime())) return 'Invalid Date';
+
+  return date.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
