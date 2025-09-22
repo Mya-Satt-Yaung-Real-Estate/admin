@@ -7,6 +7,7 @@ export { default as LogoutDialog } from './LogoutDialog';
 export { default as DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 export { default as ConfirmationDialog } from './ConfirmationDialog';
 export { default as RescheduleDialog } from './RescheduleDialog';
+export { default as AppointmentRescheduleDialog } from './AppointmentRescheduleDialog';
 export { default as AssignAdminDialog } from './AssignAdminDialog';
 export { default as ActionAlert } from './ActionAlert';
 export { default as ConfigurationCategoryCard } from './ConfigurationCategoryCard';

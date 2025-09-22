@@ -52,6 +52,9 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         accepted: 'Accepted',
         rescheduled: 'Rescheduled',
         cancelled: 'Cancelled',
+        // Appointment statuses
+        confirmed: 'Confirmed',
+        completed: 'Completed',
       };
       return statusMap[status] || status;
     }
@@ -183,6 +186,19 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           border: '#DC2626',
           hoverBg: '#FEF2F2',
           hoverBorder: '#B91C1C',
+        },
+        // Appointment statuses
+        confirmed: {
+          text: '#059669', // Green
+          border: '#059669',
+          hoverBg: '#ECFDF5',
+          hoverBorder: '#047857',
+        },
+        completed: {
+          text: '#7C3AED', // Purple
+          border: '#7C3AED',
+          hoverBg: '#F5F3FF',
+          hoverBorder: '#5B21B6',
         },
         // Loan request statuses
         approved: {

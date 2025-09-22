@@ -65,10 +65,21 @@ export const MENU_ITEMS = [
     iconName: 'RequestQuote',
     path: '/points/purchase-requests',
   },
+  // {
+  //   text: 'Bookings',
+  //   iconName: 'EventNote',
+  //   path: '/bookings',
+  // },
   {
-    text: 'Bookings',
+    text: 'Appointments',
     iconName: 'EventNote',
-    path: '/bookings',
+    children: [
+      {
+        text: 'Appointments',
+        iconName: 'EventNote',
+        path: '/appointments',
+      },
+    ],
   },
   {
     text: 'Loan Requests',
