@@ -203,6 +203,12 @@ const PropertyEditPage: React.FC = () => {
   };
 
   const handleSubmit = async (values: any) => {
+    console.log('🚀 Form submission started');
+    console.log('📝 Form values:', values);
+    console.log('📱 Phone numbers:', phoneNumbers);
+    console.log('🖼️ Existing media:', existingMedia);
+    console.log('📤 Uploaded media:', uploadedMedia);
+    
     try {
       const mediaIds = [
         ...existingMedia.map(media => media.id),
@@ -216,11 +222,16 @@ const PropertyEditPage: React.FC = () => {
         media_ids: mediaIds,
       };
 
+      console.log('📦 Update data to send:', updateData);
+      console.log('🆔 Property ID:', Number(id));
+
       await updatePropertyMutation.mutateAsync({ id: Number(id), data: updateData });
       
+      console.log('✅ Property updated successfully');
       // Navigate to property detail page with success message
       navigate(`/properties/${id}?success=${encodeURIComponent('Property updated successfully!')}`);
     } catch (error: any) {
+      console.error('❌ Error updating property:', error);
       showError(error.message || 'Failed to update property');
     }
   };
@@ -327,7 +338,7 @@ const PropertyEditPage: React.FC = () => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ values, errors, touched, handleChange, setFieldValue }) => (
+        {({ values, errors, touched, handleChange, setFieldValue, handleSubmit }) => (
           <Form>
             <Grid container spacing={3}>
               {/* Left Column */}
@@ -433,6 +444,7 @@ const PropertyEditPage: React.FC = () => {
 
                 {/* Form Actions */}
                 <FormActions
+                  onSubmit={handleSubmit}
                   onCancel={() => navigate(`/properties/${id}`)}
                   submitText={uploadState.isUploading ? `Uploading... (${uploadState.uploadedFiles}/${uploadState.totalFiles})` : "Update Property"}
                   isSubmitting={updatePropertyMutation.isPending}
