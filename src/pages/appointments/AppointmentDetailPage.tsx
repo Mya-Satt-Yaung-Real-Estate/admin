@@ -280,9 +280,17 @@ const AppointmentDetailPage: React.FC = () => {
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Typography variant="h6" fontWeight="600">
-                  Appointment Information
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="h6" fontWeight="600">
+                    Appointment Information
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <PropertyIcon color="primary" fontSize="small" />
+                    <Typography variant="body2" color="textSecondary">
+                      {appointment.property_listing_type?.name_en || 'N/A'}
+                    </Typography>
+                  </Box>
+                </Box>
                 <StatusChip status={appointment.status} />
               </Box>
               
@@ -291,48 +299,38 @@ const AppointmentDetailPage: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <EventIcon color="primary" />
                     <Typography variant="body2" color="textSecondary">
-                      Date
+                      Prefer Date & Time
                     </Typography>
                   </Box>
                   <Typography variant="body1" fontWeight="500">
                     {formatDate(appointment.date, 'display')}
                   </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <TimeIcon color="primary" />
-                    <Typography variant="body2" color="textSecondary">
-                      Schedule Time
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {appointment.schedule_time_range || '-'}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <PropertyIcon color="primary" />
-                    <Typography variant="body2" color="textSecondary">
-                      Property Type
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
-                    {appointment.property_listing_type?.name_en || 'N/A'}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <TimeIcon color="primary" />
-                    <Typography variant="body2" color="textSecondary">
-                      Preferred Time
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" fontWeight="500">
+                  <Typography variant="body2" color="textSecondary">
                     {appointment.prefer_time_range || 'Anytime'}
                   </Typography>
+                </Grid>
+                
+                <Grid item xs={12} sm={6}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <TimeIcon color="primary" />
+                    <Typography variant="body2" color="textSecondary">
+                      Reschedule Date & Time
+                    </Typography>
+                  </Box>
+                  {appointment.schedule_date || appointment.schedule_time_range ? (
+                    <>
+                      <Typography variant="body1" fontWeight="500">
+                        {appointment.schedule_date ? formatDate(appointment.schedule_date, 'display') : '-'}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        {appointment.schedule_time_range || '-'}
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography variant="body1" fontWeight="500" color="textSecondary">
+                      -
+                    </Typography>
+                  )}
                 </Grid>
               </Grid>
             </CardContent>

@@ -271,7 +271,7 @@ const AppointmentListPage: React.FC = () => {
     },
     {
       id: 'appointment',
-      label: 'Date & Time',
+      label: 'Prefer Date & Time',
       render: (_value, appointment) => {
         if (!appointment) return <Typography variant="body2">No data</Typography>;
         return (
@@ -280,7 +280,7 @@ const AppointmentListPage: React.FC = () => {
               {formatDate(appointment.date, 'display')}
             </Typography>
             <Typography variant="caption" color="textSecondary">
-              {appointment.display_time_range || 'No time set'}
+              {appointment.prefer_time_range || 'No time set'}
             </Typography>
           </Box>
         );
@@ -296,13 +296,24 @@ const AppointmentListPage: React.FC = () => {
     },
     {
       id: 'scheduleTime',
-      label: 'Schedule Time',
+      label: 'Reschedule Date & Time',
       render: (_value, appointment) => {
         if (!appointment) return <Typography variant="body2">No data</Typography>;
+        
+        // If not scheduled, show dash
+        if (!appointment.schedule_date && !appointment.schedule_time_range) {
+          return <Typography variant="body2" color="textSecondary">-</Typography>;
+        }
+        
         return (
-          <Typography variant="body2" color="textSecondary">
-            {appointment.schedule_time_range || '-'}
-          </Typography>
+          <Box>
+            <Typography variant="body2" fontWeight="500">
+              {appointment.schedule_date ? formatDate(appointment.schedule_date, 'display') : '-'}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {appointment.schedule_time_range || '-'}
+            </Typography>
+          </Box>
         );
       },
       hidden: isMobile,

@@ -147,9 +147,17 @@ const AppointmentRescheduleDialog: React.FC<AppointmentRescheduleDialogProps> = 
     if (preferTimeId && preferTimeSlots.length > 0) {
       const selectedSlot = preferTimeSlots.find(slot => slot.id === preferTimeId);
       if (selectedSlot) {
-        // Extract time from datetime string (e.g., "2025-09-22T01:30:00.000000Z" -> "01:30:00")
-        const startTimeStr = selectedSlot.start_time.split('T')[1]?.split('.')[0] || selectedSlot.start_time;
-        const endTimeStr = selectedSlot.end_time.split('T')[1]?.split('.')[0] || selectedSlot.end_time;
+        // Handle both datetime strings and time strings
+        let startTimeStr = selectedSlot.start_time;
+        let endTimeStr = selectedSlot.end_time;
+        
+        // If it's a datetime string, extract the time part
+        if (selectedSlot.start_time.includes('T')) {
+          startTimeStr = selectedSlot.start_time.split('T')[1]?.split('.')[0] || selectedSlot.start_time;
+        }
+        if (selectedSlot.end_time.includes('T')) {
+          endTimeStr = selectedSlot.end_time.split('T')[1]?.split('.')[0] || selectedSlot.end_time;
+        }
         
         setSelectedStartTime(dayjs(`2000-01-01T${startTimeStr}`));
         setSelectedEndTime(dayjs(`2000-01-01T${endTimeStr}`));
