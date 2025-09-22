@@ -7,6 +7,7 @@ import {
   useTheme,
   useMediaQuery,
   Avatar,
+  Chip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -91,6 +92,7 @@ const TABLE_CONFIG = {
     name: { label: 'Name', width: '30%' },
     status: { label: 'Status', width: '15%' },
     lastLogin: { label: 'Last Login', width: '20%' },
+    role: { label: 'Roles', width: '30%' },
     actions: { label: 'Actions', width: '15%', align: 'center' as const },
   },
 } as const;
@@ -201,6 +203,27 @@ const createTableColumns = (
         <Typography variant="body2">
           {formatLastLogin(admin.last_login_at)}
         </Typography>
+      );
+    },
+  },
+  {
+    id: 'role',
+    label: TABLE_CONFIG.columns.role.label,
+    width: TABLE_CONFIG.columns.role.width,
+    render: (_value, admin, _index) => {
+      if (!admin) return <Typography variant="body2">No role</Typography>;
+      const roles = admin.roles || [];
+      return (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {roles.slice(0,3).map((role) => (
+            <Chip 
+              key={role.id}
+              label={role.name}
+              size='small'
+              color='primary'
+            />
+          ))}
+        </Box>
       );
     },
   },
