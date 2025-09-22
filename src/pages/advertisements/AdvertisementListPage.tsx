@@ -191,6 +191,7 @@ const AdvertisementListPage: React.FC = () => {
 
   // Filter advertisements using client-side filtering
   const filteredAdvertisements = useMemo(() => {
+    console.log('Current filters:', filters);
     if (!advertisements || advertisements.length === 0) return [];
     
     const validAdvertisements = advertisements.filter(advertisement => advertisement != null);
@@ -203,11 +204,19 @@ const AdvertisementListPage: React.FC = () => {
       if (activeTab === 0 && isDeleted) return false;
       if (activeTab === 1 && !isDeleted) return false;
       
+      const searchTerm = filters.searchTerm || '';
       const matchesSearch = 
-        advertisement.title_en.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        advertisement.title_mm.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        advertisement.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        advertisement.contact_name.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        (advertisement.title_en || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (advertisement.title_mm || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (advertisement.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (advertisement.contact_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Debug search
+      if (searchTerm && searchTerm.length > 0) {
+        console.log('Search term:', searchTerm);
+        console.log('Advertisement title:', advertisement.title_en);
+        console.log('Matches search:', matchesSearch);
+      }
       
       const matchesStatus = filters.statusFilter === 'all' || 
         advertisement.status === filters.statusFilter;
@@ -681,7 +690,10 @@ const AdvertisementListPage: React.FC = () => {
       <StandardFilters
         fields={filterFields}
         filters={filters}
-        onFilterChange={setFilter}
+        onFilterChange={(key, value) => {
+          console.log('Filter change:', key, value);
+          setFilter(key as keyof AdvertisementFilters, value);
+        }}
       />
 
       {/* Tabs */}
