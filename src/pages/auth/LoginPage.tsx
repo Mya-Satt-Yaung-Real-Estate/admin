@@ -150,7 +150,7 @@ const LoginPage: React.FC = () => {
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Box
             component="img"
-            src="/project_logo.png"
+            src="/jade.png"
             alt="Logo"
             sx={{
               width: 80,
@@ -168,7 +168,7 @@ const LoginPage: React.FC = () => {
               mb: 1,
             }}
           >
-            MyaSattYaung
+            Jade Property
           </Typography>
           <Typography 
             variant="body1" 
@@ -176,7 +176,7 @@ const LoginPage: React.FC = () => {
               color: '#4a5568',
             }}
           >
-            通达・房地产公司
+            {/* 通达・房地产公司 */}
           </Typography>
         </Box>
 
@@ -290,7 +290,7 @@ const LoginPage: React.FC = () => {
             textAlign: 'center',
           }}
         >
-          © 2024 Admin Panel. All rights reserved.
+          © 2026 Jade Admin Panel. All rights reserved.
         </Typography>
       </Box>
     </Box>

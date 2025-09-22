@@ -29,15 +29,11 @@ export const FormActions: React.FC<FormActionsProps> = ({
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Button
-            type="submit"
             variant="contained"
             fullWidth
             startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />}
             disabled={isSubmitting || isDisabled}
             onClick={() => {
-              console.log('Submit button clicked');
-              console.log('isSubmitting:', isSubmitting);
-              console.log('isDisabled:', isDisabled);
               if (onSubmit) {
                 onSubmit();
               }

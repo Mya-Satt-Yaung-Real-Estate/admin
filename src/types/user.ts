@@ -52,7 +52,9 @@ export interface RegularUser {
   name: string;
   slug: string;
   email: string;
+  phone?: string;
   user_type: 'company' | 'individual';
+  user_type_label?: string;
   member_level: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active: boolean;
   last_login_at?: string;

@@ -152,12 +152,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     setOpenDropdown(prev => prev === dropdownText ? null : dropdownText);
   }, []);
 
-  // Find the index of the Analytics item
-  const analyticsIdx = menuItems.findIndex(item => item.text === 'Analytics');
-  // Everything before and including Analytics
-  const mainMenu = menuItems.slice(0, analyticsIdx + 1);
-  // Everything after Analytics (Settings and Admin Management)
-  const secondaryMenu = menuItems.slice(analyticsIdx + 1);
+  // Group menu items by sections (no need for analytics split anymore)
+  const allMenuItems = menuItems;
 
   const sidebarContent = (
     <Box sx={{ 
@@ -201,41 +197,39 @@ const Sidebar: React.FC<SidebarProps> = ({
         px: 1,
       }}>
         <List sx={{ p: 0 }}>
-          {mainMenu.map((item) => (
-            <SidebarItem
-              key={item.text}
-              text={item.text}
-              icon={getIconComponent(item.iconName)}
-              path={item.path}
-              isSelected={currentPath === item.path}
-              isCollapsed={isCollapsed}
-              onClick={handleNavigate}
-              childrenItems={item.children}
-              currentPath={currentPath}
-              openDropdown={openDropdown}
-              onDropdownToggle={handleDropdownToggle}
-            />
-          ))}
-        </List>
-        {secondaryMenu.length > 0 && (
-          <Divider sx={{ my: 1, borderColor: 'divider' }} />
-        )}
-        <List sx={{ p: 0 }}>
-          {secondaryMenu.map((item) => (
-            <SidebarItem
-              key={item.text}
-              text={item.text}
-              icon={getIconComponent(item.iconName)}
-              path={item.path}
-              isSelected={currentPath === item.path}
-              isCollapsed={isCollapsed}
-              onClick={handleNavigate}
-              childrenItems={item.children}
-              currentPath={currentPath}
-              openDropdown={openDropdown}
-              onDropdownToggle={handleDropdownToggle}
-            />
-          ))}
+          {allMenuItems.map((item, index) => {
+            // Handle divider items
+            if (item.isDivider) {
+              return (
+                <Divider 
+                  key={`divider-${index}`}
+                  sx={{ 
+                    my: 1, 
+                    borderColor: 'divider',
+                    borderWidth: 1,
+                    opacity: 0.8,
+                  }} 
+                />
+              );
+            }
+            
+            // Handle regular menu items
+            return (
+              <SidebarItem
+                key={item.text}
+                text={item.text}
+                icon={getIconComponent(item.iconName)}
+                path={item.path}
+                isSelected={currentPath === item.path}
+                isCollapsed={isCollapsed}
+                onClick={handleNavigate}
+                childrenItems={item.children}
+                currentPath={currentPath}
+                openDropdown={openDropdown}
+                onDropdownToggle={handleDropdownToggle}
+              />
+            );
+          })}
         </List>
       </Box>
     </Box>

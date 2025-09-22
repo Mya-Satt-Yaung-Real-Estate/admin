@@ -61,6 +61,7 @@ export interface MenuItem {
   iconName: string;
   path?: string;
   children?: MenuItem[];
+  isDivider?: boolean;
 }
 
 // Layout Constants

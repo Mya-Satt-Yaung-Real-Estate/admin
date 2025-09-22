@@ -4,16 +4,7 @@ export const MENU_ITEMS = [
     iconName: 'Dashboard',
     path: '/',
   },
-  {
-    text: 'Point Orders',
-    iconName: 'RequestQuote',
-    path: '/points/purchase-requests',
-  },
-  {
-    text: 'Users',
-    iconName: 'People',
-    path: '/users',
-  },
+  // First Section: Core Business Features
   {
     text: 'Properties',
     iconName: 'HomeWork',
@@ -61,6 +52,42 @@ export const MENU_ITEMS = [
       },
     ],
   },
+  // HR Line - First Section End
+  {
+    text: 'HR_DIVIDER_1',
+    iconName: 'Dashboard', // Placeholder
+    path: '',
+    isDivider: true,
+  },
+  // Second Section: User & Transaction Features
+  {
+    text: 'Point Orders',
+    iconName: 'RequestQuote',
+    path: '/points/purchase-requests',
+  },
+  {
+    text: 'Bookings',
+    iconName: 'EventNote',
+    path: '/bookings',
+  },
+  {
+    text: 'Loan Requests',
+    iconName: 'RequestQuote',
+    path: '/loan-requests',
+  },
+  {
+    text: 'Users',
+    iconName: 'People',
+    path: '/users',
+  },
+  // HR Line - Second Section End
+  {
+    text: 'HR_DIVIDER_2',
+    iconName: 'Dashboard', // Placeholder
+    path: '',
+    isDivider: true,
+  },
+  // Third Section: System & Admin Features
   {
     text: 'Master Data',
     iconName: 'Assessment',
@@ -92,11 +119,6 @@ export const MENU_ITEMS = [
       },
     ],
   },
-  // {
-  //   text: 'Analytics',
-  //   iconName: 'Assessment',
-  //   path: '/analytics',
-  // },
   {
     text: 'Settings',
     iconName: 'Settings',
@@ -133,11 +155,6 @@ export const MENU_ITEMS = [
     text: 'Feedback',
     iconName: 'Feedback',
     path: '/feedback',
-  },
-  {
-    text: 'Loan Requests',
-    iconName: 'RequestQuote',
-    path: '/loan-requests',
   },
   {
     text: 'FAQs',
