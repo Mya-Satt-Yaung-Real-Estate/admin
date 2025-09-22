@@ -264,8 +264,11 @@ const AdvertisementEditPage: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
-      console.log('Form submission started');
-      console.log('Form values:', values);
+      console.log('🚀 Advertisement form submission started');
+      console.log('📝 Form values:', values);
+      console.log('📱 Phone numbers:', phoneNumbers);
+      console.log('🖼️ Existing media:', existingMedia);
+      console.log('📤 Uploaded media:', uploadedMedia);
       
       // Check if at least one image is uploaded
       const allMedia = [...existingMedia, ...uploadedMedia];
@@ -284,16 +287,19 @@ const AdvertisementEditPage: React.FC = () => {
         media_ids: allMedia.map(media => media.id),
       };
 
-      console.log('Advertisement data to submit:', advertisementData);
+      console.log('📦 Advertisement data to submit:', advertisementData);
+      console.log('🔄 Calling update mutation...');
+      
       await updateAdvertisementMutation.mutateAsync({
         id: Number(id),
         data: advertisementData
       });
       
+      console.log('✅ Advertisement updated successfully');
       // Navigate to advertisement detail page with success message (consistent with other edit pages)
       navigate(`/advertisements/${id}?success=${encodeURIComponent('Advertisement updated successfully!')}`);
     } catch (error: any) {
-      console.error('Error updating advertisement:', error);
+      console.error('❌ Error updating advertisement:', error);
       showError(error.message || 'Failed to update advertisement. Please try again.');
     }
   };
@@ -327,7 +333,7 @@ const AdvertisementEditPage: React.FC = () => {
         onSubmit={handleSubmit}
         enableReinitialize={false}
       >
-        {({ values, errors, touched, handleChange, setFieldValue }) => (
+        {({ values, errors, touched, handleChange, setFieldValue, handleSubmit }) => (
           <Form>
             <Grid container spacing={3}>
               {/* Left Column */}
@@ -446,7 +452,7 @@ const AdvertisementEditPage: React.FC = () => {
 
                 {/* Form Actions */}
                 <FormActions
-                  onSubmit={() => {}} // Handled by Formik
+                  onSubmit={handleSubmit}
                   onCancel={() => navigate(`/advertisements/${id}`)}
                   submitText={uploadState.isUploading ? `Uploading... (${uploadState.uploadedFiles}/${uploadState.totalFiles})` : "Update Advertisement"}
                   isSubmitting={updateAdvertisementMutation.isPending}
