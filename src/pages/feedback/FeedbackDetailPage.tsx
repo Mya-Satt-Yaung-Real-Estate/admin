@@ -94,6 +94,34 @@ const FeedbackDetailPage: React.FC = () => {
         title="Feedback Details"
         subtitle={`From ${feedback.user_name || 'Unknown User'}`}
       />
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+        <Button
+          variant="outlined"
+          color="error"
+          startIcon={<DeleteIcon />}
+          onClick={handleDelete}
+        >
+          Delete
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+        >
+          Back to List
+        </Button>
+      </Box>
+      <ActionAlert {...alert} onClose={clearAlert} />
+      <DeleteConfirmationDialog
+        open={deleteState.open}
+        onClose={closeDeleteConfirmation}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteState.itemName}
+        itemType={deleteState.itemType}
+        isLoading={deleteFeedbackMutation.isPending}
+        error={deleteFeedbackMutation.error?.message}
+        requireReason={false}
+      />
       <Card>
         <CardContent>
           <Grid container spacing={3}>
@@ -137,34 +165,6 @@ const FeedbackDetailPage: React.FC = () => {
           </Grid>
         </CardContent>
       </Card>
-      <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<DeleteIcon />}
-          onClick={handleDelete}
-        >
-          Delete
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to List
-        </Button>
-      </Box>
-      <ActionAlert {...alert} onClose={clearAlert} />
-      <DeleteConfirmationDialog
-        open={deleteState.open}
-        onClose={closeDeleteConfirmation}
-        onConfirm={handleConfirmDelete}
-        itemName={deleteState.itemName}
-        itemType={deleteState.itemType}
-        isLoading={deleteFeedbackMutation.isPending}
-        error={deleteFeedbackMutation.error?.message}
-        requireReason={false}
-      />
     </Box>
   );
 };

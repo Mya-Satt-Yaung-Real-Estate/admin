@@ -22,7 +22,7 @@ import { StandardFilters, FilterField } from '../../components/common/StandardFi
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
-import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
+import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useLoanRequests, useDeleteLoanRequest, useRestoreLoanRequest, useLoanRequestStatistics } from '../../services/queries/loan-requests';
 import { FilterState } from '../../constants/filters';
 import { LoanRequest } from '../../types/loanRequest';
@@ -49,7 +49,7 @@ const PAGE_CONFIG = {
 
 const FILTER_FIELDS: FilterField[] = [
   {
-    key: 'search',
+    key: 'searchTerm',
     type: 'search',
     label: 'Search',
     placeholder: 'Search by name, email, phone or NRC...',
@@ -86,16 +86,6 @@ const LoanRequestListPage: React.FC = () => {
     status: '',
   });
 
-  // Manual search: only triggers on Enter key or search button click
-  const {
-    searchValue,
-    searchTerm,
-    handleInputChange,
-    triggerSearch,
-    clearSearch,
-    handleKeyPress,
-  } = useManualSearch('');
-
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
 
   // Tab state for active/deleted loan requests
@@ -105,7 +95,6 @@ const LoanRequestListPage: React.FC = () => {
   const { data: loanRequestsResponse, isLoading, error } = useLoanRequests({
     page: 1, // Fetch first page
     per_page: 90, // Fetch a larger number to accommodate both active and deleted requests
-    search: searchTerm || undefined, // Use manual search term
     status: filters.status || undefined,
     sort_by: 'created_at',
     sort_direction: 'desc',
@@ -139,23 +128,15 @@ const LoanRequestListPage: React.FC = () => {
     handleChangePage(event, 0);
   };
 
-  // Custom filter change handler that handles search input specially
+  // Filter change handler - updates filters immediately
   const handleFilterChange = (key: string, value: string) => {
-    if (key === 'searchTerm') {
-      // Use manual search for search input
-      handleInputChange(value);
-    } else {
-      // Use regular filter for other inputs
-      setFilter(key as keyof LoanFilters, value);
-    }
+    setFilter(key as keyof LoanFilters, value);
   };
 
   // Clear all filters function
   const handleClearFilters = () => {
-    // Clear search
-    clearSearch();
-    
     // Reset all filters to default values
+    setFilter('searchTerm', '');
     setFilter('status', '');
     
     // Reset to first page
@@ -187,6 +168,29 @@ const LoanRequestListPage: React.FC = () => {
   };
 
   // ========================================================================  
+  // HELPER FUNCTIONS
+  // ========================================================================
+
+  // Helper function to check if a string contains a search term (case insensitive)
+  const containsSearchTerm = (text: string | null | undefined, term: string): boolean => {
+    if (!text || !term) return false;
+    return text.toLowerCase().includes(term.toLowerCase());
+  };
+
+  // Enhanced search function that checks all relevant fields
+  const matchesSearchTerm = (loanRequest: LoanRequest, term: string): boolean => {
+    if (!term) return true;
+    
+    return (
+      containsSearchTerm(loanRequest.full_name, term) ||
+      containsSearchTerm(loanRequest.email, term) ||
+      containsSearchTerm(loanRequest.phone, term) ||
+      containsSearchTerm(loanRequest.nrc_number, term) ||
+      containsSearchTerm(loanRequest.user?.name, term)
+    );
+  };
+
+  // ========================================================================  
   // DATA PROCESSING
   // ========================================================================
 
@@ -201,13 +205,8 @@ const LoanRequestListPage: React.FC = () => {
         ? loanRequest.deleted_at === null  // Active tab: show non-deleted requests
         : loanRequest.deleted_at !== null; // Deleted tab: show deleted requests
       
-      // Filter by search term
-      const matchesSearch = !filters.search || 
-        (loanRequest.full_name?.toLowerCase().includes(filters.search.toLowerCase())) ||
-        (loanRequest.email?.toLowerCase().includes(filters.search.toLowerCase())) ||
-        (loanRequest.phone?.toLowerCase().includes(filters.search.toLowerCase())) ||
-        (loanRequest.nrc_number?.toLowerCase().includes(filters.search.toLowerCase())) ||
-        (loanRequest.user?.name?.toLowerCase().includes(filters.search.toLowerCase()));
+      // Filter by search term using enhanced search function
+      const matchesSearch = matchesSearchTerm(loanRequest, filters.searchTerm);
       
       // Filter by status
       const matchesStatus = !filters.status || 
@@ -215,7 +214,7 @@ const LoanRequestListPage: React.FC = () => {
       
       return matchesDeletedStatus && matchesSearch && matchesStatus;
     });
-  }, [allLoanRequests, activeTab, filters]);
+  }, [allLoanRequests, activeTab, filters.searchTerm, filters.status]);
 
   // Paginate data
   const paginatedLoanRequests = useMemo(() => {
@@ -289,6 +288,20 @@ const LoanRequestListPage: React.FC = () => {
         <Typography variant="body2">
           {row.user?.name || 'N/A'}
         </Typography>
+      ),
+    },
+    {
+      id: 'contact',
+      label: 'Contact',
+      render: (_value, row) => (
+        <Box>
+          <Typography variant="body2">
+            {row?.phone || 'N/A'}
+          </Typography>
+          <Typography variant="body2">
+            {row?.email || 'N/A'}
+          </Typography>
+        </Box>
       ),
     },
     {
@@ -485,15 +498,9 @@ const LoanRequestListPage: React.FC = () => {
 
       {/* Filters */}
       <StandardFilters
-        filters={{
-          ...filters,
-          searchTerm: searchValue, // Use current search value for immediate UI feedback
-        }}
+        filters={filters}
         onFilterChange={handleFilterChange}
         fields={FILTER_FIELDS}
-        onSearchKeyPress={handleKeyPress}
-        onSearchClick={triggerSearch}
-        showSearchButton={true}
         onClearFilters={handleClearFilters}
         showClearButton={true}
       />
@@ -502,7 +509,7 @@ const LoanRequestListPage: React.FC = () => {
       {filteredLoanRequests.length === 0 && !isLoading && (
         <PageEmptyState
           title="No Loan Requests Found"
-          message={filters.search || filters.status
+          message={filters.searchTerm || filters.status
             ? "No loan requests match your current filters. Try adjusting your search criteria."
             : activeTab === 0
               ? "No active loan requests have been created yet."
