@@ -1,6 +1,6 @@
 // Base API configuration and request function
 const API_BASE_URL = import.meta.env.DEV 
-  ? '/api' // Use proxy in development (now points to localhost:8000)
+  ? 'https://msy-api.phyozaw.info/api/v1/admin' // Use proxy in development (now points to localhost:8000)
   : (import.meta.env.VITE_API_URL || 'https://msy-api.phyozaw.info/api/v1/admin');
 
 // Simple API response type

@@ -1,4 +1,5 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   IconButton,
@@ -14,13 +15,14 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Person as PersonIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
+import { PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert, Pagination } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useFeedbacks, useDeleteFeedback } from '../../services/queries/feedback';
 import { FilterState } from '../../constants/filters';
@@ -64,18 +66,24 @@ const FILTER_FIELDS: FilterField[] = [
 // ============================================================================
 
 const FeedbackListPage: React.FC = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   // Hooks
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
-  const { filters, setFilter } = useFilters<FeedbackFilters>({
+  const { filters, setFilter, resetFilters } = useFilters<FeedbackFilters>({
     searchTerm: '',
     dateFrom: '',
     dateTo: '',
     user_name: '',
     email: '',
   });
+  
+  // Create a custom reset function that ensures all fields are cleared
+  const handleResetFilters = useCallback(() => {
+    resetFilters();
+  }, [resetFilters]);
   
   const { showSuccess, showError } = useAlertSystem();
   const { 
@@ -104,15 +112,20 @@ const FeedbackListPage: React.FC = () => {
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(feedback => 
-        feedback.user_name.toLowerCase().includes(searchLower) ||
-        feedback.email.toLowerCase().includes(searchLower) ||
-        feedback.feedback.toLowerCase().includes(searchLower) ||
-        feedback.slug.toLowerCase().includes(searchLower)
+        (feedback.user_name && feedback.user_name.toLowerCase().includes(searchLower)) ||
+        (feedback.email && feedback.email.toLowerCase().includes(searchLower)) ||
+        (feedback.feedback && feedback.feedback.toLowerCase().includes(searchLower)) ||
+        (feedback.slug && feedback.slug.toLowerCase().includes(searchLower))
       );
     }
 
     return filtered;
   }, [allFeedbacks, filters.searchTerm]);
+  
+  // Log filter changes for debugging
+  useEffect(() => {
+    console.log('Filters changed:', filters);
+  }, [filters]);
 
   // Client-side pagination
   const paginatedFeedbacks = useMemo(() => {
@@ -140,6 +153,7 @@ const FeedbackListPage: React.FC = () => {
     {
       title: 'This Month',
       value: filteredFeedbacks.filter(feedback => {
+        if (!feedback.created_at) return false;
         const feedbackDate = new Date(feedback.created_at);
         const now = new Date();
         return feedbackDate.getMonth() === now.getMonth() && 
@@ -151,6 +165,7 @@ const FeedbackListPage: React.FC = () => {
     {
       title: 'Recent (7 days)',
       value: filteredFeedbacks.filter(feedback => {
+        if (!feedback.created_at) return false;
         const feedbackDate = new Date(feedback.created_at);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
@@ -163,15 +178,24 @@ const FeedbackListPage: React.FC = () => {
 
   // Event handlers
   const handleDeleteFeedback = async (feedback: Feedback) => {
+    // Ensure we're working with a proper string value
+    const userName = feedback.user_name ? String(feedback.user_name) : 'Unknown User';
+    
     openDeleteConfirmation(
-      feedback.user_name,
+      userName,
       'feedback',
       async () => {
         try {
-          await deleteFeedbackMutation.mutateAsync(feedback.slug);
-          showSuccess(`Feedback from ${feedback.user_name} deleted successfully!`);
+          const slug = feedback.slug || '';
+          if (!slug) {
+            throw new Error('Feedback slug is missing');
+          }
+          
+          await deleteFeedbackMutation.mutateAsync(slug);
+          showSuccess(`Feedback from ${userName} deleted successfully!`);
           refetch();
         } catch (error: any) {
+          console.error('Delete feedback error:', error);
           showError(error.message || 'Failed to delete feedback.');
         }
       }
@@ -191,10 +215,7 @@ const FeedbackListPage: React.FC = () => {
           </Avatar>
           <Box>
             <Typography variant="body2" fontWeight={500}>
-              {feedback.user_name}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              @{feedback.slug}
+              {feedback.user_name || 'Unknown User'}
             </Typography>
           </Box>
         </Box>
@@ -209,7 +230,7 @@ const FeedbackListPage: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
             <EmailIcon fontSize="small" color="action" />
             <Typography variant="caption" color="textSecondary">
-              {feedback.email}
+              {feedback.email || 'No email'}
             </Typography>
           </Box>
           {feedback.phone && (
@@ -239,7 +260,7 @@ const FeedbackListPage: React.FC = () => {
               textOverflow: 'ellipsis',
             }}
           >
-            {feedback.feedback}
+            {feedback.feedback || 'No feedback content'}
           </Typography>
         </Box>
       ),
@@ -251,11 +272,13 @@ const FeedbackListPage: React.FC = () => {
       render: (_, feedback) => (
         <Box>
           <Typography variant="body2">
-            {formatDate(feedback.created_at)}
+            {feedback.created_at ? formatDate(feedback.created_at) : 'Unknown date'}
           </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {new Date(feedback.created_at).toLocaleTimeString()}
-          </Typography>
+          {/* {feedback.created_at && (
+            <Typography variant="caption" color="textSecondary">
+              {new Date(feedback.created_at).toLocaleTimeString()}
+            </Typography>
+          )} */}
         </Box>
       ),
     },
@@ -265,6 +288,15 @@ const FeedbackListPage: React.FC = () => {
       sortable: false,
       render: (_, feedback) => (
         <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Tooltip title="View Details">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => navigate(`/feedback/${feedback.slug}`)}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Delete Feedback">
             <IconButton
               size="small"
@@ -282,38 +314,18 @@ const FeedbackListPage: React.FC = () => {
   // Mobile card actions
   const getMobileCardActions = (feedback: Feedback): MobileCardAction[] => [
     {
+      icon: <VisibilityIcon />,
+      color: 'primary',
+      tooltip: 'View Details',
+      onClick: () => navigate(`/feedback/${feedback.slug}`),
+    },
+    {
       icon: <DeleteIcon />,
       color: 'error',
       tooltip: 'Delete Feedback',
       onClick: () => handleDeleteFeedback(feedback),
     },
   ];
-
-  // Loading state
-  if (isLoading) {
-    return <PageLoadingState />;
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <PageErrorState 
-        error={error} 
-        onRetry={refetch}
-        title="Failed to load feedbacks"
-      />
-    );
-  }
-
-  // Empty state
-  if (feedbacks.length === 0) {
-    return (
-      <PageEmptyState
-        icon={<FeedbackIcon sx={{ fontSize: 64, color: 'text.secondary' }} />}
-        title="No feedbacks found"
-      />
-    );
-  }
 
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
@@ -331,21 +343,61 @@ const FeedbackListPage: React.FC = () => {
         filters={filters}
         onFilterChange={(key, value) => setFilter(key as keyof FeedbackFilters, value)}
         fields={FILTER_FIELDS}
+        showClearButton={true}
+        onClearFilters={handleResetFilters}
       />
 
+      {/* Loading state */}
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+          <Typography variant="body1">Loading feedbacks...</Typography>
+        </Box>
+      )}
+
+      {/* Error state */}
+      {error && (
+        <PageErrorState 
+          error={error} 
+          onRetry={refetch}
+          title="Failed to load feedbacks"
+        />
+      )}
+
+      {/* Empty state - shown when no feedbacks match filters */}
+      {!isLoading && !error && feedbacks.length === 0 && (
+        <PageEmptyState
+          title="No Feedbacks Found"
+          message={filters.searchTerm
+            ? "No feedbacks match your current filters. Try adjusting your search criteria."
+            : "No feedbacks have been submitted yet."
+          }
+        />
+      )}
+
       {/* Table/Cards */}
-      {isMobile ? (
+      {!isLoading && !error && feedbacks.length > 0 && isMobile && (
         <Box sx={{ mt: 2 }}>
           {feedbacks.map((feedback) => (
             <MobileCard
               key={feedback.id}
-              title={feedback.user_name}
-              subtitle={`${feedback.email} • ${formatDate(feedback.created_at)}`}
+              title={feedback.user_name || 'Unknown User'}
+              subtitle={`${feedback.email || 'No Email'} • ${feedback.created_at ? formatDate(feedback.created_at) : 'Unknown Date'}`}
               actions={getMobileCardActions(feedback)}
             />
           ))}
+          <Pagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={filteredFeedbacks.length}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            showResultsInfo={true}
+          />
         </Box>
-      ) : (
+      )}
+
+      {/* Desktop Table Layout */}
+      {!isLoading && !error && feedbacks.length > 0 && !isMobile && (
         <StandardTable
           columns={columns}
           data={feedbacks}

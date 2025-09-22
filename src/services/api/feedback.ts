@@ -12,7 +12,7 @@ export const feedbackAPI = {
     return apiRequest<Feedback[]>(`/feedbacks${queryString}`).then(response => ({
       success: response.success,
       message: response.message,
-      data: response.data,
+      data: Array.isArray(response.data) ? response.data : [],
       pagination: response.pagination ? {
         ...response.pagination,
         from: (response.pagination.current_page - 1) * response.pagination.per_page + 1,
@@ -23,15 +23,11 @@ export const feedbackAPI = {
 
   // Get single feedback by slug
   get: (slug: string): Promise<FeedbackListResponse> => {
-    return apiRequest<Feedback[]>(`/feedbacks/${slug}`).then(response => ({
+    return apiRequest<Feedback>(`/feedbacks/${slug}`).then(response => ({
       success: response.success,
       message: response.message,
-      data: response.data,
-      pagination: response.pagination ? {
-        ...response.pagination,
-        from: (response.pagination.current_page - 1) * response.pagination.per_page + 1,
-        to: Math.min(response.pagination.current_page * response.pagination.per_page, response.pagination.total),
-      } : undefined,
+      data: response.data ? [response.data] : [],
+      pagination: undefined,
     }));
   },
 
