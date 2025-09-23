@@ -589,30 +589,37 @@ const AppointmentDetailPage: React.FC = () => {
                 
                 <Divider sx={{ my: 1 }} />
                 
-                {/* Hide edit and delete buttons for completed and cancelled appointments */}
+                {/* Show edit button only for pending appointments */}
+                {appointment.status === 'pending' ? (
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<EditIcon />}
+                    onClick={handleEdit}
+                    fullWidth
+                  >
+                    Edit Appointment
+                  </Button>
+                ) : (
+                  <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Edit is only available for pending appointments
+                    </Typography>
+                  </Box>
+                )}
+                
+                {/* Hide delete button for completed and cancelled appointments */}
                 {appointment.status !== 'completed' && appointment.status !== 'cancelled' && (
-                  <>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<EditIcon />}
-                      onClick={handleEdit}
-                      fullWidth
-                    >
-                      Edit Appointment
-                    </Button>
-                    
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      startIcon={<DeleteIcon />}
-                      onClick={handleDelete}
-                      disabled={deleteAppointmentMutation.isPending}
-                      fullWidth
-                    >
-                      Delete Appointment
-                    </Button>
-                  </>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDelete}
+                    disabled={deleteAppointmentMutation.isPending}
+                    fullWidth
+                  >
+                    Delete Appointment
+                  </Button>
                 )}
               </Box>
             </CardContent>

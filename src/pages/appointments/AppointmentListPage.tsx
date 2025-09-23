@@ -35,6 +35,7 @@ import { MobileCard, MobileCardAction } from '../../components/common/MobileCard
 import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, AppointmentRescheduleDialog, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useAppointments, useAppointmentStatistics, useDeleteAppointment, useAcceptAppointment, useRescheduleAppointment, useCancelAppointment, useCompleteAppointment, useAppointmentTimeSlots } from '../../services/queries/appointments';
+import { usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Appointment, AppointmentRescheduleData } from '../../types/appointment';
 import { formatDate } from '../../constants/dateFormats';
@@ -64,7 +65,7 @@ const PAGE_CONFIG = {
 } as const;
 
 // Filter fields configuration
-const createFilterFields = (): FilterField[] => [
+const createFilterFields = (propertyTypes: any[] = []): FilterField[] => [
   {
     key: 'searchTerm',
     type: 'search',
@@ -90,7 +91,10 @@ const createFilterFields = (): FilterField[] => [
     label: 'Property Type',
     options: [
       { value: 'all', label: 'All Types' },
-      // This would be populated from API
+      ...propertyTypes.map(type => ({
+        value: type.id.toString(),
+        label: type.name_en
+      }))
     ],
   },
   {
@@ -170,6 +174,9 @@ const AppointmentListPage: React.FC = () => {
   
   // Time slots for reschedule dialog
   const { data: timeSlots } = useAppointmentTimeSlots();
+  
+  // Property listing types for filter
+  const { data: propertyTypesResponse } = usePropertyListingTypes();
 
   // Delete and action mutations
   const deleteAppointmentMutation = useDeleteAppointment();
@@ -208,25 +215,25 @@ const AppointmentListPage: React.FC = () => {
   const statsCards: StatCard[] = useMemo(() => [
     {
       title: 'Total Appointments',
-      value: statistics?.data?.total_appointments || 0,
+      value: statistics?.data?.data?.total_appointments || 0,
       color: 'primary',
       icon: <EventIcon />,
     },
     {
       title: 'Pending Appointments',
-      value: statistics?.data?.pending_appointments || 0,
+      value: statistics?.data?.data?.pending_appointments || 0,
       color: 'warning',
       icon: <TimeIcon />,
     },
     {
       title: 'Confirmed',
-      value: statistics?.data?.confirmed_appointments || 0,
+      value: statistics?.data?.data?.confirmed_appointments || 0,
       color: 'success',
       icon: <AcceptIcon />,
     },
     {
       title: 'Completed',
-      value: statistics?.data?.completed_appointments || 0,
+      value: statistics?.data?.data?.completed_appointments || 0,
       color: 'info',
       icon: <CompleteIcon />,
     },
@@ -775,7 +782,7 @@ const AppointmentListPage: React.FC = () => {
           searchTerm: searchValue, // Use current search value for immediate UI feedback
         }}
         onFilterChange={handleFilterChange}
-        fields={createFilterFields()}
+        fields={createFilterFields(propertyTypesResponse?.data || [])}
         searchHelperText={undefined}
         onSearchKeyPress={handleKeyPress}
         onSearchClick={triggerSearch}

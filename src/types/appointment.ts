@@ -55,6 +55,7 @@ export interface Appointment {
 }
 
 export interface CreateAppointmentData {
+  user_id: number;
   property_listing_type_id: number;
   prefer_time_id?: number;
   is_anytime: boolean;
@@ -148,6 +149,8 @@ export interface AppointmentListResponse {
 }
 
 export interface AppointmentStatisticsResponse {
+  success: boolean;
+  message: string;
   data: AppointmentStatistics;
 }
 

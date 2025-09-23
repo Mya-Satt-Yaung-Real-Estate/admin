@@ -6,6 +6,7 @@ import {
 } from '../api/appointments';
 import { 
   Appointment, 
+  CreateAppointmentData,
   AppointmentActionData,
   AppointmentRescheduleData,
   AppointmentCancelData,
@@ -32,7 +33,7 @@ export const useAppointmentStatistics = () => {
     queryKey: appointmentKeys.statistics(),
     queryFn: async () => {
       const response = await appointmentsAPI.statistics();
-      return response.data; // Return the statistics data
+      return response; // Return the full response with data property
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -78,6 +79,37 @@ export const useAppointment = (id: number) => {
 // ============================================================================
 // MUTATION HOOKS
 // ============================================================================
+
+// Create appointment
+export const useCreateAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateAppointmentData) => appointmentsAPI.create(data),
+    onSuccess: () => {
+      // Invalidate and refetch appointments lists
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+      // Invalidate statistics
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
+    },
+  });
+};
+
+// Update appointment
+export const useUpdateAppointment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<CreateAppointmentData> }) =>
+      appointmentsAPI.update(id, data),
+    onSuccess: (_, { id }) => {
+      // Invalidate all appointment-related queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: appointmentKeys.statistics() });
+    },
+  });
+};
 
 // Delete appointment
 export const useDeleteAppointment = () => {

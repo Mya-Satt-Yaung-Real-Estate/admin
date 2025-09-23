@@ -2,6 +2,7 @@
 import { apiRequest, QueryParams } from './base';
 import { 
   Appointment, 
+  CreateAppointmentData,
   AppointmentActionData,
   AppointmentRescheduleData,
   AppointmentCancelData,
@@ -51,6 +52,20 @@ export const appointmentsAPI = {
   // Get single appointment by ID (alias for get)
   getById: (id: number) =>
     apiRequest<Appointment>(`/appointments/${id}`),
+
+  // Create new appointment
+  create: (data: CreateAppointmentData) =>
+    apiRequest<Appointment>('/appointments', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Update appointment
+  update: (id: number, data: Partial<CreateAppointmentData>) =>
+    apiRequest<Appointment>(`/appointments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 
   // Delete appointment
   delete: (id: number) =>
