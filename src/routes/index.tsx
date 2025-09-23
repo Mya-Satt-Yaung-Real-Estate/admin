@@ -28,6 +28,7 @@ import { loanRequestRoutes } from './loan-requests';
 import { faqRoutes } from './faqs';
 import { bookingRoutes } from './bookings';
 import { appointmentRoutes } from './appointments';
+import { appointmentPreferTimeRoutes } from './appointmentPreferTimes';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
   ...faqRoutes,
   ...bookingRoutes,
   ...appointmentRoutes,
+  ...appointmentPreferTimeRoutes,
   
   // Catch-all route
   {

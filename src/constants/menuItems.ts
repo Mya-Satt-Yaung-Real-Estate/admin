@@ -79,6 +79,11 @@ export const MENU_ITEMS = [
         iconName: 'EventNote',
         path: '/appointments',
       },
+      {
+        text: 'Prefer Times',
+        iconName: 'AccessTime',
+        path: '/appointment-prefer-times',
+      },
     ],
   },
   {
