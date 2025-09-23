@@ -8,6 +8,7 @@ import {
   Alert,
   Grid,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Formik, Form } from 'formik';
 import { useQuery } from '@tanstack/react-query';
 import * as Yup from 'yup';
@@ -310,6 +311,11 @@ const AdvertisementEditPage: React.FC = () => {
         title="Edit Advertisement"
         subtitle="Update advertisement information"
         breadcrumbs="Dashboard / Advertisements / Edit Advertisement"
+        actionButton={{
+          text: 'Back to Advertisements',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/advertisements')
+        }}
       />
 
       {/* Success/Error Alert */}

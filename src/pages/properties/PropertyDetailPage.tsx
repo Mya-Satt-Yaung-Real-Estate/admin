@@ -253,6 +253,11 @@ const PropertyDetailPage: React.FC = () => {
         title={property.title_en}
         subtitle={property.title_mm}
         breadcrumbs="Dashboard / Property Management / Property Details"
+        actionButton={{
+          text: 'Back to Properties',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/properties')
+        }}
       />
 
       {/* Success/Error Alert */}
@@ -260,13 +265,6 @@ const PropertyDetailPage: React.FC = () => {
 
       {/* Action Buttons */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to Properties
-        </Button>
         
         {/* Show different actions based on deleted status */}
         {!property.is_deleted ? (

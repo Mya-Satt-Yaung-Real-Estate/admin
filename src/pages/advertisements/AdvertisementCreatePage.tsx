@@ -7,6 +7,7 @@ import {
   Alert,
   Grid,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -235,6 +236,11 @@ const AdvertisementCreatePage: React.FC = () => {
         title="Create Advertisement"
         subtitle="Add a new advertisement to the system"
         breadcrumbs="Dashboard / Advertisements / Create Advertisement"
+        actionButton={{
+          text: 'Back to Advertisements',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/advertisements')
+        }}
       />
 
       {/* Success/Error Alert */}

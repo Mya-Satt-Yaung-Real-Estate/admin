@@ -198,6 +198,11 @@ const AdvertisementDetailPage: React.FC = () => {
         title={advertisement.title_en}
         subtitle={advertisement.title_mm}
         breadcrumbs="Dashboard / Advertisement Management / Advertisement Details"
+        actionButton={{
+          text: 'Back to Advertisements',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/advertisements')
+        }}
       />
 
       {/* Success/Error Alert */}
@@ -205,13 +210,6 @@ const AdvertisementDetailPage: React.FC = () => {
 
       {/* Action Buttons */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to Advertisements
-        </Button>
         
         {/* Show different actions based on deleted status */}
         {!advertisement.is_deleted ? (

@@ -7,6 +7,7 @@ import {
   Alert,
   Grid,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
 import PageHeader from '../../components/layout/PageHeader';
@@ -221,6 +222,11 @@ const PropertyCreatePage: React.FC = () => {
         title="Create Property"
         subtitle="Add a new property to the system"
         breadcrumbs="Dashboard / Properties / Create Property"
+        actionButton={{
+          text: 'Back to Properties',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/properties')
+        }}
       />
 
       {/* Success/Error Alert */}

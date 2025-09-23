@@ -8,6 +8,7 @@ import {
   Alert,
   Grid,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { Formik, Form } from 'formik';
 import { useQuery } from '@tanstack/react-query';
 
@@ -316,6 +317,11 @@ const PropertyEditPage: React.FC = () => {
         title="Edit Property"
         subtitle="Update property information"
         breadcrumbs={`Properties > ${propertyData.title_en} > Edit`}
+        actionButton={{
+          text: 'Back to Properties',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/properties')
+        }}
       />
 
       {/* Success/Error Alert */}
