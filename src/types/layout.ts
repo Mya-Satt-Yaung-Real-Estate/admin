@@ -18,6 +18,10 @@ export interface PageHeaderProps {
     icon: React.ReactNode;
     onClick: () => void;
   };
+  backButton?: {
+    text: string;
+    onClick: () => void;
+  };
 }
 
 export interface SidebarItemProps {

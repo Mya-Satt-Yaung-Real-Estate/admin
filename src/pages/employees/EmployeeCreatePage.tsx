@@ -112,6 +112,10 @@ const EmployeeCreatePage: React.FC = () => {
           title="Create Employee"
           subtitle="Add a new employee to the system"
           breadcrumbs="Dashboard / Employees / Create Employee"
+          backButton={{
+            text: "Back to Employees",
+            onClick: () => navigate('/employees')
+          }}
         />
 
         {/* Success/Error Alert */}
@@ -369,6 +373,7 @@ const EmployeeCreatePage: React.FC = () => {
                 submitText="Create Employee"
                 isSubmitting={createEmployeeMutation.isPending}
                 isDisabled={!isFormValid}
+                cancelDisabled={createEmployeeMutation.isPending}
               />
             </Grid>
           </Grid>

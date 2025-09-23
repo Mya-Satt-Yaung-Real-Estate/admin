@@ -9,6 +9,7 @@ interface FormActionsProps {
   cancelText?: string;
   isSubmitting?: boolean;
   isDisabled?: boolean;
+  cancelDisabled?: boolean;
 }
 
 export const FormActions: React.FC<FormActionsProps> = ({
@@ -18,6 +19,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
   cancelText = 'Cancel',
   isSubmitting = false,
   isDisabled = false,
+  cancelDisabled = false,
 }) => {
   return (
     <Card sx={{ position: 'sticky', top: 24 }}>
@@ -47,7 +49,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
             fullWidth
             startIcon={<CancelIcon />}
             onClick={onCancel}
-            disabled={isSubmitting || isDisabled}
+            disabled={isSubmitting || cancelDisabled}
           >
             {cancelText}
           </Button>

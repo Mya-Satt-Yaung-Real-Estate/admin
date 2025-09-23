@@ -6,14 +6,15 @@ import {
   Link,
   Button,
 } from '@mui/material';
-import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
+import { NavigateNext as NavigateNextIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { PageHeaderProps } from '@/types';
 
 const PageHeader: React.FC<PageHeaderProps> = ({ 
   title, 
   breadcrumbs, 
   subtitle,
-  actionButton
+  actionButton,
+  backButton
 }) => {
   const breadcrumbItems = breadcrumbs?.split(' / ') || [];
 
@@ -21,6 +22,26 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
         <Box sx={{ flex: 1 }}>
+          {backButton && (
+            <Button
+              variant="outlined"
+              startIcon={<ArrowBackIcon />}
+              onClick={backButton.onClick}
+              sx={{
+                mb: 2,
+                color: 'primary.main',
+                borderColor: 'primary.main',
+                '&:hover': {
+                  color: 'primary.dark',
+                  borderColor: 'primary.dark',
+                  backgroundColor: 'primary.light',
+                }
+              }}
+            >
+              {backButton.text}
+            </Button>
+          )}
+          
           {breadcrumbs && (
             <Breadcrumbs 
               separator={<NavigateNextIcon fontSize="small" />}

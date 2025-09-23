@@ -12,6 +12,7 @@ import {
   MenuItem,
   FormHelperText,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -42,6 +43,11 @@ const EmployeeEditPage: React.FC = () => {
 
   // Alert system hook
   const { alert, showError, clearAlert } = useAlertSystem();
+
+  // Handle back navigation
+  const handleBack = () => {
+    navigate('/employees');
+  };
 
   // Get employee data
   const { data: employee, isLoading, error } = useEmployee(id!);
@@ -126,6 +132,11 @@ const EmployeeEditPage: React.FC = () => {
           title="Edit Employee"
           subtitle="Employee not found"
           breadcrumbs="Dashboard / Employees / Edit Employee"
+          actionButton={{
+            text: 'Back to Employees',
+            icon: <ArrowBackIcon />,
+            onClick: handleBack,
+          }}
         />
         <Box sx={{ mt: 2 }}>
           <Typography color="error">
@@ -143,6 +154,11 @@ const EmployeeEditPage: React.FC = () => {
           title="Edit Employee"
           subtitle={`Update ${employee.data.name}'s information`}
           breadcrumbs="Dashboard / Employees / Edit Employee"
+          actionButton={{
+            text: 'Back to Employees',
+            icon: <ArrowBackIcon />,
+            onClick: handleBack,
+          }}
         />
 
         {/* Success/Error Alert */}
