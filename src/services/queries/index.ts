@@ -16,6 +16,7 @@ export * from './knowledge-hub';
 export * from './feedback';
 export * from './eventRegistration';
 export * from './loan-requests';
+export * from './employees';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -30,4 +31,5 @@ export { commentKeys } from './comments';
 export { knowledgeHubKeys } from './knowledge-hub';
 export { feedbackKeys } from './feedback';
 export { eventRegistrationKeys } from './eventRegistration';
+export { employeeKeys } from './employees';
 

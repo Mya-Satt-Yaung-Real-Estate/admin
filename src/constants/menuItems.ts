@@ -96,6 +96,11 @@ export const MENU_ITEMS = [
     iconName: 'People',
     path: '/users',
   },
+  {
+    text: 'Employees',
+    iconName: 'People',
+    path: '/employees',
+  },
   // HR Line - Second Section End
   {
     text: 'HR_DIVIDER_2',
