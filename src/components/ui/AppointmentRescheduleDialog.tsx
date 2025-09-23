@@ -385,7 +385,7 @@ const AppointmentRescheduleDialog: React.FC<AppointmentRescheduleDialogProps> = 
                 <DatePicker
                   label="Appointment Date"
                   value={selectedDate}
-                  onChange={(newValue) => setSelectedDate(newValue)}
+                  onChange={(newValue: any) => setSelectedDate(newValue)}
                   minDate={dayjs()}
                   maxDate={dayjs().add(6, 'months')} // 6 months from now
                   slotProps={{
@@ -471,7 +471,7 @@ const AppointmentRescheduleDialog: React.FC<AppointmentRescheduleDialogProps> = 
                     <TimePicker
                       label="Start Time"
                       value={selectedStartTime}
-                      onChange={(newValue) => setSelectedStartTime(newValue)}
+                      onChange={(newValue: any) => setSelectedStartTime(newValue)}
                       views={['hours', 'minutes']}
                       ampm={true}
                       slotProps={{
@@ -488,7 +488,7 @@ const AppointmentRescheduleDialog: React.FC<AppointmentRescheduleDialogProps> = 
                     <TimePicker
                       label="End Time"
                       value={selectedEndTime}
-                      onChange={(newValue) => setSelectedEndTime(newValue)}
+                      onChange={(newValue: any) => setSelectedEndTime(newValue)}
                       views={['hours', 'minutes']}
                       ampm={true}
                       slotProps={{
