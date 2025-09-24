@@ -150,6 +150,7 @@ export const MENU_ITEMS = [
         path: '/system-configurations',
       },
     ],
+    requiresDeveloperAccess: true,
   },
   {
     text: 'Admins',

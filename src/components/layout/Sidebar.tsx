@@ -8,6 +8,7 @@ import {
   useTheme,
   Divider,
 } from '@mui/material';
+import { useAuthStore } from '../../stores/useAuthStore';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -152,8 +153,22 @@ const Sidebar: React.FC<SidebarProps> = ({
     setOpenDropdown(prev => prev === dropdownText ? null : dropdownText);
   }, []);
 
-  // Group menu items by sections (no need for analytics split anymore)
-  const allMenuItems = menuItems;
+  // Developer access control
+  const { user } = useAuthStore();
+  const developerEmails = [
+    'admin@jadeproperty.site',
+    'admin@myasattyaung.com', 
+    'myasattyaung.dev@gmail.com'
+  ];
+  const hasDeveloperAccess = user?.email && developerEmails.includes(user.email);
+
+  // Filter menu items based on access control
+  const allMenuItems = menuItems.filter(item => {
+    if (item.requiresDeveloperAccess) {
+      return hasDeveloperAccess;
+    }
+    return true;
+  });
 
   const sidebarContent = (
     <Box sx={{ 
