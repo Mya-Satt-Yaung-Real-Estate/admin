@@ -150,19 +150,15 @@ const PointPackageCreatePage: React.FC = () => {
       <PageHeader
         title="Create Point Package"
         subtitle="Add a new point package to the system"
+        breadcrumbs="Dashboard / Points / Packages / Create"
+        actionButton={{
+          text: 'Back to Packages',
+          icon: <ArrowBackIcon />,
+          onClick: handleCancel
+        }}
       />
       
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleCancel}
-        >
-          Cancel
-        </Button>
-      </Box>
 
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>

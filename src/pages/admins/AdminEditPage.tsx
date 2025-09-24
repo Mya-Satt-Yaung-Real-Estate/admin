@@ -203,6 +203,7 @@ const AdminEditPage: React.FC = () => {
       <PageHeader 
         title="Edit Admin User"
         subtitle={`Update information for ${admin.name}`}
+        breadcrumbs={`Dashboard / Admin Management / Admin Users / ${admin.name} / Edit`}
         actionButton={{
           text: 'Back to Admin',
           icon: <ArrowBackIcon />,

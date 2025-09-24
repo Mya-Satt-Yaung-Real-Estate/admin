@@ -222,6 +222,7 @@ const EventEditPage: React.FC = () => {
       <PageHeader
         title="Edit Event"
         subtitle="Update event information"
+        breadcrumbs={`Dashboard / Events / ${event?.name_en || 'Event'} / Edit`}
         actionButton={{
           text: 'Back to Events',
           icon: <ArrowBackIcon />,

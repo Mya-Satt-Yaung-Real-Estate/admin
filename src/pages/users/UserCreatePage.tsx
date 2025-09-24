@@ -209,6 +209,7 @@ const UserCreatePage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / User Management / Create User"
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,

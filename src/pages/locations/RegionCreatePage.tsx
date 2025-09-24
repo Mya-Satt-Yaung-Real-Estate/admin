@@ -115,19 +115,15 @@ const RegionCreatePage: React.FC = () => {
       <PageHeader
         title="Create Region"
         subtitle="Add a new region to the system"
+        breadcrumbs="Dashboard / Master Data / Locations / Create Region"
+        actionButton={{
+          text: 'Back to Locations',
+          icon: <ArrowBackIcon />,
+          onClick: handleCancel
+        }}
       />
       
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleCancel}
-        >
-          Cancel
-        </Button>
-      </Box>
 
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>

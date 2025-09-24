@@ -244,6 +244,12 @@ const PointPurchaseRequestCreatePage: React.FC = () => {
       <PageHeader
         title="Create Point Purchase Request"
         subtitle="Create a new point purchase request for a user"
+        breadcrumbs="Dashboard / Points / Purchase Requests / Create"
+        actionButton={{
+          text: 'Back to Purchase Requests',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/points/purchase-requests')
+        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />

@@ -145,6 +145,7 @@ const AdminCreatePage: React.FC = () => {
       <PageHeader 
         title="Create Admin Users"
         subtitle="Add a new administrator to the system"
+        breadcrumbs="Dashboard / Admin Management / Admin Users / Create"
         actionButton={{
           text: 'Back to Admins',
           icon: <ArrowBackIcon />,

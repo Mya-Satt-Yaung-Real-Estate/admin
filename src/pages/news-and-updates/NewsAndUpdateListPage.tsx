@@ -446,6 +446,7 @@ const NewsAndUpdateListPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / Content Management / News & Updates"
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,

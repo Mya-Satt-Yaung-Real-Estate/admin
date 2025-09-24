@@ -51,15 +51,6 @@ const PointPackageDetailPage: React.FC = () => {
         <Alert severity="error" sx={{ mt: 2 }}>
           {error?.message || 'Failed to load point package. Please try again.'}
         </Alert>
-        <Box sx={{ mt: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-          >
-            Back to List
-          </Button>
-        </Box>
       </Box>
     );
   }
@@ -71,22 +62,13 @@ const PointPackageDetailPage: React.FC = () => {
       <PageHeader
         title="Point Package Details"
         subtitle="View point package information"
+        breadcrumbs={`Dashboard / Points / Packages / ${pointPackage.name_en}`}
         actionButton={{
-          text: 'Edit',
-          icon: <EditIcon />,
-          onClick: handleEdit,
+          text: 'Back to Packages',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
         }}
       />
-
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to List
-        </Button>
-      </Box>
 
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
@@ -304,13 +286,6 @@ const PointPackageDetailPage: React.FC = () => {
 
         {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-          >
-            Back to List
-          </Button>
           <Button
             variant="contained"
             startIcon={<EditIcon />}

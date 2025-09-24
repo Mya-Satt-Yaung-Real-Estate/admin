@@ -217,22 +217,16 @@ const EventCreatePage: React.FC = () => {
         onClose={clearAlert}
       />
 
-      {/* Back Button - Right aligned */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          variant="outlined"
-          color="primary"
-        >
-          Back to Events
-        </Button>
-      </Box>
-
       {/* Page Header */}
       <PageHeader
         title="Create Event"
         subtitle="Create a new event"
+        breadcrumbs="Dashboard / Events / Create Event"
+        actionButton={{
+          text: 'Back to Events',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Form */}

@@ -179,22 +179,16 @@ const EventDetailPage: React.FC = () => {
         onClose={clearAlert}
       />
 
-      {/* Back Button - Right aligned */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          variant="outlined"
-          color="primary"
-        >
-          Back to Events
-        </Button>
-      </Box>
-
       {/* Page Header */}
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs={`Dashboard / Events / ${event.name_en} / Details`}
+        actionButton={{
+          text: 'Back to Events',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Event Title Header */}

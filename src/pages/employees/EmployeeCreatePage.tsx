@@ -12,6 +12,7 @@ import {
   MenuItem,
   FormHelperText,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -112,8 +113,9 @@ const EmployeeCreatePage: React.FC = () => {
           title="Create Employee"
           subtitle="Add a new employee to the system"
           breadcrumbs="Dashboard / Employees / Create Employee"
-          backButton={{
+          actionButton={{
             text: "Back to Employees",
+            icon: <ArrowBackIcon />,
             onClick: () => navigate('/employees')
           }}
         />

@@ -11,7 +11,6 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Visibility as ViewIcon,
   List as ListIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -232,15 +231,6 @@ const PropertyListingTypeListPage: React.FC = () => {
         if (!listingType) return <Typography variant="body2">No data</Typography>;
         return (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-            <Tooltip title="View Details">
-              <IconButton
-                size="small"
-                onClick={() => navigate(`/property-listing-types/${listingType.slug}`)}
-                color="primary"
-              >
-                <ViewIcon />
-              </IconButton>
-            </Tooltip>
             <Tooltip title="Edit">
               <IconButton
                 size="small"
@@ -271,12 +261,6 @@ const PropertyListingTypeListPage: React.FC = () => {
   // ========================================================================
 
   const createMobileCardActions = (listingType: PropertyListingType): MobileCardAction[] => [
-    {
-      icon: <ViewIcon />,
-      tooltip: 'View Details',
-      color: 'primary' as const,
-      onClick: () => navigate(`/property-listing-types/${listingType.slug}`),
-    },
     {
       icon: <EditIcon />,
       tooltip: 'Edit',
@@ -397,8 +381,6 @@ const PropertyListingTypeListPage: React.FC = () => {
                 },
               ]}
               actions={createMobileCardActions(listingType)}
-              onClick={() => navigate(`/property-listing-types/${listingType.slug}`)}
-              clickable={true}
             />
           ))}
           <Pagination

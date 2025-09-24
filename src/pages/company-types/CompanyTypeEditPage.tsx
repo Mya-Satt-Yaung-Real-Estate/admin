@@ -142,6 +142,7 @@ const CompanyTypeEditPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs={`Dashboard / Master Data / Company Types / ${companyTypeData?.data?.name_en || 'Company Type'} / Edit`}
         actionButton={{
           text: 'Back to List',
           icon: <ArrowBackIcon />,

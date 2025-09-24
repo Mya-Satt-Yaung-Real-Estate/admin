@@ -8,7 +8,6 @@ import {
   IconButton,
   Chip,
   Divider,
-  Button,
   Grid,
   Paper,
   Alert,
@@ -186,6 +185,11 @@ const FaqDetailPage: React.FC = () => {
         title={faq.question_en || 'FAQ Details'}
         subtitle={faq.question_mm || PAGE_CONFIG.description}
         breadcrumbs="Dashboard / FAQs / Details"
+        actionButton={{
+          text: 'Back to FAQs',
+          icon: <BackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Success/Error Alert */}
@@ -193,13 +197,6 @@ const FaqDetailPage: React.FC = () => {
 
       {/* Action Buttons */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          startIcon={<BackIcon />}
-          onClick={handleBack}
-        >
-          Back to FAQs
-        </Button>
         
         {/* Show different actions based on deleted status */}
         {!isDeleted ? (

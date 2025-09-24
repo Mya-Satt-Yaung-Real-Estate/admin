@@ -129,21 +129,15 @@ const EventCategoryEditPage: React.FC = () => {
           error={alert.error}
           onClose={clearAlert}
         />
-        {/* Back Button - Right aligned */}
-        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-            variant="outlined"
-            color="primary"
-          >
-            Back to Categories
-          </Button>
-        </Box>
-
         <PageHeader
           title={PAGE_CONFIG.title}
           subtitle={PAGE_CONFIG.description}
+          breadcrumbs="Dashboard / Events / Categories / Edit"
+          actionButton={{
+            text: 'Back to Categories',
+            icon: <ArrowBackIcon />,
+            onClick: handleBack
+          }}
         />
         <Alert severity="error">
           Event category not found.
@@ -161,22 +155,16 @@ const EventCategoryEditPage: React.FC = () => {
         onClose={clearAlert}
       />
 
-      {/* Back Button - Right aligned */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          variant="outlined"
-          color="primary"
-        >
-          Back to Categories
-        </Button>
-      </Box>
-
       {/* Page Header */}
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs={`Dashboard / Events / Categories / ${eventCategory?.name_en || 'Category'} / Edit`}
+        actionButton={{
+          text: 'Back to Categories',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Form */}

@@ -9,7 +9,6 @@ import {
   Tabs,
   Tab,
   Paper,
-  Button,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -383,21 +382,16 @@ const LocationListPage: React.FC = () => {
     <Box>
       <PageHeader 
         title="Locations"
-        // breadcrumbs="Location Management"
+        breadcrumbs="Dashboard / Master Data / Locations"
         subtitle="Manage locations"
+        actionButton={{
+          text: `Add ${activeTab === 0 ? 'Region' : 'Township'}`,
+          icon: <AddIcon />,
+          onClick: handleAdd
+        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-        >
-          Add {activeTab === 0 ? 'Region' : 'Township'}
-        </Button>
-      </Box>
 
       <StatisticsCards cards={statsCards} />
 

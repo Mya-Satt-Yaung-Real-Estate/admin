@@ -73,9 +73,6 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
   const approveRejectMutation = useApproveRejectPointPurchaseRequest();
 
   // Event handlers
-  const handleBack = () => {
-    navigate('/points/purchase-requests');
-  };
 
   const handleApprove = () => {
     if (!requestData?.data) return;
@@ -212,15 +209,6 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
           sx={{ mt: 2 }} 
           onClose={clearAlert} 
         />
-        <Box sx={{ mt: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-          >
-            Back to List
-          </Button>
-        </Box>
       </Box>
     );
   }
@@ -232,6 +220,12 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
       <PageHeader
         title="Point Purchase Request Details"
         subtitle="View point purchase request information"
+        breadcrumbs={`Dashboard / Points / Purchase Requests / ${request.user?.name || 'Request'}`}
+        actionButton={{
+          text: 'Back to Purchase Requests',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/points/purchase-requests')
+        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
@@ -260,14 +254,6 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
             </Button>
           )}
         </Box>
-
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to List
-        </Button>
       </Box>
 
       <Grid container spacing={3}>

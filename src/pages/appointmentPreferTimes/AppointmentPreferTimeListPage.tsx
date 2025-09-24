@@ -459,6 +459,7 @@ const AppointmentPreferTimeListPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / Appointments / Prefer Times"
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,

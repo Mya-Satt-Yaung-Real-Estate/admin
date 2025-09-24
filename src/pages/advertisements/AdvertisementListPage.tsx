@@ -676,6 +676,7 @@ const AdvertisementListPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / Content Management / Advertisements"
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,

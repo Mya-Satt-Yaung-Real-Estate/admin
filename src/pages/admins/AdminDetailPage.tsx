@@ -92,6 +92,7 @@ const AdminDetailPage: React.FC = () => {
       <PageHeader
         title="Admin Details"
         subtitle={`View detailed information about ${admin.name}`}
+        breadcrumbs={`Dashboard / Admin Management / Admin Users / ${admin.name} / Details`}
         actionButton={{
           text: 'Back to Admins',
           icon: <ArrowBackIcon />,

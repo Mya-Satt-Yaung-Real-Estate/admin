@@ -15,6 +15,7 @@ import {
   MenuItem,
   Autocomplete,
 } from '@mui/material';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -132,6 +133,11 @@ const AppointmentCreatePage: React.FC = () => {
           title="Create Appointment"
           subtitle="Schedule a new appointment request"
           breadcrumbs="Dashboard / Appointments / Create Appointment"
+          actionButton={{
+            text: 'Back to Appointments',
+            icon: <ArrowBackIcon />,
+            onClick: () => navigate('/appointments')
+          }}
         />
 
         {/* Success/Error Alert */}

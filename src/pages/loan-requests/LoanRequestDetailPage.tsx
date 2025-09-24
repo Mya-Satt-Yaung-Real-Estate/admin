@@ -193,6 +193,11 @@ const LoanRequestDetailPage: React.FC = () => {
         title={`Loan Request #${loanRequest.id}`}
         subtitle={loanRequest.full_name}
         breadcrumbs="Dashboard / Loan Requests / Loan Request Details"
+        actionButton={{
+          text: 'Back to Loan Requests',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Success/Error Alert */}
@@ -200,13 +205,6 @@ const LoanRequestDetailPage: React.FC = () => {
 
       {/* Action Buttons */}
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to Loan Requests
-        </Button>
         
         {loanRequest?.deleted_at ? (
           <Tooltip title="Restore Loan Request">

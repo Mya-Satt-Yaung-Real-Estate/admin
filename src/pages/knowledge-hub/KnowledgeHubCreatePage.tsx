@@ -216,22 +216,16 @@ const KnowledgeHubCreatePage: React.FC = () => {
         onClose={clearAlert}
       />
 
-      {/* Back Button - Right aligned */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          variant="outlined"
-          color="primary"
-        >
-          Back to Knowledge Hub
-        </Button>
-      </Box>
-
       {/* Page Header */}
       <PageHeader
         title="Create Knowledge Hub"
         subtitle="Create a new knowledge hub article"
+        breadcrumbs="Dashboard / Content Management / Knowledge Hub / Create"
+        actionButton={{
+          text: 'Back to Knowledge Hub',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Form */}

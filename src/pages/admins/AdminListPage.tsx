@@ -417,6 +417,7 @@ const AdminListPage: React.FC = () => {
       <PageHeader 
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / Admin Management / Admin Users"
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,

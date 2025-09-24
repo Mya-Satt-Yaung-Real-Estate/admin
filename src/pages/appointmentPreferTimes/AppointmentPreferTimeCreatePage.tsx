@@ -125,22 +125,16 @@ const AppointmentPreferTimeCreatePage: React.FC = () => {
         onClose={clearAlert}
       />
 
-      {/* Back Button - Right aligned */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          variant="outlined"
-          color="primary"
-        >
-          Back to Time Slots
-        </Button>
-      </Box>
-
       {/* Page Header */}
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / Appointments / Prefer Times / Create"
+        actionButton={{
+          text: 'Back to Time Slots',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Form */}

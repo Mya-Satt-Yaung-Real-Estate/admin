@@ -70,18 +70,18 @@ const FeedbackDetailPage: React.FC = () => {
   if (error || !feedbackData?.data) {
     return (
       <Box>
-        <PageHeader title="Feedback Details" />
+        <PageHeader 
+          title="Feedback Details"
+          breadcrumbs="Dashboard / Feedback Management / Details"
+          actionButton={{
+            text: 'Back to Feedback',
+            icon: <ArrowBackIcon />,
+            onClick: handleBack
+          }}
+        />
         <Alert severity="error" sx={{ mt: 2 }}>
           {error?.message || 'Failed to load feedback details.'}
         </Alert>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-          sx={{ mt: 2 }}
-        >
-          Back to List
-        </Button>
       </Box>
     );
   }
@@ -93,6 +93,12 @@ const FeedbackDetailPage: React.FC = () => {
       <PageHeader
         title="Feedback Details"
         subtitle={`From ${feedback.user_name || 'Unknown User'}`}
+        breadcrumbs="Dashboard / Feedback Management / Details"
+        actionButton={{
+          text: 'Back to Feedback',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
         <Button
@@ -102,13 +108,6 @@ const FeedbackDetailPage: React.FC = () => {
           onClick={handleDelete}
         >
           Delete
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to List
         </Button>
       </Box>
       <ActionAlert {...alert} onClose={clearAlert} />

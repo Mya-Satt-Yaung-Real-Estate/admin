@@ -315,6 +315,7 @@ const PointPackageListPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs="Dashboard / Points / Packages"
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
           icon: <AddIcon />,

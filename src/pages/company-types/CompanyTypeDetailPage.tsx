@@ -85,6 +85,7 @@ const CompanyTypeDetailPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
+        breadcrumbs={`Dashboard / Master Data / Company Types / ${companyType?.name_en || 'Company Type'} / Details`}
         actionButton={{
           text: 'Back to List',
           icon: <ArrowBackIcon />,

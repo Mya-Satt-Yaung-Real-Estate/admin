@@ -175,21 +175,15 @@ const FaqFormPage: React.FC = () => {
         title={isEdit ? 'Edit FAQ' : 'Create FAQ'}
         breadcrumbs={`Dashboard / FAQs / ${isEdit ? 'Edit' : 'Create'}`}
         subtitle={PAGE_CONFIG.description}
+        actionButton={{
+          text: 'Back to FAQs',
+          icon: <BackIcon />,
+          onClick: handleBack
+        }}
       />
 
       {/* Success/Error Alert */}
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      {/* Back Button */}
-      <Box sx={{ mb: 2 }}>
-        <Button
-          startIcon={<BackIcon />}
-          onClick={handleBack}
-          variant="outlined"
-        >
-          Back to FAQs
-        </Button>
-      </Box>
 
       <Card>
         <CardContent>

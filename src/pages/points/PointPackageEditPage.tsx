@@ -201,19 +201,15 @@ const PointPackageEditPage: React.FC = () => {
       <PageHeader
         title="Edit Point Package"
         subtitle="Update point package information"
+        breadcrumbs={`Dashboard / Points / Packages / ${pointPackageData?.data?.name_en || 'Package'} / Edit`}
+        actionButton={{
+          text: 'Back to Packages',
+          icon: <ArrowBackIcon />,
+          onClick: handleCancel
+        }}
       />
       
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleCancel}
-        >
-          Cancel
-        </Button>
-      </Box>
 
       <Paper sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>

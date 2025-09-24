@@ -94,18 +94,17 @@ const RegionDetailPage: React.FC = () => {
       <PageHeader
         title={region.name_en}
         subtitle={region.name_mm}
+        breadcrumbs={`Dashboard / Master Data / Locations / ${region.name_en} / Details`}
+        actionButton={{
+          text: 'Back to Locations',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack
+        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button
-          variant="outlined"
-          startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
-        >
-          Back to Locations
-        </Button>
         <Button
           variant="contained"
           startIcon={<EditIcon />}
