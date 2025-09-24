@@ -53,6 +53,7 @@ interface PropertyFilters extends FilterState {
   propertyTypeFilter: string;
   listingTypeFilter: string;
   expiredFilter: string;
+  isTrendingFilter: string;
 }
 
 // ============================================================================
@@ -131,6 +132,16 @@ const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterFi
       { value: 'active', label: 'Active Only' },
     ],
   },
+  {
+    key: 'isTrendingFilter',
+    type: 'select',
+    label: 'Trending',
+    options: [
+      { value: 'all', label: 'All Properties' },
+      { value: 'true', label: 'Trending Only' },
+      { value: 'false', label: 'Non-Trending Only' },
+    ],
+  },
 ];
 
 // ============================================================================
@@ -163,6 +174,7 @@ const PropertyListPage: React.FC = () => {
     propertyTypeFilter: 'all',
     listingTypeFilter: 'all',
     expiredFilter: 'all',
+    isTrendingFilter: 'all',
   });
 
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
@@ -192,6 +204,7 @@ const PropertyListPage: React.FC = () => {
     property_type: filters.propertyTypeFilter !== 'all' ? filters.propertyTypeFilter : undefined,
     listing_type: filters.listingTypeFilter !== 'all' ? filters.listingTypeFilter : undefined,
     expired: filters.expiredFilter === 'expired' ? 'true' : undefined,
+    is_trending: filters.isTrendingFilter !== 'all' ? filters.isTrendingFilter === 'true' : undefined,
     deleted: activeTab === 1 ? 'true' : undefined, // Show deleted properties when tab 1 is active, undefined for all properties
     sort_by: 'created_at',
     sort_direction: 'desc',
@@ -771,6 +784,7 @@ const PropertyListPage: React.FC = () => {
     setFilter('propertyTypeFilter', 'all');
     setFilter('listingTypeFilter', 'all');
     setFilter('expiredFilter', 'all');
+    setFilter('isTrendingFilter', 'all');
     
     // Reset to first page
     handleChangePage({} as any, 0);

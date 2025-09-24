@@ -9,6 +9,7 @@ export interface PropertyQueryParams extends QueryParams {
   property_type?: string;
   listing_type?: string;
   expired?: string | boolean;
+  is_trending?: boolean;
   deleted?: string | boolean;
 }
 
@@ -21,7 +22,30 @@ export function buildCleanQueryString(params?: Record<string, any>): string {
     Object.entries(params).filter(([_, value]) => value !== undefined && value !== null && value !== '')
   );
   
-  return Object.keys(filteredParams).length > 0 ? '?' + new URLSearchParams(filteredParams as any).toString() : '';
+  // Convert boolean values to proper string representation for Laravel
+  const processedParams = Object.fromEntries(
+    Object.entries(filteredParams).map(([key, value]) => {
+      if (key === 'is_trending' && typeof value === 'boolean') {
+        // Special handling for is_trending to ensure Laravel compatibility
+        return [key, value ? '1' : '0'];
+      }
+      return [key, value];
+    })
+  );
+  
+  const queryString = Object.keys(processedParams).length > 0 ? '?' + new URLSearchParams(processedParams as any).toString() : '';
+  
+  // Debug logging for is_trending parameter
+  if (params && 'is_trending' in params) {
+    console.log('🔍 is_trending debug:', {
+      original: params.is_trending,
+      type: typeof params.is_trending,
+      processed: processedParams.is_trending,
+      queryString: queryString
+    });
+  }
+  
+  return queryString;
 }
 
 export const propertiesAPI = {

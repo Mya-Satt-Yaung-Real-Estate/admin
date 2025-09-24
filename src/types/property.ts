@@ -19,6 +19,7 @@ export interface Property {
   bathrooms?: number;
   bank_installment_available?: boolean;
   tan_tan_tan?: boolean;
+  is_trending?: boolean;
   features?: string[];
   location: {
     region: Region;
@@ -128,6 +129,7 @@ export interface CreatePropertyData {
   bathrooms?: number;
   bank_installment_available?: boolean;
   tan_tan_tan?: boolean;
+  is_trending?: boolean;
   features?: string[];
   
   // Contact information

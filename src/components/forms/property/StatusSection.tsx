@@ -8,6 +8,8 @@ import {
   FormControlLabel,
   Switch,
   SelectChangeEvent,
+  Typography,
+  Alert,
 } from '@mui/material';
 import { FormSection } from '../shared/FormSection';
 import { PROPERTY_STATUSES } from '../../../validations';
@@ -70,6 +72,35 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
             }
             label="Tan Tan Tan"
           />
+        </Grid>
+
+        {/* Is Trending */}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                name="is_trending"
+                checked={Boolean(values.is_trending)}
+                onChange={(e) => {
+                  console.log('is_trending switch changed:', e.target.checked);
+                  console.log('Current values.is_trending:', values.is_trending, typeof values.is_trending);
+                  if (setFieldValue) {
+                    setFieldValue('is_trending', e.target.checked);
+                  } else {
+                    handleChange(e);
+                  }
+                }}
+              />
+            }
+            label="Is Trending"
+          />
+          {values.is_trending && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              <Typography variant="body2">
+                Enabling trending feature will require additional points from the user's account when the property is published.
+              </Typography>
+            </Alert>
+          )}
         </Grid>
       </Grid>
     </FormSection>

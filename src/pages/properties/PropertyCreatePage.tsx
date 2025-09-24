@@ -89,6 +89,7 @@ const PropertyCreatePage: React.FC = () => {
       bathrooms: undefined as number | undefined,
       bank_installment_available: false,
       tan_tan_tan: false,
+      is_trending: false,
       owner_name: '',
       phone_numbers: [''],
       email: '',
@@ -111,6 +112,7 @@ const PropertyCreatePage: React.FC = () => {
           price: values.price || 0,
           area_sqft: values.area_sqft || 0,
           tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
+          is_trending: Boolean(values.is_trending), // Ensure boolean type
           phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
           media_ids: uploadedMedia.map(media => media.id),
         };

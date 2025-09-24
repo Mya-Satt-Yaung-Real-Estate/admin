@@ -193,6 +193,7 @@ const PropertyEditPage: React.FC = () => {
     bathrooms: propertyData.bathrooms || undefined,
     bank_installment_available: propertyData.bank_installment_available || false,
     tan_tan_tan: propertyData.tan_tan_tan || false,
+    is_trending: propertyData.is_trending || false,
     
     // Contact information
     owner_name: propertyData.contact_info?.owner_name || '',
@@ -219,6 +220,7 @@ const PropertyEditPage: React.FC = () => {
       const updateData: CreatePropertyData = {
         ...values,
         tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
+        is_trending: Boolean(values.is_trending), // Ensure boolean type
         phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
         media_ids: mediaIds,
       };

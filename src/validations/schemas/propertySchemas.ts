@@ -49,6 +49,12 @@ export const propertyBaseSchema = Yup.object({
     }
     return Boolean(value);
   }).optional(),
+  is_trending: Yup.boolean().transform((value) => {
+    if (typeof value === 'string') {
+      return value === 'true' || value === 'on';
+    }
+    return Boolean(value);
+  }).optional(),
 });
 
 // Dual-mode fields schema (for create/edit forms)

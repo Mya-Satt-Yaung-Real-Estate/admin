@@ -38,6 +38,7 @@ import {
   Email as EmailIcon,
   Diamond as DiamondIcon,
   PriceChange as PriceChangeIcon,
+  TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty } from '../../services/queries/properties';
@@ -340,6 +341,14 @@ const PropertyDetailPage: React.FC = () => {
                         color="success"
                         size="small"
                         icon={<PriceChangeIcon />}
+                      />
+                    )}
+                    {property.is_trending && (
+                      <Chip
+                        label="Trending"
+                        color="warning"
+                        size="small"
+                        icon={<TrendingUpIcon />}
                       />
                     )}
                   </Box>
