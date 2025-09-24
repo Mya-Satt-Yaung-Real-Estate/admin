@@ -34,8 +34,12 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // Check if any child is currently selected
-  const hasSelectedChild = childrenItems.some(child => child.path === currentPath);
+  // Check if any child is currently selected (including nested routes)
+  const hasSelectedChild = childrenItems.some(child => {
+    if (child.path === currentPath) return true;
+    // Check if current path starts with child path (for nested routes like /events/create, /events/slug/edit)
+    return child.path && currentPath.startsWith(child.path + '/');
+  });
   
   // Determine if this dropdown should be open
   const isOpen = openDropdown === text || (hasSelectedChild && openDropdown === null);
@@ -127,30 +131,38 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
       </ListItem>
       <Collapse in={isOpen && !isCollapsed} timeout="auto" unmountOnExit>
         <List component="div" disablePadding id={`dropdown-list-${text}`}>
-          {childrenItems.map((child) => (
-            <SidebarItem
-              key={child.text}
-              text={child.text}
-              icon={icon}
-              path={child.path!}
-              isSelected={currentPath === child.path}
-              isCollapsed={isCollapsed}
-              onClick={handleChildClick}
-              currentPath={currentPath}
-              sx={{
-                pl: isCollapsed ? 2 : 5,
-                py: 1.2,
-                borderLeft: currentPath === child.path ? '3px solid #3B8880' : '3px solid transparent',
-                backgroundColor: currentPath === child.path ? 'rgba(59, 136, 128, 0.10)' : 'transparent',
-                fontWeight: currentPath === child.path ? 600 : 400,
-                color: currentPath === child.path ? 'primary.main' : 'text.secondary',
-                '&:hover': {
-                  backgroundColor: 'rgba(59, 136, 128, 0.08)',
-                  color: 'primary.main',
-                },
-              }}
-            />
-          ))}
+          {childrenItems.map((child) => {
+            // Check if this child item should be selected
+            const isChildSelected = Boolean(
+              currentPath === child.path || 
+              (child.path && currentPath.startsWith(child.path + '/'))
+            );
+            
+            return (
+              <SidebarItem
+                key={child.text}
+                text={child.text}
+                icon={icon}
+                path={child.path!}
+                isSelected={isChildSelected}
+                isCollapsed={isCollapsed}
+                onClick={handleChildClick}
+                currentPath={currentPath}
+                sx={{
+                  pl: isCollapsed ? 2 : 5,
+                  py: 1.2,
+                  borderLeft: isChildSelected ? '3px solid #3B8880' : '3px solid transparent',
+                  backgroundColor: isChildSelected ? 'rgba(59, 136, 128, 0.10)' : 'transparent',
+                  fontWeight: isChildSelected ? 600 : 400,
+                  color: isChildSelected ? 'primary.main' : 'text.secondary',
+                  '&:hover': {
+                    backgroundColor: 'rgba(59, 136, 128, 0.08)',
+                    color: 'primary.main',
+                  },
+                }}
+              />
+            );
+          })}
         </List>
       </Collapse>
     </>
