@@ -105,7 +105,7 @@ const CompanyTypeDetailPage: React.FC = () => {
               </Typography>
             </Box>
             <Button
-              variant="contained"
+              variant="outlined"
               startIcon={<EditIcon />}
               onClick={handleEdit}
             >
@@ -196,7 +196,7 @@ const CompanyTypeDetailPage: React.FC = () => {
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+          {/* <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
             <Button
               variant="outlined"
               startIcon={<ArrowBackIcon />}
@@ -211,7 +211,7 @@ const CompanyTypeDetailPage: React.FC = () => {
             >
               Edit Company Type
             </Button>
-          </Box>
+          </Box> */}
         </CardContent>
       </Card>
     </Box>
