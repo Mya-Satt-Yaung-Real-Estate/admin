@@ -85,3 +85,36 @@ export interface EmployeeStatistics {
   total_handled_properties: number;
 }
 
+export interface PropertyEmployeeReferral {
+  id: number;
+  property_id: number;
+  employee_id: number;
+  assignment_type: 'referral' | 'handler';
+  assignment_type_label: string;
+  assignment_priority: number;
+  assignment_status: 'active' | 'inactive' | 'completed';
+  assigned_at: string;
+  assigned_date_formatted: string;
+  assigned_until: string | null;
+  referral_source: string;
+  referral_notes: string | null;
+  assigned_by: number | null;
+  notes: string | null;
+  employee?: Employee;
+  property?: {
+    id: number;
+    title_en: string;
+    title_mm: string;
+    code: string;
+    status: string;
+    verification_status: string;
+  };
+  assigned_by_user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+

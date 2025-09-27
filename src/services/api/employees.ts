@@ -1,7 +1,7 @@
 // Employees API functions
 import { apiRequest, QueryParams } from './base';
 import { buildCleanQueryString } from './properties';
-import { Employee, CreateEmployeeData, UpdateEmployeeData, PropertyEmployeeAssignment } from '../../types/employee';
+import { Employee, CreateEmployeeData, UpdateEmployeeData, PropertyEmployeeAssignment, PropertyEmployeeReferral } from '../../types/employee';
 
 // Employees-specific query parameters interface
 export interface EmployeeQueryParams extends QueryParams {
@@ -83,4 +83,32 @@ export const employeesAPI = {
   // Unassign property from employee
   unassignProperty: (assignmentId: string) =>
     apiRequest(`/employees/unassign-property/${assignmentId}`, { method: 'DELETE' }),
+
+  // Property Employee Referral Management
+  // Bulk assign employees to property
+  bulkAssignToProperty: (data: {
+    property_id: number;
+    employee_ids: number[];
+    assignment_type: 'referral' | 'handler';
+    referral_source?: string;
+    referral_notes?: string;
+    notes?: string;
+  }) => {
+    return apiRequest('/property-employee-referrals/bulk-assign', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Get property referrals
+  getPropertyReferrals: (propertyId: number) => {
+    return apiRequest<PropertyEmployeeReferral[]>(`/property-employee-referrals/property/${propertyId}`);
+  },
+
+  // Remove assignment
+  removeAssignment: (assignmentId: number) => {
+    return apiRequest(`/property-employee-referrals/${assignmentId}`, {
+      method: 'DELETE',
+    });
+  },
 };

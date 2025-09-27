@@ -9,10 +9,15 @@ import {
   TextField,
   Button,
   Typography,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
+  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { useApproveProperty, useRejectProperty } from '../../services/queries/properties';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,13 +45,25 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  
+  // Menu state
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const queryClient = useQueryClient();
   const approvePropertyMutation = useApproveProperty();
   const rejectPropertyMutation = useRejectProperty();
 
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
   const handleApprove = () => {
     setApproveDialogOpen(true);
+    handleMenuClose();
   };
 
   const handleConfirmApprove = async () => {
@@ -69,6 +86,7 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
 
   const handleReject = () => {
     setRejectionDialogOpen(true);
+    handleMenuClose();
   };
 
   const handleConfirmRejection = async () => {
@@ -102,27 +120,49 @@ export const VerificationActions: React.FC<VerificationActionsProps> = ({
   
   return (
     <>
-      <Tooltip title="Approve Property">
+      <Tooltip title="Verification Actions">
         <IconButton
           size={buttonSize}
-          color="success"
-          onClick={handleApprove}
+          onClick={handleMenuOpen}
+          color="default"
           disabled={approvePropertyMutation.isPending || rejectPropertyMutation.isPending}
+          sx={{ 
+            bgcolor: 'grey.100', 
+            '&:hover': { bgcolor: 'grey.200' } 
+          }}
         >
-          <ApproveIcon />
+          <MoreVertIcon />
         </IconButton>
       </Tooltip>
       
-      <Tooltip title="Reject Property">
-        <IconButton
-          size={buttonSize}
-          color="error"
-          onClick={handleReject}
-          disabled={approvePropertyMutation.isPending || rejectPropertyMutation.isPending}
-        >
-          <RejectIcon />
-        </IconButton>
-      </Tooltip>
+      {/* Verification Actions Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleApprove}>
+          <ListItemIcon>
+            <ApproveIcon color="success" />
+          </ListItemIcon>
+          <ListItemText>Approve Property</ListItemText>
+        </MenuItem>
+        
+        <MenuItem onClick={handleReject}>
+          <ListItemIcon>
+            <RejectIcon color="error" />
+          </ListItemIcon>
+          <ListItemText>Reject Property</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {/* Approve Confirmation Dialog */}
       <Dialog

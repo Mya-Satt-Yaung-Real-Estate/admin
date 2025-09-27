@@ -15,6 +15,7 @@ import {
   Dialog,
   DialogContent,
   useTheme,
+  CircularProgress,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -39,14 +40,18 @@ import {
   Diamond as DiamondIcon,
   PriceChange as PriceChangeIcon,
   TrendingUp as TrendingUpIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty } from '../../services/queries/properties';
+import { employeesAPI } from '../../services/api/employees';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { formatDate } from '../../constants/dateFormats';
 import { formatPropertyCondition } from '../../utils/propertyUtils';
+import { PropertyEmployeeReferral } from '../../types/employee';
 
 const PropertyDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -86,6 +91,16 @@ const PropertyDetailPage: React.FC = () => {
   // Comments modal state
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
 
+  // Referral assignment modal state
+  const [referralModalOpen, setReferralModalOpen] = useState(false);
+
+  // Employees list state
+  const [employees, setEmployees] = useState<PropertyEmployeeReferral[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+
+
+  // Extract property data
+  const property = propertyResponse?.data;
 
   // Handle success message from URL
   React.useEffect(() => {
@@ -100,8 +115,12 @@ const PropertyDetailPage: React.FC = () => {
     }
   }, [location.search, navigate, showSuccess]);
 
-  // Extract property data
-  const property = propertyResponse?.data;
+  // Load employees when property is loaded
+  React.useEffect(() => {
+    if (property) {
+      loadEmployees();
+    }
+  }, [property]);
 
   // ========================================================================
   // COMMENTS MODAL FUNCTIONS
@@ -113,6 +132,47 @@ const PropertyDetailPage: React.FC = () => {
 
   const handleCloseCommentsModal = () => {
     setCommentsModalOpen(false);
+  };
+
+  // ========================================================================
+  // REFERRAL MODAL FUNCTIONS
+  // ========================================================================
+
+  const handleOpenReferralModal = () => {
+    setReferralModalOpen(true);
+  };
+
+  const handleCloseReferralModal = () => {
+    setReferralModalOpen(false);
+  };
+
+      const handleReferralSuccess = () => {
+        showSuccess('Employees assigned successfully');
+        // Refresh employees list
+        loadEmployees();
+      };
+
+      const handleAssignmentRemoved = () => {
+        // Refresh employees list when an assignment is removed
+        loadEmployees();
+      };
+
+  // ========================================================================
+  // EMPLOYEES FUNCTIONS
+  // ========================================================================
+
+  const loadEmployees = async () => {
+    if (!property) return;
+
+    try {
+      setEmployeesLoading(true);
+      const response = await employeesAPI.getPropertyReferrals(property.id);
+      setEmployees(response.data || []);
+    } catch (error) {
+      console.error('Failed to load employees:', error);
+    } finally {
+      setEmployeesLoading(false);
+    }
   };
 
 
@@ -278,6 +338,16 @@ const PropertyDetailPage: React.FC = () => {
               onShowSuccess={showSuccess}
               onShowError={showError}
             />
+            
+            {/* Referral Assignment Button */}
+            <Tooltip title="Assign Referral Employee">
+              <IconButton
+                color="info"
+                onClick={handleOpenReferralModal}
+              >
+                <PersonAddIcon />
+              </IconButton>
+            </Tooltip>
             
             <Tooltip title="Edit Property">
               <IconButton
@@ -626,6 +696,7 @@ const PropertyDetailPage: React.FC = () => {
                 </CardContent>
               </Card>
           )}
+
         </Grid>
 
         {/* Sidebar Information */}
@@ -805,7 +876,7 @@ const PropertyDetailPage: React.FC = () => {
           </Card>
 
           {/* Timestamps */}
-          <Card>
+          <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Avatar sx={{ bgcolor: 'default.main', mr: 2 }}>
@@ -853,6 +924,88 @@ const PropertyDetailPage: React.FC = () => {
               </Grid>
             </CardContent>
           </Card>
+
+          {/* Assigned Employees */}
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ bgcolor: 'info.main', mr: 2 }}>
+                  <PersonIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight={600}>
+                    Referral Employees
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Employees assigned to this property
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {employeesLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : employees.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="textSecondary">
+                    No employees assigned to this property yet.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box>
+                  {employees.map((assignment) => {
+                    const identifier = assignment.employee?.employee_id || assignment.employee?.email;
+                    return (
+                      <Box
+                        key={assignment.id}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          p: 2,
+                          border: 1,
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          mb: 1,
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body1" fontWeight="medium">
+                            {assignment.employee?.name} ({identifier})
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {assignment.assignment_type_label} • {new Date(assignment.assigned_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </Typography>
+                          {assignment.employee?.position && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {assignment.employee.position}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip
+                            label={assignment.assignment_status}
+                            size="small"
+                            color={assignment.assignment_status === 'active' ? 'success' : 'default'}
+                          />
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+
         </Grid>
 
         {/* Media Section */}
@@ -1137,6 +1290,15 @@ const PropertyDetailPage: React.FC = () => {
         title={`Comments for ${property?.title_en || 'Property'}`}
         propertyId={property?.id || 0}
         canDelete={true}
+      />
+
+      {/* Referral Assignment Modal */}
+      <ReferralAssignmentModal
+        open={referralModalOpen}
+        onClose={handleCloseReferralModal}
+        property={property}
+        onSuccess={handleReferralSuccess}
+        onAssignmentRemoved={handleAssignmentRemoved}
       />
     </Box>
   );

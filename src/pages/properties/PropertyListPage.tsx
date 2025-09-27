@@ -8,6 +8,10 @@ import {
   useMediaQuery,
   Tabs,
   Tab,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -17,8 +21,10 @@ import {
   Visibility as ViewIcon,
   Home as HomeIcon,
   Refresh as RefreshIcon,
+  PersonAdd as PersonAddIcon,
+  MoreVert as MoreVertIcon,
+  CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
-
   AttachMoney as PriceIcon,
   Bed as BedIcon,
   Bathtub as BathIcon,
@@ -35,7 +41,8 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
@@ -194,6 +201,14 @@ const PropertyListPage: React.FC = () => {
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedPropertyForComments, setSelectedPropertyForComments] = useState<Property | null>(null);
 
+  // Referral assignment modal state
+  const [referralModalOpen, setReferralModalOpen] = useState(false);
+  const [selectedPropertyForReferral, setSelectedPropertyForReferral] = useState<Property | null>(null);
+
+  // Action menu state
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedPropertyForMenu, setSelectedPropertyForMenu] = useState<Property | null>(null);
+
   // API Queries - Server-side filtering and pagination
   const { data: propertiesResponse, isLoading, error } = useProperties({
     page: page + 1, // API uses 1-based pagination
@@ -251,6 +266,86 @@ const PropertyListPage: React.FC = () => {
     setCommentsModalOpen(false);
     setSelectedPropertyForComments(null);
   };
+
+  // ========================================================================
+  // REFERRAL MODAL FUNCTIONS
+  // ========================================================================
+
+  const handleOpenReferralModal = (property: Property) => {
+    setSelectedPropertyForReferral(property);
+    setReferralModalOpen(true);
+  };
+
+  const handleCloseReferralModal = () => {
+    setReferralModalOpen(false);
+    setSelectedPropertyForReferral(null);
+  };
+
+      const handleReferralSuccess = () => {
+        showSuccess('Employees assigned successfully');
+        // Optionally refresh the properties list
+        // window.location.reload(); // Simple refresh
+      };
+
+      const handleAssignmentRemoved = () => {
+        // Refresh the properties list when an assignment is removed
+        // This ensures the UI stays in sync
+        window.location.reload();
+      };
+
+      // ========================================================================
+      // VERIFICATION ACTIONS
+      // ========================================================================
+
+      const handleApproveProperty = (property: Property) => {
+        // TODO: Implement approve property logic
+        console.log('Approve property:', property.id);
+        showSuccess(`${property.title_en} approved successfully!`);
+      };
+
+      const handleRejectProperty = (property: Property) => {
+        // TODO: Implement reject property logic
+        console.log('Reject property:', property.id);
+        showSuccess(`${property.title_en} rejected successfully!`);
+      };
+
+      // ========================================================================
+      // ACTION MENU FUNCTIONS
+      // ========================================================================
+
+      const handleActionMenuOpen = (event: React.MouseEvent<HTMLElement>, property: Property) => {
+        setActionMenuAnchor(event.currentTarget);
+        setSelectedPropertyForMenu(property);
+      };
+
+      const handleActionMenuClose = () => {
+        setActionMenuAnchor(null);
+        setSelectedPropertyForMenu(null);
+      };
+
+      const handleMenuAction = (action: 'approve' | 'reject' | 'referral' | 'delete' | 'renew') => {
+        if (!selectedPropertyForMenu) return;
+        
+        switch (action) {
+          case 'approve':
+            handleApproveProperty(selectedPropertyForMenu);
+            break;
+          case 'reject':
+            handleRejectProperty(selectedPropertyForMenu);
+            break;
+          case 'referral':
+            handleOpenReferralModal(selectedPropertyForMenu);
+            break;
+          case 'delete':
+            handleDeleteProperty(selectedPropertyForMenu);
+            break;
+          case 'renew':
+            handleRenewProperty(selectedPropertyForMenu);
+            break;
+        }
+        
+        handleActionMenuClose();
+      };
 
 
   // ========================================================================
@@ -559,6 +654,7 @@ const PropertyListPage: React.FC = () => {
         
         return (
           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', alignItems: 'center' }}>
+            {/* Primary Actions - View Details and Edit (always visible for non-deleted) */}
             <Tooltip title="View Details">
               <IconButton
                 size="small"
@@ -569,47 +665,100 @@ const PropertyListPage: React.FC = () => {
               </IconButton>
             </Tooltip>
             
-            {/* Show different actions based on deleted status */}
-            {!isDeleted ? (
+            {/* Edit button - only for non-deleted properties */}
+            {!isDeleted && (
+              <Tooltip title="Edit">
+                <IconButton
+                  size="small"
+                  onClick={() => navigate(`/properties/${property.id}/edit`)}
+                  color="secondary"
+                >
+                  <EditIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            
+            {/* Secondary Actions - Dropdown Menu */}
+            {!isDeleted && (
               <>
-                {/* Verification Actions */}
-                <VerificationActions
-                  propertyId={property.id}
-                  propertyTitle={property.title_en}
-                  verificationStatus={property.verification_status}
-                  onShowSuccess={showSuccess}
-                  onShowError={showError}
-                />
-                
-                <Tooltip title="Edit">
+                <Tooltip title="More Actions">
                   <IconButton
                     size="small"
-                    onClick={() => navigate(`/properties/${property.id}/edit`)}
-                    color="secondary"
+                    onClick={(e) => handleActionMenuOpen(e, property)}
+                    color="default"
+                    sx={{ 
+                      bgcolor: 'grey.100', 
+                      '&:hover': { bgcolor: 'grey.200' } 
+                    }}
                   >
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDeleteProperty(property)}
-                    color="error"
-                    disabled={deletePropertyMutation.isPending}
-                  >
-                    <DeleteIcon />
+                    <MoreVertIcon />
                   </IconButton>
                 </Tooltip>
                 
-                {/* Renew button - only show for expired properties */}
-                {property.is_expired && (
-                  <RenewButton
-                    onClick={() => handleRenewProperty(property)}
-                    disabled={renewPropertyMutation.isPending}
-                  />
-                )}
+                {/* Action Menu */}
+                <Menu
+                  anchorEl={actionMenuAnchor}
+                  open={Boolean(actionMenuAnchor && selectedPropertyForMenu?.id === property.id)}
+                  onClose={handleActionMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                >
+                  {/* Verification Actions - Only for pending properties */}
+                  {property.verification_status === 'pending' && (
+                    <>
+                      <MenuItem onClick={() => handleMenuAction('approve')}>
+                        <ListItemIcon>
+                          <CheckCircleIcon color="success" />
+                        </ListItemIcon>
+                        <ListItemText>Approve Property</ListItemText>
+                      </MenuItem>
+                      
+                      <MenuItem onClick={() => handleMenuAction('reject')}>
+                        <ListItemIcon>
+                          <CancelIcon color="error" />
+                        </ListItemIcon>
+                        <ListItemText>Reject Property</ListItemText>
+                      </MenuItem>
+                    </>
+                  )}
+                  
+                  {/* Assign Referral Employee */}
+                  <MenuItem onClick={() => handleMenuAction('referral')}>
+                    <ListItemIcon>
+                      <PersonAddIcon color="info" />
+                    </ListItemIcon>
+                    <ListItemText>Assign Referral</ListItemText>
+                  </MenuItem>
+                  
+                  {/* Renew option - only show for expired properties */}
+                  {property.is_expired && (
+                    <MenuItem onClick={() => handleMenuAction('renew')}>
+                      <ListItemIcon>
+                        <RefreshIcon color="warning" />
+                      </ListItemIcon>
+                      <ListItemText>Renew</ListItemText>
+                    </MenuItem>
+                  )}
+                  
+                  {/* Delete action */}
+                  <MenuItem onClick={() => handleMenuAction('delete')} sx={{ color: 'error.main' }}>
+                    <ListItemIcon>
+                      <DeleteIcon color="error" />
+                    </ListItemIcon>
+                    <ListItemText>Delete</ListItemText>
+                  </MenuItem>
+                </Menu>
               </>
-            ) : (
+            )}
+            
+            {/* Restore action - Only for deleted properties */}
+            {isDeleted && (
               <Tooltip title="Restore">
                 <IconButton
                   size="small"
@@ -625,7 +774,7 @@ const PropertyListPage: React.FC = () => {
         );
       },
     },
-  ], [isMobile, navigate, deletePropertyMutation.isPending, restorePropertyMutation.isPending]);
+  ], [isMobile, navigate, deletePropertyMutation.isPending, restorePropertyMutation.isPending, actionMenuAnchor, selectedPropertyForMenu]);
 
   // ========================================================================
   // MOBILE CARD ACTIONS
@@ -656,6 +805,12 @@ const PropertyListPage: React.FC = () => {
           tooltip: 'Edit',
           color: 'secondary' as const,
           onClick: () => navigate(`/properties/${property.id}/edit`),
+        },
+        {
+          icon: <PersonAddIcon />,
+          tooltip: 'Assign Referral Employee',
+          color: 'info' as const,
+          onClick: () => handleOpenReferralModal(property),
         },
         {
           icon: <DeleteIcon />,
@@ -1033,6 +1188,15 @@ const PropertyListPage: React.FC = () => {
         title={`Comments for ${selectedPropertyForComments?.title_en || 'Property'}`}
         propertyId={selectedPropertyForComments?.id || 0}
         canDelete={true}
+      />
+
+      {/* Referral Assignment Modal */}
+      <ReferralAssignmentModal
+        open={referralModalOpen}
+        onClose={handleCloseReferralModal}
+        property={selectedPropertyForReferral}
+        onSuccess={handleReferralSuccess}
+        onAssignmentRemoved={handleAssignmentRemoved}
       />
     </Box>
   );
