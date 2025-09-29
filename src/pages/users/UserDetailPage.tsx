@@ -152,14 +152,26 @@ const UserDetailPage: React.FC = () => {
                 {user.email}
               </Typography>
               
-              <Box sx={{ mt: 2, mb: 2 }}>
+              <Box sx={{ 
+                mt: 2, 
+                mb: 2, 
+                display: 'flex', 
+                gap: 1, 
+                flexWrap: 'wrap', 
+                justifyContent: 'center' 
+              }}>
                 <Chip
                   label={user.user_type === 'company' ? 'Company' : 'Individual'}
                   color={user.user_type === 'company' ? 'primary' : 'secondary'}
                   size="small"
-                  sx={{ mr: 1, mb: 1 }}
                 />
-                <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+                <StatusChip status={user.is_active ? 'active' : 'inactive'} /> 
+                {user.user_type === 'company' && (
+                  <StatusChip 
+                    status={user.verification_status || 'pending'} 
+                    statusType="verification_status"
+                  />
+                )}
               </Box>
               
               <Button

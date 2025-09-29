@@ -57,6 +57,7 @@ export interface RegularUser {
   user_type_label?: string;
   member_level: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active: boolean;
+  verification_status?: 'pending' | 'approved';
   last_login_at?: string;
   last_active_at?: string;
   email_verified_at?: string;
@@ -107,6 +108,7 @@ export interface UpdateRegularUserData {
   user_type?: 'company' | 'individual';
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
+  verification_status?: 'pending' | 'approved';
 }
 
 export interface RegularUserFilters {
