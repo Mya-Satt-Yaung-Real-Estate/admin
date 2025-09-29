@@ -87,6 +87,22 @@ export const MENU_ITEMS = [
     ],
   },
   {
+    text: 'Employees',
+    iconName: 'People',
+    children: [
+      {
+        text: 'Employees',
+        iconName: 'PersonAdd',
+        path: '/employees',
+      },
+      {
+        text: 'Referrals',
+        iconName: 'PersonAdd',
+        path: '/property-referrals',
+      },
+    ],
+  },
+  {
     text: 'Loan Requests',
     iconName: 'RequestQuote',
     path: '/loan-requests',
@@ -96,11 +112,7 @@ export const MENU_ITEMS = [
     iconName: 'People',
     path: '/users',
   },
-  {
-    text: 'Employees',
-    iconName: 'People',
-    path: '/employees',
-  },
+  
   // HR Line - Second Section End
   {
     text: 'HR_DIVIDER_2',

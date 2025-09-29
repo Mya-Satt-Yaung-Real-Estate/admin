@@ -18,9 +18,6 @@ import {
   CircularProgress,
 } from '@mui/material';
 import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  RestoreFromTrash as RestoreIcon,
   ArrowBack as ArrowBackIcon,
   Home as HomeIcon,
   LocationOn as LocationIcon,
@@ -43,11 +40,11 @@ import {
   PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty } from '../../services/queries/properties';
+import { useProperty } from '../../services/queries/properties';
 import { employeesAPI } from '../../services/api/employees';
-import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
+import { useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, ActionAlert, CommentsModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { formatDate } from '../../constants/dateFormats';
 import { formatPropertyCondition } from '../../utils/propertyUtils';
@@ -67,27 +64,11 @@ const PropertyDetailPage: React.FC = () => {
 
   // API Queries
   const { data: propertyResponse, isLoading, isFetching, error } = useProperty(Number(id));
-  const deletePropertyMutation = useDeleteProperty();
-  const restorePropertyMutation = useRestoreProperty();
-  const renewPropertyMutation = useRenewProperty();
+
 
   // Alert system hook
-  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  const { alert, showSuccess, clearAlert } = useAlertSystem();
   
-  // Delete confirmation hook
-  const {
-    deleteState,
-    openDeleteConfirmation,
-    closeDeleteConfirmation,
-    handleConfirmDelete,
-  } = useDeleteConfirmation();
-
-  // Restore confirmation state
-  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
-
-  // Renew confirmation state
-  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
-
   // Comments modal state
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
 
@@ -146,16 +127,17 @@ const PropertyDetailPage: React.FC = () => {
     setReferralModalOpen(false);
   };
 
-      const handleReferralSuccess = () => {
-        showSuccess('Employees assigned successfully');
-        // Refresh employees list
-        loadEmployees();
-      };
+  const handleReferralSuccess = () => {
+    showSuccess('Employees assigned successfully');
+    // Refresh employees list
+    loadEmployees();
+  };
 
-      const handleAssignmentRemoved = () => {
-        // Refresh employees list when an assignment is removed
-        loadEmployees();
-      };
+  const handleAssignmentRemoved = () => {
+    // Refresh employees list when an assignment is removed
+    loadEmployees();
+  };
+
 
   // ========================================================================
   // EMPLOYEES FUNCTIONS
@@ -177,71 +159,7 @@ const PropertyDetailPage: React.FC = () => {
 
 
   // Event handlers
-  const handleBack = () => navigate('/properties');
-  const handleEdit = () => navigate(`/properties/${id}/edit`);
-  const handleDelete = () => {
-    if (!property) return;
-    
-    openDeleteConfirmation(
-      property.title_en,
-      'property',
-      async () => {
-        try {
-          await deletePropertyMutation.mutateAsync(property.id);
-          showSuccess(`${property.title_en} deleted successfully!`, true);
-          navigate('/properties');
-        } catch (error: any) {
-          showError(error.message || 'Failed to delete property. Please try again.', true);
-        }
-      }
-    );
-  };
-
-  const handleRestore = () => {
-    setRestoreConfirmOpen(true);
-  };
-
-  const handleConfirmRestore = async () => {
-    if (!property) return;
-    
-    try {
-      await restorePropertyMutation.mutateAsync(property.id);
-      showSuccess(`${property.title_en} restored successfully!`, true);
-      setRestoreConfirmOpen(false);
-      // Refresh the data to update the UI
-      window.location.reload();
-    } catch (error: any) {
-      showError(error.message || 'Failed to restore property. Please try again.', true);
-    }
-  };
-
-  const handleRenew = () => {
-    setRenewConfirmOpen(true);
-  };
-
-  const handleConfirmRenew = async (notes?: string) => {
-    if (!property) return;
-    
-    try {
-      const response = await renewPropertyMutation.mutateAsync({ 
-        id: property.id, 
-        notes 
-      });
-      
-      const newExpiry = response.data?.renewal_info?.new_expiry;
-      const expiryDate = newExpiry ? new Date(newExpiry).toLocaleDateString() : 'N/A';
-      
-      showSuccess(
-        `${property.title_en} renewed successfully! New expiry: ${expiryDate}`, 
-        true
-      );
-      setRenewConfirmOpen(false);
-      // Refresh the data to update the UI
-      window.location.reload();
-    } catch (error: any) {
-      showError(error.message || 'Failed to renew property. Please try again.', true);
-    }
-  };
+  const handleBack = () => navigate('/property-referral');
 
   // Image viewer handlers
   const handleImageClick = (image: any) => {
@@ -269,12 +187,12 @@ const PropertyDetailPage: React.FC = () => {
 
   // Loading state
   if (isLoading) {
-    return <PageLoadingState title="Loading Property Details" />;
+    return <PageLoadingState title="Loading Referral Details" />;
   }
 
   // Show loading state during refetch to ensure fresh data is displayed
   if (isFetching && !propertyResponse?.data) {
-    return <PageLoadingState title="Refreshing Property Details" />;
+    return <PageLoadingState title="Refreshing Referral Details" />;
   }
 
   // Error state
@@ -282,7 +200,7 @@ const PropertyDetailPage: React.FC = () => {
     return (
       <PageErrorState
         error={error}
-        title="Error Loading Property"
+        title="Error Loading Referral"
         message={error.message}
         onRetry={() => window.location.reload()}
       />
@@ -293,16 +211,16 @@ const PropertyDetailPage: React.FC = () => {
   if (!property) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Property Not Found</Typography>
+        <Typography variant="h6" gutterBottom>Referral Not Found</Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          The property you're looking for doesn't exist or has been removed.
+          The Referral you're looking for doesn't exist or has been removed.
         </Typography>
         <Button
           variant="contained"
           startIcon={<ArrowBackIcon />}
           onClick={handleBack}
         >
-          Back to Properties
+          Back to Referral
         </Button>
       </Box>
     );
@@ -313,11 +231,11 @@ const PropertyDetailPage: React.FC = () => {
       <PageHeader
         title={property.title_en}
         subtitle={property.title_mm}
-        breadcrumbs="Dashboard / Property Management / Property Details"
+        breadcrumbs="Dashboard / Referral / Property Details for Referral"
         actionButton={{
-          text: 'Back to Properties',
+          text: 'Back to Referral',
           icon: <ArrowBackIcon />,
-          onClick: () => navigate('/properties')
+          onClick: () => navigate('/property-referrals')
         }}
       />
 
@@ -328,16 +246,8 @@ const PropertyDetailPage: React.FC = () => {
       <Box sx={{ mb: 3, display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
         
         {/* Show different actions based on deleted status */}
-        {!property.is_deleted ? (
-          <>
-            {/* Verification Actions */}
-            <VerificationActions
-              propertyId={property.id}
-              propertyTitle={property.title_en}
-              verificationStatus={property.verification_status}
-              onShowSuccess={showSuccess}
-              onShowError={showError}
-            />
+        <>
+            {/* PDF Export Button */}
             
             {/* Referral Assignment Button */}
             <Tooltip title="Assign Referral Employee">
@@ -348,45 +258,7 @@ const PropertyDetailPage: React.FC = () => {
                 <PersonAddIcon />
               </IconButton>
             </Tooltip>
-            
-            <Tooltip title="Edit Property">
-              <IconButton
-                color="primary"
-                onClick={handleEdit}
-              >
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete Property">
-              <IconButton
-                color="error"
-                onClick={handleDelete}
-                disabled={deletePropertyMutation.isPending}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
-            
-            {/* Renew button - only show for expired properties */}
-            {property.is_expired && (
-              <RenewButton
-                onClick={handleRenew}
-                disabled={renewPropertyMutation.isPending}
-                tooltip="Renew Property"
-              />
-            )}
-          </>
-        ) : (
-          <Tooltip title="Restore Property">
-            <IconButton
-              color="success"
-              onClick={handleRestore}
-              disabled={restorePropertyMutation.isPending}
-            >
-              <RestoreIcon />
-            </IconButton>
-          </Tooltip>
-        )}
+        </>
       </Box>
 
       <Grid container spacing={3}>
@@ -701,8 +573,89 @@ const PropertyDetailPage: React.FC = () => {
 
         {/* Sidebar Information */}
         <Grid item xs={12} lg={4}>
+          {/* Assigned Employees */}
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ bgcolor: 'info.main', mr: 2 }}>
+                  <PersonIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight={600}>
+                    Referral Employees
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Employees assigned to this property
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Divider sx={{ mb: 2 }} />
+
+              {employeesLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : employees.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                  <Typography variant="body2" color="textSecondary">
+                    No employees assigned to this property yet.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box>
+                  {employees.map((assignment) => {
+                    const identifier = assignment.employee?.employee_id || assignment.employee?.email;
+                    return (
+                      <Box
+                        key={assignment.id}
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          p: 2,
+                          border: 1,
+                          borderColor: 'divider',
+                          borderRadius: 1,
+                          mb: 1,
+                        }}
+                      >
+                        <Box>
+                          <Typography variant="body1" fontWeight="medium">
+                            {assignment.employee?.name} ({identifier})
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {assignment.assignment_type_label} • {new Date(assignment.assigned_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </Typography>
+                          {assignment.employee?.position && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {assignment.employee.position}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Chip
+                            label={assignment.assignment_status}
+                            size="small"
+                            color={assignment.assignment_status === 'active' ? 'success' : 'default'}
+                          />
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Price Card */}
-          <Card sx={{ mb: 3 }}>
+          <Card sx={{ mb: 3, mt:2 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
@@ -922,87 +875,6 @@ const PropertyDetailPage: React.FC = () => {
                   </Grid>
                 )}
               </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Assigned Employees */}
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: 'info.main', mr: 2 }}>
-                  <PersonIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h6" fontWeight={600}>
-                    Referral Employees
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    Employees assigned to this property
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Divider sx={{ mb: 2 }} />
-
-              {employeesLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-                  <CircularProgress size={24} />
-                </Box>
-              ) : employees.length === 0 ? (
-                <Box sx={{ p: 2, textAlign: 'center' }}>
-                  <Typography variant="body2" color="textSecondary">
-                    No employees assigned to this property yet.
-                  </Typography>
-                </Box>
-              ) : (
-                <Box>
-                  {employees.map((assignment) => {
-                    const identifier = assignment.employee?.employee_id || assignment.employee?.email;
-                    return (
-                      <Box
-                        key={assignment.id}
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          p: 2,
-                          border: 1,
-                          borderColor: 'divider',
-                          borderRadius: 1,
-                          mb: 1,
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body1" fontWeight="medium">
-                            {assignment.employee?.name} ({identifier})
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {assignment.assignment_type_label} • {new Date(assignment.assigned_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </Typography>
-                          {assignment.employee?.position && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              {assignment.employee.position}
-                            </Typography>
-                          )}
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Chip
-                            label={assignment.assignment_status}
-                            size="small"
-                            color={assignment.assignment_status === 'active' ? 'success' : 'default'}
-                          />
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              )}
             </CardContent>
           </Card>
 
@@ -1249,39 +1121,6 @@ const PropertyDetailPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog
-        open={deleteState.open}
-        onClose={closeDeleteConfirmation}
-        onConfirm={handleConfirmDelete}
-        itemName={deleteState.itemName}
-        itemType={deleteState.itemType}
-        isLoading={deletePropertyMutation.isPending}
-        error={deletePropertyMutation.error?.message}
-      />
-
-      {/* Restore Confirmation Dialog */}
-      <ConfirmationDialog
-        open={restoreConfirmOpen}
-        onClose={() => setRestoreConfirmOpen(false)}
-        onConfirm={handleConfirmRestore}
-        itemName={property?.title_en}
-        itemType="property"
-        action="restore"
-        isLoading={restorePropertyMutation.isPending}
-        error={restorePropertyMutation.error?.message}
-      />
-
-      {/* Renew Confirmation Dialog */}
-      <RenewConfirmationDialog
-        open={renewConfirmOpen}
-        onClose={() => setRenewConfirmOpen(false)}
-        onConfirm={handleConfirmRenew}
-        property={property}
-        isLoading={renewPropertyMutation.isPending}
-        error={renewPropertyMutation.error?.message}
-      />
 
       {/* Comments Modal */}
       <CommentsModal

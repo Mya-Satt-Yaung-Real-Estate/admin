@@ -142,11 +142,11 @@ const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterFi
   {
     key: 'isTrendingFilter',
     type: 'select',
-    label: 'Trending',
+    label: 'Premium',
     options: [
       { value: 'all', label: 'All Properties' },
-      { value: 'true', label: 'Trending Only' },
-      { value: 'false', label: 'Non-Trending Only' },
+      { value: 'true', label: 'Premium Only' },
+      { value: 'false', label: 'Non-Premium Only' },
     ],
   },
 ];

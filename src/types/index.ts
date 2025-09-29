@@ -19,6 +19,7 @@ export * from './knowledgeHub';
 export * from './eventRegistration';
 export * from './loanRequest';
 export * from './employee';
+export * from './propertyReferral';
 
 // Global types that don't fit into specific categories
 export interface BaseEntity {

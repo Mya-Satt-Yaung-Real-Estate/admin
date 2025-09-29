@@ -92,12 +92,12 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
                 }}
               />
             }
-            label="Is Trending"
+            label="Is Premium"
           />
           {values.is_trending && (
             <Alert severity="warning" sx={{ mt: 1 }}>
               <Typography variant="body2">
-                Enabling trending feature will require additional points from the user's account when the property is published.
+                Enabling premium feature will require additional points from the user's account when the property is published.
               </Typography>
             </Alert>
           )}

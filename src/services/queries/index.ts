@@ -17,6 +17,7 @@ export * from './feedback';
 export * from './eventRegistration';
 export * from './loan-requests';
 export * from './employees';
+export * from './propertyReferrals';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -32,4 +33,5 @@ export { knowledgeHubKeys } from './knowledge-hub';
 export { feedbackKeys } from './feedback';
 export { eventRegistrationKeys } from './eventRegistration';
 export { employeeKeys } from './employees';
+export { propertyReferralKeys } from './propertyReferrals';
 
