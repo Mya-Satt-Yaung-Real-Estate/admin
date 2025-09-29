@@ -41,6 +41,7 @@ interface UserFilters extends FilterState {
   userTypeFilter: string;
   memberLevelFilter: string;
   statusFilter: string;
+  verificationStatusFilter: string;
 }
 
 // ============================================================================
@@ -93,6 +94,16 @@ const FILTER_FIELDS: FilterField[] = [
       { value: 'inactive', label: 'Inactive' },
     ],
   },
+  {
+    key: 'verificationStatusFilter',
+    type: 'select',
+    label: 'Verification Status',
+    options: [
+      { value: 'all', label: 'All' },
+      { value: 'pending', label: 'Pending' },
+      { value: 'approved', label: 'Approved' },
+    ],
+  },
 ];
 
 // ============================================================================
@@ -121,6 +132,7 @@ const UserListPage: React.FC = () => {
     userTypeFilter: 'all',
     memberLevelFilter: 'all',
     statusFilter: 'all',
+    verificationStatusFilter: 'all',
   });
 
   // Alert system hook
@@ -141,21 +153,24 @@ const UserListPage: React.FC = () => {
   // Filter users using client-side filtering
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
-      const matchesSearch = !filters.searchTerm || 
+      const matchesSearch = !filters.searchTerm ||
         user.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(filters.searchTerm.toLowerCase());
-      
-      const matchesUserType = filters.userTypeFilter === 'all' || 
+
+      const matchesUserType = filters.userTypeFilter === 'all' ||
         user.user_type === filters.userTypeFilter;
-      
-      const matchesMemberLevel = filters.memberLevelFilter === 'all' || 
+
+      const matchesMemberLevel = filters.memberLevelFilter === 'all' ||
         user.member_level === filters.memberLevelFilter;
-      
-      const matchesStatus = filters.statusFilter === 'all' || 
+
+      const matchesStatus = filters.statusFilter === 'all' ||
         (filters.statusFilter === 'active' && user.is_active) ||
         (filters.statusFilter === 'inactive' && !user.is_active);
-      
-      return matchesSearch && matchesUserType && matchesMemberLevel && matchesStatus;
+
+      const matchesVerificationStatus = filters.verificationStatusFilter === 'all' ||
+        (user.user_type === 'company' && user.verification_status === filters.verificationStatusFilter);
+
+      return matchesSearch && matchesUserType && matchesMemberLevel && matchesStatus && matchesVerificationStatus;
     });
   }, [users, filters]);
 
@@ -256,8 +271,8 @@ const UserListPage: React.FC = () => {
       render: (_value, user) => {
         if (!user) return <Typography variant="body2">No data</Typography>;
         return (
-          <StatusChip 
-            status={user.member_level} 
+          <StatusChip
+            status={user.member_level}
             statusType="member_level"
             size="small"
           />
@@ -305,6 +320,27 @@ const UserListPage: React.FC = () => {
         return (
           <StatusChip 
             status={user.is_active ? 'active' : 'inactive'} 
+            size="small"
+          />
+        );
+      },
+    },
+    {
+      id: 'verificationStatus',
+      label: 'Verification Status',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        if (user.user_type !== 'company') {
+          return <Typography variant="body2" color="textSecondary">N/A</Typography>;
+        }
+        const verificationStatus = typeof user.verification_status === 'string' ? user.verification_status : '';
+        if (!verificationStatus || verificationStatus.trim() === '') {
+          return <Typography variant="body2" color="textSecondary">Not Submitted</Typography>;
+        }
+        return (
+          <StatusChip 
+            status={verificationStatus} 
+            statusType="verification_status"
             size="small"
           />
         );
@@ -449,7 +485,7 @@ const UserListPage: React.FC = () => {
       {filteredUsers.length === 0 && !isLoading && (
         <PageEmptyState
           title="No Users Found"
-          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all'
+          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all' || filters.verificationStatusFilter !== 'all'
             ? "No users match your current filters. Try adjusting your search criteria."
             : "No users have been created yet."
           }
@@ -471,24 +507,36 @@ const UserListPage: React.FC = () => {
                 label: user.is_active ? 'Active' : 'Inactive',
                 color: user.is_active ? 'success' : 'error',
               }}
-                             chips={[
-                 {
-                   label: user.user_type === 'company' ? 'Company' : 'Individual',
-                   color: user.user_type === 'company' ? 'primary' : 'secondary',
-                 },
-                 {
-                   label: user.member_level,
-                   color: 'info',
-                 },
-                 {
-                   label: `${user.property_count || 0} Properties`,
-                   color: 'secondary',
-                 },
-                 {
-                   label: `${user.point_balance || 0} Points`,
-                   color: 'warning',
-                 },
-               ]}
+              chips={[
+                ...(() => {
+                  if (user.user_type === 'company') {
+                    const verificationStatus = typeof user.verification_status === 'string' ? user.verification_status : '';
+                    if (verificationStatus && verificationStatus.trim() !== '') {
+                      return [{
+                        label: verificationStatus.charAt(0).toUpperCase() + verificationStatus.slice(1),
+                        color: verificationStatus === 'approved' ? 'primary' as const : 'warning' as const,
+                      }];
+                    }
+                  }
+                  return [];
+                })(),
+                {
+                  label: user.user_type === 'company' ? 'Company' : 'Individual',
+                  color: user.user_type === 'company' ? 'primary' as const : 'secondary' as const,
+                },
+                {
+                  label: user.member_level,
+                  color: 'info' as const,
+                },
+                {
+                  label: `${user.property_count || 0} Properties`,
+                  color: 'secondary' as const,
+                },
+                {
+                  label: `${user.point_balance || 0} Points`,
+                  color: 'warning' as const,
+                },
+              ]}
               actions={createMobileCardActions(user)}
               onClick={() => navigate(`/users/${user.id}`)}
               clickable={true}

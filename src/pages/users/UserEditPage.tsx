@@ -17,6 +17,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Chip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -61,6 +62,7 @@ const UserEditPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [status, setStatus] = useState<boolean>(true);
   const [memberLevel, setMemberLevel] = useState<string>('silver');
+  const [verificationStatus, setVerificationStatus] = useState<string>('pending');
   const [hasChanges, setHasChanges] = useState(false);
 
   // Hooks
@@ -78,6 +80,7 @@ const UserEditPage: React.FC = () => {
     if (user) {
       setStatus(user.is_active);
       setMemberLevel(user.member_level);
+      setVerificationStatus(typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
       setHasChanges(false);
     }
   }, [user]);
@@ -87,20 +90,27 @@ const UserEditPage: React.FC = () => {
   
   const handleStatusChange = (newStatus: boolean) => {
     setStatus(newStatus);
-    checkForChanges();
   };
 
   const handleMemberLevelChange = (newMemberLevel: string) => {
     setMemberLevel(newMemberLevel);
-    checkForChanges();
   };
 
-  const checkForChanges = () => {
-    if (!user) return;
-    const statusChanged = status !== user.is_active;
-    const memberLevelChanged = memberLevel !== user.member_level;
-    setHasChanges(statusChanged || memberLevelChanged);
+  const handleVerificationStatusChange = (newVerificationStatus: string) => {
+    setVerificationStatus(newVerificationStatus);
   };
+
+  // New useEffect to track changes
+  React.useEffect(() => {
+    if (!user) return;
+    const statusChanged = Boolean(status) !== Boolean(user.is_active);
+    const memberLevelChanged = memberLevel !== user.member_level;
+    let verificationStatusChanged = false;
+    if (user.user_type === 'company') {
+      verificationStatusChanged = verificationStatus !== (typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
+    }
+    setHasChanges(statusChanged || memberLevelChanged || verificationStatusChanged);
+  }, [status, memberLevel, verificationStatus, user]);
 
   const handleSubmit = async () => {
     if (!user || !hasChanges) return;
@@ -109,6 +119,10 @@ const UserEditPage: React.FC = () => {
       is_active: status,
       member_level: memberLevel as 'bronze' | 'silver' | 'gold' | 'platinum',
     };
+
+    if (user.user_type === 'company') {
+      updateData.verification_status = verificationStatus as 'pending' | 'approved';
+    }
 
     try {
       await updateUserMutation.mutateAsync({
@@ -200,12 +214,29 @@ const UserEditPage: React.FC = () => {
               <Typography variant="body2" color="textSecondary" gutterBottom>
                 {user.email}
               </Typography>
-              
-              <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 2 }}>
-                {user.user_type === 'company' ? 'Company User' : 'Individual User'}
-              </Typography>
 
-              <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+              <Box sx={{ 
+                mt: 2,
+                mb: 2,
+                display: 'flex',
+                gap: 1,
+                flexWrap: 'wrap',
+                justifyContent: 'center'
+               }}>
+                  <Chip
+                    label={user.user_type === 'company' ? 'Company' : 'Individual'}
+                    color={user.user_type === 'company' ? 'primary' : 'secondary'}
+                    size="small"
+                  />
+                  <StatusChip status={user.is_active ? 'active' : 'inactive'} />
+                  {user.user_type === 'company' && (
+                    <StatusChip 
+                      status={typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending'} 
+                      statusType="verification_status"
+                    />
+                  )}
+
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -332,6 +363,35 @@ const UserEditPage: React.FC = () => {
           </Paper>
         </Grid>
 
+        {/* Verification Status Edit Section */}
+        {user.user_type === 'company' && (
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Verification Status
+              </Typography>
+              
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
+                Change the user's verification status. Approved users may have access to additional features.
+              </Typography>
+
+              <Box sx={{ mb: 3 }}>
+                <FormControl fullWidth sx={{ maxWidth: 300 }}>
+                  <InputLabel>Verification Status</InputLabel>
+                  <Select
+                    value={verificationStatus}
+                    label="Verification Status"
+                    onChange={(e) => handleVerificationStatusChange(e.target.value)}
+                  >
+                    <MenuItem value="pending">Pending</MenuItem>
+                    <MenuItem value="approved">Approved</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+            </Paper>
+          </Grid>
+        )}
+
         {/* Actions Section */}
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
@@ -354,6 +414,11 @@ const UserEditPage: React.FC = () => {
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
                   Current Status: <StatusChip status={user.is_active ? 'active' : 'inactive'} />
                 </Typography>
+                {user.user_type === 'company' && (
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                    Current Verification Status: <StatusChip status={typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending'} statusType="verification_status" />
+                  </Typography>
+                )}
                 <Typography variant="body2" color="textSecondary">
                   Current Member Level: <strong>{user.member_level}</strong>
                 </Typography>
