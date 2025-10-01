@@ -31,6 +31,7 @@ import { appointmentRoutes } from './appointments';
 import { appointmentPreferTimeRoutes } from './appointmentPreferTimes';
 import { employeeRoutes } from './employees';
 import { propertyReferralRoutes } from './property-referrals';
+import { pointTransactionRoutes } from './point-transactions';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
   ...appointmentPreferTimeRoutes,
   ...employeeRoutes,
   ...propertyReferralRoutes,
+  ...pointTransactionRoutes,
   
   // Catch-all route
   {

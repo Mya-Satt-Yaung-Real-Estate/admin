@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { SidebarItemProps, MenuItem } from '@/types';
+import { getIconComponent } from './Sidebar';
 
 interface SidebarItemDropdownProps extends SidebarItemProps {
   childrenItems?: MenuItem[];
@@ -142,7 +143,7 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
               <SidebarItem
                 key={child.text}
                 text={child.text}
-                icon={icon}
+                icon={getIconComponent(child.iconName)}
                 path={child.path!}
                 isSelected={isChildSelected}
                 isCollapsed={isCollapsed}

@@ -3,7 +3,7 @@ import { Chip, ChipProps } from '@mui/material';
 
 export interface StatusChipProps extends Omit<ChipProps, 'color'> {
   status: string | boolean;
-  statusType?: 'status' | 'verification_status' | 'member_level';
+  statusType?: 'status' | 'verification_status' | 'member_level' | 'transaction_type';
   size?: 'small' | 'medium';
 }
 
@@ -19,7 +19,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
     : status;
 
   // Get status label based on status type
-  const getStatusLabel = (status: string, type: 'status' | 'verification_status' | 'member_level'): string => {
+  const getStatusLabel = (status: string, type: 'status' | 'verification_status' | 'member_level' | 'transaction_type'): string => {
     if (type === 'verification_status') {
       const verificationStatusMap: Record<string, string> = {
         pending: 'Pending',
@@ -35,6 +35,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         platinum: 'Platinum',
       };
       return memberLevelMap[status] || status;
+    } else if (type === 'transaction_type') {
+      const transactionTypeMap: Record<string, string> = {
+        CREDIT: 'Credit',
+        DEBIT: 'Debit',
+      };
+      return transactionTypeMap[status] || status;
     } else {
       const statusMap: Record<string, string> = {
         active: 'Active',
@@ -61,7 +67,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
   };
 
   // Get status colors based on status type
-  const getStatusColors = (status: string, type: 'status' | 'verification_status' | 'member_level') => {
+  const getStatusColors = (status: string, type: 'status' | 'verification_status' | 'member_level' | 'transaction_type') => {
     if (type === 'verification_status') {
       const verificationColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
         pending: {
@@ -112,6 +118,22 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         },
       };
       return memberLevelColorMap[status] || memberLevelColorMap.bronze;
+    } else if (type === 'transaction_type') {
+      const transactionTypeColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
+        CREDIT: {
+          text: '#059669', // Green
+          border: '#059669',
+          hoverBg: '#ECFDF5',
+          hoverBorder: '#047857',
+        },
+        DEBIT: {
+          text: '#DC2626', // Red
+          border: '#DC2626',
+          hoverBg: '#FEF2F2',
+          hoverBorder: '#B91C1C',
+        },
+      };
+      return transactionTypeColorMap[status] || transactionTypeColorMap.CREDIT;
     } else {
       const statusColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
         active: {

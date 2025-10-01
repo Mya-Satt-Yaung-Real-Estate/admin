@@ -35,7 +35,10 @@ import {
   Key as KeyIcon,
   Feedback as FeedbackIcon,
   LiveHelp as LiveHelpIcon,
-
+  AccountBalance as AccountBalanceIcon,
+  AccessTime as AccessTimeIcon,
+  PersonAdd as PersonAddIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -53,7 +56,7 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
-const getIconComponent = (iconName: string): React.ReactNode => {
+export const getIconComponent = (iconName: string): React.ReactNode => {
   switch (iconName) {
     // Main navigation icons
     case 'Dashboard':
@@ -109,15 +112,23 @@ const getIconComponent = (iconName: string): React.ReactNode => {
     case 'Key':
       return <KeyIcon />;
     
+    // Additional icons
+    case 'AccessTime':
+      return <AccessTimeIcon />;
+    case 'PersonAdd':
+      return <PersonAddIcon />;
+    case 'ShoppingCart':
+      return <ShoppingCartIcon />;
+    
     // Legacy icons (for backward compatibility)
     case 'Event':
       return <EventNoteIcon />;
     case 'Article':
       return <NewspaperIcon />;
-    case 'ShoppingCart':
-      return <RequestQuoteIcon />;
     case 'QuestionMarkIcon':
       return <LiveHelpIcon />;
+    case 'AccountBalance':
+      return <AccountBalanceIcon />;
     
     default:
       return <DashboardIcon />;

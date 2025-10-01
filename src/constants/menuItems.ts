@@ -20,7 +20,7 @@ export const MENU_ITEMS = [
     iconName: 'EventNote',
     children: [
       {
-        text: 'Event Categories',
+        text: 'Categories',
         iconName: 'EventAvailable',
         path: '/events/categories',
       },
@@ -61,9 +61,20 @@ export const MENU_ITEMS = [
   },
   // Second Section: User & Transaction Features
   {
-    text: 'Point Orders',
-    iconName: 'RequestQuote',
-    path: '/points/purchase-requests',
+    text: 'Points',
+    iconName: 'Star',
+    children: [
+      {
+        text: 'Orders',
+        iconName: 'ShoppingCart',
+        path: '/points/purchase-requests',
+      },
+      {
+        text: 'Transactions',
+        iconName: 'AccountBalance',
+        path: '/point-transactions',
+      },
+    ],
   },
   // {
   //   text: 'Bookings',
@@ -87,7 +98,7 @@ export const MENU_ITEMS = [
     ],
   },
   {
-    text: 'Employees',
+    text: 'Employee',
     iconName: 'People',
     children: [
       {
@@ -97,7 +108,7 @@ export const MENU_ITEMS = [
       },
       {
         text: 'Referrals',
-        iconName: 'PersonAdd',
+        iconName: 'HomeWork',
         path: '/property-referrals',
       },
     ],
@@ -122,7 +133,7 @@ export const MENU_ITEMS = [
   },
   // Third Section: System & Admin Features
   {
-    text: 'Master Data',
+    text: 'System Configuration',
     iconName: 'Assessment',
     children: [
       {
@@ -141,7 +152,7 @@ export const MENU_ITEMS = [
         path: '/property-listing-types',
       },
       {
-        text: 'Point Packages',
+        text: 'Packages',
         iconName: 'Star',
         path: '/points/packages',
       },
@@ -169,7 +180,7 @@ export const MENU_ITEMS = [
     iconName: 'AdminPanelSettings',
     children: [
       {
-        text: 'Admin Users',
+        text: 'Admins',
         iconName: 'People',
         path: '/admins',
       },
