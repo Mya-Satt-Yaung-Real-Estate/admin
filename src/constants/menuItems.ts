@@ -133,7 +133,7 @@ export const MENU_ITEMS = [
   },
   // Third Section: System & Admin Features
   {
-    text: 'System Configuration',
+    text: 'Master Data',
     iconName: 'Assessment',
     children: [
       {
