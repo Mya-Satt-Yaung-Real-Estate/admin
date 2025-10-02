@@ -28,6 +28,7 @@ import {
   Business as BusinessIcon,
   CalendarToday as CalendarIcon,
   Star as StarIcon,
+  Phone as PhoneIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -269,6 +270,18 @@ const UserEditPage: React.FC = () => {
                     secondary={user.email}
                   />
                 </ListItem>
+
+                {user.user_type === 'individual' && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <PhoneIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Phone Number"
+                      secondary={user.phone}
+                    />
+                  </ListItem>
+                )}
                 
                 <ListItem>
                   <ListItemIcon>

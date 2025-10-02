@@ -44,7 +44,7 @@ import { MobileCard, MobileCardAction } from '../../components/common/MobileCard
 import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
-import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
+import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
 import { formatDate } from '../../constants/dateFormats';
@@ -220,7 +220,7 @@ const PropertyListPage: React.FC = () => {
     listing_type: filters.listingTypeFilter !== 'all' ? filters.listingTypeFilter : undefined,
     expired: filters.expiredFilter === 'expired' ? 'true' : undefined,
     is_trending: filters.isTrendingFilter !== 'all' ? filters.isTrendingFilter === 'true' : undefined,
-    deleted: activeTab === 1 ? 'true' : undefined, // Show deleted properties when tab 1 is active, undefined for all properties
+    deleted: activeTab === 1 ? 'true' : 'false', // Show deleted properties when tab 1 is active, show non-deleted when tab 0 is active
     sort_by: 'created_at',
     sort_direction: 'desc',
   });
@@ -241,6 +241,8 @@ const PropertyListPage: React.FC = () => {
   const deletePropertyMutation = useDeleteProperty();
   const restorePropertyMutation = useRestoreProperty();
   const renewPropertyMutation = useRenewProperty();
+  const approvePropertyMutation = useApproveProperty();
+  const rejectPropertyMutation = useRejectProperty();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -297,16 +299,40 @@ const PropertyListPage: React.FC = () => {
       // VERIFICATION ACTIONS
       // ========================================================================
 
-      const handleApproveProperty = (property: Property) => {
-        // TODO: Implement approve property logic
-        console.log('Approve property:', property.id);
-        showSuccess(`${property.title_en} approved successfully!`);
+      const handleApproveProperty = async (property: Property) => {
+        try {
+          await approvePropertyMutation.mutateAsync(property.id);
+          showSuccess(`${property.title_en} approved successfully!`);
+        } catch (error: any) {
+          // Handle validation errors from API response
+          if ((error as any)?.response?.data?.message) {
+            showError((error as any).response.data.message);
+          } else if ((error as any)?.response?.data?.errors) {
+            // Handle validation errors object (e.g., Laravel validation errors)
+            const errorMessages = Object.values((error as any).response.data.errors).flat();
+            showError(errorMessages.join('\n'));
+          } else {
+            showError(error.message || 'Failed to approve property. Please try again.');
+          }
+        }
       };
 
-      const handleRejectProperty = (property: Property) => {
-        // TODO: Implement reject property logic
-        console.log('Reject property:', property.id);
-        showSuccess(`${property.title_en} rejected successfully!`);
+      const handleRejectProperty = async (property: Property) => {
+        try {
+          await rejectPropertyMutation.mutateAsync({ id: property.id, reason: 'Rejected by admin' });
+          showSuccess(`${property.title_en} rejected successfully!`);
+        } catch (error: any) {
+          // Handle validation errors from API response
+          if ((error as any)?.response?.data?.message) {
+            showError((error as any).response.data.message);
+          } else if ((error as any)?.response?.data?.errors) {
+            // Handle validation errors object (e.g., Laravel validation errors)
+            const errorMessages = Object.values((error as any).response.data.errors).flat();
+            showError(errorMessages.join('\n'));
+          } else {
+            showError(error.message || 'Failed to reject property. Please try again.');
+          }
+        }
       };
 
       // ========================================================================
@@ -678,6 +704,33 @@ const PropertyListPage: React.FC = () => {
               </Tooltip>
             )}
             
+            {/* Approve/Reject buttons - only for pending properties */}
+            {!isDeleted && property.verification_status === 'pending' && (
+              <>
+                <Tooltip title="Approve Property">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleApproveProperty(property)}
+                    color="success"
+                    disabled={approvePropertyMutation.isPending}
+                  >
+                    <CheckCircleIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Reject Property">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleRejectProperty(property)}
+                    color="error"
+                    disabled={rejectPropertyMutation.isPending}
+                  >
+                    <CancelIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
+            
             {/* Secondary Actions - Dropdown Menu */}
             {!isDeleted && (
               <>
@@ -820,6 +873,24 @@ const PropertyListPage: React.FC = () => {
         }
       );
       
+      // Add approve/reject actions for pending properties
+      if (property.verification_status === 'pending') {
+        baseActions.push(
+          {
+            icon: <CheckCircleIcon />,
+            tooltip: 'Approve Property',
+            color: 'success' as const,
+            onClick: () => handleApproveProperty(property),
+          },
+          {
+            icon: <CancelIcon />,
+            tooltip: 'Reject Property',
+            color: 'error' as const,
+            onClick: () => handleRejectProperty(property),
+          }
+        );
+      }
+      
       // Add renew action for expired properties
       if (property.is_expired) {
         baseActions.push({
@@ -854,7 +925,16 @@ const PropertyListPage: React.FC = () => {
           await deletePropertyMutation.mutateAsync(property.id);
           showSuccess(`${property.title_en} deleted successfully!`, true);
         } catch (error: any) {
-          showError(error.message || 'Failed to delete property. Please try again.', true);
+          // Handle validation errors from API response
+          if ((error as any)?.response?.data?.message) {
+            showError((error as any).response.data.message, true);
+          } else if ((error as any)?.response?.data?.errors) {
+            // Handle validation errors object (e.g., Laravel validation errors)
+            const errorMessages = Object.values((error as any).response.data.errors).flat();
+            showError(errorMessages.join('\n'), true);
+          } else {
+            showError(error.message || 'Failed to delete property. Please try again.', true);
+          }
         }
       }
     );
@@ -874,7 +954,16 @@ const PropertyListPage: React.FC = () => {
       setRestoreConfirmOpen(false);
       setPropertyToRestore(null);
     } catch (error: any) {
-      showError(error.message || 'Failed to restore property. Please try again.', true);
+      // Handle validation errors from API response
+      if ((error as any)?.response?.data?.message) {
+        showError((error as any).response.data.message, true);
+      } else if ((error as any)?.response?.data?.errors) {
+        // Handle validation errors object (e.g., Laravel validation errors)
+        const errorMessages = Object.values((error as any).response.data.errors).flat();
+        showError(errorMessages.join('\n'), true);
+      } else {
+        showError(error.message || 'Failed to restore property. Please try again.', true);
+      }
     }
   };
 
@@ -903,7 +992,16 @@ const PropertyListPage: React.FC = () => {
       setRenewConfirmOpen(false);
       setPropertyToRenew(null);
     } catch (error: any) {
-      showError(error.message || 'Failed to renew property. Please try again.', true);
+      // Handle validation errors from API response
+      if ((error as any)?.response?.data?.message) {
+        showError((error as any).response.data.message, true);
+      } else if ((error as any)?.response?.data?.errors) {
+        // Handle validation errors object (e.g., Laravel validation errors)
+        const errorMessages = Object.values((error as any).response.data.errors).flat();
+        showError(errorMessages.join('\n'), true);
+      } else {
+        showError(error.message || 'Failed to renew property. Please try again.', true);
+      }
     }
   };
 
@@ -951,6 +1049,17 @@ const PropertyListPage: React.FC = () => {
 
   // Error state - show inline error instead of full page error
   if (error) {
+    let errorMessage = error.message || 'An error occurred while loading properties';
+    
+    // Handle validation errors from API response (only if error has response property)
+    if ((error as any)?.response?.data?.message) {
+      errorMessage = (error as any).response.data.message;
+    } else if ((error as any)?.response?.data?.errors) {
+      // Handle validation errors object (e.g., Laravel validation errors)
+      const errorMessages = Object.values((error as any).response.data.errors).flat();
+      errorMessage = errorMessages.join('\n');
+    }
+    
     return (
       <Box sx={{ p: 3 }}>
         <PageHeader
@@ -966,7 +1075,7 @@ const PropertyListPage: React.FC = () => {
           <PageErrorState
             error={error}
             title="Error Loading Properties"
-            message={error.message}
+            message={errorMessage}
             onRetry={() => window.location.reload()}
           />
         </Box>

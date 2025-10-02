@@ -29,6 +29,10 @@ export function buildCleanQueryString(params?: Record<string, any>): string {
         // Special handling for is_trending to ensure Laravel compatibility
         return [key, value ? '1' : '0'];
       }
+      if (key === 'deleted' && typeof value === 'boolean') {
+        // Special handling for deleted to ensure Laravel compatibility
+        return [key, value ? '1' : '0'];
+      }
       return [key, value];
     })
   );

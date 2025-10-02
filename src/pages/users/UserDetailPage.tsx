@@ -214,7 +214,18 @@ const UserDetailPage: React.FC = () => {
                     secondary={user.email}
                   />
                 </ListItem>
-                
+
+                { user?.user_type !== 'company' ?
+                  (<ListItem>
+                      <ListItemIcon>
+                        <PhoneIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Phone Number"
+                        secondary={user.phone}
+                      />
+                    </ListItem> ) : null
+                 }
                 <ListItem>
                   <ListItemIcon>
                     <StarIcon />
@@ -302,16 +313,18 @@ const UserDetailPage: React.FC = () => {
                           secondary={user.company_profile.company_type_name}
                         />
                       </ListItem>
-                      
-                      <ListItem>
-                        <ListItemIcon>
-                          <PhoneIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Phone Number"
-                          secondary={user.company_profile.phone_number}
-                        />
-                      </ListItem>
+                      { user?.user_type == 'company' ? 
+                        ( <ListItem>
+                            <ListItemIcon>
+                              <PhoneIcon />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary="Phone Number"
+                              secondary={user.company_profile.phone_number}
+                            />
+                          </ListItem> 
+                          ) : null 
+                        }
                     </List>
                   </Grid>
                   
