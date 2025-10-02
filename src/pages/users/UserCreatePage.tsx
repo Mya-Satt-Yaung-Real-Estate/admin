@@ -63,11 +63,10 @@ const createUserSchema = Yup.object().shape({
     then: (schema) => schema.required('Company type is required'),
     otherwise: (schema) => schema.optional(),
   }),
-  phone: Yup.string().when('user_type', {
-    is: 'company',
-    then: (schema) => schema.required('Phone number is required'),
-    otherwise: (schema) => schema.optional(),
-  }),
+  
+  phone: Yup.string()
+  .required('Phone number is required'),
+  
   address: Yup.string().when('user_type', {
     is: 'company',
     then: (schema) => schema.required('Address is required'),
@@ -118,13 +117,13 @@ const UserCreatePage: React.FC = () => {
       name: '',
     email: '',
       password: '',
+      phone: '',
       user_type: 'individual' as 'individual' | 'company',
       member_level: 'silver' as 'bronze' | 'silver' | 'gold' | 'platinum',
       is_active: 'true' as string,
       // Company-specific fields
       company_name: '',
       company_type_id: '',
-    phone: '',
       address: '',
       region_id: '',
       township_id: '',
@@ -140,13 +139,13 @@ const UserCreatePage: React.FC = () => {
           user_type: values.user_type,
           member_level: values.member_level,
           is_active: values.is_active === 'true',
+          phone: values.phone,
         };
 
         // Add company-specific fields if user type is company
         if (values.user_type === 'company') {
           userData.company_name = values.company_name;
           userData.company_type_id = Number(values.company_type_id);
-          userData.phone = values.phone;
           userData.address = values.address;
           userData.region_id = Number(values.region_id);
           userData.township_id = Number(values.township_id);
@@ -169,7 +168,14 @@ const UserCreatePage: React.FC = () => {
           navigate('/users');
         }
       } catch (error: any) {
-        showError(error.message || 'Failed to create user');
+        if (error.response && error.response.data && error.response.data.errors) {
+          const validationErrors = error.response.data.errors;
+          Object.keys(validationErrors).forEach((fieldName) => {
+            formik.setFieldError(fieldName, validationErrors[fieldName][0]);
+          });
+        } else {
+          showError(error.message || 'Failed to create user');
+        }
       }
     },
   });
@@ -192,7 +198,6 @@ const UserCreatePage: React.FC = () => {
     if (userType === 'individual') {
       formik.setFieldValue('company_name', '');
       formik.setFieldValue('company_type_id', '');
-      formik.setFieldValue('phone', '');
       formik.setFieldValue('address', '');
       formik.setFieldValue('region_id', '');
       formik.setFieldValue('township_id', '');
@@ -338,6 +343,21 @@ const UserCreatePage: React.FC = () => {
               </FormControl>
             </Grid>
 
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                id="phone"
+                name="phone"
+                label="Phone Number *"
+                value={formik.values.phone}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.phone && Boolean(formik.errors.phone)}
+                helperText={formik.touched.phone && formik.errors.phone}
+                required
+              />
+            </Grid>
+
             {/* Company Information - Only show for company users */}
             {formik.values.user_type === 'company' && (
               <>
@@ -390,21 +410,6 @@ const UserCreatePage: React.FC = () => {
                     }}
                   />
                 </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    id="phone"
-                    name="phone"
-                    label="Phone Number *"
-                    value={formik.values.phone}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    error={formik.touched.phone && Boolean(formik.errors.phone)}
-                    helperText={formik.touched.phone && formik.errors.phone}
-                    required
-                  />
-            </Grid>
 
                 <Grid item xs={12} md={6}>
                   <Autocomplete
