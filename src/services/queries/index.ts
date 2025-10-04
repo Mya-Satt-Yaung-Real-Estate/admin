@@ -19,6 +19,7 @@ export * from './loan-requests';
 export * from './employees';
 export * from './propertyReferrals';
 export * from './announcements';
+export * from './lawyers';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -36,4 +37,5 @@ export { eventRegistrationKeys } from './eventRegistration';
 export { employeeKeys } from './employees';
 export { propertyReferralKeys } from './propertyReferrals';
 export { announcementKeys } from './announcements';
+export { lawyerKeys } from './lawyers';
 

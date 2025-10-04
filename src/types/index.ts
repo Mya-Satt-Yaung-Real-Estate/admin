@@ -22,6 +22,7 @@ export * from './employee';
 export * from './propertyReferral';
 export * from './pointTransaction';
 export * from './announcement';
+export * from './lawyer';
 
 // Global types that don't fit into specific categories
 export interface BaseEntity {
