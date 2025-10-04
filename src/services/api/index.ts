@@ -16,4 +16,5 @@ export * from './eventRegistration';
 export * from './loan-requests';
 export * from './employees';
 export * from './propertyReferrals';
+export * from './announcements';
 

@@ -123,6 +123,11 @@ export const MENU_ITEMS = [
     iconName: 'People',
     path: '/users',
   },
+  {
+    text: 'Announcements',
+    iconName: 'Campaign',
+    path: '/announcements',
+  },
   
   // HR Line - Second Section End
   {
