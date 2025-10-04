@@ -21,7 +21,7 @@ import { usersAPI } from '../../services/api/users';
 import { locationsAPI } from '../../services/api/locations';
 import { useProperty, useUpdateProperty } from '../../services/queries/properties';
 import { useAlertSystem } from '../../hooks/useAlertSystem';
-import { CreatePropertyData } from '../../types/property';
+import { UpdatePropertyData } from '../../types/property';
 import { Media } from '../../types/media';
 import { propertyEditSchema } from '../../validations';
 import {
@@ -217,8 +217,14 @@ const PropertyEditPage: React.FC = () => {
         ...uploadedMedia.map(media => media.id)
       ];
 
-      const updateData: CreatePropertyData = {
-        ...values,
+      // Destructure to exclude form-specific fields that shouldn't be sent to API
+      const { is_platform_property, ...otherValues } = values;
+      
+      const updateData: UpdatePropertyData = {
+        ...otherValues,
+        // Transform is_platform_property boolean to property_mode string
+        property_mode: is_platform_property ? 'platform' : 'user',
+        user_id: is_platform_property ? undefined : values.user_id,
         tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
         is_trending: Boolean(values.is_trending), // Ensure boolean type
         phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
@@ -228,14 +234,27 @@ const PropertyEditPage: React.FC = () => {
       console.log('📦 Update data to send:', updateData);
       console.log('🆔 Property ID:', Number(id));
 
-      await updatePropertyMutation.mutateAsync({ id: Number(id), data: updateData });
+      // Call the mutation to update the property
+      const result = await updatePropertyMutation.mutateAsync({ id: Number(id), data: updateData });
       
-      console.log('✅ Property updated successfully');
-      // Navigate to property detail page with success message
-      navigate(`/properties/${id}?success=${encodeURIComponent('Property updated successfully!')}`);
+      console.log('✅ Property updated successfully', result);
+      showSuccess('Property updated successfully!');
+      
+      // Navigate to property detail page
+      navigate(`/properties/${id}`);
     } catch (error: any) {
       console.error('❌ Error updating property:', error);
-      showError(error.message || 'Failed to update property');
+      
+      // Handle validation errors from API response
+      if (error.response?.data?.message) {
+        showError(error.response.data.message);
+      } else if (error.response?.data?.errors) {
+        // Handle validation errors object (e.g., Laravel validation errors)
+        const errorMessages = Object.values(error.response.data.errors).flat();
+        showError(errorMessages.join('\n'));
+      } else {
+        showError(error.message || 'Failed to update property');
+      }
     }
   };
 
