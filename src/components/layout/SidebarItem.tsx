@@ -13,6 +13,7 @@ import {
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { SidebarItemProps, MenuItem } from '@/types';
 import { getIconComponent } from './Sidebar';
+import { useModulePermission } from '@/hooks/useModulePermission';
 
 interface SidebarItemDropdownProps extends SidebarItemProps {
   childrenItems?: MenuItem[];
@@ -35,8 +36,16 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
+  // Filter children items based on module permissions
+  const filteredChildrenItems = childrenItems.filter(child => {
+    if (child.module) {
+      return useModulePermission(child.module);
+    }
+    return true;
+  });
+  
   // Check if any child is currently selected (including nested routes)
-  const hasSelectedChild = childrenItems.some(child => {
+  const hasSelectedChild = filteredChildrenItems.some(child => {
     if (child.path === currentPath) return true;
     // Check if current path starts with child path (for nested routes like /events/create, /events/slug/edit)
     return child.path && currentPath.startsWith(child.path + '/');
@@ -132,7 +141,7 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
       </ListItem>
       <Collapse in={isOpen && !isCollapsed} timeout="auto" unmountOnExit>
         <List component="div" disablePadding id={`dropdown-list-${text}`}>
-          {childrenItems.map((child) => {
+          {filteredChildrenItems.map((child) => {
             // Check if this child item should be selected
             const isChildSelected = Boolean(
               currentPath === child.path || 

@@ -9,6 +9,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useAuthStore } from '../../stores/useAuthStore';
+import { useModulePermission } from '../../hooks/useModulePermission';
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -175,9 +176,29 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   // Filter menu items based on access control
   const allMenuItems = menuItems.filter(item => {
+    // Check developer access first
     if (item.requiresDeveloperAccess) {
       return hasDeveloperAccess;
     }
+    
+    // For dropdown menus, check if user has permission for ANY child
+    if (item.children && item.children.length > 0) {
+      const hasAnyChildPermission = item.children.some(child => {
+        if (child.module) {
+          return useModulePermission(child.module);
+        }
+        return true;
+      });
+      return hasAnyChildPermission;
+    }
+    
+    // For single items, check module permission
+    if (item.module) {
+      const hasModulePermission = useModulePermission(item.module);
+      return hasModulePermission;
+    }
+    
+    // If no module specified, show the item
     return true;
   });
 
