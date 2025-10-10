@@ -67,6 +67,7 @@ export interface MenuItem {
   children?: MenuItem[];
   isDivider?: boolean;
   requiresDeveloperAccess?: boolean;
+  module?: string;
 }
 
 // Layout Constants

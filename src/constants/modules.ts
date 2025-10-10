@@ -1,0 +1,42 @@
+/**
+ * Module permission constants
+ * These match the module slugs from your Laravel API
+ */
+export const MODULES = {
+  USER: 'user-module',
+  ROLE: 'role-module',
+  PERMISSION: 'permission-module',
+  COMPANY: 'company-module',
+  DASHBOARD: 'dashboard-module',
+  SETTINGS: 'setting-module',
+  TOWNSHIPS: 'township-module',
+  REGIONS: 'region-module',
+  PROPERTY_TYPES: 'property-type-module',
+  PROPERTY_LISTING_TYPES: 'property-listing-type-module',
+  PROPERTIES: 'property-module',
+  COMPANY_TYPES: 'company-type-module',
+  ADMIN_USERS: 'admin-user-module',
+  HOUSING_EVENT_CATEGORIES: 'housing-event-category-module',
+  HOUSING_EVENTS: 'housing-event-module',
+  NEWS_AND_UPDATES: 'news-and-update-module',
+  KNOWLEDGE_HUB: 'knowledge-hub-module',
+  NEWS_ARTICLE_CATEGORY: 'news-article-category-module',
+  LOAN_REQUEST: 'loan-request-module',
+  FEEDBACK: 'feedback-module',
+  FAQ: 'faq-module',
+  ADVERTISEMENT: 'advertisement-module',
+  APPOINTMENT: 'appointment-module',
+  APPOINTMENT_PREFER_TIME: 'appointment-prefer-time-module',
+  BOOKING: 'booking-module',
+  CONTACT_US: 'contact-us-module',
+  EMPLOYEE: 'employee-module',
+  HOUSING_EVENT_REGISTER: 'housing-event-register-module',
+  POINT_PACKAGE: 'point-package-module',
+  POINT_PURCHASE_REQUEST: 'point-purchase-request-module',
+  PROPERTY_COMMENT: 'property-comment-module',
+  PROPERTY_EMPLOYEE_REFERRAL: 'property-employee-referral-module',
+  PROPERTY_LIKE: 'property-like-module',
+  SYSTEM_CONFIGURATION: 'system-configuration-module',
+  ANNOUNCEMENT: 'announcement-module',
+  LAWYER: 'lawyer-module'
+} as const;
