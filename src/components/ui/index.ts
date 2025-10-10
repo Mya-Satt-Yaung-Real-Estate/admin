@@ -44,6 +44,9 @@ export { default as RenewConfirmationDialog } from './RenewConfirmationDialog';
 // Comments
 export { CommentsModal } from './comments/CommentsModal';
 
+// Share URL
+export { ShareURLModal } from './ShareURLModal';
+
 // Interactive Map
 export { InteractiveMap } from './InteractiveMap';
 export { MapSelectionModal } from './MapSelectionModal';

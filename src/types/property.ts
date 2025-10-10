@@ -6,6 +6,7 @@ export interface Property {
   user_id: number;
   property_mode: 'platform' | 'user';
   code: string;
+  slug: string;
   title_en: string;
   title_mm: string;
   description: string;

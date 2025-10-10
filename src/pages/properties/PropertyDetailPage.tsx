@@ -14,6 +14,9 @@ import {
   Tooltip,
   Dialog,
   DialogContent,
+  DialogActions,
+  DialogTitle,
+  TextField,
   useTheme,
   CircularProgress,
 } from '@mui/material';
@@ -31,6 +34,7 @@ import {
   Visibility as ViewCountIcon,
   Phone as PhoneIcon,
   CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
   Schedule as ScheduleIcon,
   Image as ImageIcon,
   PlayArrow as PlayIcon,
@@ -41,13 +45,14 @@ import {
   PriceChange as PriceChangeIcon,
   TrendingUp as TrendingUpIcon,
   PersonAdd as PersonAddIcon,
+  Share as ShareIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty } from '../../services/queries/properties';
+import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty } from '../../services/queries/properties';
 import { employeesAPI } from '../../services/api/employees';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, VerificationActions, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { formatDate } from '../../constants/dateFormats';
 import { formatPropertyCondition } from '../../utils/propertyUtils';
@@ -70,6 +75,8 @@ const PropertyDetailPage: React.FC = () => {
   const deletePropertyMutation = useDeleteProperty();
   const restorePropertyMutation = useRestoreProperty();
   const renewPropertyMutation = useRenewProperty();
+  const approvePropertyMutation = useApproveProperty();
+  const rejectPropertyMutation = useRejectProperty();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -93,6 +100,14 @@ const PropertyDetailPage: React.FC = () => {
 
   // Referral assignment modal state
   const [referralModalOpen, setReferralModalOpen] = useState(false);
+
+  // Share URL modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  // Approve/Reject dialog states
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Employees list state
   const [employees, setEmployees] = useState<PropertyEmployeeReferral[]>([]);
@@ -144,6 +159,64 @@ const PropertyDetailPage: React.FC = () => {
 
   const handleCloseReferralModal = () => {
     setReferralModalOpen(false);
+  };
+
+  // ========================================================================
+  // SHARE URL MODAL FUNCTIONS
+  // ========================================================================
+
+  const handleOpenShareModal = () => {
+    setShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+  };
+
+  // ========================================================================
+  // APPROVE/REJECT FUNCTIONS
+  // ========================================================================
+
+  const handleApprove = () => {
+    setApproveDialogOpen(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!property) return;
+    
+    try {
+      await approvePropertyMutation.mutateAsync(property.id);
+      setApproveDialogOpen(false);
+      showSuccess(`${property.title_en} approved successfully!`);
+    } catch (error: any) {
+      showError(error.message || 'Failed to approve property. Please try again.');
+    }
+  };
+
+  const handleCancelApprove = () => {
+    setApproveDialogOpen(false);
+  };
+
+  const handleReject = () => {
+    setRejectDialogOpen(true);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!property || !rejectionReason.trim()) return;
+    
+    try {
+      await rejectPropertyMutation.mutateAsync({ id: property.id, reason: rejectionReason.trim() });
+      setRejectDialogOpen(false);
+      setRejectionReason('');
+      showSuccess(`${property.title_en} rejected successfully!`);
+    } catch (error: any) {
+      showError(error.message || 'Failed to reject property. Please try again.');
+    }
+  };
+
+  const handleCancelReject = () => {
+    setRejectDialogOpen(false);
+    setRejectionReason('');
   };
 
       const handleReferralSuccess = () => {
@@ -330,14 +403,30 @@ const PropertyDetailPage: React.FC = () => {
         {/* Show different actions based on deleted status */}
         {!property.is_deleted ? (
           <>
-            {/* Verification Actions */}
-            <VerificationActions
-              propertyId={property.id}
-              propertyTitle={property.title_en}
-              verificationStatus={property.verification_status}
-              onShowSuccess={showSuccess}
-              onShowError={showError}
-            />
+            {/* Approve/Reject buttons - only for pending properties */}
+            {property.verification_status === 'pending' && (
+              <>
+                <Tooltip title="Approve Property">
+                  <IconButton
+                    color="success"
+                    onClick={handleApprove}
+                    disabled={approvePropertyMutation.isPending}
+                  >
+                    <CheckCircleIcon />
+                  </IconButton>
+                </Tooltip>
+                
+                <Tooltip title="Reject Property">
+                  <IconButton
+                    color="error"
+                    onClick={handleReject}
+                    disabled={rejectPropertyMutation.isPending}
+                  >
+                    <CancelIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
             
             {/* Referral Assignment Button */}
             <Tooltip title="Assign Referral Employee">
@@ -348,6 +437,18 @@ const PropertyDetailPage: React.FC = () => {
                 <PersonAddIcon />
               </IconButton>
             </Tooltip>
+            
+            {/* Share URL Button - only for published and approved properties */}
+            {property.status === 'published' && property.verification_status === 'approved' && (
+              <Tooltip title="Share URL">
+                <IconButton
+                  color="info"
+                  onClick={handleOpenShareModal}
+                >
+                  <ShareIcon />
+                </IconButton>
+              </Tooltip>
+            )}
             
             <Tooltip title="Edit Property">
               <IconButton
@@ -1300,6 +1401,84 @@ const PropertyDetailPage: React.FC = () => {
         onSuccess={handleReferralSuccess}
         onAssignmentRemoved={handleAssignmentRemoved}
       />
+
+      {/* Share URL Modal */}
+      <ShareURLModal
+        open={shareModalOpen}
+        onClose={handleCloseShareModal}
+        propertyTitle={property?.title_en || ''}
+        propertySlug={property?.slug || ''}
+      />
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog
+        open={approveDialogOpen}
+        onClose={handleCancelApprove}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Approve Property</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Are you sure you want to approve this property?
+          </Typography>
+          <Typography variant="body1" fontWeight="500">
+            {property?.title_en}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelApprove} disabled={approvePropertyMutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmApprove}
+            color="success"
+            variant="contained"
+            disabled={approvePropertyMutation.isPending}
+          >
+            {approvePropertyMutation.isPending ? 'Approving...' : 'Approve Property'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={handleCancelReject}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Reject Property</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Rejecting: <strong>{property?.title_en}</strong>
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Rejection Reason"
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Enter the reason for rejection..."
+            error={rejectionReason.trim() === ''}
+            helperText={rejectionReason.trim() === '' ? 'Rejection reason is required' : ''}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelReject} disabled={rejectPropertyMutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmReject}
+            color="error"
+            variant="contained"
+            disabled={rejectPropertyMutation.isPending || rejectionReason.trim() === ''}
+          >
+            {rejectPropertyMutation.isPending ? 'Rejecting...' : 'Reject Property'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -33,7 +33,7 @@ import {
   Favorite as FavoriteIcon,
   ThumbUp as LikeIcon,
   Comment as CommentIcon,
-
+  Share as ShareIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -41,7 +41,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal } from '../../components/ui';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
@@ -205,6 +205,10 @@ const PropertyListPage: React.FC = () => {
   const [referralModalOpen, setReferralModalOpen] = useState(false);
   const [selectedPropertyForReferral, setSelectedPropertyForReferral] = useState<Property | null>(null);
 
+  // Share URL modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedPropertyForShare, setSelectedPropertyForShare] = useState<Property | null>(null);
+
   // Action menu state
   const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedPropertyForMenu, setSelectedPropertyForMenu] = useState<Property | null>(null);
@@ -283,6 +287,20 @@ const PropertyListPage: React.FC = () => {
     setSelectedPropertyForReferral(null);
   };
 
+  // ========================================================================
+  // SHARE URL MODAL FUNCTIONS
+  // ========================================================================
+
+  const handleOpenShareModal = (property: Property) => {
+    setSelectedPropertyForShare(property);
+    setShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+    setSelectedPropertyForShare(null);
+  };
+
       const handleReferralSuccess = () => {
         showSuccess('Employees assigned successfully');
         // Optionally refresh the properties list
@@ -349,7 +367,7 @@ const PropertyListPage: React.FC = () => {
         setSelectedPropertyForMenu(null);
       };
 
-      const handleMenuAction = (action: 'approve' | 'reject' | 'referral' | 'delete' | 'renew') => {
+      const handleMenuAction = (action: 'approve' | 'reject' | 'referral' | 'delete' | 'renew' | 'share') => {
         if (!selectedPropertyForMenu) return;
         
         switch (action) {
@@ -367,6 +385,9 @@ const PropertyListPage: React.FC = () => {
             break;
           case 'renew':
             handleRenewProperty(selectedPropertyForMenu);
+            break;
+          case 'share':
+            handleOpenShareModal(selectedPropertyForMenu);
             break;
         }
         
@@ -704,33 +725,6 @@ const PropertyListPage: React.FC = () => {
               </Tooltip>
             )}
             
-            {/* Approve/Reject buttons - only for pending properties */}
-            {!isDeleted && property.verification_status === 'pending' && (
-              <>
-                <Tooltip title="Approve Property">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleApproveProperty(property)}
-                    color="success"
-                    disabled={approvePropertyMutation.isPending}
-                  >
-                    <CheckCircleIcon />
-                  </IconButton>
-                </Tooltip>
-                
-                <Tooltip title="Reject Property">
-                  <IconButton
-                    size="small"
-                    onClick={() => handleRejectProperty(property)}
-                    color="error"
-                    disabled={rejectPropertyMutation.isPending}
-                  >
-                    <CancelIcon />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
-            
             {/* Secondary Actions - Dropdown Menu */}
             {!isDeleted && (
               <>
@@ -788,6 +782,16 @@ const PropertyListPage: React.FC = () => {
                     </ListItemIcon>
                     <ListItemText>Assign Referral</ListItemText>
                   </MenuItem>
+                  
+                  {/* Share URL - only for published and approved properties */}
+                  {property.status === 'published' && property.verification_status === 'approved' && (
+                    <MenuItem onClick={() => handleMenuAction('share')}>
+                      <ListItemIcon>
+                        <ShareIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText>Share URL</ListItemText>
+                    </MenuItem>
+                  )}
                   
                   {/* Renew option - only show for expired properties */}
                   {property.is_expired && (
@@ -859,6 +863,13 @@ const PropertyListPage: React.FC = () => {
           color: 'secondary' as const,
           onClick: () => navigate(`/properties/${property.id}/edit`),
         },
+        // Add Share URL action for published and approved properties
+        ...(property.status === 'published' && property.verification_status === 'approved' ? [{
+          icon: <ShareIcon />,
+          tooltip: 'Share URL',
+          color: 'info' as const,
+          onClick: () => handleOpenShareModal(property),
+        }] : []),
         {
           icon: <PersonAddIcon />,
           tooltip: 'Assign Referral Employee',
@@ -1306,6 +1317,14 @@ const PropertyListPage: React.FC = () => {
         property={selectedPropertyForReferral}
         onSuccess={handleReferralSuccess}
         onAssignmentRemoved={handleAssignmentRemoved}
+      />
+
+      {/* Share URL Modal */}
+      <ShareURLModal
+        open={shareModalOpen}
+        onClose={handleCloseShareModal}
+        propertyTitle={selectedPropertyForShare?.title_en || ''}
+        propertySlug={selectedPropertyForShare?.slug || ''}
       />
     </Box>
   );
