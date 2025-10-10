@@ -3,7 +3,7 @@ import { UploadMediaRequest, UploadMediaResponse } from '../../types/media';
 // Frontend API base URL for media uploads (bypassing admin proxy)
 const FRONTEND_API_BASE_URL = import.meta.env.DEV 
   ? 'http://localhost:8000/api/v1' // Direct call to backend in development
-  : (import.meta.env.VITE_FRONTEND_API_URL || 'https://msy-api.phyozaw.info/api/v1');
+  : (import.meta.env.VITE_FRONTEND_API_URL || 'https://api.jadeproperty.site/api/v1');
 
 export const mediaAPI = {
   // Upload image or video

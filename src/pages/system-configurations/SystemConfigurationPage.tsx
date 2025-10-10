@@ -26,6 +26,10 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -38,6 +42,7 @@ import {
   Home as HomeIcon,
   Warning as WarningIcon,
   Security as SecurityIcon,
+  ContactPhone as ContactIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -91,6 +96,12 @@ const CONFIG_CATEGORIES = {
     description: 'Manage validation rules and limits',
     icon: <SecurityIcon />,
     color: '#7b1fa2',
+  },
+  contact_information: {
+    name: 'Contact Information',
+    description: 'Manage company contact details and information',
+    icon: <ContactIcon />,
+    color: '#1976d2',
   },
 } as const;
 
@@ -226,6 +237,31 @@ const SystemConfigurationPage: React.FC = () => {
   // Render form field based on configuration type
   const renderFormField = (config: SystemConfiguration) => {
     const value = formData[config.config_key] || '';
+
+    // Special handling for contact info source
+    if (config.config_key === 'property.contact_info_source') {
+      return (
+        <FormControl fullWidth>
+          <FormLabel component="legend">Contact Information Source</FormLabel>
+          <RadioGroup
+            value={value}
+            onChange={(e) => handleFieldChange(config.config_key, e.target.value)}
+            row
+          >
+            <FormControlLabel
+              value="company"
+              control={<Radio />}
+              label="Company Information"
+            />
+            <FormControlLabel
+              value="agent"
+              control={<Radio />}
+              label="Agent Information"
+            />
+          </RadioGroup>
+        </FormControl>
+      );
+    }
 
     if (config.config_type === 'bool') {
       return (

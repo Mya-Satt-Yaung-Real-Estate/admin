@@ -183,7 +183,7 @@ export const propertyReferralsAPI = {
   // Export all property referrals to Excel
   export: async (params?: PropertyReferralQueryParams) => {
     const queryString = buildCleanQueryString(params);
-    const url = `${import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'https://msy-api.phyozaw.info/api/v1/admin')}/property-employee-referrals/export${queryString}`;
+    const url = `${import.meta.env.DEV ? '/api' : (import.meta.env.VITE_API_URL || 'https://api.jadeproperty.site/api/v1/admin')}/property-employee-referrals/export${queryString}`;
     
     const token = localStorage.getItem('admin_token') || JSON.parse(localStorage.getItem('auth-storage') || '{}').state?.token;
     
