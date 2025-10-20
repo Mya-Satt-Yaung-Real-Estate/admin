@@ -584,6 +584,26 @@ const PropertyDetailPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Grid>
+                  {property.length && (
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <AreaIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" fontWeight="500">
+                          Length: {property.length} ft
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                  {property.width && (
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <AreaIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" fontWeight="500">
+                          Width: {property.width} ft
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
                   <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <CheckCircleIcon sx={{ fontSize: 20, color: 'text.secondary' }} />

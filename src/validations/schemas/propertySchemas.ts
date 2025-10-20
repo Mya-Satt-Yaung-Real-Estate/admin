@@ -23,6 +23,8 @@ export const propertyBaseSchema = Yup.object({
   // Property details
   price: Yup.number().min(0, 'Price must be positive').required('Price is required'),
   area_sqft: Yup.number().min(0, 'Area must be positive').required('Area is required'),
+  length: Yup.number().min(0, 'Length must be positive').optional(),
+  width: Yup.number().min(0, 'Width must be positive').optional(),
   bedrooms: Yup.number().min(0, 'Bedrooms must be positive').optional(),
   bathrooms: Yup.number().min(0, 'Bathrooms must be positive').optional(),
   bank_installment_available: Yup.boolean().optional(),
@@ -34,7 +36,7 @@ export const propertyBaseSchema = Yup.object({
     otherwise: (schema) => schema.optional().max(255, 'Owner name must be 255 characters or less'),
   }),
   phone_numbers: Yup.array().of(Yup.string().min(1, 'Phone number cannot be empty')).min(1, 'At least one phone number is required').required('Phone numbers are required'),
-  email: Yup.string().email('Invalid email format').required('Email is required'),
+  email: Yup.string().email('Invalid email format').optional(),
 
   // Status and settings - Fixed to match API requirements
   status: Yup.string()

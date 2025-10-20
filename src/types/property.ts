@@ -16,6 +16,8 @@ export interface Property {
   price: string;
   formatted_price: string;
   area_sqft: string;
+  length?: number;
+  width?: number;
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;
@@ -126,6 +128,8 @@ export interface CreatePropertyData {
   // Property details
   price: number;
   area_sqft: number;
+  length?: number;
+  width?: number;
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;
@@ -136,7 +140,7 @@ export interface CreatePropertyData {
   // Contact information
   owner_name: string;
   phone_numbers: string[];
-  email: string;
+  email?: string;
   
   // Status and settings
   status?: 'published' | 'draft' | 'sold' | 'rented';

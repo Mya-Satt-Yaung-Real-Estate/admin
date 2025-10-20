@@ -107,8 +107,6 @@ const YarpyatListPage: React.FC = () => {
       key: 'regionFilter',
       label: 'Region',
       type: 'select',
-      value: regionFilter,
-      onChange: setRegionFilter,
       options: [
         { value: '', label: 'All Regions' },
         ...(regionsData?.data || []).map(region => ({
@@ -121,8 +119,6 @@ const YarpyatListPage: React.FC = () => {
       key: 'townshipFilter',
       label: 'Township',
       type: 'select',
-      value: townshipFilter,
-      onChange: setTownshipFilter,
       options: [
         { value: '', label: 'All Townships' },
         ...(townshipsData?.data?.filter(township => 
@@ -137,8 +133,6 @@ const YarpyatListPage: React.FC = () => {
       key: 'wardFilter',
       label: 'Ward',
       type: 'select',
-      value: wardFilter,
-      onChange: setWardFilter,
       options: [
         { value: '', label: 'All Wards' },
         ...(wardsData?.data?.filter(ward => {
@@ -156,8 +150,8 @@ const YarpyatListPage: React.FC = () => {
   const createTableColumns = (): TableColumn<YarpyatTax>[] => [
     {
       id: 'name_en',
-      label: 'English Name',
-      render: (value, yarpyat) => (
+      label: 'Road & Floor',
+      render: (_, yarpyat) => (
         <Box>
           <Typography variant="body2" fontWeight={500}>
             {yarpyat.name_en}
@@ -171,7 +165,7 @@ const YarpyatListPage: React.FC = () => {
     {
       id: 'ward',
       label: 'Ward',
-      render: (value, yarpyat) => (
+      render: (_, yarpyat) => (
         <Box>
           <Typography variant="body2" fontWeight={500}>
             {yarpyat.ward?.ward_name_en || 'Unknown Ward'}
@@ -185,7 +179,7 @@ const YarpyatListPage: React.FC = () => {
     {
       id: 'township',
       label: 'Township',
-      render: (value, yarpyat) => (
+      render: (_, yarpyat) => (
         <Box>
           <Typography variant="body2" fontWeight={500}>
             {yarpyat.ward?.township?.name_en || 'Unknown Township'}
@@ -199,7 +193,7 @@ const YarpyatListPage: React.FC = () => {
     {
       id: 'region',
       label: 'Region',
-      render: (value, yarpyat) => (
+      render: (_, yarpyat) => (
         <Box>
           <Typography variant="body2" fontWeight={500}>
             {yarpyat.ward?.township?.region?.name_en || 'Unknown Region'}
@@ -213,7 +207,7 @@ const YarpyatListPage: React.FC = () => {
     {
       id: 'price',
       label: 'Price',
-      render: (value, yarpyat) => (
+      render: (_, yarpyat) => (
         <Typography variant="body2" fontWeight={600} color="success.main">
           {yarpyat.price.toLocaleString()} MMK
         </Typography>
@@ -285,7 +279,6 @@ const YarpyatListPage: React.FC = () => {
     );
   }
 
-  const yarpyatTaxes = yarpyatData?.data || [];
 
   return (
     <Box>
@@ -337,7 +330,6 @@ const YarpyatListPage: React.FC = () => {
         ]}
         onClearFilters={handleClearFilters}
         showClearButton={true}
-        sx={{ mb: 3 }}
       />
 
       {/* Desktop Table */}
@@ -347,6 +339,11 @@ const YarpyatListPage: React.FC = () => {
           data={filteredYarpyatData}
           loading={isLoading}
           emptyMessage="No yarpyat taxes found"
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalCount={filteredYarpyatData.length}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
         />
       )}
 
@@ -370,8 +367,8 @@ const YarpyatListPage: React.FC = () => {
             page={page}
             rowsPerPage={rowsPerPage}
             totalCount={filteredYarpyatData.length}
-            onPageChange={setPage}
-            onRowsPerPageChange={setRowsPerPage}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
           />
         </Box>
       )}
@@ -382,8 +379,8 @@ const YarpyatListPage: React.FC = () => {
           page={page}
           rowsPerPage={rowsPerPage}
           totalCount={filteredYarpyatData.length}
-          onPageChange={setPage}
-          onRowsPerPageChange={setRowsPerPage}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
         />
       )}
     </Box>

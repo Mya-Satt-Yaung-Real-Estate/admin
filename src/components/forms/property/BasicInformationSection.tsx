@@ -179,6 +179,35 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
           />
         </Grid>
 
+        {/* Length and Width */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            size="small"
+            name="length"
+            label="Length (ft)"
+            type="number"
+            value={values.length || ''}
+            onChange={handleChange}
+            error={touched.length && Boolean(errors.length)}
+            helperText={touched.length && errors.length}
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            size="small"
+            name="width"
+            label="Width (ft)"
+            type="number"
+            value={values.width || ''}
+            onChange={handleChange}
+            error={touched.width && Boolean(errors.width)}
+            helperText={touched.width && errors.width}
+          />
+        </Grid>
+
         {/* Bedrooms and Bathrooms */}
         <Grid item xs={12} sm={6}>
           <TextField

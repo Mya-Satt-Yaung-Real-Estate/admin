@@ -1,7 +1,7 @@
 // Location React Query hooks
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { locationsAPI } from '../api/locations';
-import { CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, YarpyatTax, CreateYarpyatTaxData, UpdateYarpyatTaxData } from '../../types/location';
+import { CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, CreateYarpyatTaxData, UpdateYarpyatTaxData } from '../../types/location';
 import { QueryParams } from '../api/base';
 
 // Query keys

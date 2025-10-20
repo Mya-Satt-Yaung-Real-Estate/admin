@@ -76,11 +76,11 @@ const WardEditPage: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.ward_name_en.trim()) {
+    if (!formData.ward_name_en?.trim()) {
       newErrors.ward_name_en = 'English name is required';
     }
 
-    if (!formData.ward_name_mm.trim()) {
+    if (!formData.ward_name_mm?.trim()) {
       newErrors.ward_name_mm = 'Myanmar name is required';
     }
 

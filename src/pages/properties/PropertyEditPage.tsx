@@ -189,6 +189,8 @@ const PropertyEditPage: React.FC = () => {
     // Property details
     price: parseFloat(propertyData.price) || 0,
     area_sqft: parseFloat(propertyData.area_sqft) || 0,
+    length: propertyData.length || undefined,
+    width: propertyData.width || undefined,
     bedrooms: propertyData.bedrooms || undefined,
     bathrooms: propertyData.bathrooms || undefined,
     bank_installment_available: propertyData.bank_installment_available || false,
@@ -228,6 +230,7 @@ const PropertyEditPage: React.FC = () => {
         tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
         is_trending: Boolean(values.is_trending), // Ensure boolean type
         phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
+        email: values.email?.trim() || undefined, // Handle empty email as undefined
         media_ids: mediaIds,
       };
 

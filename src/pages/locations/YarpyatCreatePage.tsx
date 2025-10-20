@@ -247,7 +247,7 @@ const YarpyatCreatePage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="English Name"
+                label="English Name (Road & Floor)"
                 value={formData.name_en}
                 onChange={(e) => handleInputChange('name_en', e.target.value)}
                 error={!!errors.name_en}
@@ -261,7 +261,7 @@ const YarpyatCreatePage: React.FC = () => {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Myanmar Name"
+                label="Myanmar Name (Road & Floor)"
                 value={formData.name_mm}
                 onChange={(e) => handleInputChange('name_mm', e.target.value)}
                 error={!!errors.name_mm}
