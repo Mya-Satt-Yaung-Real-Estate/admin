@@ -20,6 +20,17 @@ export interface Township {
   region?: Region;
 }
 
+export interface Ward {
+  id: number;
+  township_id: number;
+  ward_name_en: string;
+  ward_name_mm: string;
+  slug: string;
+  township?: Township & {
+    region?: Region;
+  };
+}
+
 export interface CreateRegionData {
   name_mm: string;
   name_en: string;
@@ -48,6 +59,46 @@ export interface UpdateTownshipData {
   name_en?: string;
   description?: string;
   is_active?: boolean;
+}
+
+export interface CreateWardData {
+  township_id: number;
+  ward_name_en: string;
+  ward_name_mm: string;
+}
+
+export interface UpdateWardData {
+  township_id?: number;
+  ward_name_en?: string;
+  ward_name_mm?: string;
+}
+
+export interface YarpyatTax {
+  id: number;
+  ward_id: number;
+  name_en: string;
+  name_mm: string;
+  price: number;
+  slug: string;
+  ward?: Ward & {
+    township?: Township & {
+      region?: Region;
+    };
+  };
+}
+
+export interface CreateYarpyatTaxData {
+  ward_id: number;
+  name_en: string;
+  name_mm: string;
+  price: number;
+}
+
+export interface UpdateYarpyatTaxData {
+  ward_id?: number;
+  name_en?: string;
+  name_mm?: string;
+  price?: number;
 }
 
 // Form data types for components

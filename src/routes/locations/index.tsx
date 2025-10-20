@@ -9,7 +9,6 @@ const RegionEditPage = lazy(() => import('@/pages/locations/RegionEditPage'));
 const TownshipEditPage = lazy(() => import('@/pages/locations/TownshipEditPage'));
 const RegionDetailPage = lazy(() => import('@/pages/locations/RegionDetailPage'));
 const TownshipDetailPage = lazy(() => import('@/pages/locations/TownshipDetailPage'));
-
 export const locationRoutes: RouteObject[] = [
   {
     path: '/locations',

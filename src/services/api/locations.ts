@@ -1,6 +1,6 @@
 // Locations API functions
 import { apiRequest, QueryParams } from './base';
-import { Region, Township, CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData } from '../../types/location';
+import { Region, Township, Ward, CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, YarpyatTax, CreateYarpyatTaxData, UpdateYarpyatTaxData } from '../../types/location';
 
 export const locationsAPI = {
   // Regions
@@ -50,4 +50,52 @@ export const locationsAPI = {
 
   deleteTownship: (slug: string) =>
     apiRequest(`/townships/${slug}`, { method: 'DELETE' }),
+
+  // Wards
+  getWards: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<Ward[]>(`/wards${queryString}`);
+  },
+
+  getWard: (slug: string) =>
+    apiRequest<Ward>(`/wards/${slug}`),
+
+  createWard: (data: CreateWardData) =>
+    apiRequest<Ward>('/wards', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateWard: (slug: string, data: UpdateWardData) =>
+    apiRequest<Ward>(`/wards/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteWard: (slug: string) =>
+    apiRequest(`/wards/${slug}`, { method: 'DELETE' }),
+
+  // YarpyatTax
+  getYarpyatTaxes: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<YarpyatTax[]>(`/yarpyat${queryString}`);
+  },
+
+  getYarpyatTax: (slug: string) =>
+    apiRequest<YarpyatTax>(`/yarpyat/${slug}`),
+
+  createYarpyatTax: (data: CreateYarpyatTaxData) =>
+    apiRequest<YarpyatTax>('/yarpyat', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateYarpyatTax: (slug: string, data: UpdateYarpyatTaxData) =>
+    apiRequest<YarpyatTax>(`/yarpyat/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteYarpyatTax: (slug: string) =>
+    apiRequest(`/yarpyat/${slug}`, { method: 'DELETE' }),
 };

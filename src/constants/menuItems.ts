@@ -141,16 +141,33 @@ export const MENU_ITEMS = [
     path: '',
     isDivider: true,
   },
-  // Third Section: System & Admin Features
+  // Third Section: Location Management
+  {
+    text: 'Locations',
+    iconName: 'LocationOn',
+    children: [
+      {
+        text: 'Regions & Townships',
+        iconName: 'LocationOn',
+        path: '/locations',
+      },
+      {
+        text: 'Wards',
+        iconName: 'LocationOn',
+        path: '/wards',
+      },
+      {
+        text: 'Yarpyat Taxes',
+        iconName: 'AttachMoney',
+        path: '/yarpyat',
+      },
+    ],
+  },
+  // Fourth Section: System & Admin Features
   {
     text: 'Master Data',
     iconName: 'Assessment',
     children: [
-      {
-        text: 'Locations',
-        iconName: 'LocationOn',
-        path: '/locations',
-      },
       {
         text: 'Property Types',
         iconName: 'Category',

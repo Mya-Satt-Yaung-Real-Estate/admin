@@ -9,6 +9,8 @@ import { adminUserRoutes } from './admin-users';
 import { roleRoutes } from './roles';
 import { permissionRoutes } from './permissions';
 import { locationRoutes } from './locations';
+import { wardRoutes } from './wards';
+import { yarpyatRoutes } from './yarpyat';
 import { propertyRoutes } from './properties';
 import { propertyTypeRoutes } from './property-types';
 import { propertyListingTypeRoutes } from './property-listing-types';
@@ -46,6 +48,8 @@ export const router = createBrowserRouter([
   ...roleRoutes,
   ...permissionRoutes,
   ...locationRoutes,
+  ...wardRoutes,
+  ...yarpyatRoutes,
   ...propertyRoutes,
   ...propertyTypeRoutes,
   ...propertyListingTypeRoutes,
