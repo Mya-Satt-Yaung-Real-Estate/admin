@@ -42,17 +42,26 @@ function getAuthToken(): string | null {
     // First check for admin_token (used by the login hook)
     const adminToken = localStorage.getItem('admin_token');
     if (adminToken) {
+      console.log('🔑 Using admin_token from localStorage');
       return adminToken;
     }
     
     // Then check Zustand store
     const authStoreData = localStorage.getItem('auth-storage');
-    const authStore = JSON.parse(authStoreData || '{}');
+    if (authStoreData) {
+      const authStore = JSON.parse(authStoreData);
+      console.log('🔑 Auth store data:', authStore);
+      
+      // Zustand stores data in a 'state' property when using persist middleware
+      const token = authStore.state?.token || authStore.token || null;
+      if (token) {
+        console.log('🔑 Using token from Zustand store');
+        return token;
+      }
+    }
     
-    // Zustand stores data in a 'state' property when using persist middleware
-    const token = authStore.state?.token || authStore.token || null;
-    
-    return token;
+    console.log('❌ No auth token found');
+    return null;
   } catch (error) {
     console.error('Error parsing auth store:', error);
     return null;

@@ -25,6 +25,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useLogout } from '@/services/queries/auth';
 import { useNavigate } from 'react-router-dom';
 import LogoutDialog from '@/components/ui/LogoutDialog';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 import { getUserInitials } from '@/utils';
 
 interface TopBarProps {
@@ -159,6 +160,11 @@ const TopBar: React.FC<TopBarProps> = ({
 
           {/* User Profile Menu */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Notification Bell */}
+            {user?.id && (
+              <NotificationBell adminId={user.id} />
+            )}
+            
             <IconButton
               onClick={handleProfileMenuOpen}
               size="small"
