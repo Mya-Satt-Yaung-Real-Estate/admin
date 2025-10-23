@@ -333,7 +333,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ adminId }) =
                             markAsRead(notification.id);
                           }
                           // Navigate to the detail page
-                          window.location.href = notification.data.view_button.url;
+                          if (notification.data.view_button?.url) {
+                            window.location.href = notification.data.view_button.url;
+                          }
                         }}
                         sx={{ 
                           textTransform: 'none',
