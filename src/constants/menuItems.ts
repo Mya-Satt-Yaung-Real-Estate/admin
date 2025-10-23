@@ -229,6 +229,11 @@ export const MENU_ITEMS = [
     path: '/feedback',
   },
   {
+    text: 'Contact Us',
+    iconName: 'ContactMail',
+    path: '/contact-us',
+  },
+  {
     text: 'FAQs',
     iconName: 'QuestionMarkIcon',
     path: '/faqs',
