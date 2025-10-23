@@ -40,10 +40,6 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ adminId }) =
     deleteAllNotifications,
   } = useNotifications(adminId);
 
-  // Debug logging
-  console.log('🔔 NotificationBell - adminId:', adminId);
-  console.log('🔔 NotificationBell - unreadCount:', unreadCount);
-  console.log('🔔 NotificationBell - notifications:', notifications.length);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);

@@ -58,10 +58,7 @@ export const notificationApi = {
     is_read?: boolean;
   }): Promise<NotificationResponse> => {
     try {
-      console.log('🌐 API Request - getNotifications with params:', params);
       const response = await api.get('/admin-notifications', { params });
-      console.log('🌐 API Response - getNotifications:', response);
-      console.log('🌐 API Response data:', response.data);
       return response.data as NotificationResponse;
     } catch (error) {
       // Return empty data if API endpoint doesn't exist yet

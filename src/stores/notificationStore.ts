@@ -55,7 +55,6 @@ export const useNotificationStore = create<NotificationState>((set) => ({
   }),
   
   setUnreadCount: (count) => {
-    console.log('📊 Store - setUnreadCount called with:', count);
     set({ unreadCount: count });
   },
   

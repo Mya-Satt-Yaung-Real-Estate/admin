@@ -35,7 +35,6 @@ export const useNotifications = (adminId?: number) => {
   } = useQuery({
     queryKey: ['admin-notifications'],
     queryFn: () => {
-      console.log('🔄 useQuery - Fetching notifications for adminId:', adminId);
       return notificationApi.getNotifications();
     },
     enabled: !!adminId,
@@ -96,28 +95,12 @@ export const useNotifications = (adminId?: number) => {
       // Update store when data changes
       useEffect(() => {
         if (notificationsData && 'data' in notificationsData) {
-          console.log('📊 Notifications data received:', notificationsData);
-          console.log('📊 Data array:', notificationsData.data);
-          console.log('📊 Meta object:', notificationsData.meta);
-          console.log('📊 Unread count from API:', notificationsData.meta?.unread_count);
-          
           setNotifications(notificationsData.data || []);
           setUnreadCount(notificationsData.meta?.unread_count || 0);
-          
-          console.log('📊 Store updated - notifications:', notificationsData.data?.length || 0);
-          console.log('📊 Store updated - unread count:', notificationsData.meta?.unread_count || 0);
         } else if (notificationsError) {
-          console.log('❌ Notifications API error:', notificationsError);
-          console.log('🔍 Error details:', {
-            message: notificationsError.message,
-            status: (notificationsError as any).status,
-            response: (notificationsError as any).response
-          });
           // Set empty data on error
           setNotifications([]);
           setUnreadCount(0);
-        } else {
-          console.log('⚠️ No notifications data available yet');
         }
       }, [notificationsData, notificationsError, setNotifications, setUnreadCount]);
 
@@ -143,19 +126,16 @@ export const useNotifications = (adminId?: number) => {
     pusherService.connect(adminId);
 
     // Listen for push notifications
-    pusherService.onPushNotification((data) => {
-      console.log('🔔 Push notification received:', data);
+    pusherService.onPushNotification(() => {
     });
 
     // Listen for bell count updates
     pusherService.onBellCountUpdate((count) => {
-      console.log('🔢 Bell count updated:', count);
       setUnreadCount(count);
     });
 
     // Listen for new notifications
     pusherService.onNewNotification((notification: AdminNotification) => {
-      console.log('📝 New notification received:', notification);
       addNotification(notification);
       // Don't increment count here - the bell-count-update event will handle it
     });

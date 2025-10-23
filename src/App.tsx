@@ -7,7 +7,6 @@ import { router } from './routes';
 import { QueryProvider } from './providers/QueryProvider';
 import './index.css';
 import 'leaflet/dist/leaflet.css';
-import './utils/debugApi'; // Import debug utility
 
 function App() {
   return (

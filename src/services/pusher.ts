@@ -27,8 +27,6 @@ class PusherService {
     this.adminId = adminId;
     this.channel = this.pusher.subscribe(`admin-notifications.${adminId}`);
     
-    console.log(`🔗 Connected to admin notifications channel for admin ${adminId}`);
-    console.log(`📡 Pusher connection state: ${this.getConnectionState()}`);
   }
 
   /**
@@ -41,7 +39,6 @@ class PusherService {
     }
 
     this.channel.bind('push-notification', (data: any) => {
-      console.log('Received push notification:', data);
       
       // Show browser notification
       this.showBrowserNotification(data);
@@ -61,7 +58,6 @@ class PusherService {
     }
 
     this.channel.bind('bell-count-update', (data: any) => {
-      console.log('Bell count updated:', data.count);
       callback(data.count);
     });
   }
@@ -76,7 +72,6 @@ class PusherService {
     }
 
     this.channel.bind('new-notification', (data: any) => {
-      console.log('New notification received:', data);
       callback(data.notification);
     });
   }
@@ -86,7 +81,6 @@ class PusherService {
    */
   private showBrowserNotification(data: any) {
     if (!('Notification' in window)) {
-      console.log('This browser does not support notifications');
       return;
     }
 
