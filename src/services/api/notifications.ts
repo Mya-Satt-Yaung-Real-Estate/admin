@@ -1,12 +1,25 @@
 import { api } from './client';
 
+export interface ViewButton {
+  text: string;
+  url: string;
+  action: string;
+}
+
 export interface AdminNotification {
   id: number;
-  admin_id: number;
+  admin_id: number | null; // Nullable for global notifications
   type: 'property' | 'feedback' | 'system_alert';
   title: string;
   body: string;
-  data: any;
+  data: {
+    property_id?: number;
+    feedback_id?: number;
+    user_name?: string;
+    property_title?: string;
+    view_button?: ViewButton;
+    [key: string]: any;
+  };
   is_read: boolean;
   read_at: string | null;
   created_at: string;

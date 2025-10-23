@@ -45,3 +45,4 @@ export const debugApi = {
 
 // Make it available globally for debugging
 (window as any).debugApi = debugApi;
+

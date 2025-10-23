@@ -32,3 +32,4 @@ export const api = {
     return apiRequest(endpoint, { method: 'DELETE' });
   },
 };
+
