@@ -2822,3 +2822,587 @@ const logout = async () => {
 13. **Payment Verification**: Implement proper payment proof verification before approving requests
 
 
+
+
+## Wanting List Management
+
+### Overview
+
+The Wanting List API allows administrators to manage wanting lists in the system. Wanting lists are user-generated requests for properties they are looking for (e.g., looking to buy or rent). This includes creating, updating, deleting, and monitoring wanting lists.
+
+### Endpoints
+
+#### List Wanting Lists
+**GET** `/api/v1/admin/wanted-lists?per_page=1`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Query Parameters:**
+- `per_page` (optional): Number of items per page (1-100, default: 10)
+- `page` (optional): Page number (default: 1)
+- `wanted_type` (optional): Filter by wanted type (`buyer`, `renter`)
+- `property_type_id` (optional): Filter by property type ID
+- `prefer_region_id` (optional): Filter by prefered region ID
+- `prefer_township_id` (optional): Filter by prefered township ID
+- `min_budget` (optional): Filter by minimum budget
+- `max_budget` (optional): Filter by maximum budget
+- `bedrooms` (optional): Filter by number of bedrooms
+- `bathrooms` (optional): Filter by number of bathrooms
+- `min_area` (optional): Filter by minimum area
+- `max_area` (optional): Filter by maximum area
+- `search` (optional): Search by title, description, or additional requirement
+- `sort_by` (optional): Sort field (`created_at`, `updated_at`, `min_budget`, `max_budget`, `title`)
+- `sort_direction` (optional): Sort direction (`asc` or `desc`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Wanting lists retrieved successfully",
+  "data": [
+     {
+        "id": 1,
+        "slug": "qqqq",
+        "wanted_type": "renter",
+        "wanted_type_label": "Renter",
+        "title": "qqqq",
+        "description": "www",
+        "property_type": {
+            "id": 15,
+            "name_en": "Beach House",
+            "name_mm": "ကမ်းခြေအိမ်"
+        },
+        "location": {
+            "region_en": "Yangon",
+            "township_en": "Bahan",
+            "region_mm": "ရန်ကုန်",
+            "township_mm": "ဗဟန်း"
+        },
+        "budget": {
+            "min_budget": "0.00",
+            "max_budget": null,
+            "budget_range": "0 - ∞ MMK"
+        },
+        "specifications": {
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "area_range": "123 - 123 sqft"
+        },
+        "contact": {
+            "name": "re",
+            "phone": "098888888888",
+            "email": null
+        },
+        "status": {
+            "verification_status": "approved",
+            "status": "published",
+            "is_expired": false,
+            "is_published": true,
+            "expires_at": null
+        },
+        "created_at": "Oct 29, 2025"
+      }
+  ],
+  "pagination": { ... }
+}
+```
+
+#### Get Wanting List Details
+**GET** `/api/v1/admin/wanted-lists/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Public wanting list retrieved successfully",
+    "data": {
+        "id": 2,
+        "slug": "hello",
+        "wanted_type": "renter",
+        "wanted_type_label": "Renter",
+        "title": "Hello",
+        "description": "hello heelllo",
+        "additional_requirement": "Hiii",
+        "property_type": {
+            "id": 15,
+            "name_en": "Beach House",
+            "name_mm": "ကမ်းခြေအိမ်"
+        },
+        "preferred_location": {
+            "region": {
+                "id": 1,
+                "name_en": "Yangon",
+                "name_mm": "ရန်ကုန်"
+            },
+            "township": {
+                "id": 4,
+                "name_en": "Tamwe",
+                "name_mm": "တာမွေ"
+            }
+        },
+        "budget": {
+            "min_budget": "300000.00",
+            "max_budget": "400000.00",
+            "budget_range": "300,000 - 400,000 MMK"
+        },
+        "specifications": {
+            "bedrooms": 1,
+            "bathrooms": 2,
+            "min_area": "123.00",
+            "max_area": "222.00",
+            "area_range": "123 - 222 sqft"
+        },
+        "contact": {
+            "name": "Tin",
+            "email": null,
+            "phone": "0999999999"
+        },
+        "status": {
+            "verification_status": "approved",
+            "status": "published",
+            "is_expired": false,
+            "is_published": true,
+            "expires_at": null
+        },
+        "user": {
+            "id": 50,
+            "name": "Tin",
+            "email": "tinyadanar.1997.yu@gmail.com",
+            "user_type": "individual",
+            "member_level": "silver"
+        },
+        "created_at": "Oct 29, 2025"
+    }
+}
+```
+
+#### Create Wanting List
+**POST** `/api/v1/admin/wanted-lists`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+  "wanted_type": "renter",
+  "property_type_id": 2,
+  "title": "3BR House for Rent",
+  "description": "Looking for a 3-bedroom house for rent in peaceful area",
+  "prefer_region_id": 1,
+  "prefer_township_id": 2,
+  "min_budget": 50000,
+  "max_budget": 100000,
+  "bedrooms": 3,
+  "bathrooms": 2,
+  "max_area": 2000,
+  "min_area": 1500,
+  "additional_requirement": "Garden preferred",
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "phone": "+959987654321",
+  "status": "published",
+  "expires_at": "2024-03-15T10:30:00.000000Z"
+}
+```
+
+**Field Descriptions:**
+- `wanted_type` (required): Wanted type (`buyer` or `renter`)
+- `property_type_id` (required): ID of the property type
+- `title` (required): Title of the wanting list (max 255 characters)
+- `description` (optional): Description of requirements
+- `prefer_region_id` (required): ID of preferred region
+- `prefer_township_id` (required): ID of preferred township
+- `min_budget` (optional): Minimum budget (default: 0)
+- `max_budget` (optional): Maximum budget
+- `bedrooms` (optional): Number of bedrooms preferred
+- `bathrooms` (optional): Number of bathrooms preferred
+- `max_area` (optional): Maximum area in sqft
+- `min_area` (optional): Minimum area in sqft
+- `additional_requirement` (optional): Additional requirements
+- `name` (required): Contact name (max 255 characters)
+- `email` (optional): Contact email
+- `phone` (required): Contact phone (max 20 characters)
+- `status` (optional): Status (`published`, `draft`, default: `published`)
+- `expires_at` (optional): Expiration date (format: YYYY-MM-DD HH:MM:SS)
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Wanting list created successfully",
+    "data": {
+        "id": 3,
+        "slug": "apartment-for-rent-wanted",
+        "wanted_type": "renter",
+        "wanted_type_label": "Renter",
+        "title": "Apartment for rent wanted",
+        "description": null,
+        "additional_requirement": null,
+        "property_type": {
+            "id": 2,
+            "name_en": "Apartment",
+            "name_mm": "တိုက်ခန်း"
+        },
+        "preferred_location": {
+            "region": {
+                "id": 2,
+                "name_en": "Mandalay",
+                "name_mm": "မန္တလေး"
+            },
+            "township": {
+                "id": 3,
+                "name_en": "Sanchaung",
+                "name_mm": "စမ်းချောင်း"
+            }
+        },
+        "budget": {
+            "min_budget": "0.00",
+            "max_budget": null,
+            "budget_range": "0 - ∞ MMK"
+        },
+        "specifications": {
+            "bedrooms": null,
+            "bathrooms": null,
+            "min_area": null,
+            "max_area": null,
+            "area_range": "0 - ∞ sqft"
+        },
+        "contact": {
+            "name": "Jane Smith",
+            "email": null,
+            "phone": "09234567890"
+        },
+        "status": {
+            "verification_status": "approved",
+            "status": "published",
+            "is_expired": false,
+            "is_published": true,
+            "expires_at": null
+        },
+        "user": {
+            "id": 1,
+            "name": "Super Admin",
+            "email": "admin@myasattyaung.com",
+            "user_type": "admin",
+            "member_level": "silver"
+        },
+        "created_at": "Nov 11, 2025"
+    }
+}
+```
+
+#### Update Wanting List
+**PUT** `/api/v1/admin/wanted-lists/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Request:**
+```json
+{
+    "success": true,
+    "message": "Wanting list updated successfully",
+    "data": {
+        "id": 1,
+        "slug": "looking-for-3-bedroom-apartment-in-downtown-upd",
+        "wanted_type": "buyer",
+        "wanted_type_label": "Buyer",
+        "title": "Looking for 3-bedroom apartment in downtown UPD",
+        "description": "Looking for a modern 3-bedroom apartment with good natural lighting and nearby amenities. Prefer buildings with security and parking facilities.",
+        "additional_requirement": "Must have parking space and elevator",
+        "property_type": {
+            "id": 1,
+            "name_en": "House",
+            "name_mm": "အိမ်"
+        },
+        "preferred_location": {
+            "region": {
+                "id": 1,
+                "name_en": "Yangon",
+                "name_mm": "ရန်ကုန်"
+            },
+            "township": {
+                "id": 1,
+                "name_en": "Downtown",
+                "name_mm": "မြို့ပြ"
+            }
+        },
+        "budget": {
+            "min_budget": "500000.00",
+            "max_budget": "800000.00",
+            "budget_range": "500,000 - 800,000 MMK"
+        },
+        "specifications": {
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "min_area": "1000.00",
+            "max_area": "1500.00",
+            "area_range": "1,000 - 1,500 sqft"
+        },
+        "contact": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "phone": "09123456789"
+        },
+        "status": {
+            "verification_status": "approved",
+            "status": "published",
+            "is_expired": false,
+            "is_published": true,
+            "expires_at": "2025-12-30T17:30:00.000000Z"
+        },
+        "user": {
+            "id": 5,
+            "name": "Soe Hein",
+            "email": "soeheindev@gmail.com",
+            "user_type": "individual",
+            "member_level": "silver"
+        },
+        "created_at": "Nov 02, 2025"
+    }
+}
+```
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Wanting list updated successfully",
+    "data": {
+        "id": 1,
+        "slug": "looking-for-3-bedroom-apartment-in-downtown-upd",
+        "wanted_type": "buyer",
+        "wanted_type_label": "Buyer",
+        "title": "Looking for 3-bedroom apartment in downtown UPD",
+        "description": "Looking for a modern 3-bedroom apartment with good natural lighting and nearby amenities. Prefer buildings with security and parking facilities.",
+        "additional_requirement": "Must have parking space and elevator",
+        "property_type": {
+            "id": 1,
+            "name_en": "House",
+            "name_mm": "အိမ်"
+        },
+        "preferred_location": {
+            "region": {
+                "id": 1,
+                "name_en": "Yangon",
+                "name_mm": "ရန်ကုန်"
+            },
+            "township": {
+                "id": 1,
+                "name_en": "Downtown",
+                "name_mm": "မြို့ပြ"
+            }
+        },
+        "budget": {
+            "min_budget": "500000.00",
+            "max_budget": "800000.00",
+            "budget_range": "500,000 - 800,000 MMK"
+        },
+        "specifications": {
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "min_area": "1000.00",
+            "max_area": "1500.00",
+            "area_range": "1,000 - 1,500 sqft"
+        },
+        "contact": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "phone": "09123456789"
+        },
+        "status": {
+            "verification_status": "approved",
+            "status": "published",
+            "is_expired": false,
+            "is_published": true,
+            "expires_at": "2025-12-30T17:30:00.000000Z"
+        },
+        "user": {
+            "id": 5,
+            "name": "Soe Hein",
+            "email": "soeheindev@gmail.com",
+            "user_type": "individual",
+            "member_level": "silver"
+        },
+        "created_at": "Nov 02, 2025"
+    }
+}
+```
+
+#### Delete Wanting List (Soft Delete)
+**DELETE** `/api/v1/admin/wanted-lists/{slug}`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Wanting list deleted successfully",
+  "data": null
+}
+```
+
+#### Restore Wanting List
+**POST** `/api/v1/admin/wanted-lists/{slug}/restore`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+    "success": true,
+    "message": "Lawer restored successfully",
+    "data": {
+        "id": 2,
+        "slug": "looking-for-3br-house-in-yangon-1",
+        "wanted_type": "buyer",
+        "wanted_type_label": "Buyer",
+        "title": "Looking for 3BR House in Yangon",
+        "description": "Need a spacious house for family with good security and near schools",
+        "additional_requirement": "Near school and hospital, good security, parking space",
+        "property_type": {
+            "id": 1,
+            "name_en": "House",
+            "name_mm": "အိမ်"
+        },
+        "preferred_location": {
+            "region": {
+                "id": 1,
+                "name_en": "Yangon",
+                "name_mm": "ရန်ကုန်"
+            },
+            "township": {
+                "id": 5,
+                "name_en": "Thingangyun",
+                "name_mm": "သင်္ဃန်းကျွန်း"
+            }
+        },
+        "budget": {
+            "min_budget": "50000000.00",
+            "max_budget": "80000000.00",
+            "budget_range": "50,000,000 - 80,000,000 MMK"
+        },
+        "specifications": {
+            "bedrooms": 3,
+            "bathrooms": 2,
+            "min_area": "1200.00",
+            "max_area": "2000.00",
+            "area_range": "1,200 - 2,000 sqft"
+        },
+        "contact": {
+            "name": "John Doe",
+            "email": "john.doe@example.com",
+            "phone": "09123456789"
+        },
+        "status": {
+            "verification_status": "approved",
+            "status": "published",
+            "is_expired": false,
+            "is_published": true,
+            "expires_at": null
+        },
+        "user": {
+            "id": 5,
+            "name": "Soe Hein",
+            "email": "soeheindev@gmail.com",
+            "user_type": "individual",
+            "member_level": "silver"
+        },
+        "created_at": "Nov 10, 2025"
+    }
+}
+```
+
+#### Force Delete Wanting List (Permanent Delete)
+**DELETE** `/api/v1/admin/wanting-lists/{slug}/force`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "WantingList permanently deleted successfully",
+  "data": null
+}
+```
+
+#### Toggle Wanting List Status
+**POST** `/api/v1/admin/wanting-lists/{slug}/toggle-status`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Wanting list status toggled successfully",
+  "data": {
+    "id": 1,
+    "slug": "modern-bedroom-wanted-123",
+    "is_active": false,
+    "status": "inactive"
+  }
+}
+```
+
+#### Get Wanting List Statistics
+**GET** `/api/v1/admin/wanting-lists/statistics`
+
+**Headers:** `Authorization: Bearer {token}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Statistics retrieved successfully",
+  "data": {
+    "total": 150,
+    "published": 120,
+    "draft": 5,
+    "pending": 10,
+    "approved": 135,
+    "rejected": 15,
+    "by_type": {
+      "buyer": 90,
+      "renter": 60
+    }
+  }
+}
+```
+
+**Error Responses:**
+- **Validation Error (422):**
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "wanted_type": ["The wanted type field is required."],
+    "property_type_id": ["The property type id field is required."],
+    "title": ["The title field is required."],
+    "prefer_region_id": ["The prefer region id field is required."],
+    "prefer_township_id": ["The prefer township id field is required."],
+    "name": ["The name field is required."],
+    "phone": ["The phone field is required."]
+  }
+}
+```
+
+- **Not Found (404):**
+```json
+{
+  "success": false,
+  "message": "Wanting list not found"
+}
+```
+
+- **Server Error (500):**
+```json
+{
+  "success": false,
+  "message": "Failed to retrieve wanting lists"
+}
+```

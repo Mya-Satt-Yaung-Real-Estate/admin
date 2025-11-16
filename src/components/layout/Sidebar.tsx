@@ -39,6 +39,7 @@ import {
   AccessTime as AccessTimeIcon,
   PersonAdd as PersonAddIcon,
   ShoppingCart as ShoppingCartIcon,
+  FolderSpecial as WantingListIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -129,6 +130,8 @@ export const getIconComponent = (iconName: string): React.ReactNode => {
       return <LiveHelpIcon />;
     case 'AccountBalance':
       return <AccountBalanceIcon />;
+    case 'WantingList':
+      return <WantingListIcon />;
     
     default:
       return <DashboardIcon />;

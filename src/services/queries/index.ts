@@ -20,11 +20,13 @@ export * from './employees';
 export * from './propertyReferrals';
 export * from './announcements';
 export * from './lawyers';
+export * from './wantingListings';
 
 // Export query keys for external use
 export { authKeys } from './auth';
 export { adminUserKeys } from './adminUsers';
 export { userKeys } from './users';
+export { wantingListKeys } from './wantingListings';
 export { propertyKeys } from './properties';
 export { roleKeys } from './roles';
 export { permissionKeys } from './permissions';
