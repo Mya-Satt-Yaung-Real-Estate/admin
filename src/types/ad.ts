@@ -2,20 +2,20 @@
 export interface AD {
   id: number;
   user_id: number;
-  title_en: string;
-  title_mm: string;
-  slug: string;
-  description_en: string;
-  description_mm: string;
-  link: string;
-  link_type: 'button_link' | 'text_link' | 'image_link';
-  link_text?: string;
+  title_en: string | null;
+  title_mm: string | null;
+  description_en: string | null;
+  description_mm: string | null;
+  link: string | null;
+  link_type: 'button_link' | 'text_link' | 'image_link' | null;
+  link_text?: string | null;
+  text_color_code?: string | null;
   price?: number;
   status: boolean;
   is_paid: boolean;
   is_published: boolean;
-  display_location: 'homepage-slider' | 'home-page-asidebar' | 'detail-page-asidebar';
-  payment_date?: string;
+  display_location: 'homepage_block' | 'home-page-asidebar' | 'detail-page-asidebar';
+  payment_date?: string | null;
   start_at?: string;
   end_at?: string;
   media_id?: number;
@@ -50,20 +50,20 @@ export interface AD {
 }
 
 export interface ADFormData {
-  title_en: string;
-  title_mm: string;
-  slug: string;
-  description_en: string;
-  description_mm: string;
-  link: string;
-  link_type: 'button_link' | 'text_link' | 'image_link';
-  link_text?: string;
+  title_en: string | null;
+  title_mm: string | null;
+  description_en: string | null;
+  description_mm: string | null;
+  link: string | null;
+  link_type: 'button_link' | 'text_link' | 'image_link' | null;
+  link_text?: string | null;
+  text_color_code?: string | null;
   price?: number;
   status: boolean;
   is_paid: boolean;
   is_published: boolean;
-  display_location: 'homepage-slider' | 'home-page-asidebar' | 'detail-page-asidebar';
-  payment_date?: string;
+  display_location: 'homepage_block' | 'home-page-asidebar' | 'detail-page-asidebar';
+  payment_date?: string | null;
   start_at?: string;
   end_at?: string;
   media_id: number;
@@ -131,9 +131,9 @@ export interface ADStatisticsResponse {
 
 // Display location limits
 export const DISPLAY_LOCATION_LIMITS = {
-  'homepage-slider': 5,      // Maximum 5 active ads
-  'home-page-asidebar': 1,   // Maximum 1 active ad
-  'detail-page-asidebar': 1, // Maximum 1 active ad
+  'homepage_block': 3,       // Maximum 3 active ads
+  'home-page-asidebar': 3,   // Maximum 3 active ads
+  'detail-page-asidebar': 3, // Maximum 3 active ads
 } as const;
 
 // Status options
@@ -151,7 +151,7 @@ export const AD_LINK_TYPES = [
 
 // Display location options
 export const AD_DISPLAY_LOCATIONS = [
-  { value: 'homepage-slider', label: 'Homepage Slider' },
+  { value: 'homepage_block', label: 'Homepage Block' },
   { value: 'home-page-asidebar', label: 'Home Page Sidebar' },
   { value: 'detail-page-asidebar', label: 'Detail Page Sidebar' },
 ] as const;

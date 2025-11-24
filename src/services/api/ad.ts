@@ -31,12 +31,8 @@ export const adAPI = {
   },
 
   // Get specific ad by ID
-  getAD: (id: number): Promise<ApiResponse<AD>> =>
+  getAD: (id: number | string): Promise<ApiResponse<AD>> =>
     apiRequest<AD>(`/ads/${id}`),
-
-  // Get specific ad by slug
-  getADBySlug: (slug: string): Promise<ApiResponse<AD>> =>
-    apiRequest<AD>(`/ads/${slug}`),
 
   // Create new ad
   createAD: (data: ADFormData): Promise<ApiResponse<ADResponse>> =>
@@ -46,22 +42,15 @@ export const adAPI = {
     }),
 
   // Update ad by ID
-  updateAD: (id: number, data: Partial<ADFormData>): Promise<ApiResponse<ADResponse>> =>
+  updateAD: (id: number | string, data: Partial<ADFormData>): Promise<ApiResponse<ADResponse>> =>
     apiRequest<ADResponse>(`/ads/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
 
-  // Update ad by slug
-  updateADBySlug: (slug: string, data: Partial<ADFormData>): Promise<ApiResponse<ADResponse>> =>
-    apiRequest<ADResponse>(`/ads/${slug}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
-
-  // Delete ad by slug
-  deleteAD: (slug: string): Promise<{ success: boolean; message: string; data: null }> =>
-    apiRequest(`/ads/${slug}`, {
+  // Delete ad by ID
+  deleteAD: (id: number | string): Promise<{ success: boolean; message: string; data: null }> =>
+    apiRequest(`/ads/${id}`, {
       method: 'DELETE',
     }),
 

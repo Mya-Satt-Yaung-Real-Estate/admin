@@ -13,28 +13,28 @@ import {
 } from '@mui/material';
 import {
   Link as LinkIcon,
-  AttachMoney as MoneyIcon,
   CalendarToday as CalendarIcon,
   Visibility as VisibilityIcon,
-  Person as PersonIcon,
   LocationOn as LocationIcon,
   Business as BusinessIcon,
   ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
-import { LoadingSpinner, PageErrorState } from '../../components/ui';
+import { ActionAlert, LoadingSpinner, PageErrorState } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
-import { useADBySlug } from '../../services/queries/ad';
+import { useAD } from '../../services/queries/ad';
 import { AD } from '../../types/ad';
+import { useAlertSystem } from '../../hooks/useAlertSystem';
 
 const ADViewPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const theme = useTheme();
+  const { alert, clearAlert } = useAlertSystem();
 
-  // Fetch AD data by slug
-  const { data: adResponse, isLoading, error, refetch } = useADBySlug(slug || '');
+  // Fetch AD data by id
+  const { data: adResponse, isLoading, error, refetch } = useAD(id || '');
 
   const ad: AD | undefined = adResponse?.data;
 
@@ -57,7 +57,13 @@ const ADViewPage: React.FC = () => {
 
   // Helper function to get image URL from different possible sources
   const getImageUrl = (ad: AD): string | undefined => {
-    // Priority order: media.url > media[0].url > image_url
+    // Priority order: images.url (current API format) > media.url > image array > image object > image_url
+    // Check for images (singular object) - current API response format
+    if ((ad as any).images && typeof (ad as any).images === 'object' && !Array.isArray((ad as any).images)) {
+      return (ad as any).images.url;
+    }
+
+    // Check for media.url
     if (ad.media?.url) {
       return ad.media.url;
     }
@@ -84,6 +90,11 @@ const ADViewPage: React.FC = () => {
 
   // Helper function to get image filename from different possible sources
   const getImageFilename = (ad: AD): string | undefined => {
+    // Check for images (singular object) - current API response format
+    if ((ad as any).images && typeof (ad as any).images === 'object' && !Array.isArray((ad as any).images)) {
+      return (ad as any).images.filename;
+    }
+
     if (ad.media?.filename) {
       return ad.media.filename;
     }
@@ -106,6 +117,17 @@ const ADViewPage: React.FC = () => {
 
   // Helper function to get image size from different possible sources
   const getImageSize = (ad: AD): string => {
+    // Check for images (singular object) - current API response format
+    if ((ad as any).images && typeof (ad as any).images === 'object' && !Array.isArray((ad as any).images)) {
+      const images = (ad as any).images;
+      if (images.size) {
+        return `${Math.round(images.size / 1024)} KB`;
+      }
+      if (images.formatted_size) {
+        return images.formatted_size;
+      }
+    }
+
     if (ad.media?.size) {
       return `${Math.round(ad.media.size / 1024)} KB`;
     }
@@ -150,15 +172,18 @@ const ADViewPage: React.FC = () => {
     <Box>
       {/* Page Header */}
       <PageHeader
-        title={`AD Details: ${ad.title_en}`}
-        subtitle={ad.title_mm}
-        breadcrumbs={`Dashboard / ADs / All ADs / ${ad.title_en}`}
+        title={`AD Details: ${ad.title_en || 'Untitled'}`}
+        subtitle={ad.title_mm || ''}
+        breadcrumbs={`Dashboard / ADs / All ADs / ${ad.title_en || 'Untitled'}`}
         actionButton={{
           text: 'Back to ADs',
           icon: <ArrowBackIcon />,
           onClick: () => navigate('/ads'),
         }}
       />
+
+      {/* Success/Error Alert */}
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Grid container spacing={3}>
         {/* Primary Information Card */}
@@ -179,13 +204,13 @@ const ADViewPage: React.FC = () => {
                     Titles
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
-                  <Grid container spacing={2}>
+                    <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2" color="textSecondary">
                         English Title
                       </Typography>
                       <Typography variant="body1">
-                        {ad.title_en}
+                        {ad.title_en || 'N/A'}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -193,7 +218,7 @@ const ADViewPage: React.FC = () => {
                         Myanmar Title
                       </Typography>
                       <Typography variant="body1">
-                        {ad.title_mm}
+                        {ad.title_mm || 'N/A'}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -204,13 +229,13 @@ const ADViewPage: React.FC = () => {
                     Descriptions
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
-                  <Grid container spacing={2}>
+                    <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
                       <Typography variant="subtitle2" color="textSecondary">
                         English Description
                       </Typography>
                       <Typography variant="body1">
-                        {ad.description_en}
+                        {ad.description_en || 'N/A'}
                       </Typography>
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -218,7 +243,7 @@ const ADViewPage: React.FC = () => {
                         Myanmar Description
                       </Typography>
                       <Typography variant="body1">
-                        {ad.description_mm}
+                        {ad.description_mm || 'N/A'}
                       </Typography>
                     </Grid>
                   </Grid>
@@ -230,25 +255,29 @@ const ADViewPage: React.FC = () => {
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Link
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <LinkIcon sx={{ mr: 1, fontSize: 16, color: 'action.active' }} />
-                        <Typography variant="body1" component="a" href={ad.link} target="_blank" color="primary">
-                          {ad.link}
+                    {ad.link && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Link
                         </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Link Type
-                      </Typography>
-                      <Typography variant="body1">
-                        {ad.link_type.replace('_', ' ').toUpperCase()}
-                      </Typography>
-                    </Grid>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <LinkIcon sx={{ mr: 1, fontSize: 16, color: 'action.active' }} />
+                          <Typography variant="body1" component="a" href={ad.link} target="_blank" color="primary">
+                            {ad.link}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    )}
+                    {ad.link_type && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="textSecondary">
+                          Link Type
+                        </Typography>
+                        <Typography variant="body1">
+                          {ad.link_type.replace('_', ' ').toUpperCase()}
+                        </Typography>
+                      </Grid>
+                    )}
                     {ad.link_text && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="subtitle2" color="textSecondary">
@@ -259,15 +288,23 @@ const ADViewPage: React.FC = () => {
                         </Typography>
                       </Grid>
                     )}
-                    {ad.price !== undefined && ad.price !== null && (
+                    {ad.text_color_code && (
                       <Grid item xs={12} sm={6}>
                         <Typography variant="subtitle2" color="textSecondary">
-                          Price
+                          Text Color Code
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <MoneyIcon sx={{ mr: 1, fontSize: 16, color: 'action.active' }} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '4px',
+                              backgroundColor: ad.text_color_code,
+                              border: '1px solid #ccc',
+                            }}
+                          />
                           <Typography variant="body1">
-                            {ad.price} MMK
+                            {ad.text_color_code}
                           </Typography>
                         </Box>
                       </Grid>
@@ -341,50 +378,15 @@ const ADViewPage: React.FC = () => {
 
                 <Grid item xs={12}>
                   <Typography variant="subtitle2" color="textSecondary">
-                    Published
-                  </Typography>
-                  <Chip
-                    label={ad.is_published ? 'Published' : 'Draft'}
-                    color={ad.is_published ? 'success' : 'warning'}
-                    variant="outlined"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Payment Status
-                  </Typography>
-                  <Chip
-                    label={ad.is_paid ? 'Paid' : 'Unpaid'}
-                    color={ad.is_paid ? 'success' : 'error'}
-                    variant="outlined"
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="textSecondary">
                     Display Location
                   </Typography>
                   <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
                     {ad.display_location === 'detail-page-asidebar' ? 'DetailPage Sidebar' :
                      ad.display_location === 'home-page-asidebar' ? 'HomePage Sidebar' :
-                     ad.display_location.replace('-', ' ')}
+                     ad.display_location === 'homepage_block' ? 'Homepage Block' :
+                     String(ad.display_location).replace('-', ' ')}
                   </Typography>
                 </Grid>
-
-                {ad.payment_date && (
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Payment Date
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <CalendarIcon sx={{ mr: 1, fontSize: 16, color: 'action.active' }} />
-                      <Typography variant="body1">
-                        {formatDate(ad.payment_date, 'display')}
-                      </Typography>
-                    </Box>
-                  </Grid>
-                )}
 
                 {ad.start_at && (
                   <Grid item xs={12}>
@@ -416,48 +418,6 @@ const ADViewPage: React.FC = () => {
               </Grid>
             </CardContent>
           </Card>
-
-          {/* User Information Card */}
-          {ad.user && (
-            <Card sx={{ mt: 3 }}>
-              <CardHeader 
-                title="User Information" 
-                avatar={
-                  <Avatar sx={{ backgroundColor: theme.palette.info.main }}>
-                    <PersonIcon />
-                  </Avatar>
-                }
-              />
-              <CardContent>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Name
-                    </Typography>
-                    <Typography variant="body1">
-                      {ad.user.name}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      Email
-                    </Typography>
-                    <Typography variant="body1">
-                      {ad.user.email}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="textSecondary">
-                      User Type
-                    </Typography>
-                    <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                      {ad.user.user_type}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Media Information Card */}
           {ad.media && (

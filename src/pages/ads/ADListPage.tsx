@@ -78,7 +78,7 @@ const createFilterFields = (): FilterField[] => [
     label: 'Display Location',
     options: [
       { value: 'all', label: 'All Locations' },
-      { value: 'homepage-slider', label: 'Homepage Slider' },
+      { value: 'homepage_block', label: 'Homepage Block' },
       { value: 'home-page-asidebar', label: 'Home Page Sidebar' },
       { value: 'detail-page-asidebar', label: 'Detail Page Sidebar' },
     ],
@@ -203,14 +203,8 @@ const ADListPage: React.FC = () => {
       icon: <BusinessIcon />,
     },
     {
-      title: 'Paid ADs',
-      value: ads.filter(ad => ad.is_paid).length,
-      color: 'primary', // green color
-      icon: <BusinessIcon />,
-    },
-    {
-      title: 'Homepage Slider',
-      value: ads.filter(ad => ad.display_location === 'homepage-slider').length,
+      title: 'Homepage Block',
+      value: ads.filter(ad => ad.display_location === 'homepage_block').length,
       color: 'warning',
       icon: <BusinessIcon />,
     },
@@ -241,11 +235,13 @@ const ADListPage: React.FC = () => {
         return (
           <Box>
             <Typography variant="subtitle2" fontWeight="600">
-              {ad.title_en}
+              {ad.title_en || 'Untitled'}
             </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {ad.title_mm}
-            </Typography>
+            {ad.title_mm && (
+              <Typography variant="caption" color="textSecondary">
+                {ad.title_mm}
+              </Typography>
+            )}
           </Box>
         );
       },
@@ -258,11 +254,13 @@ const ADListPage: React.FC = () => {
         return (
           <Box>
             <Typography variant="body2" noWrap>
-              {ad.description_en}
+              {ad.description_en || 'No description'}
             </Typography>
-            <Typography variant="caption" color="textSecondary" noWrap>
-              {ad.description_mm}
-            </Typography>
+            {ad.description_mm && (
+              <Typography variant="caption" color="textSecondary" noWrap>
+                {ad.description_mm}
+              </Typography>
+            )}
           </Box>
         );
       },
@@ -277,7 +275,8 @@ const ADListPage: React.FC = () => {
           <Typography variant="body2" textTransform="capitalize">
             {ad.display_location === 'detail-page-asidebar' ? 'DetailPage Sidebar' :
              ad.display_location === 'home-page-asidebar' ? 'HomePage Sidebar' :
-             ad.display_location.replace('-', ' ')}
+             ad.display_location === 'homepage_block' ? 'Homepage Block' :
+             String(ad.display_location).replace('-', ' ')}
           </Typography>
         );
       },
@@ -294,46 +293,6 @@ const ADListPage: React.FC = () => {
           />
         );
       },
-    },
-    {
-      id: 'payment',
-      label: 'Payment',
-      render: (_value, ad) => {
-        if (!ad) return <Typography variant="body2">No data</Typography>;
-        return (
-          <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-            <Box
-              component="span"
-              sx={{
-                padding: '4px 8px',
-                borderRadius: '12px',
-                fontSize: '0.75rem',
-                fontWeight: '500',
-                backgroundColor: ad.is_paid ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)', // light green or light red background
-                color: ad.is_paid ? '#4CAF50' : '#F44336', // green or red text
-                border: `1px solid ${ad.is_paid ? '#4CAF50' : '#F44336'}`, // green or red border
-              }}
-            >
-              {ad.is_paid ? 'Paid' : 'Unpaid'}
-            </Box>
-          </Box>
-        );
-      },
-      hidden: isMobile,
-    },
-    {
-      id: 'publishing',
-      label: 'Published',
-      render: (_value, ad) => {
-        if (!ad) return <Typography variant="body2">No data</Typography>;
-        return (
-          <StatusChip 
-            status={ad.is_published ? 'published' : 'draft'} 
-            statusType="verification_status" 
-          />
-        );
-      },
-      hidden: isMobile,
     },
     {
       id: 'createdAt',
@@ -425,11 +384,11 @@ const ADListPage: React.FC = () => {
   // ========================================================================
 
   const handleView = (ad: AD) => {
-    navigate(`/ads/${ad.slug}`);
+    navigate(`/ads/${ad.id}`);
   };
 
   const handleEdit = (ad: AD) => {
-    navigate(`/ads/${ad.slug}/edit`);
+    navigate(`/ads/${ad.id}/edit`);
   };
 
   const handleDelete = (ad: AD) => {
@@ -438,10 +397,10 @@ const ADListPage: React.FC = () => {
 
     openDeleteConfirmation(
       'AD',
-      ad.title_en,
+      ad.title_en || 'Untitled',
       async () => {
         try {
-          await deleteADMutation.mutateAsync(ad.slug);
+          await deleteADMutation.mutateAsync(ad.id);
           showSuccess('AD deleted successfully');
         } catch (error: any) {
           // Extract API response message
@@ -558,16 +517,16 @@ const ADListPage: React.FC = () => {
           {paginatedADs.map((ad: AD) => (
             <MobileCard
               key={ad.id}
-              title={ad.title_en}
-              subtitle={ad.title_mm}
-              description={`${ad.description_en.substring(0, 100)}...`}
+              title={ad.title_en || 'Untitled'}
+              subtitle={ad.title_mm || ''}
+              description={ad.description_en ? `${ad.description_en.substring(0, 100)}...` : 'No description'}
               actions={getMobileCardActions(ad)}
               chips={[
                 { label: ad.display_location === 'detail-page-asidebar' ? 'DetailPage Sidebar' :
                          ad.display_location === 'home-page-asidebar' ? 'HomePage Sidebar' :
-                         ad.display_location.replace('-', ' '), color: 'primary' },
+                         ad.display_location === 'homepage_block' ? 'Homepage Block' :
+                         String(ad.display_location).replace('-', ' '), color: 'primary' },
                 { label: ad.status ? 'Active' : 'Inactive', color: ad.status ? 'primary' : 'default' },
-                { label: ad.is_paid ? 'Paid' : 'Unpaid', color: ad.is_paid ? 'primary' : 'error' },
               ]}
             />
           ))}

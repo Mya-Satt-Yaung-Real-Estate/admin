@@ -9,24 +9,26 @@ import {
   Grid,
   Switch,
   FormControlLabel,
+  Box,
 } from '@mui/material';
 import { FormSection } from '../shared/FormSection';
 
 interface ADsFieldsSectionProps {
   values: {
-    title_en: string;
-    title_mm: string;
-    description_en: string;
-    description_mm: string;
-    link: string;
-    link_type: string;
-    link_text?: string;
+    title_en: string | null;
+    title_mm: string | null;
+    description_en: string | null;
+    description_mm: string | null;
+    link: string | null;
+    link_type: string | null;
+    link_text?: string | null;
+    text_color_code?: string | null;
     price?: number;
     status: boolean;
     is_paid: boolean;
     is_published: boolean;
     display_location: string;
-    payment_date?: string;
+    payment_date?: string | null;
     start_at?: string;
     end_at?: string;
     media_id: number;
@@ -56,8 +58,8 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
             variant="outlined"
             id="title_en"
             name="title_en"
-            label="Title (English) *"
-            value={values.title_en}
+            label="Title (English)"
+            value={values.title_en || ''}
             onChange={handleChange}
             onBlur={handleBlur}
             error={touched.title_en && Boolean(errors.title_en)}
@@ -73,8 +75,8 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
             variant="outlined"
             id="title_mm"
             name="title_mm"
-            label="Title (Myanmar) *"
-            value={values.title_mm}
+            label="Title (Myanmar)"
+            value={values.title_mm || ''}
             onChange={handleChange}
             onBlur={handleBlur}
             error={touched.title_mm && Boolean(errors.title_mm)}
@@ -90,8 +92,8 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
             variant="outlined"
             id="description_en"
             name="description_en"
-            label="Description (English) *"
-            value={values.description_en}
+            label="Description (English)"
+            value={values.description_en || ''}
             onChange={handleChange}
             onBlur={handleBlur}
             error={touched.description_en && Boolean(errors.description_en)}
@@ -109,8 +111,8 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
             variant="outlined"
             id="description_mm"
             name="description_mm"
-            label="Description (Myanmar) *"
-            value={values.description_mm}
+            label="Description (Myanmar)"
+            value={values.description_mm || ''}
             onChange={handleChange}
             onBlur={handleBlur}
             error={touched.description_mm && Boolean(errors.description_mm)}
@@ -128,8 +130,8 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
             variant="outlined"
             id="link"
             name="link"
-            label="Link *"
-            value={values.link}
+            label="Link"
+            value={values.link || ''}
             onChange={handleChange}
             onBlur={handleBlur}
             error={touched.link && Boolean(errors.link)}
@@ -145,15 +147,15 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
             variant="outlined"
             error={touched.link_type && Boolean(errors.link_type)}
           >
-            <InputLabel id="link-type-label">Link Type *</InputLabel>
+            <InputLabel id="link-type-label">Link Type</InputLabel>
             <Select
               labelId="link-type-label"
               id="link_type"
               name="link_type"
-              value={values.link_type}
+              value={values.link_type || ''}
               onChange={(e) => setFieldValue('link_type', e.target.value)}
               onBlur={handleBlur}
-              label="Link Type *"
+              label="Link Type"
             >
               <MenuItem value="button_link">Button Link</MenuItem>
               <MenuItem value="text_link">Text Link</MenuItem>
@@ -180,6 +182,39 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
               error={touched.link_text && Boolean(errors.link_text)}
               helperText={touched.link_text ? errors.link_text : ''}
               placeholder="Explore Now"
+            />
+          </Grid>
+        )}
+
+        {/* Text Color Code */}
+        {(values.link_type === 'button_link' || values.link_type === 'text_link') && (
+          <Grid item xs={12} sm={6}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              id="text_color_code"
+              name="text_color_code"
+              label="Text Color Code"
+              value={values.text_color_code || ''}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.text_color_code && Boolean(errors.text_color_code)}
+              helperText={touched.text_color_code ? errors.text_color_code : 'Hex color code (e.g., #000000)'}
+              placeholder="#000000"
+              InputProps={{
+                startAdornment: values.text_color_code ? (
+                  <Box
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '4px',
+                      backgroundColor: values.text_color_code,
+                      border: '1px solid #ccc',
+                      mr: 1,
+                    }}
+                  />
+                ) : null,
+              }}
             />
           </Grid>
         )}
@@ -222,7 +257,7 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
               onBlur={handleBlur}
               label="Display Location *"
             >
-              <MenuItem value="homepage-slider">Homepage Slider</MenuItem>
+              <MenuItem value="homepage_block">Homepage Block</MenuItem>
               <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
               <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
             </Select>

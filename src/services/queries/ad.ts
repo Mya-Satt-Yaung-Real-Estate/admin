@@ -9,8 +9,7 @@ export const adKeys = {
   lists: () => [...adKeys.all, 'list'] as const,
   list: (params?: QueryParams) => [...adKeys.lists(), params] as const,
   details: () => [...adKeys.all, 'detail'] as const,
-  detail: (id: number) => [...adKeys.details(), id] as const,
-  detailBySlug: (slug: string) => [...adKeys.details(), slug] as const,
+  detail: (id: number | string) => [...adKeys.details(), id] as const,
   statistics: () => [...adKeys.all, 'statistics'] as const,
 };
 
@@ -24,21 +23,11 @@ export const useADs = (params?: ADFilters) => {
 };
 
 // Get single ad by ID
-export const useAD = (id: number) => {
+export const useAD = (id: number | string) => {
   return useQuery({
     queryKey: adKeys.detail(id),
     queryFn: () => adAPI.getAD(id),
     enabled: !!id, // Only run if id exists
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
-
-// Get single ad by slug
-export const useADBySlug = (slug: string) => {
-  return useQuery({
-    queryKey: adKeys.detailBySlug(slug),
-    queryFn: () => adAPI.getADBySlug(slug),
-    enabled: !!slug, // Only run if slug exists
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -72,7 +61,7 @@ export const useUpdateAD = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<ADFormData> }) =>
+    mutationFn: ({ id, data }: { id: number | string; data: Partial<ADFormData> }) =>
       adAPI.updateAD(id, data),
     onSuccess: (_data, variables) => {
       // Invalidate and refetch ads lists
@@ -85,33 +74,15 @@ export const useUpdateAD = () => {
   });
 };
 
-// Update ad by slug
-export const useUpdateADBySlug = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: Partial<ADFormData> }) =>
-      adAPI.updateADBySlug(slug, data),
-    onSuccess: (_data, variables) => {
-      // Invalidate and refetch ads lists
-      queryClient.invalidateQueries({ queryKey: adKeys.lists() });
-      // Invalidate the specific ad to force a fresh fetch
-      queryClient.invalidateQueries({ queryKey: adKeys.detailBySlug(variables.slug) });
-      // Invalidate statistics
-      queryClient.invalidateQueries({ queryKey: adKeys.statistics() });
-    },
-  });
-};
-
 // Delete ad
 export const useDeleteAD = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (slug: string) => adAPI.deleteAD(slug),
-    onSuccess: (_, slug) => {
-      // Remove the specific ad from cache using slug
-      queryClient.removeQueries({ queryKey: adKeys.detailBySlug(slug) });
+    mutationFn: (id: number | string) => adAPI.deleteAD(id),
+    onSuccess: (_, id) => {
+      // Remove the specific ad from cache using id
+      queryClient.removeQueries({ queryKey: adKeys.detail(id) });
       // Invalidate and refetch ads lists
       queryClient.invalidateQueries({ queryKey: adKeys.lists() });
       // Invalidate statistics

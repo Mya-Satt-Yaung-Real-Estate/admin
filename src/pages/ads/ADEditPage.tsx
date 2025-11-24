@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Alert,
   Grid,
   TextField,
   FormControl,
@@ -15,15 +14,23 @@ import {
   FormHelperText,
   Switch,
   FormControlLabel,
+  IconButton,
+  InputAdornment,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, ColorLens as ColorLensIcon } from '@mui/icons-material';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 
 import PageHeader from '../../components/layout/PageHeader';
 import { ActionAlert, LoadingSpinner, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks/useAlertSystem';
-import { useADBySlug, useUpdateADBySlug } from '../../services/queries/ad';
+import { useAD, useUpdateAD } from '../../services/queries/ad';
 import { Media } from '../../types/media';
 import { ADFormData } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -33,20 +40,35 @@ import { FormActions } from '../../components/forms/shared/FormActions';
 // ============================================================================
 
 const validationSchema = Yup.object({
-  title_en: Yup.string().required('English title is required').max(255, 'Title must be less than 255 characters'),
-  title_mm: Yup.string().required('Myanmar title is required').max(255, 'Title must be less than 255 characters'),
-  description_en: Yup.string().required('English description is required'),
-  description_mm: Yup.string().required('Myanmar description is required'),
-  link: Yup.string().url('Must be a valid URL').required('Link is required'),
-  link_type: Yup.string().oneOf(['button_link', 'text_link', 'image_link']).required('Link type is required'),
-  display_location: Yup.string().oneOf(['homepage-slider', 'home-page-asidebar', 'detail-page-asidebar']).required('Display location is required'),
+  title_en: Yup.string().nullable().max(255, 'Title must be less than 255 characters'),
+  title_mm: Yup.string().nullable().max(255, 'Title must be less than 255 characters'),
+  description_en: Yup.string().nullable(),
+  description_mm: Yup.string().nullable(),
+  link: Yup.string()
+    .nullable()
+    .test('url', 'Must be a valid URL', function(value) {
+      if (!value || value.length === 0) return true; // Allow empty/null
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }),
+  link_type: Yup.string().nullable().oneOf(['button_link', 'text_link', 'image_link']),
+  display_location: Yup.string().oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar']).required('Display location is required'),
   media_id: Yup.number().required('Media ID is required').positive('Media ID must be a positive number'),
-  // Add conditional validation for link_text based on link_type
-  link_text: Yup.string().when('link_type', {
-    is: (link_type: string) => link_type === 'button_link' || link_type === 'text_link',
-    then: (schema) => schema.required('Link text is required for button and text links'),
+  // Link text is required if link has value and link_type is not image_link
+  link_text: Yup.string().nullable().when(['link', 'link_type'], {
+    is: (link: string, link_type: string) => 
+      link && link.length > 0 && link_type && link_type !== 'image_link',
+    then: (schema) => schema.required('Link text is required when link is provided and link type is not image link'),
     otherwise: (schema) => schema.nullable(),
   }),
+  text_color_code: Yup.string()
+    .nullable()
+    .matches(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color code (e.g., #000000)'),
+  payment_date: Yup.string().nullable(),
 });
 
 // ============================================================================
@@ -54,32 +76,53 @@ const validationSchema = Yup.object({
 // ============================================================================
 
 const ADEditPage: React.FC = () => {
-  const { slug } = useParams<{ slug?: string }>();
-  const typedSlug = slug || '';
+  const { id } = useParams<{ id?: string }>();
+  const typedId = id || '';
   const navigate = useNavigate();
   const [uploadedImage, setUploadedImage] = useState<Media | null>(null);
   const [originalMediaId, setOriginalMediaId] = useState<number | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [tempColor, setTempColor] = useState<string>('');
+  const [formikSetFieldValue, setFormikSetFieldValue] = useState<((field: string, value: any) => void) | null>(null);
   const { alert, showError, clearAlert } = useAlertSystem();
 
   // Fetch AD details
-  const { data: ad, isLoading: isLoadingAD } = useADBySlug(typedSlug);
+  const { data: ad, isLoading: isLoadingAD } = useAD(typedId);
 
   // Update AD mutation
-  const updateADMutation = useUpdateADBySlug();
+  const updateADMutation = useUpdateAD();
 
   // Upload Media Mutation (currently unused but kept for future functionality)
   // const uploadMediaMutation = useUploadMedia();
 
-  // Ensure slug exists before proceeding
-  if (!typedSlug) {
-    return <ActionAlert error={{ show: true, message: "AD slug is required" }} />;
+  // Ensure id exists before proceeding
+  if (!typedId) {
+    return <ActionAlert error={{ show: true, message: "AD id is required" }} />;
   }
 
   // Initialize uploaded image from AD data when it loads
   useEffect(() => {
     if (!ad || !ad.data) return; // Early return if ad or ad.data is undefined
 
-    if (ad.data.media) {
+    // Check for images (singular object) first - this is the current API response format
+    if ((ad.data as any)?.images && typeof (ad.data as any).images === 'object' && !Array.isArray((ad.data as any).images)) {
+      const image: any = (ad.data as any).images;
+      const mediaObj: Media = {
+        id: image.id || 0,
+        type: image.type || 'image',
+        filename: image.filename || `AD Image ${ad.data.id}`,
+        size: image.size || 0,
+        formatted_size: image.formatted_size || 'N/A',
+        mime_type: image.mime_type || 'image/jpeg',
+        is_primary: image.is_primary ?? true,
+        status: image.status || 'completed',
+        url: image.url || '',
+        created_at: image.created_at || ad.data.created_at || new Date().toISOString(),
+      };
+      setUploadedImage(mediaObj);
+      setOriginalMediaId(mediaObj.id);
+    } else if (ad.data.media) {
       // Ensure the media object has all required Media properties
       const completeMedia: Media = {
         id: ad.data.media.id || 0,
@@ -96,8 +139,7 @@ const ADEditPage: React.FC = () => {
       setUploadedImage(completeMedia);
       setOriginalMediaId(completeMedia.id);
     } else if ((ad.data as any)?.image && Array.isArray((ad.data as any).image) && (ad.data as any).image.length > 0) {
-      // Handle case where API returns image array (as per your API response)
-      // Find primary image if available, otherwise use the first image
+      // Handle case where API returns image array
       const imageArray: any[] = (ad.data as any).image;
       const primaryImage = imageArray.find((img: any) => img.is_primary);
       const imageToUse = primaryImage || imageArray[0];
@@ -163,9 +205,26 @@ const ADEditPage: React.FC = () => {
 
   const adData = ad.data;
 
+  // Helper function to format ISO date string to YYYY-MM-DD for date inputs
+  const formatDateForInput = (dateString: string | null | undefined): string => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      return '';
+    }
+  };
+
   // Get the correct media_id from image data if available
   let effectiveMediaId = adData.media_id;
-  if (adData.media) {
+  if ((adData as any)?.images && typeof (adData as any).images === 'object' && !Array.isArray((adData as any).images)) {
+    // Check for images (singular object) first - this is the current API response format
+    effectiveMediaId = (adData as any).images.id;
+  } else if (adData.media) {
     effectiveMediaId = adData.media.id;
   } else if ((adData as any).image && Array.isArray((adData as any).image) && (adData as any).image.length > 0) {
     const primaryImage = (adData as any).image.find((img: any) => img.is_primary);
@@ -183,14 +242,15 @@ const ADEditPage: React.FC = () => {
     link: adData.link || '',
     link_type: adData.link_type || 'button_link',
     link_text: adData.link_text || '',
+    text_color_code: adData.text_color_code || '',
     price: adData.price || 0,
     status: adData.status || false,
     is_paid: adData.is_paid || false,
     is_published: adData.is_published || false,
-    display_location: adData.display_location || 'homepage-slider',
+    display_location: adData.display_location || 'homepage_block',
     payment_date: adData.payment_date || '',
-    start_at: adData.start_at || '',
-    end_at: adData.end_at || '',
+    start_at: formatDateForInput(adData.start_at),
+    end_at: formatDateForInput(adData.end_at),
     media_id: effectiveMediaId,
   };
 
@@ -199,43 +259,33 @@ const ADEditPage: React.FC = () => {
       console.log('🚀 AD form submission started');
       console.log('📝 Form values:', values);
 
-      // Generate slug from English title
-      const newSlug = values.title_en
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '') // Remove special characters
-        .replace(/[\s_-]+/g, '-') // Replace spaces, underscores, multiple hyphens with single hyphen
-        .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
-
       // Prepare media ID - if new image was uploaded, use new image ID; otherwise use original media_id
       // Ensure that we never use an invalid media_id (like the default fallback of 1)
       const mediaId = (uploadedImage && uploadedImage?.id !== originalMediaId) ? uploadedImage?.id :
                      (values.media_id > 0 ? values.media_id : originalMediaId);
 
-      // Prepare AD data (exclude id since we're using slug for update)
+      // Prepare AD data
       const adData: Partial<ADFormData> = {
         ...values,
-        slug: newSlug,
         media_id: mediaId,
       };
 
       console.log('📦 AD data to submit:', adData);
       console.log('🔄 Calling update mutation...');
 
-      // Ensure slug is available before making API call
-      if (!slug) {
-        throw new Error('AD slug is required for update operation');
+      // Ensure id is available before making API call
+      if (!typedId) {
+        throw new Error('AD id is required for update operation');
       }
 
       await updateADMutation.mutateAsync({
-        slug: slug, // Use the original slug from URL to identify the AD to update
+        id: typedId, // Use the id from URL to identify the AD to update
         data: adData
       });
 
       console.log('✅ AD updated successfully');
       // Navigate to AD detail page with success message
-      // Since we're updating with slug, we can navigate using the generated slug
-      navigate(`/ads/${newSlug || slug}?success=${encodeURIComponent('AD updated successfully!')}`);
+      navigate(`/ads/${typedId}?success=${encodeURIComponent('AD updated successfully!')}`);
     } catch (error: any) {
       console.error('❌ Error updating AD:', error);
 
@@ -294,6 +344,11 @@ const ADEditPage: React.FC = () => {
         enableReinitialize={true}
       >
         {({ values, errors, touched, handleChange, setFieldValue, handleSubmit }) => {
+          // Store setFieldValue for use in Dialog
+          useEffect(() => {
+            setFormikSetFieldValue(() => setFieldValue);
+          }, [setFieldValue]);
+
           // Handle image upload inside Formik context to access setFieldValue
           const handleImageUpload = (media: Media) => {
             // Ensure the media object has all required Media properties when received from SingleImageUpload
@@ -334,6 +389,88 @@ const ADEditPage: React.FC = () => {
                 <Card>
                   <CardContent>
                     <Grid container spacing={3}>
+
+                      {/* Display Location */}
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth variant="outlined">
+                          <InputLabel id="display_location-label">Display Location *</InputLabel>
+                          <Select
+                            labelId="display_location-label"
+                            id="display_location"
+                            name="display_location"
+                            value={values.display_location}
+                            onChange={handleChange}
+                            onBlur={() => {}}
+                            label="Display Location *"
+                            error={touched.display_location && Boolean(errors.display_location)}
+                          >
+                            <MenuItem value="homepage_block">Homepage Block</MenuItem>
+                            <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
+                            <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+                          </Select>
+                          {touched.display_location && errors.display_location && (
+                            <FormHelperText error>
+                              {errors.display_location as string}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
+                      </Grid>
+
+                      {/* Status Switches */}
+                      <Grid item xs={12} sm={6}>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              id="status"
+                              name="status"
+                              checked={Boolean(values.status)}
+                              onChange={(e) => setFieldValue('status', e.target.checked)}
+                            />
+                          }
+                          label="Status (Active/Inactive)"
+                        />
+                      </Grid>
+
+                      {/* Date Fields */}
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          id="start_at"
+                          name="start_at"
+                          label="Start Date *"
+                          type="date"
+                          value={values.start_at || ''}
+                          onChange={handleChange}
+                          onBlur={() => {}}
+                          error={touched.start_at && Boolean(errors.start_at)}
+                          helperText={touched.start_at ? errors.start_at : ''}
+                          required
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          id="end_at"
+                          name="end_at"
+                          label="End Date *"
+                          type="date"
+                          value={values.end_at || ''}
+                          onChange={handleChange}
+                          onBlur={() => {}}
+                          error={touched.end_at && Boolean(errors.end_at)}
+                          helperText={touched.end_at ? errors.end_at : ''}
+                          required
+                          InputLabelProps={{
+                            shrink: true,
+                          }}
+                        />
+                      </Grid>
+
                       {/* Title Fields */}
                       <Grid item xs={12} sm={6}>
                         <TextField
@@ -341,10 +478,10 @@ const ADEditPage: React.FC = () => {
                           variant="outlined"
                           id="title_en"
                           name="title_en"
-                          label="Title (English) *"
-                          value={values.title_en}
+                          label="Title (English)"
+                          value={values.title_en || ''}
                           onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
+                          onBlur={() => {}}
                           error={touched.title_en && Boolean(errors.title_en)}
                           helperText={touched.title_en ? errors.title_en : ''}
                           placeholder="Enter English title"
@@ -356,10 +493,10 @@ const ADEditPage: React.FC = () => {
                           variant="outlined"
                           id="title_mm"
                           name="title_mm"
-                          label="Title (Myanmar) *"
-                          value={values.title_mm}
+                          label="Title (Myanmar)"
+                          value={values.title_mm || ''}
                           onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
+                          onBlur={() => {}}
                           error={touched.title_mm && Boolean(errors.title_mm)}
                           helperText={touched.title_mm ? errors.title_mm : ''}
                           placeholder="မြန်မာဘာသာ ခေါင်းစီးပိုင်းထည့်ပါ"
@@ -373,10 +510,10 @@ const ADEditPage: React.FC = () => {
                           variant="outlined"
                           id="description_en"
                           name="description_en"
-                          label="Description (English) *"
-                          value={values.description_en}
+                          label="Description (English)"
+                          value={values.description_en || ''}
                           onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
+                          onBlur={() => {}}
                           error={touched.description_en && Boolean(errors.description_en)}
                           helperText={touched.description_en ? errors.description_en : ''}
                           multiline
@@ -390,10 +527,10 @@ const ADEditPage: React.FC = () => {
                           variant="outlined"
                           id="description_mm"
                           name="description_mm"
-                          label="Description (Myanmar) *"
-                          value={values.description_mm}
+                          label="Description (Myanmar)"
+                          value={values.description_mm || ''}
                           onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
+                          onBlur={() => {}}
                           error={touched.description_mm && Boolean(errors.description_mm)}
                           helperText={touched.description_mm ? errors.description_mm : ''}
                           multiline
@@ -409,26 +546,27 @@ const ADEditPage: React.FC = () => {
                           variant="outlined"
                           id="link"
                           name="link"
-                          label="Link *"
-                          value={values.link}
+                          label="Link"
+                          value={values.link || ''}
                           onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
+                          onBlur={() => {}}
                           error={touched.link && Boolean(errors.link)}
                           helperText={touched.link ? errors.link : ''}
                           placeholder="https://example.com"
                         />
                       </Grid>
+
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth variant="outlined">
-                          <InputLabel id="link_type-label">Link Type *</InputLabel>
+                          <InputLabel id="link_type-label">Link Type</InputLabel>
                           <Select
                             labelId="link_type-label"
                             id="link_type"
                             name="link_type"
-                            value={values.link_type}
+                            value={values.link_type || ''}
                             onChange={handleChange}
-                            onBlur={() => {}} // Placeholder for edit page
-                            label="Link Type *"
+                            onBlur={() => {}}
+                            label="Link Type"
                             error={touched.link_type && Boolean(errors.link_type)}
                           >
                             <MenuItem value="button_link">Button Link</MenuItem>
@@ -442,6 +580,7 @@ const ADEditPage: React.FC = () => {
                           )}
                         </FormControl>
                       </Grid>
+                      
                       <Grid item xs={12} sm={6}>
                         <TextField
                           fullWidth
@@ -451,155 +590,116 @@ const ADEditPage: React.FC = () => {
                           label="Link Text"
                           value={values.link_text || ''}
                           onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
+                          onBlur={() => {}}
                           error={touched.link_text && Boolean(errors.link_text)}
-                          helperText={touched.link_text ? errors.link_text : 'Required for button and text links'}
+                          helperText={touched.link_text ? errors.link_text : ''}
                         />
                       </Grid>
 
-                      {/* Link Type and Price */}
-                      
                       <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          id="price"
-                          name="price"
-                          label="Price"
-                          type="number"
-                          value={values.price || ''}
-                          onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
-                          error={touched.price && Boolean(errors.price)}
-                          helperText={touched.price ? errors.price : ''}
-                          placeholder="0"
-                          InputProps={{
-                            inputProps: { min: 0 }
-                          }}
-                        />
-                      </Grid>
-
-                      {/* Display Location */}
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth variant="outlined">
-                          <InputLabel id="display_location-label">Display Location *</InputLabel>
-                          <Select
-                            labelId="display_location-label"
-                            id="display_location"
-                            name="display_location"
-                            value={values.display_location}
-                            onChange={handleChange}
-                            onBlur={() => {}} // Placeholder for edit page
-                            label="Display Location *"
-                            error={touched.display_location && Boolean(errors.display_location)}
-                          >
-                            <MenuItem value="homepage-slider">Homepage Slider</MenuItem>
-                            <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
-                            <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
-                          </Select>
-                          {touched.display_location && errors.display_location && (
-                            <FormHelperText error>
-                              {errors.display_location as string}
-                            </FormHelperText>
+                        <Box>
+                          <TextField
+                            fullWidth
+                            variant="outlined"
+                            id="text_color_code"
+                            name="text_color_code"
+                            label="Text Color Code"
+                            value={values.text_color_code || ''}
+                            onChange={(e) => {
+                              // Ensure value starts with # and is valid hex
+                              let value = e.target.value;
+                              if (value && !value.startsWith('#')) {
+                                value = '#' + value;
+                              }
+                              // Limit to 7 characters (# + 6 hex digits)
+                              if (value.length > 7) {
+                                value = value.substring(0, 7);
+                              }
+                              setFieldValue('text_color_code', value);
+                            }}
+                            onBlur={() => {}}
+                            error={touched.text_color_code && Boolean(errors.text_color_code)}
+                            helperText={touched.text_color_code ? errors.text_color_code : 'Hex color code (e.g., #000000)'}
+                            placeholder="#000000"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Box
+                                    sx={{
+                                      width: 32,
+                                      height: 32,
+                                      borderRadius: '4px',
+                                      backgroundColor: values.text_color_code || '#ffffff',
+                                      border: '2px solid',
+                                      borderColor: values.text_color_code ? 'transparent' : '#ccc',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      mr: 1,
+                                      boxShadow: values.text_color_code ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
+                                    }}
+                                  />
+                                </InputAdornment>
+                              ),
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <Tooltip title="Pick a color">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => {
+                                        setTempColor(values.text_color_code || '#000000');
+                                        setColorPickerOpen(true);
+                                      }}
+                                      sx={{
+                                        color: values.text_color_code || 'inherit',
+                                        '&:hover': {
+                                          backgroundColor: 'action.hover',
+                                        },
+                                      }}
+                                    >
+                                      <ColorLensIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
+                          {values.text_color_code && (
+                            <Box
+                              sx={{
+                                mt: 1,
+                                p: 1.5,
+                                borderRadius: 1,
+                                backgroundColor: 'grey.50',
+                                border: '1px solid',
+                                borderColor: 'grey.300',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: '4px',
+                                  backgroundColor: values.text_color_code,
+                                  border: '2px solid',
+                                  borderColor: 'grey.300',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                }}
+                              />
+                              <Box>
+                                <Typography variant="caption" color="textSecondary">
+                                  Preview
+                                </Typography>
+                                <Typography variant="body2" fontWeight="medium">
+                                  {values.text_color_code}
+                                </Typography>
+                              </Box>
+                            </Box>
                           )}
-                        </FormControl>
-                      </Grid>
-
-                      {/* Date Fields */}
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          id="payment_date"
-                          name="payment_date"
-                          label="Payment Date"
-                          type="date"
-                          value={values.payment_date || ''}
-                          onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
-                          error={touched.payment_date && Boolean(errors.payment_date)}
-                          helperText={touched.payment_date ? errors.payment_date : ''}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          id="start_at"
-                          name="start_at"
-                          label="Start Date"
-                          type="date"
-                          value={values.start_at || ''}
-                          onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
-                          error={touched.start_at && Boolean(errors.start_at)}
-                          helperText={touched.start_at ? errors.start_at : ''}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField
-                          fullWidth
-                          variant="outlined"
-                          id="end_at"
-                          name="end_at"
-                          label="End Date"
-                          type="date"
-                          value={values.end_at || ''}
-                          onChange={handleChange}
-                          onBlur={() => {}} // Placeholder for edit page
-                          error={touched.end_at && Boolean(errors.end_at)}
-                          helperText={touched.end_at ? errors.end_at : ''}
-                          InputLabelProps={{
-                            shrink: true,
-                          }}
-                        />
-                      </Grid>
-
-                      {/* Status Switches */}
-                      <Grid item xs={12} sm={4}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              id="status"
-                              name="status"
-                              checked={Boolean(values.status)}
-                              onChange={(e) => setFieldValue('status', e.target.checked)}
-                            />
-                          }
-                          label="Status (Active/Inactive)"
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              id="is_paid"
-                              name="is_paid"
-                              checked={Boolean(values.is_paid)}
-                              onChange={(e) => setFieldValue('is_paid', e.target.checked)}
-                            />
-                          }
-                          label="Paid"
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              id="is_published"
-                              name="is_published"
-                              checked={Boolean(values.is_published)}
-                              onChange={(e) => setFieldValue('is_published', e.target.checked)}
-                            />
-                          }
-                          label="Published"
-                        />
+                        </Box>
                       </Grid>
                     </Grid>
                   </CardContent>
@@ -608,27 +708,11 @@ const ADEditPage: React.FC = () => {
 
               {/* Right Column */}
               <Grid item xs={12} lg={4}>
-                {/* Information Card */}
-                <Card sx={{ mb: 2 }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      AD Information
-                    </Typography>
-                    <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mb: 2 }} />
-
-                    <Alert severity="info">
-                      <Typography variant="body2">
-                        ADs can be displayed in three locations: homepage slider, home page sidebar, and detail page sidebar. Each location has different limits.
-                      </Typography>
-                    </Alert>
-                  </CardContent>
-                </Card>
-
                 {/* Image Upload */}
                 <Card sx={{ mb: 2 }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom>
-                      AD Image
+                      AD Image *
                     </Typography>
                     <Box sx={{ borderTop: 1, borderColor: 'divider', pt: 2, mb: 2 }} />
 
@@ -636,10 +720,13 @@ const ADEditPage: React.FC = () => {
                       uploadedImage={uploadedImage}
                       onImageUpload={handleImageUpload}
                       onImageDelete={handleImageDeleteInFormik}
-                      onUploadStart={() => console.log('Upload started')}
+                      onUploadStart={() => setIsUploadingImage(true)}
                       onUploadProgress={(uploaded, total) => console.log(`Uploaded: ${uploaded}/${total}`)}
-                      onUploadComplete={() => console.log('Upload completed')}
-                      onUploadError={(error) => showError(error)}
+                      onUploadComplete={() => setIsUploadingImage(false)}
+                      onUploadError={(error) => {
+                        setIsUploadingImage(false);
+                        showError(error);
+                      }}
                     />
                   </CardContent>
                 </Card>
@@ -650,7 +737,7 @@ const ADEditPage: React.FC = () => {
                   onCancel={() => navigate('/ads')}
                   submitText={updateADMutation.isPending ? "Updating AD..." : "Update AD"}
                   isSubmitting={updateADMutation.isPending}
-                  isDisabled={updateADMutation.isPending}
+                  isDisabled={updateADMutation.isPending || isUploadingImage}
                 />
               </Grid>
             </Grid>
@@ -658,6 +745,108 @@ const ADEditPage: React.FC = () => {
         );
       }}
       </Formik>
+
+      {/* Color Picker Dialog */}
+      <Dialog
+        open={colorPickerOpen}
+        onClose={() => setColorPickerOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle>Pick a Color</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 2 }}>
+            {/* Large Color Preview */}
+            <Box
+              sx={{
+                width: 200,
+                height: 200,
+                borderRadius: 2,
+                backgroundColor: tempColor || '#000000',
+                border: '3px solid',
+                borderColor: 'grey.300',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  color: tempColor && tempColor !== '#000000' ? '#000000' : '#ffffff',
+                  fontWeight: 'bold',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                {tempColor || '#000000'}
+              </Typography>
+            </Box>
+
+            {/* Native Color Picker */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%' }}>
+              <input
+                type="color"
+                value={tempColor || '#000000'}
+                onChange={(e) => setTempColor(e.target.value)}
+                style={{
+                  width: '100%',
+                  height: 60,
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                }}
+              />
+              
+              {/* Manual Hex Input */}
+              <TextField
+                fullWidth
+                label="Hex Color Code"
+                value={tempColor || ''}
+                onChange={(e) => {
+                  let value = e.target.value;
+                  if (value && !value.startsWith('#')) {
+                    value = '#' + value;
+                  }
+                  if (value.length > 7) {
+                    value = value.substring(0, 7);
+                  }
+                  setTempColor(value);
+                }}
+                placeholder="#000000"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography variant="body2" color="textSecondary">#</Typography>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setColorPickerOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (formikSetFieldValue) {
+                formikSetFieldValue('text_color_code', tempColor || '');
+              }
+              setColorPickerOpen(false);
+            }}
+          >
+            Apply
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

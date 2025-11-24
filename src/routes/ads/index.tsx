@@ -33,7 +33,7 @@ export const adsRoutes = [
   },
   // AD Detail Page
   {
-    path: '/ads/:slug',
+    path: '/ads/:id',
     element: (
       <AdminLayout>
         <Suspense fallback={<PageLoader />}>
@@ -44,7 +44,7 @@ export const adsRoutes = [
   },
   // AD Edit Page
   {
-    path: '/ads/:slug/edit',
+    path: '/ads/:id/edit',
     element: (
       <AdminLayout>
         <Suspense fallback={<PageLoader />}>
