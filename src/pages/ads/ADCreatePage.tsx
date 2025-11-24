@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Alert,
 } from '@mui/material';
 import { ColorLens as ColorLensIcon } from '@mui/icons-material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
@@ -569,6 +570,24 @@ const ADCreatePage: React.FC = () => {
                     showError(error);
                   }}
                 />
+                
+                {/* Image Size Warning Based on Display Location */}
+                {formik.values.display_location && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      {formik.values.display_location === 'home-page-asidebar' && (
+                        <>Recommended image size: <strong>1920 x 1080 pixels (16:9 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                      )}
+                      {formik.values.display_location === 'homepage_block' && (
+                        <>Recommended image size: <strong>400-450 x 160 pixels (2.5:1 to 2.8:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                      )}
+                      {formik.values.display_location === 'detail-page-asidebar' && (
+                        <>Recommended image size: <strong>400 x 160 pixels (2.5:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                      )}
+                    </Typography>
+                  </Alert>
+                )}
+                
                 {formik.touched.media_id && formik.errors.media_id && (
                   <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
                     {formik.errors.media_id}
