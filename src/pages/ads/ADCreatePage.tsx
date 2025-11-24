@@ -346,8 +346,8 @@ const ADCreatePage: React.FC = () => {
                         error={formik.touched.display_location && Boolean(formik.errors.display_location)}
                       >
                         <MenuItem value="homepage-slider">Homepage Slider</MenuItem>
-                        <MenuItem value="home-page-aside">Home Page Sidebar</MenuItem>
-                        <MenuItem value="detail-page-aside">Detail Page Sidebar</MenuItem>
+                        <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
+                        <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
                       </Select>
                       {formik.touched.display_location && formik.errors.display_location && (
                         <FormHelperText error>
