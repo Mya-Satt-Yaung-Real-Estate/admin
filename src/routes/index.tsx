@@ -38,6 +38,7 @@ import { announcementRoutes } from './announcements';
 import { lawyerRoutes } from './lawyers';
 import { contactUsRoutes } from './contact-us';
 import { wantingListRoutes } from './wanted-listings';
+import { adsRoutes } from './ads';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -79,6 +80,7 @@ export const router = createBrowserRouter([
     ...lawyerRoutes,
     ...contactUsRoutes,
     ...wantingListRoutes,
+    ...adsRoutes,
 
   // Catch-all route
   {

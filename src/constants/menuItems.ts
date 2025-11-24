@@ -20,6 +20,19 @@ export const MENU_ITEMS = [
     iconName: 'Campaign',
     path: '/advertisements',
   },
+
+  {
+    text: 'ADs',
+    iconName: 'ADS',
+    children: [
+      {
+        text: 'All ADs',
+        iconName: 'Campaign',
+        path: '/ads',
+      },
+    ],
+  },
+      
   {
     text: 'Events',
     iconName: 'EventNote',
