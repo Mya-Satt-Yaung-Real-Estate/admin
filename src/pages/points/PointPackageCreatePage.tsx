@@ -81,8 +81,8 @@ const PointPackageCreatePage: React.FC = () => {
       newErrors.price_mmk = 'Price is required';
     } else {
       const price = parseInt(formData.price_mmk);
-      if (isNaN(price) || price < 1000) {
-        newErrors.price_mmk = 'Price must be at least 1,000 MMK';
+      if (isNaN(price) || price < 500) {
+        newErrors.price_mmk = 'Price must be at least 500 MMK';
       } else if (price > 10000000) {
         newErrors.price_mmk = 'Price cannot exceed 10,000,000 MMK';
       }
@@ -228,7 +228,7 @@ const PointPackageCreatePage: React.FC = () => {
                 helperText={errors.price_mmk}
                 required
                 placeholder="Enter price in MMK"
-                inputProps={{ min: 1000, max: 10000000 }}
+                inputProps={{ min: 500, max: 10000000 }}
               />
             </Grid>
 
