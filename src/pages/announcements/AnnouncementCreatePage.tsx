@@ -15,13 +15,22 @@ import {
   Typography,
   Autocomplete,
   Chip,
+  Radio,
+  RadioGroup,
+  FormLabel,
 } from '@mui/material';
 import {
-  Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
   Notifications as NotificationIcon,
   Group as GroupIcon,
+  Schedule as ScheduleIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
+import { DateTimePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { Dayjs } from 'dayjs';
+import { getMyanmarTime, toMyanmarTime, myanmarTimeToUTC } from '../../utils/dayjs';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { PageLoadingState, ActionAlert } from '../../components/ui';
@@ -41,6 +50,8 @@ interface CreateFormData {
   title: string;
   body: string;
   selectedUsers: any[];
+  sendType: 'immediate' | 'scheduled';
+  scheduledDateTime: Dayjs | null;
 }
 
 interface FormErrors {
@@ -50,6 +61,8 @@ interface FormErrors {
   title?: string;
   body?: string;
   selectedUsers?: string;
+  sendType?: string;
+  scheduledDateTime?: string;
 }
 
 // ============================================================================
@@ -67,6 +80,8 @@ const AnnouncementCreatePage: React.FC = () => {
     title: '',
     body: '',
     selectedUsers: [],
+    sendType: 'immediate',
+    scheduledDateTime: null,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -116,7 +131,6 @@ const AnnouncementCreatePage: React.FC = () => {
   };
 
   const handleUserChange = (users: any[]) => {
-    console.log('Selected users:', users);
     setFormData(prev => ({
       ...prev,
       selectedUsers: users,
@@ -146,6 +160,14 @@ const AnnouncementCreatePage: React.FC = () => {
       newErrors.selectedUsers = 'Please select at least one user or enable "All Users"';
     }
 
+    if (formData.sendType === 'scheduled') {
+      if (!formData.scheduledDateTime) {
+        newErrors.scheduledDateTime = 'Scheduled date and time is required';
+      } else if (formData.scheduledDateTime.isBefore(getMyanmarTime())) {
+        newErrors.scheduledDateTime = 'Scheduled date and time must be in the future';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -164,11 +186,18 @@ const AnnouncementCreatePage: React.FC = () => {
         user_ids: formData.all_users ? [] : formData.user_ids,
         title: formData.title.trim(),
         body: formData.body.trim(),
+        scheduled_at: formData.sendType === 'scheduled' && formData.scheduledDateTime
+          ? myanmarTimeToUTC(formData.scheduledDateTime).toISOString()
+          : undefined,
       };
 
       const response = await createMutation.mutateAsync(payload);
       
-      showSuccess(response.message || 'Announcement created successfully!');
+      const successMessage = formData.sendType === 'scheduled'
+        ? `Announcement scheduled for ${formData.scheduledDateTime?.format('MMM DD, YYYY [at] hh:mm A')} (Myanmar Time)`
+        : 'Announcement sent successfully!';
+      
+      showSuccess(response.message || successMessage);
       
       // Redirect to announcements list after a short delay
       setTimeout(() => {
@@ -231,9 +260,13 @@ const AnnouncementCreatePage: React.FC = () => {
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
-      <Paper sx={{ p: 3 }}>
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
+      <LocalizationProvider 
+        dateAdapter={AdapterDayjs} 
+        adapterLocale="en"
+      >
+        <Paper sx={{ p: 3 }}>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
             {/* Announcement Type */}
             <Grid item xs={12} md={6}>
               <FormControl fullWidth error={!!errors.announcement_type}>
@@ -363,6 +396,99 @@ const AnnouncementCreatePage: React.FC = () => {
               />
             </Grid>
 
+            {/* Send Type Selection */}
+            <Grid item xs={12}>
+              <FormControl component="fieldset" fullWidth>
+                <FormLabel component="legend" sx={{ mb: 2 }}>
+                  Send Options
+                </FormLabel>
+                <RadioGroup
+                  row
+                  value={formData.sendType}
+                  onChange={(e) => {
+                    handleInputChange('sendType', e.target.value);
+                    if (e.target.value === 'immediate') {
+                      handleInputChange('scheduledDateTime', null);
+                    }
+                  }}
+                >
+                  <FormControlLabel
+                    value="immediate"
+                    control={<Radio />}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <SendIcon sx={{ fontSize: 18 }} />
+                        <Typography>Send Immediately</Typography>
+                      </Box>
+                    }
+                  />
+                  <FormControlLabel
+                    value="scheduled"
+                    control={<Radio />}
+                    label={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ScheduleIcon sx={{ fontSize: 18 }} />
+                        <Typography>Schedule for Later</Typography>
+                      </Box>
+                    }
+                  />
+                </RadioGroup>
+              </FormControl>
+            </Grid>
+
+            {/* Scheduled Date/Time Picker - Only show if scheduled is selected */}
+            {formData.sendType === 'scheduled' && (
+              <Grid item xs={12} md={6}>
+                <DateTimePicker
+                  label="Schedule Date & Time * (Myanmar Time)"
+                  value={formData.scheduledDateTime}
+                  onChange={(newValue: any) => {
+                    // Convert to Myanmar timezone if needed
+                    const myanmarTime = newValue ? toMyanmarTime(newValue) : null;
+                    handleInputChange('scheduledDateTime', myanmarTime);
+                    if (errors.scheduledDateTime) {
+                      setErrors(prev => ({
+                        ...prev,
+                        scheduledDateTime: undefined
+                      }));
+                    }
+                  }}
+                  minDateTime={getMyanmarTime()}
+                  timezone="Asia/Yangon"
+                  format="YYYY-MM-DD HH:mm"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      error: !!errors.scheduledDateTime,
+                      helperText: errors.scheduledDateTime || 'Select a future date and time',
+                    },
+                  }}
+                />
+              </Grid>
+            )}
+
+            {/* Schedule Preview */}
+            {formData.sendType === 'scheduled' && formData.scheduledDateTime && !errors.scheduledDateTime && (
+              <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 1,
+                    backgroundColor: 'primary.50',
+                  }}
+                >
+                  <Typography variant="subtitle2" color="primary" gutterBottom>
+                    Scheduled Send Time
+                  </Typography>
+                  <Typography variant="body1" fontWeight="500">
+                    {formData.scheduledDateTime.format('MMMM DD, YYYY [at] hh:mm A')} (Myanmar Time)
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+
             {/* Submit Button */}
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
@@ -376,16 +502,20 @@ const AnnouncementCreatePage: React.FC = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  startIcon={<SaveIcon />}
+                  startIcon={formData.sendType === 'scheduled' ? <ScheduleIcon /> : <SendIcon />}
                   disabled={createMutation.isPending}
                 >
-                  {createMutation.isPending ? 'Creating...' : 'Create Announcement'}
+                  {createMutation.isPending
+                    ? (formData.sendType === 'scheduled' ? 'Scheduling...' : 'Sending...')
+                    : (formData.sendType === 'scheduled' ? 'Schedule Announcement' : 'Send Announcement')
+                  }
                 </Button>
               </Box>
             </Grid>
           </Grid>
         </form>
       </Paper>
+      </LocalizationProvider>
     </Box>
   );
 };

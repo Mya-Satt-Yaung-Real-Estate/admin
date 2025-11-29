@@ -107,3 +107,49 @@ export const useSendAnnouncement = () => {
   });
 };
 
+// Update schedule for a scheduled announcement
+export const useUpdateAnnouncementSchedule = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, scheduled_at }: { id: number; scheduled_at: string }) =>
+      announcementsAPI.updateSchedule(id, scheduled_at),
+    onSuccess: (_data, variables) => {
+      // Invalidate and refetch announcements lists
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+      // Invalidate the specific announcement to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: announcementKeys.detail(variables.id) });
+    },
+  });
+};
+
+// Cancel a scheduled announcement
+export const useCancelAnnouncement = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => announcementsAPI.cancel(id),
+    onSuccess: (_data, id) => {
+      // Invalidate and refetch announcements lists
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+      // Invalidate the specific announcement to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: announcementKeys.detail(id) });
+    },
+  });
+};
+
+// Resend a failed announcement
+export const useResendAnnouncement = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => announcementsAPI.resend(id),
+    onSuccess: (_data, id) => {
+      // Invalidate and refetch announcements lists
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+      // Invalidate the specific announcement to force a fresh fetch
+      queryClient.invalidateQueries({ queryKey: announcementKeys.detail(id) });
+    },
+  });
+};
+

@@ -16,6 +16,10 @@ import {
   Refresh as RefreshIcon,
   Person as PersonIcon,
   Group as GroupIcon,
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -28,7 +32,7 @@ import { usePagination, useFilters, useAlertSystem, useManualSearch, useDeleteCo
 import { useAnnouncements, useDeleteAnnouncement } from '../../services/queries/announcements';
 import { FilterState } from '../../constants/filters';
 import { Announcement } from '../../types/announcement';
-import { formatDate } from '../../constants/dateFormats';
+import { utcToMyanmarTime } from '../../utils/dayjs';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -276,6 +280,90 @@ const AnnouncementListPage: React.FC = () => {
       },
     },
     {
+      id: 'status',
+      label: 'Status',
+      width: '140px',
+      render: (_value, announcement) => {
+        if (!announcement) return <Typography variant="body2">No data</Typography>;
+        
+        const getStatusConfig = (status: string) => {
+          switch (status) {
+            case 'scheduled':
+              return { color: 'info' as const, label: 'Scheduled', icon: <ScheduleIcon sx={{ fontSize: 14 }} /> };
+            case 'sending':
+              return { color: 'warning' as const, label: 'Sending', icon: <ScheduleIcon sx={{ fontSize: 14 }} /> };
+            case 'sent':
+              return { color: 'success' as const, label: 'Sent', icon: <CheckCircleIcon sx={{ fontSize: 14 }} /> };
+            case 'failed':
+              return { color: 'error' as const, label: 'Failed', icon: <ErrorIcon sx={{ fontSize: 14 }} /> };
+            case 'cancelled':
+              return { color: 'default' as const, label: 'Cancelled', icon: <CancelIcon sx={{ fontSize: 14 }} /> };
+            default:
+              return { color: 'default' as const, label: status || 'Pending', icon: null };
+          }
+        };
+        
+        const statusConfig = getStatusConfig(announcement.status || 'pending');
+        
+        return (
+          <Chip
+            icon={statusConfig.icon as any}
+            label={statusConfig.label}
+            color={statusConfig.color === 'success' ? 'default' : statusConfig.color}
+            size="small"
+            variant="outlined"
+          />
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'scheduled_at',
+      label: 'Scheduled At',
+      width: '180px',
+      render: (_value, announcement) => {
+        if (!announcement) return <Typography variant="body2">No data</Typography>;
+        
+        if (announcement.scheduled_at) {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              {utcToMyanmarTime(announcement.scheduled_at).format('MMM DD, YYYY [at] hh:mm A')} (MMT)
+            </Typography>
+          );
+        }
+        
+        return (
+          <Typography variant="body2" color="textSecondary">
+            Immediate
+          </Typography>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'sent_at',
+      label: 'Sent At',
+      width: '180px',
+      render: (_value, announcement) => {
+        if (!announcement) return <Typography variant="body2">No data</Typography>;
+        
+        if (announcement.sent_at) {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              {utcToMyanmarTime(announcement.sent_at).format('MMM DD, YYYY [at] hh:mm A')} (MMT)
+            </Typography>
+          );
+        }
+        
+        return (
+          <Typography variant="body2" color="textSecondary">
+            —
+          </Typography>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
       id: 'actions',
       label: 'Actions',
       width: '120px',
@@ -459,13 +547,24 @@ const AnnouncementListPage: React.FC = () => {
                 }}
                 chips={[
                   {
+                    label: announcement.status || 'pending',
+                    color: announcement.status === 'sent' ? 'default' : 
+                            announcement.status === 'failed' ? 'error' :
+                            announcement.status === 'scheduled' ? 'info' :
+                            announcement.status === 'cancelled' ? 'default' : 'warning',
+                  },
+                  {
                     label: announcement.all_users ? 'All Users' : `${announcement.users?.length || 0} Users`,
                     color: announcement.all_users ? 'primary' : 'secondary',
                   },
-                  {
-                    label: announcement.created_at ? formatDate(announcement.created_at, 'display') : 'N/A',
-                    color: 'info',
-                  },
+                  ...(announcement.scheduled_at ? [{
+                    label: `Scheduled: ${utcToMyanmarTime(announcement.scheduled_at).format('MMM DD, YYYY hh:mm A')} (MMT)`,
+                    color: 'info' as const,
+                  }] : []),
+                  ...(announcement.sent_at ? [{
+                    label: `Sent: ${utcToMyanmarTime(announcement.sent_at).format('MMM DD, YYYY hh:mm A')} (MMT)`,
+                    color: 'default' as const,
+                  }] : []),
                 ]}
                 actions={createMobileCardActions(announcement)}
                 onClick={() => navigate(`/announcements/${announcement.id}`)}

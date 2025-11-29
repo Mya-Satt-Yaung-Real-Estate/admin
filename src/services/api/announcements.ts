@@ -57,4 +57,23 @@ export const announcementsAPI = {
   send: (id: number) =>
     apiRequest<Announcement>(`/announcements/${id}/send`, { method: 'POST' }),
 
+  // Update schedule for a scheduled announcement
+  updateSchedule: (id: number, scheduled_at: string) =>
+    apiRequest<Announcement>(`/announcements/${id}/schedule`, {
+      method: 'PATCH',
+      body: JSON.stringify({ scheduled_at }),
+    }),
+
+  // Cancel a scheduled announcement
+  cancel: (id: number) =>
+    apiRequest<Announcement>(`/announcements/${id}/cancel`, {
+      method: 'PATCH',
+    }),
+
+  // Resend a failed announcement
+  resend: (id: number) =>
+    apiRequest<Announcement>(`/announcements/${id}/resend`, {
+      method: 'POST',
+    }),
+
 };
