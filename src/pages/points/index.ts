@@ -4,3 +4,4 @@ export { default as PointPackageCreatePage } from './PointPackageCreatePage';
 export { default as PointPackageEditPage } from './PointPackageEditPage';
 export { default as PointPackageDetailPage } from './PointPackageDetailPage';
 export { default as PointPurchaseRequestListPage } from './PointPurchaseRequestListPage';
+export { default as PointOrderListPage } from './PointOrderListPage';

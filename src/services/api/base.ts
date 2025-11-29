@@ -42,7 +42,7 @@ function getAuthToken(): string | null {
     // First check for admin_token (used by the login hook)
     const adminToken = localStorage.getItem('admin_token');
     if (adminToken) {
-      console.log('🔑 Using admin_token from localStorage');
+      // console.log('🔑 Using admin_token from localStorage');
       return adminToken;
     }
     
@@ -50,12 +50,12 @@ function getAuthToken(): string | null {
     const authStoreData = localStorage.getItem('auth-storage');
     if (authStoreData) {
       const authStore = JSON.parse(authStoreData);
-      console.log('🔑 Auth store data:', authStore);
+      // console.log('🔑 Auth store data:', authStore);
       
       // Zustand stores data in a 'state' property when using persist middleware
       const token = authStore.state?.token || authStore.token || null;
       if (token) {
-        console.log('🔑 Using token from Zustand store');
+        // console.log('🔑 Using token from Zustand store');
         return token;
       }
     }
@@ -78,7 +78,7 @@ export async function apiRequest<T>(
   // Get auth token
   const token = getAuthToken();
   
-  console.log('🌐 API Request:', { url, token: token ? 'Present' : 'Missing', endpoint });
+  // console.log('🌐 API Request:', { url, token: token ? 'Present' : 'Missing', endpoint });
   
   const config: RequestInit = {
     headers: {

@@ -10,6 +10,7 @@ const PointPackageDetailPage = lazy(() => import('@/pages/points/PointPackageDet
 const PointPurchaseRequestListPage = lazy(() => import('@/pages/points/PointPurchaseRequestListPage'));
 const PointPurchaseRequestDetailPage = lazy(() => import('@/pages/points/PointPurchaseRequestDetailPage'));
 const PointPurchaseRequestCreatePage = lazy(() => import('@/pages/points/PointPurchaseRequestCreatePage'));
+const PointOrderListPage = lazy(() => import('@/pages/points/PointOrderListPage'));
 
 export const pointRoutes = [
   // Point Packages
@@ -80,6 +81,17 @@ export const pointRoutes = [
       <AdminLayout>
         <Suspense fallback={<PageLoader />}>
           <PointPurchaseRequestDetailPage />
+        </Suspense>
+      </AdminLayout>
+    ),
+  },
+  // Point Orders (Payment)
+  {
+    path: '/points/orders',
+    element: (
+      <AdminLayout>
+        <Suspense fallback={<PageLoader />}>
+          <PointOrderListPage />
         </Suspense>
       </AdminLayout>
     ),

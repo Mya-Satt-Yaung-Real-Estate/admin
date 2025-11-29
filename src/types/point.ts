@@ -168,3 +168,93 @@ export interface PointPackageFilters {
   page?: number;
   per_page?: number;
 }
+
+// Point Order Types
+export interface PointOrder {
+  id: number;
+  order_id: string;
+  status: 'pending' | 'approved' | 'failed' | 'cancelled';
+  status_label: string;
+  payment_status: 'PENDING' | 'SUCCESS' | 'ERROR' | 'CANCELLED' | 'TIMEOUT' | 'DECLINED' | 'SYSTEM_ERROR';
+  formatted_payment_status: string;
+  payment_provider: string;
+  formatted_payment_provider: string;
+  dinger_transaction_id?: string;
+  dinger_provider_name?: string;
+  dinger_method_name?: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    phone?: string;
+    user_type: 'individual' | 'company';
+  };
+  package: {
+    id: number;
+    name_en: string;
+    name_mm: string;
+    points: number;
+  };
+  point_amount: number;
+  price_mmk: number;
+  formatted_price: string;
+  payment_completed_at?: string;
+  payment_failed_at?: string;
+  payment_failure_reason?: string;
+  points_allocated_at?: string;
+  allocated_by?: {
+    id: number;
+    name: string;
+  };
+  created_at: string;
+  updated_at: string;
+  is_pending: boolean;
+  is_approved: boolean;
+  is_failed: boolean;
+  is_cancelled: boolean;
+  is_payment_pending: boolean;
+  is_payment_completed: boolean;
+  is_payment_failed: boolean;
+  is_payment_processing: boolean;
+}
+
+export interface PointOrderSummary {
+  total_orders: number;
+  pending_orders: number;
+  success_orders: number;
+  failed_orders: number;
+  total_revenue: number;
+  total_points_allocated: number;
+}
+
+// PointOrdersResponse matches the actual API response structure
+// The API returns: { success, message, data: PointOrder[], pagination, summary }
+export interface PointOrdersResponse {
+  success: boolean;
+  message: string;
+  data: PointOrder[];
+  pagination?: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+    has_more_pages: boolean;
+  };
+  summary?: PointOrderSummary;
+}
+
+export interface PointOrderFilters {
+  search?: string;
+  payment_status?: string;
+  status?: string;
+  payment_provider?: string;
+  dinger_provider_name?: string;
+  date_from?: string;
+  date_to?: string;
+  sort_by?: string;
+  sort_direction?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
+}

@@ -83,9 +83,14 @@ export const MENU_ITEMS = [
     iconName: 'Star',
     children: [
       {
-        text: 'Orders',
+        text: 'Orders (Manual)',
         iconName: 'ShoppingCart',
         path: '/points/purchase-requests',
+      },
+      {
+        text: 'Orders (Payment)',
+        iconName: 'Payment',
+        path: '/points/orders',
       },
       {
         text: 'Transactions',
