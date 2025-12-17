@@ -1,101 +1,143 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
-  Paper,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Chip,
-  Avatar,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
+  Business as BusinessIcon,
   People as PeopleIcon,
-  TrendingUp as TrendingUpIcon,
-  Assessment as AssessmentIcon,
-  Notifications as NotificationsIcon,
+  Home as HomeIcon,
+  Search as SearchIcon,
+  Event as EventIcon,
+  AddCircle as AddCircleIcon,
+  RemoveCircle as RemoveCircleIcon,
+  AttachMoney as AttachMoneyIcon,
+  Feedback as FeedbackIcon,
+  ContactMail as ContactMailIcon,
+  LocationOn as LocationOnIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
+import { useDashboardStatistics } from '../../services/queries';
+
+// Format number with commas
+const formatNumber = (num: number): string => {
+  return num.toLocaleString('en-US');
+};
+
+// Format currency (MMK)
+const formatCurrency = (num: number): string => {
+  return `${formatNumber(Math.round(num))} MMK`;
+};
 
 const DashboardPage: React.FC = () => {
-  const statsCards: StatCard[] = [
-    {
-      title: 'Total Users',
-      value: '1,234',
-      color: 'primary',
-      icon: <PeopleIcon />,
-    },
-    {
-      title: 'Active Sessions',
-      value: '567',
-      color: 'secondary',
-      icon: <TrendingUpIcon />,
-    },
-    {
-      title: 'System Status',
-      value: 'Online',
-      color: 'success',
-      icon: <AssessmentIcon />,
-    },
-    {
-      title: 'Notifications',
-      value: '23',
-      color: 'warning',
-      icon: <NotificationsIcon />,
-    },
-  ];
+  const { data, isLoading, error } = useDashboardStatistics();
 
-  const recentActivities = [
-    { id: 1, user: 'John Doe', action: 'Created new account', time: '2 minutes ago', status: 'success' },
-    { id: 2, user: 'Jane Smith', action: 'Updated profile', time: '5 minutes ago', status: 'info' },
-    { id: 3, user: 'Mike Johnson', action: 'Deleted account', time: '10 minutes ago', status: 'error' },
-    { id: 4, user: 'Sarah Wilson', action: 'Changed password', time: '15 minutes ago', status: 'warning' }
-  ];
+  const statsCards: StatCard[] = useMemo(() => {
+    if (!data?.data) return [];
+
+    const stats = data.data;
+
+    return [
+      {
+        title: 'Total Company',
+        value: formatNumber(stats.total_company),
+        color: 'primary',
+        icon: <BusinessIcon />,
+      },
+      {
+        title: 'Total Individual User',
+        value: formatNumber(stats.total_individual_user),
+        color: 'primary',
+        icon: <PeopleIcon />,
+      },
+      {
+        title: 'Total Property',
+        value: formatNumber(stats.total_property),
+        color: 'info',
+        icon: <HomeIcon />,
+      },
+      {
+        title: 'Total Wanting List',
+        value: formatNumber(stats.total_wanting_list),
+        color: 'info',
+        icon: <SearchIcon />,
+      },
+      {
+        title: 'Total Appointment',
+        value: formatNumber(stats.total_appointment),
+        color: 'secondary',
+        icon: <EventIcon />,
+      },
+      {
+        title: 'Credited Point',
+        value: formatNumber(stats.credited_point),
+        color: 'success',
+        icon: <AddCircleIcon />,
+      },
+      {
+        title: 'Debit Point',
+        value: formatNumber(stats.debit_point),
+        color: 'error',
+        icon: <RemoveCircleIcon />,
+      },
+      {
+        title: 'Total Revenue from Payment',
+        value: formatCurrency(stats.total_revenue_from_payment),
+        color: 'success',
+        icon: <AttachMoneyIcon />,
+      },
+      {
+        title: 'Total Feedback',
+        value: formatNumber(stats.total_feedback),
+        color: 'warning',
+        icon: <FeedbackIcon />,
+      },
+      {
+        title: 'Total Contact Us',
+        value: formatNumber(stats.total_contactus),
+        color: 'warning',
+        icon: <ContactMailIcon />,
+      },
+      {
+        title: 'Total Covered Region',
+        value: formatNumber(stats.total_covered_location),
+        color: 'info',
+        icon: <LocationOnIcon />,
+      },
+    ];
+  }, [data]);
 
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title="Dashboard"
         breadcrumbs="Dashboard"
-        subtitle="Welcome back! Here's what's happening with your system today."
+        subtitle="System Overview - Key statistics and metrics at a glance"
       />
 
-      {/* Statistics Cards */}
-      <StatisticsCards cards={statsCards} />
+      {/* Loading State */}
+      {isLoading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <CircularProgress />
+        </Box>
+      )}
 
-      {/* Recent Activities */}
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Recent Activities
-        </Typography>
-        <List>
-          {recentActivities.map((activity) => (
-            <ListItem key={activity.id} sx={{ px: 0 }}>
-              <ListItemAvatar>
-                <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}>
-                  <Typography variant="body2" fontSize="0.75rem">
-                    {activity.user.split(' ').map(n => n[0]).join('')}
-                  </Typography>
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={activity.action}
-                secondary={`${activity.user} • ${activity.time}`}
-              />
-              <Chip
-                label={activity.status}
-                size="small"
-                color={activity.status === 'success' ? 'success' : 
-                       activity.status === 'error' ? 'error' : 
-                       activity.status === 'warning' ? 'warning' : 'default'}
-                variant="outlined"
-              />
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
+      {/* Error State */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Failed to load dashboard statistics. Please try again later.
+        </Alert>
+      )}
+
+      {/* Statistics Cards */}
+      {!isLoading && !error && statsCards.length > 0 && (
+        <StatisticsCards 
+          cards={statsCards} 
+          columns={{ xs: 12, sm: 6, md: 4, lg: 3 }}
+        />
+      )}
     </Box>
   );
 };

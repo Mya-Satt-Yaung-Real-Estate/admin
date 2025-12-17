@@ -21,6 +21,7 @@ export * from './propertyReferrals';
 export * from './announcements';
 export * from './lawyers';
 export * from './wantingListings';
+export * from './dashboard';
 
 // Export query keys for external use
 export { authKeys } from './auth';
@@ -40,4 +41,5 @@ export { employeeKeys } from './employees';
 export { propertyReferralKeys } from './propertyReferrals';
 export { announcementKeys } from './announcements';
 export { lawyerKeys } from './lawyers';
+export { dashboardKeys } from './dashboard';
 
