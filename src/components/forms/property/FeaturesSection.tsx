@@ -1,101 +1,104 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
-  FormControlLabel,
-  Switch,
-  Autocomplete,
   TextField,
+  Button,
   Chip,
+  Stack,
 } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 import { FormSection } from '../shared/FormSection';
-import { PROPERTY_FEATURES, PropertyFeature } from '../../../validations';
 
 interface FeaturesSectionProps {
   values: any;
-  handleChange: (e: React.ChangeEvent<any>) => void;
-  selectedFeatures: PropertyFeature[];
-  onFeatureToggle: (feature: PropertyFeature) => void;
+  setFieldValue: (field: string, value: any) => void;
+  errors?: any;
+  touched?: any;
 }
 
 export const FeaturesSection: React.FC<FeaturesSectionProps> = ({
   values,
-  handleChange,
-  selectedFeatures,
-  onFeatureToggle,
+  setFieldValue,
+  errors = {},
+  touched = {},
 }) => {
-  return (
-    <FormSection 
-      title="Property Features" 
-      // subtitle="Select the features available in this property"
-    >
-      {/* Bank Installment */}
-      <FormControlLabel
-        control={
-          <Switch
-            name="bank_installment_available"
-            checked={Boolean(values.bank_installment_available)}
-            onChange={(e) => {
-              console.log('Bank installment toggle:', e.target.checked);
-              handleChange(e);
-            }}
-          />
-        }
-        label="Bank Installment Available"
-        sx={{ mb: 2 }}
-      />
+  const [featureInput, setFeatureInput] = useState<string>('');
 
-      {/* Features Selection */}
-      <Autocomplete
-        multiple
-        size="small"
-        options={PROPERTY_FEATURES}
-        getOptionLabel={(option) => `${option.label_en} (${option.label_mm})`}
-        value={PROPERTY_FEATURES.filter(feature => selectedFeatures.includes(feature.value))}
-        onChange={(_, newValue) => {
-          console.log('Features changed:', newValue);
-          const newFeatureValues = newValue.map(feature => feature.value);
-          
-          // Add features that are newly selected
-          newFeatureValues.forEach(featureValue => {
-            if (!selectedFeatures.includes(featureValue)) {
-              onFeatureToggle(featureValue);
-            }
-          });
-          
-          // Remove features that are no longer selected
-          selectedFeatures.forEach(featureValue => {
-            if (!newFeatureValues.includes(featureValue)) {
-              onFeatureToggle(featureValue);
-            }
-          });
-        }}
-        renderInput={(params) => (
+  const currentFeatures = values.features || [];
+
+  const handleAddFeature = () => {
+    const trimmedValue = featureInput.trim();
+    if (trimmedValue === '') return;
+    
+    if (!currentFeatures.includes(trimmedValue)) {
+      setFieldValue('features', [...currentFeatures, trimmedValue]);
+    }
+    setFeatureInput('');
+  };
+
+  const handleRemoveFeature = (featureToRemove: string) => {
+    setFieldValue(
+      'features',
+      currentFeatures.filter((f: string) => f !== featureToRemove)
+    );
+  };
+
+  const handleFeatureInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddFeature();
+    }
+  };
+
+  return (
+    <FormSection title="Property Features & Amenities">
+      {/* Features Input */}
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
           <TextField
-            {...params}
-            label="Select Features"
-            placeholder="Search and select features..."
+            fullWidth
             size="small"
+            placeholder="Type a feature and press Enter or click Add"
+            value={featureInput}
+            onChange={(e) => setFeatureInput(e.target.value)}
+            onKeyDown={handleFeatureInputKeyDown}
+            error={touched.features && Boolean(errors.features)}
+            helperText={touched.features && errors.features}
           />
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={handleAddFeature}
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            Add
+          </Button>
+        </Box>
+
+        {/* Features Display */}
+        {currentFeatures.length > 0 && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {currentFeatures.map((feature: string, index: number) => (
+              <Chip
+                key={index}
+                label={feature}
+                onDelete={() => handleRemoveFeature(feature)}
+                color="primary"
+                variant="filled"
+                sx={{ 
+                  mb: 1,
+                  '& .MuiChip-deleteIcon': {
+                    color: 'white',
+                    '&:hover': {
+                      color: '#f5f5f5',
+                    }
+                  }
+                }}
+              />
+            ))}
+          </Stack>
         )}
-        renderTags={(value, getTagProps) =>
-          value.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={option.value}
-              label={`${option.label_en} (${option.label_mm})`}
-              size="small"
-              color="primary"
-              variant="filled"
-            />
-          ))
-        }
-        renderOption={(props, option) => (
-          <Box component="li" {...props}>
-            {option.label_en} ({option.label_mm})
-          </Box>
-        )}
-        sx={{ mt: 1 }}
-      />
+      </Box>
     </FormSection>
   );
 };

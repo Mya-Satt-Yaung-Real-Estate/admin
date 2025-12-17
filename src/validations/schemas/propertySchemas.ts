@@ -57,6 +57,7 @@ export const propertyBaseSchema = Yup.object({
     }
     return Boolean(value);
   }).optional(),
+  features: Yup.array().of(Yup.string()).optional(),
 });
 
 // Dual-mode fields schema (for create/edit forms)

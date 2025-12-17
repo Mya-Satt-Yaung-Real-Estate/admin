@@ -30,6 +30,7 @@ import {
   LocationSection,
   ContactSection,
   StatusSection,
+  FeaturesSection,
 } from '../../components/forms/property';
 import { FormActions } from '../../components/forms/shared/FormActions';
 
@@ -196,6 +197,7 @@ const PropertyEditPage: React.FC = () => {
     bank_installment_available: propertyData.bank_installment_available || false,
     tan_tan_tan: propertyData.tan_tan_tan || false,
     is_trending: propertyData.is_trending || false,
+    features: propertyData.features || [],
     
     // Contact information
     owner_name: propertyData.contact_info?.owner_name || '',
@@ -229,6 +231,7 @@ const PropertyEditPage: React.FC = () => {
         user_id: is_platform_property ? undefined : values.user_id,
         tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
         is_trending: Boolean(values.is_trending), // Ensure boolean type
+        features: values.features || [], // Ensure features array
         phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
         email: values.email?.trim() || undefined, // Handle empty email as undefined
         media_ids: mediaIds,
@@ -409,6 +412,13 @@ const PropertyEditPage: React.FC = () => {
                   townshipsLoading={townshipsLoading}
                 />
 
+                {/* Features Section */}
+                <FeaturesSection
+                  values={values}
+                  setFieldValue={setFieldValue}
+                  errors={errors}
+                  touched={touched}
+                />
 
                 {/* Media Upload */}
                 <Card sx={{ mb: 2 }}>

@@ -26,6 +26,7 @@ import {
   LocationSection,
   ContactSection,
   StatusSection,
+  FeaturesSection,
 } from '../../components/forms/property';
 import { FormActions } from '../../components/forms/shared/FormActions';
 
@@ -92,6 +93,7 @@ const PropertyCreatePage: React.FC = () => {
       bank_installment_available: false,
       tan_tan_tan: false,
       is_trending: false,
+      features: [] as string[],
       owner_name: '',
       phone_numbers: [''],
       email: '',
@@ -115,6 +117,7 @@ const PropertyCreatePage: React.FC = () => {
           area_sqft: values.area_sqft || 0,
           tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
           is_trending: Boolean(values.is_trending), // Ensure boolean type
+          features: values.features || [], // Ensure features array
           phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
           email: values.email?.trim() || undefined, // Handle empty email as undefined
           media_ids: uploadedMedia.map(media => media.id),
@@ -304,6 +307,13 @@ const PropertyCreatePage: React.FC = () => {
               townshipsLoading={townshipsLoading}
             />
 
+            {/* Features Section */}
+            <FeaturesSection
+              values={formik.values}
+              setFieldValue={formik.setFieldValue}
+              errors={formik.errors}
+              touched={formik.touched}
+            />
 
             {/* Media Upload */}
             <Card sx={{ mb: 2 }}>

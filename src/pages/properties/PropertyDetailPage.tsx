@@ -615,6 +615,25 @@ const PropertyDetailPage: React.FC = () => {
                 </Grid>
               </Box>
 
+              {/* Features & Amenities */}
+              {property.features && property.features.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" gutterBottom>
+                    Features & Amenities
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {property.features.map((feature: string, index: number) => (
+                      <Chip
+                        key={index}
+                        label={feature}
+                        color="primary"
+                        variant="outlined"
+                        size="small"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
 
               {/* Location Information */}
               <Box sx={{ mb: 3 }}>

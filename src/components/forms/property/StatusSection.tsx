@@ -74,6 +74,26 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
           />
         </Grid>
 
+        {/* Bank Installment */}
+        <Grid item xs={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                name="bank_installment_available"
+                checked={Boolean(values.bank_installment_available)}
+                onChange={(e) => {
+                  if (setFieldValue) {
+                    setFieldValue('bank_installment_available', e.target.checked);
+                  } else {
+                    handleChange(e);
+                  }
+                }}
+              />
+            }
+            label="Bank Installment Available"
+          />
+        </Grid>
+
         {/* Is Trending */}
         <Grid item xs={12}>
           <FormControlLabel
