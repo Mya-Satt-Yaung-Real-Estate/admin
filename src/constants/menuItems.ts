@@ -222,6 +222,11 @@ export const MENU_ITEMS = [
         iconName: 'Settings',
         path: '/system-configurations',
       },
+      {
+        text: 'System Monitoring',
+        iconName: 'Speed',
+        path: '/settings/system-monitoring',
+      },
     ],
     requiresDeveloperAccess: true,
   },

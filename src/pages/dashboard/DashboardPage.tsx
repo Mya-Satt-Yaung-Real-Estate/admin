@@ -131,7 +131,7 @@ const DashboardPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards - Overview Report */}
       {!isLoading && !error && statsCards.length > 0 && (
         <StatisticsCards 
           cards={statsCards} 

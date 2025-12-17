@@ -40,6 +40,7 @@ import {
   PersonAdd as PersonAddIcon,
   ShoppingCart as ShoppingCartIcon,
   FolderSpecial as WantingListIcon,
+  Speed as SpeedIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -132,6 +133,8 @@ export const getIconComponent = (iconName: string): React.ReactNode => {
       return <AccountBalanceIcon />;
     case 'WantingList':
       return <WantingListIcon />;
+    case 'Speed':
+      return <SpeedIcon />;
     
     default:
       return <DashboardIcon />;
