@@ -84,7 +84,7 @@ const PropertyCreatePage: React.FC = () => {
       address: '',
       latitude: undefined as number | undefined,
       longitude: undefined as number | undefined,
-      price: undefined as number | undefined,
+      price_lakh: undefined as number | undefined,
       area_sqft: undefined as number | undefined,
       length: undefined as number | undefined,
       width: undefined as number | undefined,
@@ -113,7 +113,7 @@ const PropertyCreatePage: React.FC = () => {
           listing_type_id: values.listing_type_id || 0,
           region_id: values.region_id || 0,
           township_id: values.township_id || 0,
-          price: values.price || 0,
+          price_lakh: values.price_lakh || 0,
           area_sqft: values.area_sqft || 0,
           tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
           is_trending: Boolean(values.is_trending), // Ensure boolean type

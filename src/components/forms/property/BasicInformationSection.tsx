@@ -152,15 +152,16 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
           <TextField
             fullWidth
             size="small"
-            name="price"
-            label="Price"
+            name="price_lakh"
+            label="Price (Lakh)"
             type="number"
-            value={values.price}
+            inputProps={{ step: "0.01" }}
+            value={values.price_lakh}
             onChange={handleChange}
-            error={touched.price && Boolean(errors.price)}
-            helperText={touched.price && errors.price}
+            error={touched.price_lakh && Boolean(errors.price_lakh)}
+            helperText={touched.price_lakh && errors.price_lakh}
             InputProps={{
-              startAdornment: <InputAdornment position="start">MMK</InputAdornment>,
+              startAdornment: <InputAdornment position="start">Lakh</InputAdornment>,
             }}
           />
         </Grid>

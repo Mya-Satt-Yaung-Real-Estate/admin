@@ -524,14 +524,14 @@ const PropertyListPage: React.FC = () => {
     },
     {
       id: 'price',
-      label: 'Price',
+      label: 'Price (Lakh)',
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <PriceIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             <Typography variant="body2" fontWeight="500">
-              {property.formatted_price || 'N/A'}
+              {property.price_lakh || 'N/A'} Lakh
             </Typography>
           </Box>
         );

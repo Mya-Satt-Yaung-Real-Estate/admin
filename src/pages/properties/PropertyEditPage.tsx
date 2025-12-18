@@ -188,7 +188,7 @@ const PropertyEditPage: React.FC = () => {
     longitude: propertyData.location?.longitude || undefined,
     
     // Property details
-    price: parseFloat(propertyData.price) || 0,
+    price_lakh: propertyData.price_lakh ? parseFloat(String(propertyData.price_lakh)) : undefined,
     area_sqft: parseFloat(propertyData.area_sqft) || 0,
     length: propertyData.length || undefined,
     width: propertyData.width || undefined,

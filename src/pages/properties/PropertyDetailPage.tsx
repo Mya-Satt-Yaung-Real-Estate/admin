@@ -850,7 +850,7 @@ const PropertyDetailPage: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6" fontWeight={600}>
-                    Price
+                    Price (Lakh)
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     Property pricing information
@@ -861,7 +861,7 @@ const PropertyDetailPage: React.FC = () => {
               <Divider sx={{ mb: 2 }} />
 
               <Typography variant="h4" color="success.main" fontWeight={600} gutterBottom>
-                {property.formatted_price}
+                {property.price_lakh} Lakh
               </Typography>
 
               {property.bank_installment_available && (

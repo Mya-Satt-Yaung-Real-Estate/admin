@@ -15,6 +15,7 @@ export interface Property {
   verification_status: 'pending' | 'approved' | 'rejected';
   price: string;
   formatted_price: string;
+  price_lakh?: string | number;
   area_sqft: string;
   length?: number;
   width?: number;
@@ -126,7 +127,7 @@ export interface CreatePropertyData {
   longitude?: number;
   
   // Property details
-  price: number;
+  price_lakh: number;
   area_sqft: number;
   length?: number;
   width?: number;
