@@ -104,17 +104,42 @@ export const LocationSection: React.FC<LocationSectionProps> = ({
           />
         </Grid>
 
-               {/* Hidden Latitude and Longitude fields for API */}
-               <input
-                 type="hidden"
-                 name="latitude"
-                 value={values.latitude || ''}
-               />
-               <input
-                 type="hidden"
-                 name="longitude"
-                 value={values.longitude || ''}
-               />
+        {/* Latitude and Longitude */}
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            size="small"
+            name="latitude"
+            label="Latitude"
+            type="number"
+            inputProps={{ step: "0.000001" }}
+            value={values.latitude ?? ''}
+            onChange={(e) => {
+              const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
+              setFieldValue('latitude', value);
+            }}
+            error={touched.latitude && Boolean(errors.latitude)}
+            helperText={touched.latitude && errors.latitude || 'Enter latitude value (e.g., 16.8661)'}
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            size="small"
+            name="longitude"
+            label="Longitude"
+            type="number"
+            inputProps={{ step: "0.000001" }}
+            value={values.longitude ?? ''}
+            onChange={(e) => {
+              const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
+              setFieldValue('longitude', value);
+            }}
+            error={touched.longitude && Boolean(errors.longitude)}
+            helperText={touched.longitude && errors.longitude || 'Enter longitude value (e.g., 96.1951)'}
+          />
+        </Grid>
 
         {/* Interactive Map */}
         <Grid item xs={12}>
