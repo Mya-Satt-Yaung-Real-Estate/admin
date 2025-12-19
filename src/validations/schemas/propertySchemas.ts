@@ -21,7 +21,10 @@ export const propertyBaseSchema = Yup.object({
   longitude: Yup.number().min(-180).max(180).optional(),
 
   // Property details
-  price_lakh: Yup.number().min(0, 'Price (Lakh) must be positive').required('Price (Lakh) is required'),
+  price_lakh: Yup.number()
+    .min(0, 'Price (Lakh) must be positive')
+    .max(999999999.99, 'Price (Lakh) is too large. Maximum value is 999,999,999.99')
+    .required('Price (Lakh) is required'),
   area_sqft: Yup.number().min(0, 'Area must be positive').required('Area is required'),
   length: Yup.number().min(0, 'Length must be positive').optional(),
   width: Yup.number().min(0, 'Width must be positive').optional(),
