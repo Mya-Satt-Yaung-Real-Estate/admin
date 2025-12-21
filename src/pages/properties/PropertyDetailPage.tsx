@@ -503,7 +503,7 @@ const PropertyDetailPage: React.FC = () => {
                   <Typography variant="h6" color="textSecondary" gutterBottom>
                     {property.title_mm}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                     <StatusChip status={property.status} />
                     <StatusChip status={property.verification_status} statusType="verification_status" />
                     {property.tan_tan_tan && (
@@ -512,6 +512,14 @@ const PropertyDetailPage: React.FC = () => {
                         color="success"
                         size="small"
                         icon={<PriceChangeIcon />}
+                      />
+                    )}
+                    {property.code && (
+                      <Chip
+                        label={`Code: ${property.code}`}
+                        color="primary"
+                        size="small"
+                        sx={{ fontFamily: 'monospace', fontWeight: 600 }}
                       />
                     )}
                     {property.is_trending && (

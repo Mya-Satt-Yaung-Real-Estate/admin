@@ -469,6 +469,19 @@ const PropertyListPage: React.FC = () => {
       },
     },
     {
+      id: 'code',
+      label: 'Code',
+      width: '150px',
+      render: (_value, property) => {
+        if (!property) return <Typography variant="body2">No data</Typography>;
+        return (
+          <Typography variant="body2" fontWeight="500" sx={{ fontFamily: 'monospace' }}>
+            {property.code || 'N/A'}
+          </Typography>
+        );
+      },
+    },
+    {
       id: 'propertyType',
       label: 'Property Type',
       render: (_value, property) => {
