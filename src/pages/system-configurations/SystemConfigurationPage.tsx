@@ -43,6 +43,7 @@ import {
   Warning as WarningIcon,
   Security as SecurityIcon,
   ContactPhone as ContactIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -78,6 +79,12 @@ const CONFIG_CATEGORIES = {
     description: 'Configure advertisement system settings and costs',
     icon: <BusinessIcon />,
     color: '#ff6b35',
+  },
+  wanted_list: {
+    name: 'Wanted List',
+    description: 'Configure wanted list settings and costs',
+    icon: <AssignmentIcon />,
+    color: '#0288d1',
   },
   media: {
     name: 'Media',
