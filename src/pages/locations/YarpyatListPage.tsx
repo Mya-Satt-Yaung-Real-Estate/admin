@@ -20,7 +20,7 @@ import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { PageLoadingState, ActionAlert, Pagination } from '../../components/ui';
+import { ActionAlert, Pagination, PageEmptyState } from '../../components/ui';
 import { YarpyatTax } from '../../types/location';
 import { useAlertSystem } from '../../hooks';
 
@@ -33,19 +33,20 @@ const YarpyatListPage: React.FC = () => {
   const { alert, showError, clearAlert } = useAlertSystem();
 
   // State
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [wardFilter, setWardFilter] = useState<string>('');
   const [townshipFilter, setTownshipFilter] = useState<string>('');
   const [regionFilter, setRegionFilter] = useState<string>('');
 
-  // API hooks
+  // API hooks - API uses 1-based pagination, component uses 0-based
+  // Server-side filtering: only search and ward_id are sent to API
   const { data: yarpyatData, isLoading, error } = useYarpyatTaxes({
-    page,
+    page: page + 1, // Convert 0-based to 1-based for API
     per_page: rowsPerPage,
-    search,
-    ward_id: wardFilter || undefined,
+    search: search || '',
+    ward_id: wardFilter || '',
   });
 
   const { data: wardsData } = useWards();
@@ -84,22 +85,24 @@ const YarpyatListPage: React.FC = () => {
     setWardFilter('');
     setTownshipFilter('');
     setRegionFilter('');
-    setPage(1);
+    setPage(0);
   };
 
 
-  // Filter yarpyat data based on all filters
+  // Extract pagination from API response
+  const pagination = yarpyatData?.pagination;
+
+  // Client-side filtering for region and township (search and ward are filtered server-side)
   const filteredYarpyatData = useMemo(() => {
     if (!yarpyatData?.data) return [];
     
     return yarpyatData.data.filter(yarpyat => {
-      const matchesWard = !wardFilter || yarpyat.ward_id.toString() === wardFilter;
       const matchesTownship = !townshipFilter || yarpyat.ward?.township?.id.toString() === townshipFilter;
       const matchesRegion = !regionFilter || yarpyat.ward?.township?.region?.id.toString() === regionFilter;
       
-      return matchesWard && matchesTownship && matchesRegion;
+      return matchesTownship && matchesRegion;
     });
-  }, [yarpyatData?.data, wardFilter, townshipFilter, regionFilter]);
+  }, [yarpyatData?.data, townshipFilter, regionFilter]);
 
   // Filter fields with cascading dropdowns
   const filterFields: FilterField[] = [
@@ -265,10 +268,6 @@ const YarpyatListPage: React.FC = () => {
   // RENDER
   // ========================================================================
 
-  if (isLoading) {
-    return <PageLoadingState title="Loading Yarpyat Taxes" />;
-  }
-
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
@@ -306,17 +305,21 @@ const YarpyatListPage: React.FC = () => {
         onFilterChange={(key, value) => {
           if (key === 'searchTerm') {
             setSearch(value);
+            setPage(0); // Reset to first page when search changes
           } else if (key === 'regionFilter') {
             setRegionFilter(value);
             // Reset township and ward filters when region changes
             setTownshipFilter('');
             setWardFilter('');
+            setPage(0); // Reset to first page when filter changes
           } else if (key === 'townshipFilter') {
             setTownshipFilter(value);
             // Reset ward filter when township changes
             setWardFilter('');
+            setPage(0); // Reset to first page when filter changes
           } else if (key === 'wardFilter') {
             setWardFilter(value);
+            setPage(0); // Reset to first page when filter changes
           }
         }}
         fields={[
@@ -334,54 +337,76 @@ const YarpyatListPage: React.FC = () => {
 
       {/* Desktop Table */}
       {!isMobile && (
-        <StandardTable
-          columns={createTableColumns()}
-          data={filteredYarpyatData}
-          loading={isLoading}
-          emptyMessage="No yarpyat taxes found"
-          page={page}
-          rowsPerPage={rowsPerPage}
-          totalCount={filteredYarpyatData.length}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
-        />
+        filteredYarpyatData.length === 0 && !isLoading ? (
+          <PageEmptyState
+            title="No Yarpyat Taxes Found"
+            message={search || wardFilter || townshipFilter || regionFilter
+              ? "No yarpyat taxes match your current filters. Try adjusting your search criteria."
+              : "No yarpyat taxes have been created yet."
+            }
+          />
+        ) : (
+          <StandardTable
+            columns={createTableColumns()}
+            data={filteredYarpyatData}
+            loading={isLoading}
+            emptyMessage="No yarpyat taxes found"
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalCount={pagination?.total || 0}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+          />
+        )
       )}
 
       {/* Mobile Cards */}
       {isMobile && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {filteredYarpyatData.map((yarpyat) => (
-            <MobileCard
-              key={yarpyat.id}
-              title={yarpyat.name_en}
-              subtitle={yarpyat.name_mm}
-              description={`${yarpyat.ward?.ward_name_en || 'Unknown Ward'} (${yarpyat.ward?.ward_name_mm || ''}), ${yarpyat.ward?.township?.name_en || 'Unknown Township'} (${yarpyat.ward?.township?.name_mm || ''}), ${yarpyat.ward?.township?.region?.name_en || 'Unknown Region'} (${yarpyat.ward?.township?.region?.name_mm || ''})`}
-              avatar={<MoneyIcon />}
-              avatarColor="primary.main"
-              actions={createMobileCardActions(yarpyat)}
-              onClick={() => handleEdit(yarpyat)}
-              clickable
-            />
-          ))}
-          <Pagination
-            page={page}
-            rowsPerPage={rowsPerPage}
-            totalCount={filteredYarpyatData.length}
-            onPageChange={(_, newPage) => setPage(newPage)}
-            onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+        filteredYarpyatData.length === 0 && !isLoading ? (
+          <PageEmptyState
+            title="No Yarpyat Taxes Found"
+            message={search || wardFilter || townshipFilter || regionFilter
+              ? "No yarpyat taxes match your current filters. Try adjusting your search criteria."
+              : "No yarpyat taxes have been created yet."
+            }
           />
-        </Box>
-      )}
-
-      {/* Desktop Pagination */}
-      {!isMobile && (
-        <Pagination
-          page={page}
-          rowsPerPage={rowsPerPage}
-          totalCount={filteredYarpyatData.length}
-          onPageChange={(_, newPage) => setPage(newPage)}
-          onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
-        />
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {isLoading ? (
+              // Loading skeleton cards for mobile
+              Array.from({ length: rowsPerPage }).map((_, index) => (
+                <MobileCard
+                  key={`skeleton-${index}`}
+                  title=""
+                  loading={true}
+                />
+              ))
+            ) : (
+              filteredYarpyatData.map((yarpyat) => (
+                <MobileCard
+                  key={yarpyat.id}
+                  title={yarpyat.name_en}
+                  subtitle={yarpyat.name_mm}
+                  description={`${yarpyat.ward?.ward_name_en || 'Unknown Ward'} (${yarpyat.ward?.ward_name_mm || ''}), ${yarpyat.ward?.township?.name_en || 'Unknown Township'} (${yarpyat.ward?.township?.name_mm || ''}), ${yarpyat.ward?.township?.region?.name_en || 'Unknown Region'} (${yarpyat.ward?.township?.region?.name_mm || ''})`}
+                  avatar={<MoneyIcon />}
+                  avatarColor="primary.main"
+                  actions={createMobileCardActions(yarpyat)}
+                  onClick={() => handleEdit(yarpyat)}
+                  clickable
+                />
+              ))
+            )}
+            {!isLoading && (
+              <Pagination
+                page={page}
+                rowsPerPage={rowsPerPage}
+                totalCount={pagination?.total || 0}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                onRowsPerPageChange={(e) => setRowsPerPage(parseInt(e.target.value, 10))}
+              />
+            )}
+          </Box>
+        )
       )}
     </Box>
   );
