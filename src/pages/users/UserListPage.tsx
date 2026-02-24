@@ -156,9 +156,11 @@ const UserListPage: React.FC = () => {
       const searchTerm = (filters.searchTerm ?? '').toLowerCase();
       const userName = (user.name ?? '').toLowerCase();
       const userEmail = (user.email ?? '').toLowerCase();
+      const userPhone = (user.phone ?? '').toLowerCase();
       const matchesSearch = !filters.searchTerm ||
         userName.includes(searchTerm) ||
-        userEmail.includes(searchTerm);
+        userEmail.includes(searchTerm) ||
+        userPhone.includes(searchTerm);
 
       const matchesUserType = filters.userTypeFilter === 'all' ||
         user.user_type === filters.userTypeFilter;
@@ -260,9 +262,14 @@ const UserListPage: React.FC = () => {
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <EmailIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            <Typography variant="body2" fontWeight="500">
-              {user.email}
-            </Typography>
+            <Box>
+              <Typography variant="body2" fontWeight="500">
+                {user.email || '-'}
+              </Typography>
+              <Typography variant="caption" color="textSecondary">
+                {user.phone || '-'}
+              </Typography>
+            </Box>
           </Box>
         );
       },
