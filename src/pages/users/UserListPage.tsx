@@ -153,9 +153,12 @@ const UserListPage: React.FC = () => {
   // Filter users using client-side filtering
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
+      const searchTerm = (filters.searchTerm ?? '').toLowerCase();
+      const userName = (user.name ?? '').toLowerCase();
+      const userEmail = (user.email ?? '').toLowerCase();
       const matchesSearch = !filters.searchTerm ||
-        user.name.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(filters.searchTerm.toLowerCase());
+        userName.includes(searchTerm) ||
+        userEmail.includes(searchTerm);
 
       const matchesUserType = filters.userTypeFilter === 'all' ||
         user.user_type === filters.userTypeFilter;
