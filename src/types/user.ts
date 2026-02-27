@@ -83,6 +83,9 @@ export interface RegularUser {
     expired_properties: number;
     draft_properties: number;
   };
+  // Biometric (admin detail / clear-biometric)
+  biometric_enabled?: boolean;
+  biometric_enabled_at?: string;
 }
 
 export interface CreateRegularUserData {

@@ -29,6 +29,7 @@ import {
   CalendarToday as CalendarIcon,
   Star as StarIcon,
   Phone as PhoneIcon,
+  Fingerprint as FingerprintIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -38,7 +39,7 @@ import {
   StatusChip,
   ActionAlert,
 } from '../../components/ui';
-import { useUser, useUpdateUser } from '../../services/queries/users';
+import { useUser, useUpdateUser, useClearBiometricUser } from '../../services/queries/users';
 import { UpdateRegularUserData } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
@@ -67,11 +68,12 @@ const UserEditPage: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Hooks
-  const { alert, showError } = useAlertSystem();
+  const { alert, showSuccess, showError } = useAlertSystem();
   
   // Queries and mutations
   const { data: userData, isLoading, error } = useUser(slug || '');
   const updateUserMutation = useUpdateUser();
+  const clearBiometricMutation = useClearBiometricUser();
 
   // Computed values
   const user = userData?.data?.user;
@@ -99,6 +101,17 @@ const UserEditPage: React.FC = () => {
 
   const handleVerificationStatusChange = (newVerificationStatus: string) => {
     setVerificationStatus(newVerificationStatus);
+  };
+
+  const handleClearBiometric = async () => {
+    if (!slug) return;
+    if (!window.confirm('Clear biometric data for this user? They will need to enable biometric again from the app.')) return;
+    try {
+      await clearBiometricMutation.mutateAsync(slug);
+      showSuccess('Biometric data cleared. User can enable it again from the app.');
+    } catch (err: any) {
+      showError(err?.message || 'Failed to clear biometric data.', true);
+    }
   };
 
   // New useEffect to track changes
@@ -236,7 +249,6 @@ const UserEditPage: React.FC = () => {
                       statusType="verification_status"
                     />
                   )}
-
               </Box>
             </CardContent>
           </Card>
@@ -246,9 +258,21 @@ const UserEditPage: React.FC = () => {
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                User Information
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                <Typography variant="h6">
+                  User Information
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  size="small"
+                  startIcon={<FingerprintIcon />}
+                  onClick={handleClearBiometric}
+                  disabled={!user.biometric_enabled || clearBiometricMutation.isPending}
+                >
+                  {clearBiometricMutation.isPending ? 'Clearing…' : 'Clear Biometric Data'}
+                </Button>
+              </Box>
               
               <List>
                 <ListItem>

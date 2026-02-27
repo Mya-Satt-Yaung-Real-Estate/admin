@@ -27,6 +27,7 @@ import {
   Description as DescriptionIcon,
   Visibility as VisibilityIcon,
   Star as StarIcon,
+  Fingerprint as FingerprintIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -40,7 +41,7 @@ import {
   UserPropertyStatistics,
   ActionAlert,
 } from '../../components/ui';
-import { useUser } from '../../services/queries/users';
+import { useUser, useClearBiometricUser } from '../../services/queries/users';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
 
@@ -63,10 +64,11 @@ const UserDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
 
   // Hooks
-  const { alert } = useAlertSystem();
-  
+  const { alert, showSuccess, showError } = useAlertSystem();
+
   // Queries
   const { data: userData, isLoading, error } = useUser(slug || '');
+  const clearBiometricMutation = useClearBiometricUser();
 
   // Computed values
   const user = userData?.data?.user;
@@ -74,6 +76,17 @@ const UserDetailPage: React.FC = () => {
   // Event handlers
   const handleBack = () => navigate(PAGE_CONFIG.backButtonPath);
   const handleEdit = () => navigate(`/users/${slug}/edit`);
+
+  const handleClearBiometric = async () => {
+    if (!slug) return;
+    if (!window.confirm('Clear biometric data for this user? They will need to enable biometric again from the app.')) return;
+    try {
+      await clearBiometricMutation.mutateAsync(slug);
+      showSuccess('Biometric data cleared. User can enable it again from the app.');
+    } catch (err: any) {
+      showError(err?.message || 'Failed to clear biometric data.', true);
+    }
+  };
 
   // Loading state
   if (isLoading) {
@@ -173,15 +186,6 @@ const UserDetailPage: React.FC = () => {
                   />
                 )}
               </Box>
-              
-              <Button
-                variant="outlined"
-                startIcon={<EditIcon />}
-                onClick={handleEdit}
-                sx={{ mt: 2 }}
-              >
-                Edit User
-              </Button>
             </CardContent>
           </Card>
         </Grid>
@@ -190,9 +194,31 @@ const UserDetailPage: React.FC = () => {
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                User Information
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                <Typography variant="h6">
+                  User Information
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    size="small"
+                    startIcon={<FingerprintIcon />}
+                    onClick={handleClearBiometric}
+                    disabled={!user.biometric_enabled || clearBiometricMutation.isPending}
+                  >
+                    {clearBiometricMutation.isPending ? 'Clearing…' : 'Clear Biometric Data'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={handleEdit}
+                  >
+                    Edit User
+                  </Button>
+                </Box>
+              </Box>
               
               <List>
                 <ListItem>

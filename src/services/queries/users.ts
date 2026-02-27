@@ -120,3 +120,19 @@ export const useForceDeleteUser = () => {
     },
   });
 };
+
+// Clear biometric data for user
+export const useClearBiometricUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersAPI.clearBiometric,
+    onSuccess: (response, slug) => {
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(slug) });
+      if (response?.data) {
+        queryClient.setQueryData(userKeys.detail(slug), response);
+      }
+    },
+  });
+};

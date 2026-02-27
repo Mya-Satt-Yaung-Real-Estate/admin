@@ -48,4 +48,10 @@ export const usersAPI = {
     apiRequest<{ success: boolean; message: string; data: null }>(`/users/${slug}/force`, {
       method: 'DELETE',
     }),
+
+  // Clear biometric data for user (so they can set up again from the app)
+  clearBiometric: (slug: string) =>
+    apiRequest<{ success: boolean; message: string; data: { user: RegularUser } }>(`/users/${slug}/clear-biometric`, {
+      method: 'POST',
+    }),
 };
