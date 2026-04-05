@@ -139,61 +139,72 @@ const UserDetailPage: React.FC = () => {
         }}
       />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} alignItems="stretch">
         {/* User Profile Card */}
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', p: 3 }}>
+        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <CardContent
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                textAlign: 'center',
+                p: 3,
+              }}
+            >
               <Avatar
                 sx={{
-                  width: 120,
-                  height: 120,
+                  width: 280,
+                  height: 280,
                   mx: 'auto',
                   mb: 2,
-                  bgcolor: getUserTypeColor(),
-                  fontSize: '2rem',
+                  bgcolor: user.profile_image_url ? 'transparent' : getUserTypeColor(),
+                  fontSize: '4rem',
                 }}
+                src={user.profile_image_url || undefined}
               >
-                {getUserTypeIcon()}
+                {!user.profile_image_url ? getUserTypeIcon() : null}
               </Avatar>
-              
+
               <Typography variant="h5" gutterBottom>
                 {user.name}
               </Typography>
-              
+
               <Typography variant="body2" color="textSecondary" gutterBottom>
                 {user.email}
               </Typography>
-              
-              <Box sx={{ 
-                mt: 2, 
-                mb: 2, 
-                display: 'flex', 
-                gap: 1, 
-                flexWrap: 'wrap', 
-                justifyContent: 'center' 
-              }}>
+
+              <Box
+                sx={{
+                  mt: 2,
+                  display: 'flex',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                }}
+              >
                 <Chip
                   label={user.user_type === 'company' ? 'Company' : 'Individual'}
                   color={user.user_type === 'company' ? 'primary' : 'secondary'}
                   size="small"
                 />
-                <StatusChip status={user.is_active ? 'active' : 'inactive'} /> 
+                <StatusChip status={user.is_active ? 'active' : 'inactive'} />
                 {user.user_type === 'company' && (
-                  <StatusChip 
-                    status={user.verification_status || 'pending'} 
+                  <StatusChip
+                    status={user.verification_status || 'pending'}
                     statusType="verification_status"
                   />
                 )}
               </Box>
+              <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
             </CardContent>
           </Card>
         </Grid>
 
         {/* User Details */}
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
+        <Grid item xs={12} md={8} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 <Typography variant="h6">
                   User Information
@@ -272,6 +283,7 @@ const UserDetailPage: React.FC = () => {
                   />
                 </ListItem>
               </List>
+              <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
             </CardContent>
           </Card>
         </Grid>

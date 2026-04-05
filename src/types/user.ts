@@ -86,6 +86,9 @@ export interface RegularUser {
   // Biometric (admin detail / clear-biometric)
   biometric_enabled?: boolean;
   biometric_enabled_at?: string;
+  // Profile image (admin edit / user site)
+  profile_image_url?: string | null;
+  profile_media_id?: number | null;
 }
 
 export interface CreateRegularUserData {
@@ -95,6 +98,8 @@ export interface CreateRegularUserData {
   user_type: 'company' | 'individual';
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
+  /** Optional profile image (upload via /api/v1/media first). */
+  media_id?: number;
   // Company-specific fields
   company_name?: string;
   company_type_id?: number;
@@ -112,6 +117,8 @@ export interface UpdateRegularUserData {
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
   verification_status?: 'pending' | 'approved';
+  /** Set or clear profile image (admin). Omit to leave unchanged. */
+  media_id?: number | null;
 }
 
 export interface RegularUserFilters {

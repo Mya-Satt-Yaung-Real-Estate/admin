@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
@@ -13,6 +13,8 @@ import {
   FormHelperText,
   Divider,
   Autocomplete,
+  Card,
+  CardContent,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -29,6 +31,9 @@ import { useRegions, useTownships } from '../../services/queries/locations';
 import { CreateRegularUserData } from '../../types/user';
 import { useAlertSystem } from '../../hooks';
 import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
+import { USER_PROFILE_PHOTO_UPLOAD_HEIGHTS } from '../../constants/profilePhotoUpload';
+import SingleImageUpload from '../../components/ui/SingleImageUpload';
+import { Media } from '../../types/media';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -102,6 +107,7 @@ const PAGE_CONFIG = {
 const UserCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const { alert, showSuccess, showError } = useAlertSystem();
+  const [profileImage, setProfileImage] = useState<Media | null>(null);
 
   // Queries
   const { data: companyTypesData, isLoading: loadingCompanyTypes } = useCompanyTypes();
@@ -150,6 +156,10 @@ const UserCreatePage: React.FC = () => {
           userData.region_id = Number(values.region_id);
           userData.township_id = Number(values.township_id);
           userData.description = values.description;
+        }
+
+        if (profileImage) {
+          userData.media_id = profileImage.id;
         }
 
         const response = await createUserMutation.mutateAsync(userData);
@@ -230,132 +240,152 @@ const UserCreatePage: React.FC = () => {
 
       <Paper sx={{ p: 3, mt: 3 }}>
         <form onSubmit={formik.handleSubmit}>
-          <Grid container spacing={3}>
-            {/* Basic Information */}
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Basic Information
-              </Typography>
+          <Grid container spacing={3} alignItems="stretch">
+            {/* Left: account fields (same md split as user edit: 8 / 4) */}
+            <Grid item xs={12} md={8} sx={{ display: 'flex' }}>
+              <Grid container spacing={3} sx={{ width: '100%' }}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom>
+                    Basic Information
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="name"
+                    name="name"
+                    label="Full Name *"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.name && Boolean(formik.errors.name)}
+                    helperText={formik.touched.name && formik.errors.name}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="email"
+                    name="email"
+                    label="Email Address *"
+                    type="email"
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.email && Boolean(formik.errors.email)}
+                    helperText={formik.touched.email && formik.errors.email}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="phone"
+                    name="phone"
+                    label="Phone Number *"
+                    value={formik.values.phone}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.phone && Boolean(formik.errors.phone)}
+                    helperText={formik.touched.phone && formik.errors.phone}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    id="password"
+                    name="password"
+                    label="Password *"
+                    type="password"
+                    value={formik.values.password}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    error={formik.touched.password && Boolean(formik.errors.password)}
+                    helperText={formik.touched.password && formik.errors.password}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>User Type *</InputLabel>
+                    <Select
+                      value={formik.values.user_type}
+                      onChange={(e) => handleUserTypeChange(e.target.value as 'individual' | 'company')}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.user_type && Boolean(formik.errors.user_type)}
+                      label="User Type *"
+                    >
+                      <MenuItem value="individual">Individual User</MenuItem>
+                      <MenuItem value="company">Company User</MenuItem>
+                    </Select>
+                    {formik.touched.user_type && formik.errors.user_type && (
+                      <FormHelperText error>{formik.errors.user_type}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Member Level *</InputLabel>
+                    <Select
+                      value={formik.values.member_level}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.member_level && Boolean(formik.errors.member_level)}
+                      label="Member Level *"
+                      name="member_level"
+                    >
+                      {MEMBER_LEVEL_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {formik.touched.member_level && formik.errors.member_level && (
+                      <FormHelperText error>{formik.errors.member_level}</FormHelperText>
+                    )}
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Status</InputLabel>
+                    <Select
+                      value={formik.values.is_active}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      label="Status"
+                      name="is_active"
+                    >
+                      <MenuItem value="true">Active</MenuItem>
+                      <MenuItem value="false">Inactive</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
             </Grid>
 
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                id="name"
-                name="name"
-                label="Full Name *"
-                value={formik.values.name}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.name && Boolean(formik.errors.name)}
-                helperText={formik.touched.name && formik.errors.name}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                id="email"
-                name="email"
-                label="Email Address *"
-                type="email"
-                value={formik.values.email}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.email && Boolean(formik.errors.email)}
-                helperText={formik.touched.email && formik.errors.email}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                id="password"
-                name="password"
-                label="Password *"
-                type="password"
-                value={formik.values.password}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.password && Boolean(formik.errors.password)}
-                helperText={formik.touched.password && formik.errors.password}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>User Type *</InputLabel>
-                <Select
-                  value={formik.values.user_type}
-                  onChange={(e) => handleUserTypeChange(e.target.value as 'individual' | 'company')}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.user_type && Boolean(formik.errors.user_type)}
-                  label="User Type *"
-                >
-                  <MenuItem value="individual">Individual User</MenuItem>
-                  <MenuItem value="company">Company User</MenuItem>
-                </Select>
-                {formik.touched.user_type && formik.errors.user_type && (
-                  <FormHelperText error>{formik.errors.user_type}</FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Member Level *</InputLabel>
-                <Select
-                  value={formik.values.member_level}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.member_level && Boolean(formik.errors.member_level)}
-                  label="Member Level *"
-                  name="member_level"
-                >
-                  {MEMBER_LEVEL_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formik.touched.member_level && formik.errors.member_level && (
-                  <FormHelperText error>{formik.errors.member_level}</FormHelperText>
-                )}
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={formik.values.is_active}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  label="Status"
-                  name="is_active"
-                >
-                  <MenuItem value="true">Active</MenuItem>
-                  <MenuItem value="false">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                id="phone"
-                name="phone"
-                label="Phone Number *"
-                value={formik.values.phone}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.phone && Boolean(formik.errors.phone)}
-                helperText={formik.touched.phone && formik.errors.phone}
-                required
-              />
+            {/* Right: profile photo */}
+            <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+              <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Profile photo
+                  </Typography>
+                  <Box sx={{ flex: 1, minHeight: 0 }}>
+                    <SingleImageUpload
+                      uploadedImage={profileImage}
+                      onImageUpload={setProfileImage}
+                      onImageDelete={() => {
+                        setProfileImage(null);
+                      }}
+                      onUploadError={(msg) => showError(msg)}
+                      dropzoneHeight={USER_PROFILE_PHOTO_UPLOAD_HEIGHTS.dropzoneHeight}
+                      previewImageHeight={USER_PROFILE_PHOTO_UPLOAD_HEIGHTS.previewImageHeight}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
 
             {/* Company Information - Only show for company users */}

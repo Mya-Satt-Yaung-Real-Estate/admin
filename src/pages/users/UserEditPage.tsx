@@ -9,7 +9,6 @@ import {
   Select,
   MenuItem,
   Grid,
-  Avatar,
   Alert,
   Card,
   CardContent,
@@ -17,7 +16,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Chip,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -31,6 +29,8 @@ import {
   Phone as PhoneIcon,
   Fingerprint as FingerprintIcon,
 } from '@mui/icons-material';
+import SingleImageUpload from '../../components/ui/SingleImageUpload';
+import { Media } from '../../types/media';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { 
@@ -44,6 +44,7 @@ import { UpdateRegularUserData } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
 import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
+import { USER_PROFILE_PHOTO_UPLOAD_HEIGHTS } from '../../constants/profilePhotoUpload';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -66,6 +67,8 @@ const UserEditPage: React.FC = () => {
   const [memberLevel, setMemberLevel] = useState<string>('silver');
   const [verificationStatus, setVerificationStatus] = useState<string>('pending');
   const [hasChanges, setHasChanges] = useState(false);
+  const [profileImage, setProfileImage] = useState<Media | null>(null);
+  const [profileImageDirty, setProfileImageDirty] = useState(false);
 
   // Hooks
   const { alert, showSuccess, showError } = useAlertSystem();
@@ -85,6 +88,23 @@ const UserEditPage: React.FC = () => {
       setMemberLevel(user.member_level);
       setVerificationStatus(typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
       setHasChanges(false);
+      setProfileImageDirty(false);
+      if (user.profile_media_id != null && user.profile_image_url) {
+        setProfileImage({
+          id: user.profile_media_id,
+          type: 'image',
+          filename: 'profile',
+          size: 0,
+          formatted_size: '',
+          mime_type: 'image/jpeg',
+          is_primary: true,
+          status: 'completed',
+          url: user.profile_image_url,
+          created_at: new Date().toISOString(),
+        });
+      } else {
+        setProfileImage(null);
+      }
     }
   }, [user]);
 
@@ -123,8 +143,10 @@ const UserEditPage: React.FC = () => {
     if (user.user_type === 'company') {
       verificationStatusChanged = verificationStatus !== (typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
     }
-    setHasChanges(statusChanged || memberLevelChanged || verificationStatusChanged);
-  }, [status, memberLevel, verificationStatus, user]);
+    setHasChanges(
+      statusChanged || memberLevelChanged || verificationStatusChanged || profileImageDirty
+    );
+  }, [status, memberLevel, verificationStatus, user, profileImageDirty]);
 
   const handleSubmit = async () => {
     if (!user || !hasChanges) return;
@@ -136,6 +158,10 @@ const UserEditPage: React.FC = () => {
 
     if (user.user_type === 'company') {
       updateData.verification_status = verificationStatus as 'pending' | 'approved';
+    }
+
+    if (profileImageDirty) {
+      updateData.media_id = profileImage?.id ?? null;
     }
 
     try {
@@ -152,12 +178,14 @@ const UserEditPage: React.FC = () => {
     }
   };
 
-  const getUserTypeIcon = () => {
-    return user?.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />;
+  const handleProfileImageUpload = (media: Media) => {
+    setProfileImage(media);
+    setProfileImageDirty(true);
   };
 
-  const getUserTypeColor = () => {
-    return user?.user_type === 'company' ? 'primary.main' : 'secondary.main';
+  const handleProfileImageDelete = (_mediaId: number) => {
+    setProfileImage(null);
+    setProfileImageDirty(true);
   };
 
   // Loading state
@@ -203,61 +231,39 @@ const UserEditPage: React.FC = () => {
         }}
       />
 
-      <Grid container spacing={3}>
-        {/* User Overview Card */}
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', p: 3 }}>
-              <Avatar
-                sx={{
-                  width: 120,
-                  height: 120,
-                  mx: 'auto',
-                  mb: 2,
-                  bgcolor: getUserTypeColor(),
-                  fontSize: '2rem',
-                }}
-              >
-                {getUserTypeIcon()}
-              </Avatar>
-              
-              <Typography variant="h5" gutterBottom>
-                {user.name}
-              </Typography>
-              
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                {user.email}
-              </Typography>
-
-              <Box sx={{ 
-                mt: 2,
-                mb: 2,
+      <Grid container spacing={3} alignItems="stretch">
+        {/* Profile photo */}
+        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <CardContent
+              sx={{
+                p: 3,
+                flex: 1,
                 display: 'flex',
-                gap: 1,
-                flexWrap: 'wrap',
-                justifyContent: 'center'
-               }}>
-                  <Chip
-                    label={user.user_type === 'company' ? 'Company' : 'Individual'}
-                    color={user.user_type === 'company' ? 'primary' : 'secondary'}
-                    size="small"
-                  />
-                  <StatusChip status={user.is_active ? 'active' : 'inactive'} />
-                  {user.user_type === 'company' && (
-                    <StatusChip 
-                      status={typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending'} 
-                      statusType="verification_status"
-                    />
-                  )}
+                flexDirection: 'column',
+              }}
+            >
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Profile photo
+              </Typography>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <SingleImageUpload
+                  uploadedImage={profileImage}
+                  onImageUpload={handleProfileImageUpload}
+                  onImageDelete={handleProfileImageDelete}
+                  onUploadError={(msg) => showError(msg, true)}
+                  dropzoneHeight={USER_PROFILE_PHOTO_UPLOAD_HEIGHTS.dropzoneHeight}
+                  previewImageHeight={USER_PROFILE_PHOTO_UPLOAD_HEIGHTS.previewImageHeight}
+                />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
         {/* User Information */}
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardContent>
+        <Grid item xs={12} md={8} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 <Typography variant="h6">
                   User Information

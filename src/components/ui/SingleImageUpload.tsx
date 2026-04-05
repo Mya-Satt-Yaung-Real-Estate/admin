@@ -26,6 +26,10 @@ interface SingleImageUploadProps {
   onUploadProgress?: (uploaded: number, total: number) => void;
   onUploadComplete?: () => void;
   onUploadError?: (error: string) => void;
+  /** Empty-state drop zone height (px). Default 350 — omit everywhere for legacy layout. */
+  dropzoneHeight?: number;
+  /** Uploaded preview image area height (px). Default 250 — caption + actions sized relative to this. */
+  previewImageHeight?: number;
 }
 
 const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
@@ -36,7 +40,11 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
   onUploadProgress,
   onUploadComplete,
   onUploadError,
+  dropzoneHeight = 350,
+  previewImageHeight = 250,
 }) => {
+  const uploadedInnerRowHeight = previewImageHeight + 30;
+  const uploadedOuterHeight = previewImageHeight + 100;
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMediaMutation = useUploadMedia();
@@ -98,7 +106,7 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
       {/* Show Upload Area OR Uploaded Image - Not Both */}
       {!uploadedImage ? (
         /* Upload Area - Only show when no image is uploaded */
-        <Box sx={{ display: 'flex', justifyContent: 'center', height: 350 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', height: dropzoneHeight }}>
           <Card
             {...getRootProps()}
             sx={{
@@ -151,10 +159,10 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
         </Box>
       ) : (
         /* Uploaded Image - Only show when image is uploaded */
-        <Box sx={{ height: 350 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'center', height: 280 }}>
+        <Box sx={{ height: uploadedOuterHeight }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', height: uploadedInnerRowHeight }}>
             <Card sx={{ position: 'relative', maxWidth: 400, width: '100%', height: '100%' }}>
-              <Box sx={{ position: 'relative', height: 250 }}>
+              <Box sx={{ position: 'relative', height: previewImageHeight }}>
                 <img
                   src={uploadedImage.url}
                   alt={uploadedImage.filename}
