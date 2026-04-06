@@ -16,6 +16,7 @@ export interface PropertyLikeUser {
   deleted_at?: string | null;
   created_at?: string;
   verification_status?: string | null;
+  profile_image_url?: string | null;
 }
 
 export const propertyLikesAPI = {

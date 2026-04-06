@@ -47,6 +47,9 @@ export { CommentsModal } from './comments/CommentsModal';
 // Property likes (users who liked a property)
 export { PropertyLikesModal } from './property-likes/PropertyLikesModal';
 
+// Property favorites (users who saved a property)
+export { PropertyFavoritesModal } from './property-favorites/PropertyFavoritesModal';
+
 // Share URL
 export { ShareURLModal } from './ShareURLModal';
 

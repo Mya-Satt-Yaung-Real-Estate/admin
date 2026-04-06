@@ -41,7 +41,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, ShareURLModal } from '../../components/ui';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, PropertyFavoritesModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
@@ -205,6 +205,10 @@ const PropertyListPage: React.FC = () => {
   const [likesModalOpen, setLikesModalOpen] = useState(false);
   const [selectedPropertyForLikes, setSelectedPropertyForLikes] = useState<Property | null>(null);
 
+  // Favorites modal state (users who saved)
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
+  const [selectedPropertyForFavorites, setSelectedPropertyForFavorites] = useState<Property | null>(null);
+
   // Referral assignment modal state
   const [referralModalOpen, setReferralModalOpen] = useState(false);
   const [selectedPropertyForReferral, setSelectedPropertyForReferral] = useState<Property | null>(null);
@@ -285,6 +289,16 @@ const PropertyListPage: React.FC = () => {
   const handleCloseLikesModal = () => {
     setLikesModalOpen(false);
     setSelectedPropertyForLikes(null);
+  };
+
+  const handleOpenFavoritesModal = (property: Property) => {
+    setSelectedPropertyForFavorites(property);
+    setFavoritesModalOpen(true);
+  };
+
+  const handleCloseFavoritesModal = () => {
+    setFavoritesModalOpen(false);
+    setSelectedPropertyForFavorites(null);
   };
 
   // ========================================================================
@@ -632,7 +646,18 @@ const PropertyListPage: React.FC = () => {
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'error.main',
+              },
+            }}
+            onClick={() => handleOpenFavoritesModal(property)}
+          >
             <FavoriteIcon sx={{ fontSize: 16, color: 'error.main' }} />
             <Typography variant="body2" fontWeight="500">
               {property.stats?.favorite_count || 0}
@@ -896,6 +921,12 @@ const PropertyListPage: React.FC = () => {
         tooltip: 'View Likes',
         color: 'primary' as const,
         onClick: () => handleOpenLikesModal(property),
+      },
+      {
+        icon: <FavoriteIcon />,
+        tooltip: 'View Favorites',
+        color: 'error' as const,
+        onClick: () => handleOpenFavoritesModal(property),
       },
     ];
     
@@ -1359,6 +1390,13 @@ const PropertyListPage: React.FC = () => {
         onClose={handleCloseLikesModal}
         title={`Likes for ${selectedPropertyForLikes?.title_en || 'Property'}`}
         propertyId={selectedPropertyForLikes?.id || 0}
+      />
+
+      <PropertyFavoritesModal
+        open={favoritesModalOpen}
+        onClose={handleCloseFavoritesModal}
+        title={`Favorites for ${selectedPropertyForFavorites?.title_en || 'Property'}`}
+        propertyId={selectedPropertyForFavorites?.id || 0}
       />
 
       {/* Referral Assignment Modal */}

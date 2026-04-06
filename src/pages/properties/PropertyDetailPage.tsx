@@ -52,7 +52,7 @@ import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty, u
 import { employeesAPI } from '../../services/api/employees';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, ShareURLModal } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, PropertyFavoritesModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { formatDate } from '../../constants/dateFormats';
 import { formatPropertyCondition } from '../../utils/propertyUtils';
@@ -100,6 +100,9 @@ const PropertyDetailPage: React.FC = () => {
 
   // Likes modal state (users who liked)
   const [likesModalOpen, setLikesModalOpen] = useState(false);
+
+  // Favorites modal state (users who saved)
+  const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
 
   // Referral assignment modal state
   const [referralModalOpen, setReferralModalOpen] = useState(false);
@@ -158,6 +161,14 @@ const PropertyDetailPage: React.FC = () => {
 
   const handleCloseLikesModal = () => {
     setLikesModalOpen(false);
+  };
+
+  const handleOpenFavoritesModal = () => {
+    setFavoritesModalOpen(true);
+  };
+
+  const handleCloseFavoritesModal = () => {
+    setFavoritesModalOpen(false);
   };
 
   // ========================================================================
@@ -935,7 +946,22 @@ const PropertyDetailPage: React.FC = () => {
                   </Box>
                 </Grid>
                 <Grid item xs={4}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'warning.50', borderRadius: 1 }}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      bgcolor: 'warning.50',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        bgcolor: 'warning.100',
+                        transform: 'translateY(-2px)',
+                        boxShadow: 2,
+                      },
+                    }}
+                    onClick={handleOpenFavoritesModal}
+                  >
                     <Typography variant="h4" color="warning.main" fontWeight={600}>
                       {property.stats?.favorite_count || 0}
                     </Typography>
@@ -1470,6 +1496,13 @@ const PropertyDetailPage: React.FC = () => {
         open={likesModalOpen}
         onClose={handleCloseLikesModal}
         title={`Likes for ${property?.title_en || 'Property'}`}
+        propertyId={property?.id || 0}
+      />
+
+      <PropertyFavoritesModal
+        open={favoritesModalOpen}
+        onClose={handleCloseFavoritesModal}
+        title={`Favorites for ${property?.title_en || 'Property'}`}
         propertyId={property?.id || 0}
       />
 

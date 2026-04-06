@@ -18,17 +18,17 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, Person as PersonIcon, Schedule as ScheduleIcon } from '@mui/icons-material';
 import { formatDate } from '../../../constants/dateFormats';
-import { usePropertyLikes } from '../../../services/queries/propertyLikes';
-import { PropertyLikeUser } from '../../../services/api/propertyLikes';
+import { usePropertyFavorites } from '../../../services/queries/propertyFavorites';
+import type { PropertyLikeUser } from '../../../services/api/propertyLikes';
 
-export interface PropertyLikesModalProps {
+export interface PropertyFavoritesModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
   propertyId: number;
 }
 
-export const PropertyLikesModal: React.FC<PropertyLikesModalProps> = ({
+export const PropertyFavoritesModal: React.FC<PropertyFavoritesModalProps> = ({
   open,
   onClose,
   title,
@@ -36,7 +36,7 @@ export const PropertyLikesModal: React.FC<PropertyLikesModalProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: response, isLoading, error } = usePropertyLikes(
+  const { data: response, isLoading, error } = usePropertyFavorites(
     propertyId,
     { page: currentPage, per_page: 20 },
     open
@@ -83,7 +83,7 @@ export const PropertyLikesModal: React.FC<PropertyLikesModalProps> = ({
             {title}
           </Typography>
           <Typography variant="body2" color="textSecondary">
-            {pagination?.total ?? users.length} user{pagination?.total === 1 ? '' : 's'} liked this property
+            {pagination?.total ?? users.length} user{pagination?.total === 1 ? '' : 's'} saved this property
           </Typography>
         </Box>
         <IconButton aria-label="close" onClick={handleClose} sx={{ color: (theme) => theme.palette.grey[500] }}>
@@ -98,12 +98,12 @@ export const PropertyLikesModal: React.FC<PropertyLikesModalProps> = ({
           </Box>
         ) : error ? (
           <Box sx={{ p: 2 }}>
-            <Alert severity="error">{(error as Error)?.message || 'Failed to load likes'}</Alert>
+            <Alert severity="error">{(error as Error)?.message || 'Failed to load favorites'}</Alert>
           </Box>
         ) : users.length === 0 ? (
           <Box sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="body1" color="textSecondary">
-              No likes yet
+              No favorites yet
             </Typography>
           </Box>
         ) : (
@@ -121,7 +121,7 @@ export const PropertyLikesModal: React.FC<PropertyLikesModalProps> = ({
                     <Avatar
                       src={user.profile_image_url || undefined}
                       alt={user.name}
-                      sx={{ bgcolor: 'primary.main' }}
+                      sx={{ bgcolor: 'error.main' }}
                     >
                       {!user.profile_image_url ? <PersonIcon /> : null}
                     </Avatar>
