@@ -13,6 +13,8 @@ export interface ApiResponse<T = any> {
     per_page: number;
     total: number;
     last_page: number;
+    from?: number;
+    to?: number;
     has_more_pages: boolean;
   };
 }

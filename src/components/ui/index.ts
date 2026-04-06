@@ -44,6 +44,9 @@ export { default as RenewConfirmationDialog } from './RenewConfirmationDialog';
 // Comments
 export { CommentsModal } from './comments/CommentsModal';
 
+// Property likes (users who liked a property)
+export { PropertyLikesModal } from './property-likes/PropertyLikesModal';
+
 // Share URL
 export { ShareURLModal } from './ShareURLModal';
 

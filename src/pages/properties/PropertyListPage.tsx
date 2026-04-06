@@ -41,7 +41,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, ShareURLModal } from '../../components/ui';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
@@ -201,6 +201,10 @@ const PropertyListPage: React.FC = () => {
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedPropertyForComments, setSelectedPropertyForComments] = useState<Property | null>(null);
 
+  // Likes modal state (users who liked)
+  const [likesModalOpen, setLikesModalOpen] = useState(false);
+  const [selectedPropertyForLikes, setSelectedPropertyForLikes] = useState<Property | null>(null);
+
   // Referral assignment modal state
   const [referralModalOpen, setReferralModalOpen] = useState(false);
   const [selectedPropertyForReferral, setSelectedPropertyForReferral] = useState<Property | null>(null);
@@ -271,6 +275,16 @@ const PropertyListPage: React.FC = () => {
   const handleCloseCommentsModal = () => {
     setCommentsModalOpen(false);
     setSelectedPropertyForComments(null);
+  };
+
+  const handleOpenLikesModal = (property: Property) => {
+    setSelectedPropertyForLikes(property);
+    setLikesModalOpen(true);
+  };
+
+  const handleCloseLikesModal = () => {
+    setLikesModalOpen(false);
+    setSelectedPropertyForLikes(null);
   };
 
   // ========================================================================
@@ -634,7 +648,18 @@ const PropertyListPage: React.FC = () => {
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
+            onClick={() => handleOpenLikesModal(property)}
+          >
             <LikeIcon sx={{ fontSize: 16, color: 'primary.main' }} />
             <Typography variant="body2" fontWeight="500">
               {property.stats?.like_count || 0}
@@ -865,6 +890,12 @@ const PropertyListPage: React.FC = () => {
         tooltip: 'View Comments',
         color: 'secondary' as const,
         onClick: () => handleOpenCommentsModal(property),
+      },
+      {
+        icon: <LikeIcon />,
+        tooltip: 'View Likes',
+        color: 'primary' as const,
+        onClick: () => handleOpenLikesModal(property),
       },
     ];
     
@@ -1321,6 +1352,13 @@ const PropertyListPage: React.FC = () => {
         title={`Comments for ${selectedPropertyForComments?.title_en || 'Property'}`}
         propertyId={selectedPropertyForComments?.id || 0}
         canDelete={true}
+      />
+
+      <PropertyLikesModal
+        open={likesModalOpen}
+        onClose={handleCloseLikesModal}
+        title={`Likes for ${selectedPropertyForLikes?.title_en || 'Property'}`}
+        propertyId={selectedPropertyForLikes?.id || 0}
       />
 
       {/* Referral Assignment Modal */}
