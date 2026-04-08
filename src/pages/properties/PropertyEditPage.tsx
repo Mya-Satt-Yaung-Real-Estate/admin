@@ -190,8 +190,10 @@ const PropertyEditPage: React.FC = () => {
     // Property details
     price_lakh: propertyData.price_lakh ? parseFloat(String(propertyData.price_lakh)) : undefined,
     area_sqft: parseFloat(propertyData.area_sqft) || 0,
+    sqft_fee: propertyData.sqft_fee ? parseFloat(String(propertyData.sqft_fee)) : undefined,
     length: propertyData.length || undefined,
     width: propertyData.width || undefined,
+    floor: propertyData.floor || undefined,
     bedrooms: propertyData.bedrooms || undefined,
     bathrooms: propertyData.bathrooms || undefined,
     bank_installment_available: propertyData.bank_installment_available || false,

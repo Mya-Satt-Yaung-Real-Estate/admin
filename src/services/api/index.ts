@@ -20,5 +20,6 @@ export * from './announcements';
 export * from './lawyers';
 export * from './wantingListings';
 export * from './dashboard';
+export * from './appSettings';
 
 

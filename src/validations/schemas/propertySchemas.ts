@@ -26,8 +26,10 @@ export const propertyBaseSchema = Yup.object({
     .max(999999999.99, 'Price (Lakh) is too large. Maximum value is 999,999,999.99')
     .required('Price (Lakh) is required'),
   area_sqft: Yup.number().min(0, 'Area must be positive').required('Area is required'),
+  sqft_fee: Yup.number().min(0, 'Sqft fee must be positive').optional(),
   length: Yup.number().min(0, 'Length must be positive').optional(),
   width: Yup.number().min(0, 'Width must be positive').optional(),
+  floor: Yup.number().integer('Floor must be a whole number').min(0, 'Floor must be positive').optional(),
   bedrooms: Yup.number().min(0, 'Bedrooms must be positive').optional(),
   bathrooms: Yup.number().min(0, 'Bathrooms must be positive').optional(),
   bank_installment_available: Yup.boolean().optional(),

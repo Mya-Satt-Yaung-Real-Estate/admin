@@ -227,6 +227,11 @@ export const MENU_ITEMS = [
         iconName: 'Speed',
         path: '/settings/system-monitoring',
       },
+      {
+        text: 'App Version',
+        iconName: 'Settings',
+        path: '/settings/app-version',
+      },
     ],
     requiresDeveloperAccess: true,
   },

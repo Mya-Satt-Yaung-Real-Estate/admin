@@ -166,6 +166,25 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
           />
         </Grid>
 
+
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            size="small"
+            name="sqft_fee"
+            label="Sqft Fee (Lakh)"
+            type="number"
+            inputProps={{ step: "0.01" }}
+            value={values.sqft_fee || ''}
+            onChange={handleChange}
+            error={touched.sqft_fee && Boolean(errors.sqft_fee)}
+            helperText={touched.sqft_fee && errors.sqft_fee}
+            InputProps={{
+              startAdornment: <InputAdornment position="start">Lakh</InputAdornment>,
+            }}
+          />
+        </Grid>
+
         <Grid item xs={12} sm={6}>
           <TextField
             fullWidth
@@ -177,6 +196,20 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
             onChange={handleChange}
             error={touched.area_sqft && Boolean(errors.area_sqft)}
             helperText={touched.area_sqft && errors.area_sqft}
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            size="small"
+            name="floor"
+            label="Floor"
+            type="number"
+            value={values.floor || ''}
+            onChange={handleChange}
+            error={touched.floor && Boolean(errors.floor)}
+            helperText={touched.floor && errors.floor}
           />
         </Grid>
 

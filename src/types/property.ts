@@ -17,8 +17,10 @@ export interface Property {
   formatted_price: string;
   price_lakh?: string | number;
   area_sqft: string;
+  sqft_fee?: string | number;
   length?: number;
   width?: number;
+  floor?: number;
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;
@@ -129,8 +131,10 @@ export interface CreatePropertyData {
   // Property details
   price_lakh: number;
   area_sqft: number;
+  sqft_fee?: number;
   length?: number;
   width?: number;
+  floor?: number;
   bedrooms?: number;
   bathrooms?: number;
   bank_installment_available?: boolean;

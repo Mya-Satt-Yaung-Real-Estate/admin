@@ -614,6 +614,16 @@ const PropertyDetailPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Grid>
+                  {property.sqft_fee !== null && property.sqft_fee !== undefined && (
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <PriceIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" fontWeight="500">
+                          Sqft Fee: {property.sqft_fee} Lakh
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
                   {property.length && (
                     <Grid item xs={12} sm={6}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -630,6 +640,16 @@ const PropertyDetailPage: React.FC = () => {
                         <AreaIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                         <Typography variant="body2" fontWeight="500">
                           Width: {property.width} ft
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                  {property.floor !== null && property.floor !== undefined && (
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <HomeIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" fontWeight="500">
+                          Floor: {property.floor}
                         </Typography>
                       </Box>
                     </Grid>
