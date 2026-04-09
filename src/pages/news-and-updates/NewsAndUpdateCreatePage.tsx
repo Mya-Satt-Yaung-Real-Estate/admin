@@ -23,6 +23,8 @@ import { useAlertSystem } from '../../hooks';
 import { ActionAlert } from '../../components/ui';
 import SingleImageUpload from '../../components/ui/SingleImageUpload';
 import { Media } from '../../types/media';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface FormData {
   title_en: string;
@@ -68,6 +70,24 @@ const NewsAndUpdateCreatePage: React.FC = () => {
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [tagInput, setTagInput] = useState('');
+
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ list: 'ordered' }, { list: 'bullet' }],
+      [{ align: [] }],
+      ['link', 'blockquote'],
+      ['clean'],
+    ],
+  };
+
+  const getPlainTextFromHtml = (html: string): string =>
+    html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
   // Filter categories to show only active, non-deleted news_update categories
   const categories = (categoriesResponse?.data || []).filter(category => 
@@ -160,7 +180,7 @@ const NewsAndUpdateCreatePage: React.FC = () => {
       newErrors.short_description = 'Short description is required';
     }
 
-    if (!formData.main_content.trim()) {
+    if (!getPlainTextFromHtml(formData.main_content)) {
       newErrors.main_content = 'Main content is required';
     }
 
@@ -186,7 +206,7 @@ const NewsAndUpdateCreatePage: React.FC = () => {
         title_mm: formData.title_mm.trim(),
         news_article_category_id: formData.news_article_category_id,
         short_description: formData.short_description.trim(),
-        main_content: formData.main_content.trim(),
+        main_content: formData.main_content,
         writer_name: formData.writer_name.trim(),
         is_active: formData.is_active,
         tag: formData.tag,
@@ -323,24 +343,31 @@ const NewsAndUpdateCreatePage: React.FC = () => {
 
               {/* Main Content */}
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Main Content"
-                  value={formData.main_content}
-                  onChange={(e) => handleFieldChange('main_content', e.target.value)}
-                  error={!!errors.main_content}
-                  helperText={errors.main_content}
-                  multiline
-                  minRows={16}
-                  maxRows={40}
-                  required
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Main Content *
+                </Typography>
+                <Box
                   sx={{
-                    '& .MuiInputBase-input': {
-                      resize: 'vertical',
+                    border: '1px solid',
+                    borderColor: errors.main_content ? 'error.main' : 'divider',
+                    borderRadius: 1,
+                    '& .ql-editor': {
+                      minHeight: 260,
                     },
                   }}
-                />
+                >
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.main_content}
+                    onChange={(value) => handleFieldChange('main_content', value)}
+                    modules={quillModules}
+                  />
+                </Box>
+                {errors.main_content && (
+                  <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                    {errors.main_content}
+                  </Typography>
+                )}
               </Grid>
             </Grid>
           </CardContent>

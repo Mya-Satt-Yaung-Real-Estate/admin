@@ -87,6 +87,7 @@ const NewsAndUpdateDetailPage: React.FC = () => {
 
   // Extract news data
   const news = newsResponse?.data;
+  const containsHtml = (content: string): boolean => /<[^>]+>/.test(content);
 
   // Event handlers
   const handleBack = () => navigate(PAGE_CONFIG.backButtonPath);
@@ -255,9 +256,16 @@ const NewsAndUpdateDetailPage: React.FC = () => {
                 <ArticleIcon color="primary" />
                 Main Content
               </Typography>
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                {news.main_content}
-              </Typography>
+              {containsHtml(news.main_content) ? (
+                <Box
+                  sx={{ '& p': { margin: 0 }, '& p + p': { mt: 1 } }}
+                  dangerouslySetInnerHTML={{ __html: news.main_content }}
+                />
+              ) : (
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {news.main_content}
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>
