@@ -49,4 +49,5 @@ export const REFERENCE_TYPES = [
   { value: 'property_trending_refund', label: 'Property Premium Refund' },
   { value: 'advertisement_upload', label: 'Advertisement Upload' },
   { value: 'advertisement_renewal', label: 'Advertisement Renewal' },
+  { value: 'wanted_list_info_unlock', label: 'Wanted List Unlock'},
 ] as const;
