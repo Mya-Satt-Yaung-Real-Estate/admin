@@ -28,6 +28,7 @@ import {
   Visibility as VisibilityIcon,
   Star as StarIcon,
   Fingerprint as FingerprintIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -282,6 +283,28 @@ const UserDetailPage: React.FC = () => {
                     secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
                   />
                 </ListItem>
+
+                {user.user_type === 'company' && user.company_profile && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <HomeIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Show on homepage"
+                      secondary={
+                        user.company_profile.show_on_homepage ? (
+                          <Typography component="span" variant="body2" color="success.main" fontWeight={500}>
+                            Yes
+                          </Typography>
+                        ) : (
+                          <Typography component="span" variant="body2" color="error.main" fontWeight={500}>
+                            No
+                          </Typography>
+                        )
+                      }
+                    />
+                  </ListItem>
+                )}
               </List>
               <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
             </CardContent>

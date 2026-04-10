@@ -357,6 +357,23 @@ const UserListPage: React.FC = () => {
       },
     },
     {
+      id: 'showOnHomepage',
+      label: 'Homepage',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        if (user.user_type !== 'company') {
+          return <Typography variant="body2" color="textSecondary">—</Typography>;
+        }
+        const on = Boolean(user.company_profile?.show_on_homepage);
+        return (
+          <Typography variant="body2" fontWeight={500} color={on ? 'success.main' : 'error.main'}>
+            {on ? 'Yes' : 'No'}
+          </Typography>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
       id: 'lastLogin',
       label: 'Last Login',
       render: (_value, user) => {
@@ -515,7 +532,7 @@ const UserListPage: React.FC = () => {
               avatarColor={user.user_type === 'company' ? 'success.main' : 'primary.main'}
               status={{
                 label: user.is_active ? 'Active' : 'Inactive',
-                color: user.is_active ? 'success' : 'error',
+                color: user.is_active ? ('success' as const) : ('error' as const),
               }}
               chips={[
                 ...(() => {
@@ -530,6 +547,12 @@ const UserListPage: React.FC = () => {
                   }
                   return [];
                 })(),
+                ...(user.user_type === 'company'
+                  ? [{
+                      label: user.company_profile?.show_on_homepage ? 'Homepage: Yes' : 'Homepage: No',
+                      color: user.company_profile?.show_on_homepage ? ('success' as const) : ('error' as const),
+                    }]
+                  : []),
                 {
                   label: user.user_type === 'company' ? 'Company' : 'Individual',
                   color: user.user_type === 'company' ? 'primary' as const : 'secondary' as const,

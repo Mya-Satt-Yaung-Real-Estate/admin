@@ -5,9 +5,11 @@ import {
   Button,
   Typography,
   FormControl,
+  FormControlLabel,
   InputLabel,
   Select,
   MenuItem,
+  Switch,
   Grid,
   Alert,
   Card,
@@ -66,6 +68,7 @@ const UserEditPage: React.FC = () => {
   const [status, setStatus] = useState<boolean>(true);
   const [memberLevel, setMemberLevel] = useState<string>('silver');
   const [verificationStatus, setVerificationStatus] = useState<string>('pending');
+  const [showOnHomepage, setShowOnHomepage] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [profileImage, setProfileImage] = useState<Media | null>(null);
   const [profileImageDirty, setProfileImageDirty] = useState(false);
@@ -87,6 +90,7 @@ const UserEditPage: React.FC = () => {
       setStatus(user.is_active);
       setMemberLevel(user.member_level);
       setVerificationStatus(typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
+      setShowOnHomepage(Boolean(user.company_profile?.show_on_homepage));
       setHasChanges(false);
       setProfileImageDirty(false);
       if (user.profile_media_id != null && user.profile_image_url) {
@@ -121,6 +125,9 @@ const UserEditPage: React.FC = () => {
 
   const handleVerificationStatusChange = (newVerificationStatus: string) => {
     setVerificationStatus(newVerificationStatus);
+    if (newVerificationStatus !== 'approved') {
+      setShowOnHomepage(false);
+    }
   };
 
   const handleClearBiometric = async () => {
@@ -140,13 +147,15 @@ const UserEditPage: React.FC = () => {
     const statusChanged = Boolean(status) !== Boolean(user.is_active);
     const memberLevelChanged = memberLevel !== user.member_level;
     let verificationStatusChanged = false;
+    let showOnHomepageChanged = false;
     if (user.user_type === 'company') {
       verificationStatusChanged = verificationStatus !== (typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
+      showOnHomepageChanged = showOnHomepage !== Boolean(user.company_profile?.show_on_homepage);
     }
     setHasChanges(
-      statusChanged || memberLevelChanged || verificationStatusChanged || profileImageDirty
+      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || profileImageDirty
     );
-  }, [status, memberLevel, verificationStatus, user, profileImageDirty]);
+  }, [status, memberLevel, verificationStatus, showOnHomepage, user, profileImageDirty]);
 
   const handleSubmit = async () => {
     if (!user || !hasChanges) return;
@@ -158,6 +167,7 @@ const UserEditPage: React.FC = () => {
 
     if (user.user_type === 'company') {
       updateData.verification_status = verificationStatus as 'pending' | 'approved';
+      updateData.show_on_homepage = showOnHomepage;
     }
 
     if (profileImageDirty) {
@@ -431,6 +441,22 @@ const UserEditPage: React.FC = () => {
                   </Select>
                 </FormControl>
               </Box>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showOnHomepage}
+                    onChange={(_, checked) => setShowOnHomepage(checked)}
+                    disabled={verificationStatus !== 'approved'}
+                  />
+                }
+                label="Show on homepage (partner logos)"
+              />
+              {verificationStatus !== 'approved' && (
+                <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5 }}>
+                  Approve the company first to enable this.
+                </Typography>
+              )}
             </Paper>
           </Grid>
         )}

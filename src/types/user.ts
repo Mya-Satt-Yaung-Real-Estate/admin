@@ -12,6 +12,7 @@ export interface CompanyProfile {
   view_count: number;
   location_en: string;
   location_mm: string;
+  show_on_homepage?: boolean;
 }
 
 // Point Package for user detail
@@ -117,6 +118,7 @@ export interface UpdateRegularUserData {
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
   verification_status?: 'pending' | 'approved';
+  show_on_homepage?: boolean;
   /** Set or clear profile image (admin). Omit to leave unchanged. */
   media_id?: number | null;
 }

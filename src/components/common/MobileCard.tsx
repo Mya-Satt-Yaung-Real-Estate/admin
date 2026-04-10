@@ -39,7 +39,7 @@ export interface MobileCardProps {
   // Additional chips
   chips?: Array<{
     label: string;
-    color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'default';
+    color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' | 'default';
     variant?: 'filled' | 'outlined';
   }>;
   
