@@ -14,7 +14,8 @@ export interface AD {
   status: boolean;
   is_paid: boolean;
   is_published: boolean;
-  display_location: 'homepage_block' | 'home-page-asidebar' | 'detail-page-asidebar';
+  display_location: 'homepage_block' | 'home-page-asidebar' | 'detail-page-asidebar' | 'home_grid_ads';
+  grid_index?: number | null;
   payment_date?: string | null;
   start_at?: string;
   end_at?: string;
@@ -62,7 +63,8 @@ export interface ADFormData {
   status: boolean;
   is_paid: boolean;
   is_published: boolean;
-  display_location: 'homepage_block' | 'home-page-asidebar' | 'detail-page-asidebar';
+  display_location: 'homepage_block' | 'home-page-asidebar' | 'detail-page-asidebar' | 'home_grid_ads';
+  grid_index?: number | null;
   payment_date?: string | null;
   start_at?: string;
   end_at?: string;
@@ -134,6 +136,7 @@ export const DISPLAY_LOCATION_LIMITS = {
   'homepage_block': 3,       // Maximum 3 active ads
   'home-page-asidebar': 3,   // Maximum 3 active ads
   'detail-page-asidebar': 3, // Maximum 3 active ads
+  'home_grid_ads': 3,        // Per grid slot (grid_index 1–4)
 } as const;
 
 // Status options
@@ -154,4 +157,5 @@ export const AD_DISPLAY_LOCATIONS = [
   { value: 'homepage_block', label: 'Homepage Block' },
   { value: 'home-page-asidebar', label: 'Home Page Sidebar' },
   { value: 'detail-page-asidebar', label: 'Detail Page Sidebar' },
+  { value: 'home_grid_ads', label: 'Home Grid ADS' },
 ] as const;

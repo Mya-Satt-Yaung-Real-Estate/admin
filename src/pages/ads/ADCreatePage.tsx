@@ -58,8 +58,15 @@ const validationSchema = Yup.object({
     }),
   link_type: Yup.string().nullable().oneOf(['button_link', 'text_link', 'image_link']),
   display_location: Yup.string()
-    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar'], 'Please select a display location')
+    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar', 'home_grid_ads'], 'Please select a display location')
     .required('Display location is required'),
+  grid_index: Yup.number()
+    .nullable()
+    .when('display_location', {
+      is: 'home_grid_ads',
+      then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
+      otherwise: (schema) => schema.nullable(),
+    }),
   start_at: Yup.string()
     .required('Start date is required'),
   end_at: Yup.string()
@@ -147,6 +154,7 @@ const ADCreatePage: React.FC = () => {
       is_paid: false,
       is_published: false,
       display_location: '',
+      grid_index: null as number | null,
       payment_date: '',
       start_at: '',
       end_at: '',
@@ -174,7 +182,8 @@ const ADCreatePage: React.FC = () => {
         const adData: ADFormData = {
           ...values,
           link_type: values.link_type as "button_link" | "text_link" | "image_link",
-          display_location: values.display_location as "homepage_block" | "home-page-asidebar" | "detail-page-asidebar",
+          display_location: values.display_location as ADFormData['display_location'],
+          grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
           media_id: mediaId,
         };
 
@@ -241,7 +250,15 @@ const ADCreatePage: React.FC = () => {
                         id="display_location"
                         name="display_location"
                         value={formik.values.display_location}
-                        onChange={formik.handleChange}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          formik.setFieldValue('display_location', v);
+                          if (v !== 'home_grid_ads') {
+                            formik.setFieldValue('grid_index', null);
+                          } else if (formik.values.grid_index == null) {
+                            formik.setFieldValue('grid_index', 1);
+                          }
+                        }}
                         onBlur={formik.handleBlur}
                         label="Display Location *"
                         error={formik.touched.display_location && Boolean(formik.errors.display_location)}
@@ -249,6 +266,7 @@ const ADCreatePage: React.FC = () => {
                         <MenuItem value="homepage_block">Homepage Block</MenuItem>
                         <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
                         <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+                        <MenuItem value="home_grid_ads">Home Grid ADS</MenuItem>
                       </Select>
                       {formik.touched.display_location && formik.errors.display_location && (
                         <FormHelperText error>
@@ -257,6 +275,35 @@ const ADCreatePage: React.FC = () => {
                       )}
                     </FormControl>
                   </Grid>
+
+                  {formik.values.display_location === 'home_grid_ads' && (
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth variant="outlined">
+                        <InputLabel id="grid_index-label">Grid slot *</InputLabel>
+                        <Select
+                          labelId="grid_index-label"
+                          id="grid_index"
+                          name="grid_index"
+                          value={formik.values.grid_index ?? ''}
+                          onChange={(e) => {
+                            const n = e.target.value === '' ? null : Number(e.target.value);
+                            formik.setFieldValue('grid_index', n);
+                          }}
+                          onBlur={formik.handleBlur}
+                          label="Grid slot *"
+                          error={formik.touched.grid_index && Boolean(formik.errors.grid_index)}
+                        >
+                          <MenuItem value={1}>Grid 1</MenuItem>
+                          <MenuItem value={2}>Grid 2</MenuItem>
+                          <MenuItem value={3}>Grid 3</MenuItem>
+                          <MenuItem value={4}>Grid 4</MenuItem>
+                        </Select>
+                        {formik.touched.grid_index && formik.errors.grid_index && (
+                          <FormHelperText error>{formik.errors.grid_index as string}</FormHelperText>
+                        )}
+                      </FormControl>
+                    </Grid>
+                  )}
 
                   {/* Status Switches */}
                   <Grid item xs={12} sm={6}>
@@ -583,6 +630,11 @@ const ADCreatePage: React.FC = () => {
                       )}
                       {formik.values.display_location === 'detail-page-asidebar' && (
                         <>Recommended image size: <strong>400 x 160 pixels (2.5:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                      )}
+                      {formik.values.display_location === 'home_grid_ads' && (
+                        <>
+                          <strong>Home Grid ADS:</strong> Recommended <strong>1200 × 440 px</strong>. Max <strong>1.5 MB</strong>.
+                        </>
                       )}
                     </Typography>
                   </Alert>

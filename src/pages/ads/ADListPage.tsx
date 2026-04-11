@@ -55,6 +55,28 @@ const PAGE_CONFIG = {
   createButtonPath: '/ads/create',
 } as const;
 
+function formatAdScheduleDate(value?: string | null): string {
+  return value ? formatDate(value, 'display') : '—';
+}
+
+/** True when end_at is set and strictly before the current moment (campaign ended). */
+function isAdEndDateOverdue(endAt?: string | null): boolean {
+  if (!endAt) return false;
+  const end = new Date(endAt);
+  if (Number.isNaN(end.getTime())) return false;
+  return end.getTime() < Date.now();
+}
+
+function formatAdDisplayLocation(ad: AD): string {
+  if (ad.display_location === 'home_grid_ads') {
+    return ad.grid_index != null ? `Home Grid ADS · Grid ${ad.grid_index}` : 'Home Grid ADS';
+  }
+  if (ad.display_location === 'detail-page-asidebar') return 'DetailPage Sidebar';
+  if (ad.display_location === 'home-page-asidebar') return 'HomePage Sidebar';
+  if (ad.display_location === 'homepage_block') return 'Homepage Block';
+  return String(ad.display_location).replace(/-/g, ' ');
+}
+
 const createFilterFields = (): FilterField[] => [
   {
     key: 'searchTerm',
@@ -81,6 +103,7 @@ const createFilterFields = (): FilterField[] => [
       { value: 'homepage_block', label: 'Homepage Block' },
       { value: 'home-page-asidebar', label: 'Home Page Sidebar' },
       { value: 'detail-page-asidebar', label: 'Detail Page Sidebar' },
+      { value: 'home_grid_ads', label: 'Home Grid ADS' },
     ],
   },
 ];
@@ -251,13 +274,21 @@ const ADListPage: React.FC = () => {
       label: 'Description',
       render: (_value, ad) => {
         if (!ad) return <Typography variant="body2">No data</Typography>;
+        const lineClampSx = {
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical' as const,
+          wordBreak: 'break-word' as const,
+        };
         return (
-          <Box>
-            <Typography variant="body2" noWrap>
+          <Box sx={{ maxWidth: 320, minWidth: 0 }}>
+            <Typography variant="body2" sx={lineClampSx}>
               {ad.description_en || 'No description'}
             </Typography>
             {ad.description_mm && (
-              <Typography variant="caption" color="textSecondary" noWrap>
+              <Typography variant="caption" color="textSecondary" sx={{ ...lineClampSx, mt: 0.25 }}>
                 {ad.description_mm}
               </Typography>
             )}
@@ -273,10 +304,7 @@ const ADListPage: React.FC = () => {
         if (!ad) return <Typography variant="body2">No data</Typography>;
         return (
           <Typography variant="body2" textTransform="capitalize">
-            {ad.display_location === 'detail-page-asidebar' ? 'DetailPage Sidebar' :
-             ad.display_location === 'home-page-asidebar' ? 'HomePage Sidebar' :
-             ad.display_location === 'homepage_block' ? 'Homepage Block' :
-             String(ad.display_location).replace('-', ' ')}
+            {formatAdDisplayLocation(ad)}
           </Typography>
         );
       },
@@ -295,13 +323,27 @@ const ADListPage: React.FC = () => {
       },
     },
     {
-      id: 'createdAt',
-      label: 'Created',
+      id: 'startAt',
+      label: 'Start',
       render: (_value, ad) => {
         if (!ad) return <Typography variant="body2">No data</Typography>;
         return (
           <Typography variant="body2" color="textSecondary">
-            {formatDate(ad.created_at, 'display')}
+            {formatAdScheduleDate(ad.start_at)}
+          </Typography>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'endAt',
+      label: 'End',
+      render: (_value, ad) => {
+        if (!ad) return <Typography variant="body2">No data</Typography>;
+        const overdue = isAdEndDateOverdue(ad.end_at);
+        return (
+          <Typography variant="body2" color={overdue ? 'error' : 'textSecondary'}>
+            {formatAdScheduleDate(ad.end_at)}
           </Typography>
         );
       },
@@ -522,13 +564,23 @@ const ADListPage: React.FC = () => {
               description={ad.description_en ? `${ad.description_en.substring(0, 100)}...` : 'No description'}
               actions={getMobileCardActions(ad)}
               chips={[
-                { label: ad.display_location === 'detail-page-asidebar' ? 'DetailPage Sidebar' :
-                         ad.display_location === 'home-page-asidebar' ? 'HomePage Sidebar' :
-                         ad.display_location === 'homepage_block' ? 'Homepage Block' :
-                         String(ad.display_location).replace('-', ' '), color: 'primary' },
+                { label: formatAdDisplayLocation(ad), color: 'primary' },
                 { label: ad.status ? 'Active' : 'Inactive', color: ad.status ? 'primary' : 'default' },
               ]}
-            />
+            >
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  Start: {formatAdScheduleDate(ad.start_at)}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color={isAdEndDateOverdue(ad.end_at) ? 'error' : 'textSecondary'}
+                  display="block"
+                >
+                  End: {formatAdScheduleDate(ad.end_at)}
+                </Typography>
+              </Box>
+            </MobileCard>
           ))}
         </Box>
       ) : (

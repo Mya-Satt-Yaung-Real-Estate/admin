@@ -28,6 +28,7 @@ interface ADsFieldsSectionProps {
     is_paid: boolean;
     is_published: boolean;
     display_location: string;
+    grid_index?: number | null;
     payment_date?: string | null;
     start_at?: string;
     end_at?: string;
@@ -253,19 +254,56 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
               id="display_location"
               name="display_location"
               value={values.display_location}
-              onChange={(e) => setFieldValue('display_location', e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value;
+                setFieldValue('display_location', v);
+                if (v !== 'home_grid_ads') {
+                  setFieldValue('grid_index', null);
+                } else if (values.grid_index == null) {
+                  setFieldValue('grid_index', 1);
+                }
+              }}
               onBlur={handleBlur}
               label="Display Location *"
             >
               <MenuItem value="homepage_block">Homepage Block</MenuItem>
               <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
               <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+              <MenuItem value="home_grid_ads">Home Grid ADS</MenuItem>
             </Select>
             {touched.display_location && errors.display_location && (
               <FormHelperText>{errors.display_location}</FormHelperText>
             )}
           </FormControl>
         </Grid>
+
+        {values.display_location === 'home_grid_ads' && (
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth variant="outlined" error={touched.grid_index && Boolean(errors.grid_index)}>
+              <InputLabel id="grid_index-label">Grid slot *</InputLabel>
+              <Select
+                labelId="grid_index-label"
+                id="grid_index"
+                name="grid_index"
+                value={values.grid_index ?? ''}
+                onChange={(e) => {
+                  const n = e.target.value === '' ? null : Number(e.target.value);
+                  setFieldValue('grid_index', n);
+                }}
+                onBlur={handleBlur}
+                label="Grid slot *"
+              >
+                <MenuItem value={1}>Grid 1</MenuItem>
+                <MenuItem value={2}>Grid 2</MenuItem>
+                <MenuItem value={3}>Grid 3</MenuItem>
+                <MenuItem value={4}>Grid 4</MenuItem>
+              </Select>
+              {touched.grid_index && errors.grid_index && (
+                <FormHelperText>{errors.grid_index}</FormHelperText>
+              )}
+            </FormControl>
+          </Grid>
+        )}
 
         {/* Media ID */}
         <Grid item xs={12} sm={6}>

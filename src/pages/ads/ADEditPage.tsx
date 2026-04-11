@@ -57,7 +57,16 @@ const validationSchema = Yup.object({
       }
     }),
   link_type: Yup.string().nullable().oneOf(['button_link', 'text_link', 'image_link']),
-  display_location: Yup.string().oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar']).required('Display location is required'),
+  display_location: Yup.string()
+    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar', 'home_grid_ads'])
+    .required('Display location is required'),
+  grid_index: Yup.number()
+    .nullable()
+    .when('display_location', {
+      is: 'home_grid_ads',
+      then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
+      otherwise: (schema) => schema.nullable(),
+    }),
   media_id: Yup.number().required('Media ID is required').positive('Media ID must be a positive number'),
   // Link text is required if link has value and link_type is not image_link
   link_text: Yup.string().nullable().when(['link', 'link_type'], {
@@ -249,6 +258,7 @@ const ADEditPage: React.FC = () => {
     is_paid: adData.is_paid || false,
     is_published: adData.is_published || false,
     display_location: adData.display_location || 'homepage_block',
+    grid_index: adData.grid_index ?? null,
     payment_date: adData.payment_date || '',
     start_at: formatDateForInput(adData.start_at),
     end_at: formatDateForInput(adData.end_at),
@@ -268,6 +278,7 @@ const ADEditPage: React.FC = () => {
       // Prepare AD data
       const adData: Partial<ADFormData> = {
         ...values,
+        grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
         media_id: mediaId,
       };
 
@@ -400,7 +411,15 @@ const ADEditPage: React.FC = () => {
                             id="display_location"
                             name="display_location"
                             value={values.display_location}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setFieldValue('display_location', v);
+                              if (v !== 'home_grid_ads') {
+                                setFieldValue('grid_index', null);
+                              } else if (values.grid_index == null) {
+                                setFieldValue('grid_index', 1);
+                              }
+                            }}
                             onBlur={() => {}}
                             label="Display Location *"
                             error={touched.display_location && Boolean(errors.display_location)}
@@ -408,6 +427,7 @@ const ADEditPage: React.FC = () => {
                             <MenuItem value="homepage_block">Homepage Block</MenuItem>
                             <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
                             <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+                            <MenuItem value="home_grid_ads">Home Grid ADS</MenuItem>
                           </Select>
                           {touched.display_location && errors.display_location && (
                             <FormHelperText error>
@@ -416,6 +436,35 @@ const ADEditPage: React.FC = () => {
                           )}
                         </FormControl>
                       </Grid>
+
+                      {values.display_location === 'home_grid_ads' && (
+                        <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth variant="outlined">
+                            <InputLabel id="grid_index-label">Grid slot *</InputLabel>
+                            <Select
+                              labelId="grid_index-label"
+                              id="grid_index"
+                              name="grid_index"
+                              value={values.grid_index ?? ''}
+                              onChange={(e) => {
+                                const n = e.target.value === '' ? null : Number(e.target.value);
+                                setFieldValue('grid_index', n);
+                              }}
+                              onBlur={() => {}}
+                              label="Grid slot *"
+                              error={touched.grid_index && Boolean(errors.grid_index)}
+                            >
+                              <MenuItem value={1}>Grid 1</MenuItem>
+                              <MenuItem value={2}>Grid 2</MenuItem>
+                              <MenuItem value={3}>Grid 3</MenuItem>
+                              <MenuItem value={4}>Grid 4</MenuItem>
+                            </Select>
+                            {touched.grid_index && errors.grid_index && (
+                              <FormHelperText error>{errors.grid_index as string}</FormHelperText>
+                            )}
+                          </FormControl>
+                        </Grid>
+                      )}
 
                       {/* Status Switches */}
                       <Grid item xs={12} sm={6}>
@@ -742,6 +791,11 @@ const ADEditPage: React.FC = () => {
                           )}
                           {values.display_location === 'detail-page-asidebar' && (
                             <>Recommended image size: <strong>400 x 160 pixels (2.5:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                          )}
+                          {values.display_location === 'home_grid_ads' && (
+                            <>
+                              <strong>Home Grid ADS:</strong> Recommended <strong>1200 × 440 px</strong>. Max <strong>1.5 MB</strong>.
+                            </>
                           )}
                         </Typography>
                       </Alert>
