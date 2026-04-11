@@ -71,10 +71,24 @@ function formatAdDisplayLocation(ad: AD): string {
   if (ad.display_location === 'home_grid_ads') {
     return ad.grid_index != null ? `Home Grid ADS · Grid ${ad.grid_index}` : 'Home Grid ADS';
   }
-  if (ad.display_location === 'detail-page-asidebar') return 'DetailPage Sidebar';
-  if (ad.display_location === 'home-page-asidebar') return 'HomePage Sidebar';
+  if (ad.display_location === 'detail-page-asidebar') return 'Detail Page Sidebar 1';
+  if (ad.display_location === 'detail-page-asidebar-2') return 'Detail Page Sidebar 2';
+  if (ad.display_location === 'home-page-asidebar') return 'Home page Main Slider';
   if (ad.display_location === 'homepage_block') return 'Homepage Block';
   return String(ad.display_location).replace(/-/g, ' ');
+}
+
+/** Labels for display location filter (API values unchanged). */
+const DISPLAY_LOCATION_FILTER_LABELS: Record<string, string> = {
+  homepage_block: 'Homepage Block',
+  'home-page-asidebar': 'Home page Main Slider',
+  'detail-page-asidebar': 'Detail Page Sidebar 1',
+  'detail-page-asidebar-2': 'Detail Page Sidebar 2',
+  home_grid_ads: 'Home Grid ADS',
+};
+
+function displayLocationFilterTitle(filterValue: string): string {
+  return DISPLAY_LOCATION_FILTER_LABELS[filterValue] ?? filterValue.replace(/-/g, ' ');
 }
 
 const createFilterFields = (): FilterField[] => [
@@ -101,8 +115,9 @@ const createFilterFields = (): FilterField[] => [
     options: [
       { value: 'all', label: 'All Locations' },
       { value: 'homepage_block', label: 'Homepage Block' },
-      { value: 'home-page-asidebar', label: 'Home Page Sidebar' },
-      { value: 'detail-page-asidebar', label: 'Detail Page Sidebar' },
+      { value: 'home-page-asidebar', label: 'Home page Main Slider' },
+      { value: 'detail-page-asidebar', label: 'Detail Page Sidebar 1' },
+      { value: 'detail-page-asidebar-2', label: 'Detail Page Sidebar 2' },
       { value: 'home_grid_ads', label: 'Home Grid ADS' },
     ],
   },
@@ -232,14 +247,20 @@ const ADListPage: React.FC = () => {
       icon: <BusinessIcon />,
     },
     {
-      title: 'Homepage Sidebar',
+      title: 'Home page Main Slider',
       value: ads.filter(ad => ad.display_location === 'home-page-asidebar').length,
       color: 'info',
       icon: <BusinessIcon />,
     },
     {
-      title: 'Detail Page Sidebar',
+      title: 'Detail Page Sidebar 1',
       value: ads.filter(ad => ad.display_location === 'detail-page-asidebar').length,
+      color: 'secondary',
+      icon: <BusinessIcon />,
+    },
+    {
+      title: 'Detail Page Sidebar 2',
+      value: ads.filter(ad => ad.display_location === 'detail-page-asidebar-2').length,
       color: 'secondary',
       icon: <BusinessIcon />,
     },
@@ -491,11 +512,11 @@ const ADListPage: React.FC = () => {
       {/* Page Header */}
       <PageHeader
         title={filters.displayLocationFilter !== 'all'
-          ? `${filters.displayLocationFilter.replace('homepage', 'Home Page ').replace('home-page', 'Home Page ').replace('detail-page', 'Detail Page ').replace('asidebar', 'Sidebar')} ADs Management`
+          ? `${displayLocationFilterTitle(filters.displayLocationFilter)} ADs Management`
           : PAGE_CONFIG.title}
         subtitle={PAGE_CONFIG.description}
         breadcrumbs={`Dashboard / ADs / ${filters.displayLocationFilter !== 'all'
-          ? filters.displayLocationFilter.replace('homepage', 'Home Page ').replace('home-page', 'Home Page ').replace('detail-page', 'Detail Page ').replace('asidebar', 'Sidebar') + ' ADs'
+          ? `${displayLocationFilterTitle(filters.displayLocationFilter)} ADs`
           : 'All ADs'}`}
         actionButton={{
           text: PAGE_CONFIG.createButtonText,

@@ -381,8 +381,9 @@ const ADViewPage: React.FC = () => {
                     Display Location
                   </Typography>
                   <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                    {ad.display_location === 'detail-page-asidebar' ? 'DetailPage Sidebar' :
-                     ad.display_location === 'home-page-asidebar' ? 'HomePage Sidebar' :
+                    {ad.display_location === 'detail-page-asidebar' ? 'Detail Page Sidebar 1' :
+                     ad.display_location === 'detail-page-asidebar-2' ? 'Detail Page Sidebar 2' :
+                     ad.display_location === 'home-page-asidebar' ? 'Home page Main Slider' :
                      ad.display_location === 'homepage_block' ? 'Homepage Block' :
                      String(ad.display_location).replace('-', ' ')}
                   </Typography>

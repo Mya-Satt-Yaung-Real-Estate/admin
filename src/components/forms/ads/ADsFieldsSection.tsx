@@ -267,8 +267,9 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
               label="Display Location *"
             >
               <MenuItem value="homepage_block">Homepage Block</MenuItem>
-              <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
-              <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+              <MenuItem value="home-page-asidebar">Home page Main Slider</MenuItem>
+              <MenuItem value="detail-page-asidebar">Detail Page Sidebar 1</MenuItem>
+              <MenuItem value="detail-page-asidebar-2">Detail Page Sidebar 2</MenuItem>
               <MenuItem value="home_grid_ads">Home Grid ADS</MenuItem>
             </Select>
             {touched.display_location && errors.display_location && (

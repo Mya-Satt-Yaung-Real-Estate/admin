@@ -58,7 +58,7 @@ const validationSchema = Yup.object({
     }),
   link_type: Yup.string().nullable().oneOf(['button_link', 'text_link', 'image_link']),
   display_location: Yup.string()
-    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar', 'home_grid_ads'], 'Please select a display location')
+    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar', 'detail-page-asidebar-2', 'home_grid_ads'], 'Please select a display location')
     .required('Display location is required'),
   grid_index: Yup.number()
     .nullable()
@@ -264,8 +264,9 @@ const ADCreatePage: React.FC = () => {
                         error={formik.touched.display_location && Boolean(formik.errors.display_location)}
                       >
                         <MenuItem value="homepage_block">Homepage Block</MenuItem>
-                        <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
-                        <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+                        <MenuItem value="home-page-asidebar">Home page Main Slider</MenuItem>
+                        <MenuItem value="detail-page-asidebar">Detail Page Sidebar 1</MenuItem>
+                        <MenuItem value="detail-page-asidebar-2">Detail Page Sidebar 2</MenuItem>
                         <MenuItem value="home_grid_ads">Home Grid ADS</MenuItem>
                       </Select>
                       {formik.touched.display_location && formik.errors.display_location && (
@@ -628,7 +629,8 @@ const ADCreatePage: React.FC = () => {
                       {formik.values.display_location === 'homepage_block' && (
                         <>Recommended image size: <strong>400-450 x 160 pixels (2.5:1 to 2.8:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
                       )}
-                      {formik.values.display_location === 'detail-page-asidebar' && (
+                      {(formik.values.display_location === 'detail-page-asidebar' ||
+                        formik.values.display_location === 'detail-page-asidebar-2') && (
                         <>Recommended image size: <strong>400 x 160 pixels (2.5:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
                       )}
                       {formik.values.display_location === 'home_grid_ads' && (

@@ -58,7 +58,7 @@ const validationSchema = Yup.object({
     }),
   link_type: Yup.string().nullable().oneOf(['button_link', 'text_link', 'image_link']),
   display_location: Yup.string()
-    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar', 'home_grid_ads'])
+    .oneOf(['homepage_block', 'home-page-asidebar', 'detail-page-asidebar', 'detail-page-asidebar-2', 'home_grid_ads'])
     .required('Display location is required'),
   grid_index: Yup.number()
     .nullable()
@@ -425,8 +425,9 @@ const ADEditPage: React.FC = () => {
                             error={touched.display_location && Boolean(errors.display_location)}
                           >
                             <MenuItem value="homepage_block">Homepage Block</MenuItem>
-                            <MenuItem value="home-page-asidebar">Home Page Sidebar</MenuItem>
-                            <MenuItem value="detail-page-asidebar">Detail Page Sidebar</MenuItem>
+                            <MenuItem value="home-page-asidebar">Home page Main Slider</MenuItem>
+                            <MenuItem value="detail-page-asidebar">Detail Page Sidebar 1</MenuItem>
+                            <MenuItem value="detail-page-asidebar-2">Detail Page Sidebar 2</MenuItem>
                             <MenuItem value="home_grid_ads">Home Grid ADS</MenuItem>
                           </Select>
                           {touched.display_location && errors.display_location && (
@@ -789,7 +790,8 @@ const ADEditPage: React.FC = () => {
                           {values.display_location === 'homepage_block' && (
                             <>Recommended image size: <strong>400-450 x 160 pixels (2.5:1 to 2.8:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
                           )}
-                          {values.display_location === 'detail-page-asidebar' && (
+                          {(values.display_location === 'detail-page-asidebar' ||
+                            values.display_location === 'detail-page-asidebar-2') && (
                             <>Recommended image size: <strong>400 x 160 pixels (2.5:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
                           )}
                           {values.display_location === 'home_grid_ads' && (
