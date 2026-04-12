@@ -50,6 +50,9 @@ export { PropertyLikesModal } from './property-likes/PropertyLikesModal';
 // Property favorites (users who saved a property)
 export { PropertyFavoritesModal } from './property-favorites/PropertyFavoritesModal';
 
+// Property view interactions (user_interactions log)
+export { PropertyViewsModal } from './property-view-interactions/PropertyViewsModal';
+
 // Share URL
 export { ShareURLModal } from './ShareURLModal';
 

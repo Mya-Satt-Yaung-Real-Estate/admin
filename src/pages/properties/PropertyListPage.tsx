@@ -34,6 +34,7 @@ import {
   ThumbUp as LikeIcon,
   Comment as CommentIcon,
   Share as ShareIcon,
+  RemoveRedEye as ViewLogIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -41,7 +42,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, PropertyFavoritesModal, ShareURLModal } from '../../components/ui';
+import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, PropertyFavoritesModal, PropertyViewsModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
@@ -209,6 +210,10 @@ const PropertyListPage: React.FC = () => {
   const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
   const [selectedPropertyForFavorites, setSelectedPropertyForFavorites] = useState<Property | null>(null);
 
+  // View interactions modal
+  const [viewsModalOpen, setViewsModalOpen] = useState(false);
+  const [selectedPropertyForViews, setSelectedPropertyForViews] = useState<Property | null>(null);
+
   // Referral assignment modal state
   const [referralModalOpen, setReferralModalOpen] = useState(false);
   const [selectedPropertyForReferral, setSelectedPropertyForReferral] = useState<Property | null>(null);
@@ -299,6 +304,16 @@ const PropertyListPage: React.FC = () => {
   const handleCloseFavoritesModal = () => {
     setFavoritesModalOpen(false);
     setSelectedPropertyForFavorites(null);
+  };
+
+  const handleOpenViewsModal = (property: Property) => {
+    setSelectedPropertyForViews(property);
+    setViewsModalOpen(true);
+  };
+
+  const handleCloseViewsModal = () => {
+    setViewsModalOpen(false);
+    setSelectedPropertyForViews(null);
   };
 
   // ========================================================================
@@ -630,8 +645,19 @@ const PropertyListPage: React.FC = () => {
       render: (_value, property) => {
         if (!property) return <Typography variant="body2">No data</Typography>;
         return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <ViewCountIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
+            onClick={() => handleOpenViewsModal(property)}
+          >
+            <ViewCountIcon sx={{ fontSize: 16, color: 'info.main' }} />
             <Typography variant="body2" fontWeight="500">
               {property.stats?.view_count || 0}
             </Typography>
@@ -909,6 +935,12 @@ const PropertyListPage: React.FC = () => {
         tooltip: 'View Details',
         color: 'primary' as const,
         onClick: () => navigate(`/properties/${property.id}`),
+      },
+      {
+        icon: <ViewLogIcon />,
+        tooltip: 'View view log',
+        color: 'info' as const,
+        onClick: () => handleOpenViewsModal(property),
       },
       {
         icon: <CommentIcon />,
@@ -1397,6 +1429,13 @@ const PropertyListPage: React.FC = () => {
         onClose={handleCloseFavoritesModal}
         title={`Favorites for ${selectedPropertyForFavorites?.title_en || 'Property'}`}
         propertyId={selectedPropertyForFavorites?.id || 0}
+      />
+
+      <PropertyViewsModal
+        open={viewsModalOpen}
+        onClose={handleCloseViewsModal}
+        title={`Views for ${selectedPropertyForViews?.title_en || 'Property'}`}
+        propertyId={selectedPropertyForViews?.id || 0}
       />
 
       {/* Referral Assignment Modal */}

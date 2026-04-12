@@ -52,7 +52,7 @@ import { useProperty, useDeleteProperty, useRestoreProperty, useRenewProperty, u
 import { employeesAPI } from '../../services/api/employees';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, PropertyFavoritesModal, ShareURLModal } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, RenewButton, RenewConfirmationDialog, CommentsModal, PropertyLikesModal, PropertyFavoritesModal, PropertyViewsModal, ShareURLModal } from '../../components/ui';
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { formatDate } from '../../constants/dateFormats';
 import { formatPropertyCondition } from '../../utils/propertyUtils';
@@ -103,6 +103,9 @@ const PropertyDetailPage: React.FC = () => {
 
   // Favorites modal state (users who saved)
   const [favoritesModalOpen, setFavoritesModalOpen] = useState(false);
+
+  // View interactions modal (user_interactions log)
+  const [viewsModalOpen, setViewsModalOpen] = useState(false);
 
   // Referral assignment modal state
   const [referralModalOpen, setReferralModalOpen] = useState(false);
@@ -169,6 +172,14 @@ const PropertyDetailPage: React.FC = () => {
 
   const handleCloseFavoritesModal = () => {
     setFavoritesModalOpen(false);
+  };
+
+  const handleOpenViewsModal = () => {
+    setViewsModalOpen(true);
+  };
+
+  const handleCloseViewsModal = () => {
+    setViewsModalOpen(false);
   };
 
   // ========================================================================
@@ -946,7 +957,22 @@ const PropertyDetailPage: React.FC = () => {
 
               <Grid container spacing={2}>
                 <Grid item xs={4}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'primary.50', borderRadius: 1 }}>
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      p: 2,
+                      bgcolor: 'primary.50',
+                      borderRadius: 1,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease-in-out',
+                      '&:hover': {
+                        bgcolor: 'primary.100',
+                        transform: 'translateY(-2px)',
+                        boxShadow: 2,
+                      },
+                    }}
+                    onClick={handleOpenViewsModal}
+                  >
                     <Typography variant="h4" color="primary" fontWeight={600}>
                       {property.stats?.view_count || 0}
                     </Typography>
@@ -1523,6 +1549,13 @@ const PropertyDetailPage: React.FC = () => {
         open={favoritesModalOpen}
         onClose={handleCloseFavoritesModal}
         title={`Favorites for ${property?.title_en || 'Property'}`}
+        propertyId={property?.id || 0}
+      />
+
+      <PropertyViewsModal
+        open={viewsModalOpen}
+        onClose={handleCloseViewsModal}
+        title={`Views for ${property?.title_en || 'Property'}`}
         propertyId={property?.id || 0}
       />
 
