@@ -274,6 +274,12 @@ const AdvertisementDetailPage: React.FC = () => {
                   <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                     <StatusChip status={advertisement.status} />
                     <StatusChip status={advertisement.verification_status} statusType="verification_status" />
+                    <Chip
+                      label={advertisement.advertisement_type === 'for_rent' ? 'For Rent' : 'For Sale'}
+                      color={advertisement.advertisement_type === 'for_rent' ? 'secondary' : 'primary'}
+                      size="small"
+                      variant="outlined"
+                    />
                     {advertisement.is_featured && (
                       <Chip
                         label="Featured"

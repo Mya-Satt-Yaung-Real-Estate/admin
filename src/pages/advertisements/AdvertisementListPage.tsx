@@ -8,6 +8,7 @@ import {
   useMediaQuery,
   Tabs,
   Tab,
+  Chip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -51,6 +52,7 @@ interface AdvertisementFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
   verificationFilter: string;
+  advertisementTypeFilter: string;
   expiringFilter: string;
 }
 
@@ -96,6 +98,16 @@ const createFilterFields = (): FilterField[] => [
     ],
   },
   {
+    key: 'advertisementTypeFilter',
+    type: 'select',
+    label: 'Advertisement Type',
+    options: [
+      { value: 'all', label: 'All Types' },
+      { value: 'for_sale', label: 'For Sale' },
+      { value: 'for_rent', label: 'For Rent' },
+    ],
+  },
+  {
     key: 'expiringFilter',
     type: 'select',
     label: 'Expiry Status',
@@ -125,6 +137,7 @@ const AdvertisementListPage: React.FC = () => {
     searchTerm: '',
     statusFilter: 'all',
     verificationFilter: 'all',
+    advertisementTypeFilter: 'all',
     expiringFilter: 'all',
   });
 
@@ -223,6 +236,9 @@ const AdvertisementListPage: React.FC = () => {
       
       const matchesVerification = filters.verificationFilter === 'all' || 
         advertisement.verification_status === filters.verificationFilter;
+
+      const matchesAdvertisementType = filters.advertisementTypeFilter === 'all' ||
+        advertisement.advertisement_type === filters.advertisementTypeFilter;
       
       // Apply expiring filter
       let matchesExpiring = true;
@@ -235,7 +251,7 @@ const AdvertisementListPage: React.FC = () => {
         }
       }
       
-      return matchesSearch && matchesStatus && matchesVerification && matchesExpiring;
+      return matchesSearch && matchesStatus && matchesVerification && matchesAdvertisementType && matchesExpiring;
     });
   }, [advertisements, filters, activeTab]);
 
@@ -314,6 +330,22 @@ const AdvertisementListPage: React.FC = () => {
         );
       },
       hidden: isMobile,
+    },
+    {
+      id: 'advertisementType',
+      label: 'Type',
+      render: (_value, advertisement) => {
+        if (!advertisement) return <Typography variant="body2">No data</Typography>;
+        const isForRent = advertisement.advertisement_type === 'for_rent';
+        return (
+          <Chip
+            label={isForRent ? 'For Rent' : 'For Sale'}
+            color={isForRent ? 'secondary' : 'primary'}
+            size="small"
+            variant="outlined"
+          />
+        );
+      },
     },
     {
       id: 'location',

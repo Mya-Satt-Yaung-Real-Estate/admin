@@ -6,13 +6,17 @@ import {
   Grid,
   TextField,
   Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from '@mui/material';
 
 interface BasicInformationSectionProps {
   values: any;
   errors: any;
   touched: any;
-  handleChange: (event: React.ChangeEvent<any>) => void;
+  handleChange: (event: any) => void;
 }
 
 const BasicInformationSection: React.FC<BasicInformationSectionProps> = ({
@@ -72,6 +76,27 @@ const BasicInformationSection: React.FC<BasicInformationSectionProps> = ({
               error={touched.description && Boolean(errors.description)}
               helperText={touched.description && errors.description}
             />
+          </Grid>
+
+          {/* Advertisement Type */}
+          <Grid item xs={12} md={6}>
+            <FormControl
+              fullWidth
+              size="small"
+              error={touched.advertisement_type && Boolean(errors.advertisement_type)}
+            >
+              <InputLabel id="advertisement-type-label">Advertisement Type *</InputLabel>
+              <Select
+                labelId="advertisement-type-label"
+                name="advertisement_type"
+                label="Advertisement Type *"
+                value={values.advertisement_type || 'for_sale'}
+                onChange={handleChange}
+              >
+                <MenuItem value="for_sale">For Sale</MenuItem>
+                <MenuItem value="for_rent">For Rent</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
       </CardContent>

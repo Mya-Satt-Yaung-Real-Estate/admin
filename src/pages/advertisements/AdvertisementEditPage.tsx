@@ -40,6 +40,7 @@ const validationSchema = Yup.object({
   title_en: Yup.string().required('English title is required').max(255, 'Title must be less than 255 characters'),
   title_mm: Yup.string().required('Myanmar title is required').max(255, 'Title must be less than 255 characters'),
   description: Yup.string().required('Description is required'),
+  advertisement_type: Yup.string().oneOf(['for_rent', 'for_sale'], 'Invalid advertisement type'),
   region_id: Yup.number().nullable(),
   township_id: Yup.number().nullable(),
   address: Yup.string().optional(),
@@ -172,6 +173,7 @@ const AdvertisementEditPage: React.FC = () => {
     title_en: advertisementData.title_en || '',
     title_mm: advertisementData.title_mm || '',
     description: advertisementData.description || '',
+    advertisement_type: advertisementData.advertisement_type || 'for_sale',
     
     // Location information
     region_id: advertisementData.location?.region?.id || null,
