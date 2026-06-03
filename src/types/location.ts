@@ -87,6 +87,21 @@ export interface YarpyatTax {
   };
 }
 
+export type YarpyatTaxConfigType = 'selling' | 'buying';
+
+export interface YarpyatTaxConfig {
+  id: number;
+  slug: string;
+  tax_type: YarpyatTaxConfigType;
+  name_en: string;
+  name_mm: string;
+  percentage: number;
+  sort_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CreateYarpyatTaxData {
   ward_id: number;
   name_en: string;
@@ -99,6 +114,24 @@ export interface UpdateYarpyatTaxData {
   name_en?: string;
   name_mm?: string;
   price?: number;
+}
+
+export interface CreateYarpyatTaxConfigData {
+  tax_type: YarpyatTaxConfigType;
+  name_en: string;
+  name_mm: string;
+  percentage: number;
+  sort_order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateYarpyatTaxConfigData {
+  tax_type?: YarpyatTaxConfigType;
+  name_en?: string;
+  name_mm?: string;
+  percentage?: number;
+  sort_order?: number;
+  is_active?: boolean;
 }
 
 // Form data types for components

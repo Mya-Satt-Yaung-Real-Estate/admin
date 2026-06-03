@@ -184,6 +184,11 @@ export const MENU_ITEMS = [
         iconName: 'AttachMoney',
         path: '/yarpyat',
       },
+      {
+        text: 'Yarpyat Config',
+        iconName: 'Percent',
+        path: '/yarpyat-config',
+      },
     ],
   },
   // Fourth Section: System & Admin Features

@@ -1,6 +1,6 @@
 // Locations API functions
 import { apiRequest, QueryParams } from './base';
-import { Region, Township, Ward, CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, YarpyatTax, CreateYarpyatTaxData, UpdateYarpyatTaxData } from '../../types/location';
+import { Region, Township, Ward, CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, YarpyatTax, CreateYarpyatTaxData, UpdateYarpyatTaxData, YarpyatTaxConfig, CreateYarpyatTaxConfigData, UpdateYarpyatTaxConfigData } from '../../types/location';
 
 export const locationsAPI = {
   // Regions
@@ -98,4 +98,28 @@ export const locationsAPI = {
 
   deleteYarpyatTax: (slug: string) =>
     apiRequest(`/yarpyat/${slug}`, { method: 'DELETE' }),
+
+  // YarpyatTaxConfig
+  getYarpyatTaxConfigs: (params?: QueryParams) => {
+    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
+    return apiRequest<YarpyatTaxConfig[]>(`/yarpyat-config${queryString}`);
+  },
+
+  getYarpyatTaxConfig: (slug: string) =>
+    apiRequest<YarpyatTaxConfig>(`/yarpyat-config/${slug}`),
+
+  createYarpyatTaxConfig: (data: CreateYarpyatTaxConfigData) =>
+    apiRequest<YarpyatTaxConfig>('/yarpyat-config', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateYarpyatTaxConfig: (slug: string, data: UpdateYarpyatTaxConfigData) =>
+    apiRequest<YarpyatTaxConfig>(`/yarpyat-config/${slug}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteYarpyatTaxConfig: (slug: string) =>
+    apiRequest(`/yarpyat-config/${slug}`, { method: 'DELETE' }),
 };

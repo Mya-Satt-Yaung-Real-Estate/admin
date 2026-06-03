@@ -41,6 +41,8 @@ import {
   ShoppingCart as ShoppingCartIcon,
   FolderSpecial as WantingListIcon,
   Speed as SpeedIcon,
+  AttachMoney as AttachMoneyIcon,
+  Percent as PercentIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -135,6 +137,10 @@ export const getIconComponent = (iconName: string): React.ReactNode => {
       return <WantingListIcon />;
     case 'Speed':
       return <SpeedIcon />;
+    case 'AttachMoney':
+      return <AttachMoneyIcon />;
+    case 'Percent':
+      return <PercentIcon />;
     
     default:
       return <DashboardIcon />;
