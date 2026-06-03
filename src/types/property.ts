@@ -16,6 +16,8 @@ export interface Property {
   price: string;
   formatted_price: string;
   price_lakh?: string | number;
+  currency?: 'MMK' | 'USD' | 'THB' | 'CNY';
+  price_amount?: string | number | null;
   area_sqft: string;
   sqft_fee?: string | number;
   length?: number;
@@ -130,6 +132,8 @@ export interface CreatePropertyData {
   
   // Property details
   price_lakh: number;
+  currency?: 'MMK' | 'USD' | 'THB' | 'CNY';
+  price_amount?: number;
   area_sqft: number;
   sqft_fee?: number;
   length?: number;
