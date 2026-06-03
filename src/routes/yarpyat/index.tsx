@@ -5,6 +5,7 @@ import { ProtectedRoute } from '../shared';
 const YarpyatListPage = lazy(() => import('@/pages/locations/YarpyatListPage'));
 const YarpyatCreatePage = lazy(() => import('@/pages/locations/YarpyatCreatePage'));
 const YarpyatEditPage = lazy(() => import('@/pages/locations/YarpyatEditPage'));
+const YarpyatConfigPage = lazy(() => import('@/pages/locations/YarpyatConfigPage'));
 
 export const yarpyatRoutes: RouteObject[] = [
   {
@@ -18,5 +19,9 @@ export const yarpyatRoutes: RouteObject[] = [
   {
     path: '/yarpyat/:slug/edit',
     element: <ProtectedRoute><YarpyatEditPage /></ProtectedRoute>,
+  },
+  {
+    path: '/yarpyat-config',
+    element: <ProtectedRoute><YarpyatConfigPage /></ProtectedRoute>,
   },
 ];

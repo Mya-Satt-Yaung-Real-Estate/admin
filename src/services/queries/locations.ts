@@ -1,7 +1,7 @@
 // Location React Query hooks
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { locationsAPI } from '../api/locations';
-import { CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, CreateYarpyatTaxData, UpdateYarpyatTaxData } from '../../types/location';
+import { CreateRegionData, UpdateRegionData, CreateTownshipData, UpdateTownshipData, CreateWardData, UpdateWardData, CreateYarpyatTaxData, UpdateYarpyatTaxData, CreateYarpyatTaxConfigData, UpdateYarpyatTaxConfigData } from '../../types/location';
 import { QueryParams } from '../api/base';
 
 // Query keys
@@ -15,6 +15,8 @@ export const locationKeys = {
   ward: (slug: string) => [...locationKeys.wards(), slug] as const,
   yarpyatTaxes: () => [...locationKeys.all, 'yarpyatTaxes'] as const,
   yarpyatTax: (slug: string) => [...locationKeys.yarpyatTaxes(), slug] as const,
+  yarpyatTaxConfigs: () => [...locationKeys.all, 'yarpyatTaxConfigs'] as const,
+  yarpyatTaxConfig: (slug: string) => [...locationKeys.yarpyatTaxConfigs(), slug] as const,
 };
 
 // Region hooks
@@ -217,6 +219,57 @@ export const useDeleteYarpyatTax = () => {
     mutationFn: (slug: string) => locationsAPI.deleteYarpyatTax(slug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: locationKeys.yarpyatTaxes() });
+    },
+  });
+};
+
+// YarpyatTaxConfig hooks
+export const useYarpyatTaxConfigs = (params?: QueryParams) => {
+  return useQuery({
+    queryKey: [...locationKeys.yarpyatTaxConfigs(), params],
+    queryFn: () => locationsAPI.getYarpyatTaxConfigs(params),
+  });
+};
+
+export const useYarpyatTaxConfig = (slug: string) => {
+  return useQuery({
+    queryKey: locationKeys.yarpyatTaxConfig(slug),
+    queryFn: () => locationsAPI.getYarpyatTaxConfig(slug),
+    enabled: !!slug,
+  });
+};
+
+export const useCreateYarpyatTaxConfig = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (data: CreateYarpyatTaxConfigData) => locationsAPI.createYarpyatTaxConfig(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: locationKeys.yarpyatTaxConfigs() });
+    },
+  });
+};
+
+export const useUpdateYarpyatTaxConfig = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: UpdateYarpyatTaxConfigData }) =>
+      locationsAPI.updateYarpyatTaxConfig(slug, data),
+    onSuccess: (_, { slug }) => {
+      queryClient.invalidateQueries({ queryKey: locationKeys.yarpyatTaxConfigs() });
+      queryClient.invalidateQueries({ queryKey: locationKeys.yarpyatTaxConfig(slug) });
+    },
+  });
+};
+
+export const useDeleteYarpyatTaxConfig = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (slug: string) => locationsAPI.deleteYarpyatTaxConfig(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: locationKeys.yarpyatTaxConfigs() });
     },
   });
 };
