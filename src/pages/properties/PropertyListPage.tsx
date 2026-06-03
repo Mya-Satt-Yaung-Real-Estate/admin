@@ -587,7 +587,7 @@ const PropertyListPage: React.FC = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <PriceIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
             <Typography variant="body2" fontWeight="500">
-              {property.price_lakh || 'N/A'} Lakh
+              {property.formatted_price || (property.price_lakh ? `${property.price_lakh} Lakh` : 'N/A')}
             </Typography>
           </Box>
         );

@@ -188,7 +188,8 @@ const PropertyEditPage: React.FC = () => {
     longitude: propertyData.location?.longitude || undefined,
     
     // Property details
-    price_lakh: propertyData.price_lakh ? parseFloat(String(propertyData.price_lakh)) : undefined,
+    currency: propertyData.currency || 'MMK',
+    price_lakh: propertyData.price_amount ? parseFloat(String(propertyData.price_amount)) : (propertyData.price_lakh ? parseFloat(String(propertyData.price_lakh)) : undefined),
     area_sqft: parseFloat(propertyData.area_sqft) || 0,
     sqft_fee: propertyData.sqft_fee ? parseFloat(String(propertyData.sqft_fee)) : undefined,
     length: propertyData.length || undefined,
@@ -231,6 +232,8 @@ const PropertyEditPage: React.FC = () => {
         // Transform is_platform_property boolean to property_mode string
         property_mode: is_platform_property ? 'platform' : 'user',
         user_id: is_platform_property ? undefined : values.user_id,
+        currency: values.currency || 'MMK',
+        price_amount: values.price_lakh,
         tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
         is_trending: Boolean(values.is_trending), // Ensure boolean type
         features: values.features || [], // Ensure features array

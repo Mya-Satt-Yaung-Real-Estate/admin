@@ -21,6 +21,9 @@ export const propertyBaseSchema = Yup.object({
   longitude: Yup.number().min(-180).max(180).optional(),
 
   // Property details
+  currency: Yup.string()
+    .oneOf(['MMK', 'USD', 'THB', 'CNY'], 'Invalid currency')
+    .optional(),
   price_lakh: Yup.number()
     .min(0, 'Price (Lakh) must be positive')
     .max(999999999.99, 'Price (Lakh) is too large. Maximum value is 999,999,999.99')

@@ -35,6 +35,15 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
   propertyTypesLoading = false,
   listingTypesLoading = false,
 }) => {
+  const selectedCurrency = values.currency || 'MMK';
+  const selectedCurrencyLabel = selectedCurrency === 'MMK'
+    ? 'Lakh'
+    : selectedCurrency === 'THB'
+      ? 'Baht'
+      : selectedCurrency === 'CNY'
+        ? 'Yuan'
+        : selectedCurrency;
+
   return (
     <FormSection 
       title="Basic Information" 
@@ -148,12 +157,32 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
         </Grid>
 
         {/* Price and Area */}
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
+          <FormControl fullWidth size="small" error={touched.currency && Boolean(errors.currency)}>
+            <InputLabel>Currency</InputLabel>
+            <Select
+              name="currency"
+              value={selectedCurrency}
+              label="Currency"
+              onChange={handleChange}
+            >
+              <MenuItem value="MMK">MMK (Lakhs)</MenuItem>
+              <MenuItem value="USD">USD</MenuItem>
+              <MenuItem value="THB">Baht</MenuItem>
+              <MenuItem value="CNY">Yuan</MenuItem>
+            </Select>
+            {touched.currency && errors.currency && (
+              <FormHelperText>{errors.currency}</FormHelperText>
+            )}
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
             size="small"
             name="price_lakh"
-            label="Price (Lakh)"
+            label={selectedCurrency === 'MMK' ? 'Price (Lakh)' : 'Price Amount'}
             type="number"
             inputProps={{ step: "0.01" }}
             value={values.price_lakh}
@@ -161,18 +190,18 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
             error={touched.price_lakh && Boolean(errors.price_lakh)}
             helperText={touched.price_lakh && errors.price_lakh}
             InputProps={{
-              startAdornment: <InputAdornment position="start">Lakh</InputAdornment>,
+              startAdornment: <InputAdornment position="start">{selectedCurrency === 'MMK' ? 'Lakh' : selectedCurrency}</InputAdornment>,
             }}
           />
         </Grid>
 
 
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={4}>
           <TextField
             fullWidth
             size="small"
             name="sqft_fee"
-            label="Sqft Fee (Lakh)"
+            label={`Sqft Fee (${selectedCurrencyLabel})`}
             type="number"
             inputProps={{ step: "0.01" }}
             value={values.sqft_fee || ''}
@@ -180,7 +209,7 @@ export const BasicInformationSection: React.FC<BasicInformationSectionProps> = (
             error={touched.sqft_fee && Boolean(errors.sqft_fee)}
             helperText={touched.sqft_fee && errors.sqft_fee}
             InputProps={{
-              startAdornment: <InputAdornment position="start">Lakh</InputAdornment>,
+              startAdornment: <InputAdornment position="start">{selectedCurrencyLabel}</InputAdornment>,
             }}
           />
         </Grid>
