@@ -1,5 +1,5 @@
 import * as yup from 'yup';
-import { ADVERTISEMENT_STATUSES, VERIFICATION_STATUSES } from '../../types/advertisement';
+import { ADVERTISEMENT_STATUSES, ADVERTISEMENT_TYPES, VERIFICATION_STATUSES } from '../../types/advertisement';
 
 // Base advertisement validation schema
 export const advertisementBaseSchema = yup.object({
@@ -18,6 +18,10 @@ export const advertisementBaseSchema = yup.object({
     .string()
     .required('Description is required')
     .max(1000, 'Description must not exceed 1000 characters'),
+  advertisement_type: yup
+    .string()
+    .oneOf(ADVERTISEMENT_TYPES.map(type => type.value), 'Invalid advertisement type')
+    .optional(),
   price: yup
     .number()
     .min(0, 'Price must be at least 0')

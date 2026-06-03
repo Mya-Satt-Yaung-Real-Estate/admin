@@ -5,6 +5,7 @@ export interface Advertisement {
   title_en: string;
   title_mm: string;
   description: string;
+  advertisement_type?: 'for_rent' | 'for_sale';
   region_id: number | null;
   township_id: number | null;
   address: string;
@@ -146,6 +147,7 @@ export interface AdvertisementFilters {
   search?: string;
   status?: string;
   verification_status?: string;
+  advertisement_type?: 'for_rent' | 'for_sale';
   featured?: boolean;
   user_id?: number;
   region_id?: number;
@@ -216,6 +218,7 @@ export interface AdvertisementFormData {
   title_en: string;
   title_mm: string;
   description: string;
+  advertisement_type?: 'for_rent' | 'for_sale';
   region_id?: number | null;
   township_id?: number | null;
   address: string;
@@ -235,6 +238,11 @@ export const ADVERTISEMENT_STATUSES = [
   { value: 'published', label: 'Published' },
   { value: 'expired', label: 'Expired' },
   { value: 'rejected', label: 'Rejected' },
+] as const;
+
+export const ADVERTISEMENT_TYPES = [
+  { value: 'for_sale', label: 'For Sale' },
+  { value: 'for_rent', label: 'For Rent' },
 ] as const;
 
 export type AdvertisementStatus = typeof ADVERTISEMENT_STATUSES[number]['value'];
