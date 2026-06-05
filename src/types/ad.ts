@@ -69,6 +69,8 @@ export interface ADFormData {
   start_at?: string;
   end_at?: string;
   media_id: number;
+  /** Required for all display locations except Home page Main Slider. */
+  user_id?: number | null;
 }
 
 export interface ADFilters {
@@ -154,6 +156,13 @@ export const AD_LINK_TYPES = [
   { value: 'text_link', label: 'Text Link' },
   { value: 'image_link', label: 'Image Link' },
 ] as const;
+
+// Constant and helper: Only ads outside the main slider require a company user.
+export const AD_DISPLAY_LOCATION_MAIN_SLIDER = 'home-page-asidebar' as const;
+
+export function adRequiresCompanyUser(displayLocation: string): boolean {
+  return Boolean(displayLocation) && displayLocation !== AD_DISPLAY_LOCATION_MAIN_SLIDER;
+}
 
 // Display location options
 export const AD_DISPLAY_LOCATIONS = [

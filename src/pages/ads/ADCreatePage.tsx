@@ -32,7 +32,9 @@ import PageHeader from '../../components/layout/PageHeader';
 import { ActionAlert, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAD } from '../../services/queries/ad';
-import { ADFormData } from '../../types/ad';
+import { useUsers } from '../../services/queries/users';
+import { ADFormData, adRequiresCompanyUser } from '../../types/ad';
+import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 import { Media } from '../../types/media';
 import { FormActions } from '../../components/forms/shared/FormActions';
 
@@ -66,6 +68,13 @@ const validationSchema = Yup.object({
       is: 'home_grid_ads',
       then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
       otherwise: (schema) => schema.nullable(),
+    }),
+  user_id: Yup.number()
+    .nullable()
+    .when('display_location', {
+      is: (loc: string) => adRequiresCompanyUser(loc),
+      then: (schema) => schema.required('Select a company user').positive('Select a company user'),
+      otherwise: (schema) => schema.nullable().strip(),
     }),
   start_at: Yup.string()
     .required('Start date is required'),
@@ -114,6 +123,7 @@ const ADCreatePage: React.FC = () => {
 
   // Create AD Mutation
   const createADMutation = useCreateAD();
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({ user_type: 'company' });
 
   // Upload Media Mutation (currently unused but kept for future functionality)
   // const uploadMediaMutation = useUploadMedia();
@@ -155,6 +165,7 @@ const ADCreatePage: React.FC = () => {
       is_published: false,
       display_location: '',
       grid_index: null as number | null,
+      user_id: undefined as number | undefined,
       payment_date: '',
       start_at: '',
       end_at: '',
@@ -169,6 +180,8 @@ const ADCreatePage: React.FC = () => {
         end_at: true,
         media_id: true,
         link_text: true,
+        user_id: true,
+        grid_index: true,
       });
 
       try {
@@ -184,6 +197,7 @@ const ADCreatePage: React.FC = () => {
           link_type: values.link_type as "button_link" | "text_link" | "image_link",
           display_location: values.display_location as ADFormData['display_location'],
           grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
+          user_id: adRequiresCompanyUser(values.display_location) ? values.user_id : undefined,
           media_id: mediaId,
         };
 
@@ -253,7 +267,10 @@ const ADCreatePage: React.FC = () => {
                         onChange={(e) => {
                           const v = e.target.value;
                           formik.setFieldValue('display_location', v);
-                          if (v !== 'home_grid_ads') {
+                          if (v === 'home-page-asidebar') {
+                            formik.setFieldValue('user_id', undefined);
+                            formik.setFieldValue('grid_index', null);
+                          } else if (v !== 'home_grid_ads') {
                             formik.setFieldValue('grid_index', null);
                           } else if (formik.values.grid_index == null) {
                             formik.setFieldValue('grid_index', 1);
@@ -276,6 +293,20 @@ const ADCreatePage: React.FC = () => {
                       )}
                     </FormControl>
                   </Grid>
+
+                  {adRequiresCompanyUser(formik.values.display_location) && (
+                    <Grid item xs={12} sm={6}>
+                      <CompanyUserSelect
+                        userId={formik.values.user_id}
+                        onUserIdChange={(id) => formik.setFieldValue('user_id', id)}
+                        users={usersResponse?.data || []}
+                        usersLoading={usersLoading}
+                        error={formik.errors.user_id as string | undefined}
+                        touched={formik.touched.user_id}
+                        onBlur={() => formik.setFieldTouched('user_id', true)}
+                      />
+                    </Grid>
+                  )}
 
                   {formik.values.display_location === 'home_grid_ads' && (
                     <Grid item xs={12} sm={6}>
