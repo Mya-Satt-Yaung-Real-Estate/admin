@@ -32,9 +32,11 @@ import PageHeader from '../../components/layout/PageHeader';
 import { ActionAlert, LoadingSpinner, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { useAD, useUpdateAD } from '../../services/queries/ad';
+import { useUsers } from '../../services/queries/users';
 import { Media } from '../../types/media';
-import { ADFormData } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
+import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -66,6 +68,13 @@ const validationSchema = Yup.object({
       is: 'home_grid_ads',
       then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
       otherwise: (schema) => schema.nullable(),
+    }),
+  user_id: Yup.number()
+    .nullable()
+    .when('display_location', {
+      is: (loc: string) => adRequiresCompanyUser(loc),
+      then: (schema) => schema.required('Select a company user').positive('Select a company user'),
+      otherwise: (schema) => schema.nullable().strip(),
     }),
   media_id: Yup.number().required('Media ID is required').positive('Media ID must be a positive number'),
   // Link text is required if link has value and link_type is not image_link
@@ -102,6 +111,7 @@ const ADEditPage: React.FC = () => {
 
   // Update AD mutation
   const updateADMutation = useUpdateAD();
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({ user_type: 'company' });
 
   // Upload Media Mutation (currently unused but kept for future functionality)
   // const uploadMediaMutation = useUploadMedia();
@@ -259,6 +269,7 @@ const ADEditPage: React.FC = () => {
     is_published: adData.is_published || false,
     display_location: adData.display_location || 'homepage_block',
     grid_index: adData.grid_index ?? null,
+    user_id: adData.user_id ?? adData.user?.id ?? undefined,
     payment_date: adData.payment_date || '',
     start_at: formatDateForInput(adData.start_at),
     end_at: formatDateForInput(adData.end_at),
@@ -279,6 +290,7 @@ const ADEditPage: React.FC = () => {
       const adData: Partial<ADFormData> = {
         ...values,
         grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
+        user_id: adRequiresCompanyUser(values.display_location) ? values.user_id : undefined,
         media_id: mediaId,
       };
 
@@ -355,7 +367,7 @@ const ADEditPage: React.FC = () => {
         onSubmit={handleSubmit}
         enableReinitialize={true}
       >
-        {({ values, errors, touched, handleChange, setFieldValue, handleSubmit }) => {
+        {({ values, errors, touched, handleChange, setFieldValue, setFieldTouched, handleSubmit }) => {
           // Store setFieldValue for use in Dialog
           useEffect(() => {
             setFormikSetFieldValue(() => setFieldValue);
@@ -414,7 +426,10 @@ const ADEditPage: React.FC = () => {
                             onChange={(e) => {
                               const v = e.target.value;
                               setFieldValue('display_location', v);
-                              if (v !== 'home_grid_ads') {
+                              if (v === 'home-page-asidebar') {
+                                setFieldValue('user_id', undefined);
+                                setFieldValue('grid_index', null);
+                              } else if (v !== 'home_grid_ads') {
                                 setFieldValue('grid_index', null);
                               } else if (values.grid_index == null) {
                                 setFieldValue('grid_index', 1);
@@ -437,6 +452,20 @@ const ADEditPage: React.FC = () => {
                           )}
                         </FormControl>
                       </Grid>
+
+                      {adRequiresCompanyUser(values.display_location) && (
+                        <Grid item xs={12} sm={6}>
+                          <CompanyUserSelect
+                            userId={values.user_id}
+                            onUserIdChange={(id) => setFieldValue('user_id', id)}
+                            users={usersResponse?.data || []}
+                            usersLoading={usersLoading}
+                            error={errors.user_id as string | undefined}
+                            touched={touched.user_id}
+                            onBlur={() => setFieldTouched('user_id', true)}
+                          />
+                        </Grid>
+                      )}
 
                       {values.display_location === 'home_grid_ads' && (
                         <Grid item xs={12} sm={6}>
