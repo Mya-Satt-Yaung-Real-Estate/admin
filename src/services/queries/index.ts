@@ -20,6 +20,7 @@ export * from './employees';
 export * from './propertyReferrals';
 export * from './announcements';
 export * from './lawyers';
+export * from './youtubeVideos';
 export * from './wantingListings';
 export * from './dashboard';
 
@@ -41,5 +42,6 @@ export { employeeKeys } from './employees';
 export { propertyReferralKeys } from './propertyReferrals';
 export { announcementKeys } from './announcements';
 export { lawyerKeys } from './lawyers';
+export { youtubeVideoKeys } from './youtubeVideos';
 export { dashboardKeys } from './dashboard';
 

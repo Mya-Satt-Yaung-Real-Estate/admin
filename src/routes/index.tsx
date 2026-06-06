@@ -36,6 +36,7 @@ import { propertyReferralRoutes } from './property-referrals';
 import { pointTransactionRoutes } from './point-transactions';
 import { announcementRoutes } from './announcements';
 import { lawyerRoutes } from './lawyers';
+import { youtubeVideoRoutes } from './youtube-videos';
 import { contactUsRoutes } from './contact-us';
 import { wantingListRoutes } from './wanted-listings';
 import { adsRoutes } from './ads';
@@ -77,6 +78,7 @@ export const router = createBrowserRouter([
     ...propertyReferralRoutes,
     ...pointTransactionRoutes,
     ...announcementRoutes,
+    ...youtubeVideoRoutes,
     ...lawyerRoutes,
     ...contactUsRoutes,
     ...wantingListRoutes,
