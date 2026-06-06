@@ -38,7 +38,8 @@ export const CompanyUserSelect: React.FC<CompanyUserSelectProps> = ({
         onBlur={onBlur}
         getOptionLabel={(option) => {
           const label = option.company_profile?.company_name ?? option.name;
-          return `${label} (${option.email})`;
+          const phone = option.phone ?? option.company_profile?.phone_number ?? '—';
+          return `${label} (${phone})`;
         }}
         isOptionEqualToValue={(option, value) => option.id === value.id}
         renderInput={(params) => (
