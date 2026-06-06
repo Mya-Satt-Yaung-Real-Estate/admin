@@ -13,19 +13,17 @@ import {
   ListItemText,
   ListItemIcon,
   Alert,
+  Divider,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   Edit as EditIcon,
-  Email as EmailIcon,
   Phone as PhoneIcon,
   Business as BusinessIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
-  Language as LanguageIcon,
   Description as DescriptionIcon,
-  Visibility as VisibilityIcon,
   Star as StarIcon,
   Fingerprint as FingerprintIcon,
   Home as HomeIcon,
@@ -141,22 +139,25 @@ const UserDetailPage: React.FC = () => {
       />
 
       <Grid container spacing={3} alignItems="stretch">
-        {/* User Profile Card */}
+        {/* Profile photo */}
         <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
           <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
             <CardContent
               sx={{
+                p: 3,
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 textAlign: 'center',
-                p: 3,
               }}
             >
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom textAlign="left">
+                Profile photo
+              </Typography>
               <Avatar
                 sx={{
-                  width: 280,
-                  height: 280,
+                  width: 220,
+                  height: 220,
                   mx: 'auto',
                   mb: 2,
                   bgcolor: user.profile_image_url ? 'transparent' : getUserTypeColor(),
@@ -232,7 +233,22 @@ const UserDetailPage: React.FC = () => {
                 </Box>
               </Box>
               
-              <List>
+              <List
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 0.5,
+                  '& .MuiListItem-root': {
+                    px: 0,
+                    alignItems: 'flex-start',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    minWidth: 36,
+                    mt: 0.5,
+                  },
+                }}
+              >
                 <ListItem>
                   <ListItemIcon>
                     <PersonIcon />
@@ -245,25 +261,89 @@ const UserDetailPage: React.FC = () => {
                 
                 <ListItem>
                   <ListItemIcon>
-                    <EmailIcon />
+                    <PhoneIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Email"
-                    secondary={user.email}
+                    primary="Phone Number"
+                    secondary={user.phone || user.company_profile?.phone_number || 'N/A'}
                   />
                 </ListItem>
 
-                { user?.user_type !== 'company' ?
-                  (<ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <BusinessIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="User Type"
+                    secondary={user.user_type === 'company' ? 'Company' : 'Individual'}
+                  />
+                </ListItem>
+
+                {user.user_type === 'company' && user.company_profile && (
+                  <>
+                    <Divider sx={{ my: 1, gridColumn: '1 / -1' }} />
+                    <ListItem sx={{ gridColumn: '1 / -1' }}>
+                      <ListItemText
+                        primary={
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Company Information
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Company Name"
+                        secondary={user.company_profile.company_name || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <StarIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Company Type"
+                        secondary={user.company_profile.company_type_name || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
                       <ListItemIcon>
                         <PhoneIcon />
                       </ListItemIcon>
                       <ListItemText
-                        primary="Phone Number"
-                        secondary={user.phone}
+                        primary="Company Phone"
+                        secondary={user.company_profile.phone_number || 'N/A'}
                       />
-                    </ListItem> ) : null
-                 }
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <LocationIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Location"
+                        secondary={user.company_profile.location_en || user.company_profile.location_mm || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Business Address"
+                        secondary={user.company_profile.address || 'N/A'}
+                      />
+                    </ListItem>
+                  </>
+                )}
+
                 <ListItem>
                   <ListItemIcon>
                     <StarIcon />
@@ -284,7 +364,47 @@ const UserDetailPage: React.FC = () => {
                   />
                 </ListItem>
 
-                {user.user_type === 'company' && user.company_profile && (
+                {user.user_type === 'company' && user.company_profile?.description && (
+                  <ListItem sx={{ gridColumn: '1 / -1' }}>
+                    <ListItemIcon>
+                      <DescriptionIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Description"
+                      secondary={user.company_profile.description}
+                    />
+                  </ListItem>
+                )}
+              </List>
+              <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {user.user_type === 'company' && user.company_profile && (
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Status / Options
+                </Typography>
+
+                <List
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 0.5,
+                    '& .MuiListItem-root': {
+                      px: 0,
+                      alignItems: 'flex-start',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      minWidth: 36,
+                      mt: 0.5,
+                    },
+                  }}
+                >
                   <ListItem>
                     <ListItemIcon>
                       <HomeIcon />
@@ -304,8 +424,7 @@ const UserDetailPage: React.FC = () => {
                       }
                     />
                   </ListItem>
-                )}
-                {user.user_type === 'company' && user.company_profile && (
+
                   <ListItem>
                     <ListItemIcon>
                       <HomeIcon />
@@ -325,12 +444,31 @@ const UserDetailPage: React.FC = () => {
                       }
                     />
                   </ListItem>
-                )}
-              </List>
-              <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
-            </CardContent>
-          </Card>
-        </Grid>
+
+                  <ListItem>
+                    <ListItemIcon>
+                      <StarIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Are you Jade Market?"
+                      secondary={
+                        user.company_profile.our_market ? (
+                          <Typography component="span" variant="body2" color="success.main" fontWeight={500}>
+                            Yes
+                          </Typography>
+                        ) : (
+                          <Typography component="span" variant="body2" color="error.main" fontWeight={500}>
+                            No
+                          </Typography>
+                        )
+                      }
+                    />
+                  </ListItem>
+                </List>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
         {/* Property Statistics */}
         <Grid item xs={12}>
@@ -363,136 +501,6 @@ const UserDetailPage: React.FC = () => {
         <Grid item xs={12} md={6}>
           <UserPointTransactions transactions={user.recent_transactions || []} />
         </Grid>
-
-        {/* Company Profile (if company user) */}
-        {user.user_type === 'company' && user.company_profile && (
-          <Grid item xs={12}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  Company Profile
-                </Typography>
-                
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <List>
-                      <ListItem>
-                        <ListItemIcon>
-                          <BusinessIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Company Name"
-                          secondary={user.company_profile.company_name}
-                        />
-                      </ListItem>
-                      
-                      <ListItem>
-                        <ListItemIcon>
-                          <BusinessIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Company Type"
-                          secondary={user.company_profile.company_type_name}
-                        />
-                      </ListItem>
-                      { user?.user_type == 'company' ? 
-                        ( <ListItem>
-                            <ListItemIcon>
-                              <PhoneIcon />
-                            </ListItemIcon>
-                            <ListItemText
-                              primary="Phone Number"
-                              secondary={user.company_profile.phone_number}
-                            />
-                          </ListItem> 
-                          ) : null 
-                        }
-                    </List>
-                  </Grid>
-                  
-                  <Grid item xs={12} md={6}>
-                    <List>
-                      <ListItem>
-                        <ListItemIcon>
-                          <LocationIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Location (English)"
-                          secondary={user.company_profile.location_en}
-                        />
-                      </ListItem>
-                      
-                      <ListItem>
-                        <ListItemIcon>
-                          <LocationIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Location (Myanmar)"
-                          secondary={user.company_profile.location_mm}
-                        />
-                      </ListItem>
-                      
-                      <ListItem>
-                        <ListItemIcon>
-                          <VisibilityIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="View Count"
-                          secondary={user.company_profile.view_count}
-                        />
-                      </ListItem>
-                    </List>
-                  </Grid>
-                  
-                  <Grid item xs={12}>
-                    <ListItem>
-                      <ListItemIcon>
-                        <LocationIcon />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary="Address"
-                        secondary={user.company_profile.address}
-                      />
-                    </ListItem>
-                    
-                    {user.company_profile.website && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <LanguageIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Website"
-                          secondary={
-                            <a 
-                              href={user.company_profile.website} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              style={{ color: 'inherit' }}
-                            >
-                              {user.company_profile.website}
-                            </a>
-                          }
-                        />
-                      </ListItem>
-                    )}
-                    
-                    {user.company_profile.description && (
-                      <ListItem>
-                        <ListItemIcon>
-                          <DescriptionIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary="Description"
-                          secondary={user.company_profile.description}
-                        />
-                      </ListItem>
-                    )}
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
 
         {/* Data Availability Notice */}
         {(!user.point_balance && !user.total_points_allocated && !user.total_points_consumed) && (

@@ -14,6 +14,7 @@ export interface CompanyProfile {
   location_mm: string;
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
+  our_market?: boolean;
 }
 
 // Point Package for user detail
@@ -113,6 +114,7 @@ export interface CreateRegularUserData {
   verification_status?: 'pending' | 'approved';
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
+  our_market?: boolean;
 }
 
 export interface UpdateRegularUserData {
@@ -124,6 +126,7 @@ export interface UpdateRegularUserData {
   verification_status?: 'pending' | 'approved';
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
+  our_market?: boolean;
   /** Set or clear profile image (admin). Omit to leave unchanged. */
   media_id?: number | null;
 }
