@@ -69,6 +69,7 @@ const UserEditPage: React.FC = () => {
   const [memberLevel, setMemberLevel] = useState<string>('silver');
   const [verificationStatus, setVerificationStatus] = useState<string>('pending');
   const [showOnHomepage, setShowOnHomepage] = useState(false);
+  const [showOnPropertyDetail, setShowOnPropertyDetail] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [profileImage, setProfileImage] = useState<Media | null>(null);
   const [profileImageDirty, setProfileImageDirty] = useState(false);
@@ -91,6 +92,7 @@ const UserEditPage: React.FC = () => {
       setMemberLevel(user.member_level);
       setVerificationStatus(typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
       setShowOnHomepage(Boolean(user.company_profile?.show_on_homepage));
+      setShowOnPropertyDetail(Boolean(user.company_profile?.show_on_property_detail));
       setHasChanges(false);
       setProfileImageDirty(false);
       if (user.profile_media_id != null && user.profile_image_url) {
@@ -127,6 +129,7 @@ const UserEditPage: React.FC = () => {
     setVerificationStatus(newVerificationStatus);
     if (newVerificationStatus !== 'approved') {
       setShowOnHomepage(false);
+      setShowOnPropertyDetail(false);
     }
   };
 
@@ -148,14 +151,16 @@ const UserEditPage: React.FC = () => {
     const memberLevelChanged = memberLevel !== user.member_level;
     let verificationStatusChanged = false;
     let showOnHomepageChanged = false;
+    let showOnPropertyDetailChanged = false;
     if (user.user_type === 'company') {
       verificationStatusChanged = verificationStatus !== (typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
       showOnHomepageChanged = showOnHomepage !== Boolean(user.company_profile?.show_on_homepage);
+      showOnPropertyDetailChanged = showOnPropertyDetail !== Boolean(user.company_profile?.show_on_property_detail);
     }
     setHasChanges(
-      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || profileImageDirty
+      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || showOnPropertyDetailChanged || profileImageDirty
     );
-  }, [status, memberLevel, verificationStatus, showOnHomepage, user, profileImageDirty]);
+  }, [status, memberLevel, verificationStatus, showOnHomepage, showOnPropertyDetail, user, profileImageDirty]);
 
   const handleSubmit = async () => {
     if (!user || !hasChanges) return;
@@ -168,6 +173,7 @@ const UserEditPage: React.FC = () => {
     if (user.user_type === 'company') {
       updateData.verification_status = verificationStatus as 'pending' | 'approved';
       updateData.show_on_homepage = showOnHomepage;
+      updateData.show_on_property_detail = showOnPropertyDetail;
     }
 
     if (profileImageDirty) {
@@ -442,6 +448,9 @@ const UserEditPage: React.FC = () => {
                 </FormControl>
               </Box>
 
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
+                Partner Logo Display
+              </Typography>
               <FormControlLabel
                 control={
                   <Switch
@@ -451,6 +460,16 @@ const UserEditPage: React.FC = () => {
                   />
                 }
                 label="Show on homepage (partner logos)"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={showOnPropertyDetail}
+                    onChange={(_, checked) => setShowOnPropertyDetail(checked)}
+                    disabled={verificationStatus !== 'approved'}
+                  />
+                }
+                label="Show on property detail (partner logos)"
               />
               {verificationStatus !== 'approved' && (
                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5 }}>
