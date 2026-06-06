@@ -34,7 +34,7 @@ import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { useAD, useUpdateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
 import { Media } from '../../types/media';
-import { ADFormData, adRequiresCompanyUser } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, isAdEndDateExpired } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 
@@ -510,6 +510,14 @@ const ADEditPage: React.FC = () => {
                           label="Status (Active/Inactive)"
                         />
                       </Grid>
+
+                      {isAdEndDateExpired(values.end_at) && (
+                        <Grid item xs={12}>
+                          <Alert severity="warning">
+                            This ad&apos;s end date is in the past. It will remain inactive until you set a future end date.
+                          </Alert>
+                        </Grid>
+                      )}
 
                       {/* Date Fields */}
                       <Grid item xs={12} sm={6}>
