@@ -23,6 +23,7 @@ import { useCreateBooking, useAdminUsers } from '../../services/queries/bookings
 import { useUsers } from '../../services/queries/users';
 import { useProperties } from '../../services/queries/properties';
 import { CreateBookingData } from '../../types/booking';
+import { getUserSelectLabel } from '../../types/user';
 import { FormActions } from '../../components/forms/shared/FormActions';
 
 // ============================================================================
@@ -149,7 +150,7 @@ const BookingCreatePage: React.FC = () => {
                       <Autocomplete
                         // size="small"
                         options={users}
-                        getOptionLabel={(option) => `${option.name} (${option.email})`}
+                        getOptionLabel={getUserSelectLabel}
                         value={users.find(user => user.id === formik.values.user_id) || null}
                         onChange={(_, newValue) => {
                           formik.setFieldValue('user_id', newValue?.id || 0);

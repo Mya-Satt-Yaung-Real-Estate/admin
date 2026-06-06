@@ -38,6 +38,7 @@ import { useAlertSystem } from '../../hooks';
 import { useCreateAnnouncement } from '../../services/queries/announcements';
 import { useUsers } from '../../services/queries/users';
 import { CreateAnnouncementData } from '../../types/announcement';
+import { getUserSelectLabel } from '../../types/user';
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -333,7 +334,7 @@ const AnnouncementCreatePage: React.FC = () => {
                   <Autocomplete
                     multiple
                     options={users}
-                    getOptionLabel={(option) => `${option.name} (${option.email})`}
+                    getOptionLabel={getUserSelectLabel}
                     value={formData.selectedUsers}
                     onChange={(_event, newValue) => handleUserChange(newValue)}
                     loading={usersLoading}
@@ -352,7 +353,7 @@ const AnnouncementCreatePage: React.FC = () => {
                         return (
                           <Chip
                             key={option.id}
-                            label={`${option.name} (${option.email})`}
+                            label={getUserSelectLabel(option)}
                             {...tagProps}
                             size="small"
                             sx={{
