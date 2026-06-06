@@ -168,6 +168,18 @@ export function adRequiresCompanyUser(displayLocation: string): boolean {
   return Boolean(displayLocation) && displayLocation !== AD_DISPLAY_LOCATION_MAIN_SLIDER;
 }
 
+/** True when the end date (YYYY-MM-DD or ISO string) is before today. */
+export function isAdEndDateExpired(endAt: string | null | undefined): boolean {
+  if (!endAt) {
+    return false;
+  }
+
+  const datePart = endAt.slice(0, 10);
+  const end = new Date(`${datePart}T23:59:59`);
+
+  return !Number.isNaN(end.getTime()) && end < new Date();
+}
+
 // Display location options
 export const AD_DISPLAY_LOCATIONS = [
   { value: 'homepage_block', label: 'Homepage Block' },
