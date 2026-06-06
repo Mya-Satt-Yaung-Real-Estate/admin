@@ -14,7 +14,6 @@ import {
   Visibility as ViewIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
-  Email as EmailIcon,
   Schedule as ScheduleIcon,
   Home as HomeIcon,
   Diamond as DiamondIcon,
@@ -60,7 +59,7 @@ const FILTER_FIELDS: FilterField[] = [
     key: 'searchTerm',
     type: 'search',
     label: 'Search',
-    placeholder: 'Search by name or email...',
+    placeholder: 'Search by name or phone...',
   },
   {
     key: 'userTypeFilter',
@@ -243,52 +242,26 @@ const UserListPage: React.FC = () => {
               {user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
             </Avatar>
             <Box>
-              <Typography variant="subtitle2" fontWeight="600">
-                {user.name}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                <Typography variant="subtitle2" fontWeight="600">
+                  {user.name}
+                </Typography>
+                <StatusChip
+                  status={user.member_level}
+                  statusType="member_level"
+                  size="small"
+                />
+              </Box>
               <Typography variant="caption" color="textSecondary">
                 {user.user_type === 'company' ? 'Company' : 'Individual'}
               </Typography>
-            </Box>
-          </Box>
-        );
-      },
-    },
-    {
-      id: 'email',
-      label: 'Email',
-      render: (_value, user) => {
-        if (!user) return <Typography variant="body2">No data</Typography>;
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <EmailIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-            <Box>
-              <Typography variant="body2" fontWeight="500">
-                {user.email || '-'}
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
+              <Typography variant="caption" color="textSecondary" display="block">
                 {user.phone || '-'}
               </Typography>
             </Box>
           </Box>
         );
       },
-      hidden: isMobile,
-    },
-    {
-      id: 'memberLevel',
-      label: 'Member Level',
-      render: (_value, user) => {
-        if (!user) return <Typography variant="body2">No data</Typography>;
-        return (
-          <StatusChip
-            status={user.member_level}
-            statusType="member_level"
-            size="small"
-          />
-        );
-      },
-      hidden: isMobile,
     },
     {
       id: 'propertyCount',
@@ -318,6 +291,23 @@ const UserListPage: React.FC = () => {
               {user.point_balance || 0}
             </Typography>
           </Box>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'jadeMarket',
+      label: 'Jade Market',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        if (user.user_type !== 'company') {
+          return <Typography variant="body2" color="textSecondary">—</Typography>;
+        }
+        const on = Boolean(user.company_profile?.our_market);
+        return (
+          <Typography variant="body2" fontWeight={500} color={on ? 'success.main' : 'error.main'}>
+            {on ? 'Yes' : 'No'}
+          </Typography>
         );
       },
       hidden: isMobile,
@@ -543,7 +533,7 @@ const UserListPage: React.FC = () => {
             <MobileCard
               key={user.id}
               title={user.name}
-              subtitle={user.email}
+              subtitle={user.phone || '-'}
               description={`${user.user_type === 'company' ? 'Company' : 'Individual'} • ${user.member_level} member • ${user.property_count || 0} properties • ${user.point_balance || 0} points`}
               avatar={user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}
               avatarColor={user.user_type === 'company' ? 'success.main' : 'primary.main'}
@@ -571,6 +561,9 @@ const UserListPage: React.FC = () => {
                     }, {
                       label: user.company_profile?.show_on_property_detail ? 'Property detail: Yes' : 'Property detail: No',
                       color: user.company_profile?.show_on_property_detail ? ('success' as const) : ('error' as const),
+                    }, {
+                      label: user.company_profile?.our_market ? 'Jade Market: Yes' : 'Jade Market: No',
+                      color: user.company_profile?.our_market ? ('success' as const) : ('error' as const),
                     }]
                   : []),
                 {
