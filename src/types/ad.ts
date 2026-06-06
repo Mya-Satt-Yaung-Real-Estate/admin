@@ -24,12 +24,16 @@ export interface AD {
   updated_at: string;
   deleted_at?: string;
 
-  // User info
+  // User info (company-owned ads)
   user?: {
     id: number;
     name: string;
-    email: string;
+    slug?: string;
+    email?: string;
     user_type: 'admin' | 'individual' | 'company';
+    company_id?: number;
+    company_name?: string;
+    company_slug?: string;
   };
 
   // Media info
