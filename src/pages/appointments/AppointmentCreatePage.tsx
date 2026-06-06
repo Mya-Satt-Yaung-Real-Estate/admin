@@ -30,6 +30,7 @@ import { useCreateAppointment, useAppointmentTimeSlots } from '../../services/qu
 import { usePropertyListingTypes } from '../../services/queries/properties';
 import { useUsers } from '../../services/queries/users';
 import { CreateAppointmentData } from '../../types/appointment';
+import { getUserSelectLabel } from '../../types/user';
 import { FormActions } from '../../components/forms/shared/FormActions';
 
 // ============================================================================
@@ -438,7 +439,7 @@ const AppointmentCreatePage: React.FC = () => {
                     <Autocomplete
                       size="small"
                       options={usersResponse?.data || []}
-                      getOptionLabel={(option) => `${option.name} (${option.email})`}
+                      getOptionLabel={getUserSelectLabel}
                       value={usersResponse?.data?.find((user: any) => user.id === formik.values.user_id) || null}
                       onChange={(_, newValue) => {
                         formik.setFieldValue('user_id', newValue?.id || 0);
@@ -449,10 +450,10 @@ const AppointmentCreatePage: React.FC = () => {
                       disabled={createAppointmentMutation.isPending}
                       filterOptions={(options, { inputValue }) => {
                         const searchTerm = inputValue.toLowerCase();
-                        return options.filter((option) =>
-                          option.name.toLowerCase().includes(searchTerm) ||
-                          option.email.toLowerCase().includes(searchTerm)
-                        );
+                        return options.filter((option) => {
+                          const phone = (option.phone ?? option.company_profile?.phone_number ?? '').toLowerCase();
+                          return option.name.toLowerCase().includes(searchTerm) || phone.includes(searchTerm);
+                        });
                       }}
                       renderInput={(params) => (
                         <TextField
