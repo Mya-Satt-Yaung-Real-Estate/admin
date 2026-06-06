@@ -24,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCreatePointPurchaseRequest } from '../../services/queries/points';
 import { useUsers } from '../../services/queries/users';
 import { usePointPackages } from '../../services/queries/points';
+import { getUserSelectLabel } from '../../types/user';
 import PageHeader from '../../components/layout/PageHeader';
 import { PageLoadingState, ActionAlert } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
@@ -262,7 +263,7 @@ const PointPurchaseRequestCreatePage: React.FC = () => {
               <FormControl fullWidth error={!!errors.user_id}>
                 <Autocomplete
                   options={users}
-                  getOptionLabel={(option) => `${option.name} (${option.email}) - ${option.user_type}`}
+                  getOptionLabel={getUserSelectLabel}
                   value={formData.selectedUser}
                   onChange={(_event, newValue) => handleUserChange(newValue)}
                   loading={usersLoading}
