@@ -43,6 +43,7 @@ import {
   Speed as SpeedIcon,
   AttachMoney as AttachMoneyIcon,
   Percent as PercentIcon,
+  YouTube as YouTubeIcon,
 } from '@mui/icons-material';
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
@@ -141,6 +142,8 @@ export const getIconComponent = (iconName: string): React.ReactNode => {
       return <AttachMoneyIcon />;
     case 'Percent':
       return <PercentIcon />;
+    case 'YouTube':
+      return <YouTubeIcon />;
     
     default:
       return <DashboardIcon />;

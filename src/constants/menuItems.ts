@@ -20,7 +20,11 @@ export const MENU_ITEMS = [
     iconName: 'Campaign',
     path: '/advertisements',
   },
-
+  {
+    text: 'YouTube',
+    iconName: 'YouTube',
+    path: '/youtube-videos',
+  },
   {
     text: 'ADs',
     iconName: 'ADS',
@@ -146,11 +150,11 @@ export const MENU_ITEMS = [
     iconName: 'People',
     path: '/users',
   },
-    {
-      text: 'Announcements',
-      iconName: 'Campaign',
-      path: '/announcements',
-    },
+  {
+    text: 'Announcements',
+    iconName: 'Campaign',
+    path: '/announcements',
+  },
     {
       text: 'Lawyers',
       iconName: 'Gavel',
