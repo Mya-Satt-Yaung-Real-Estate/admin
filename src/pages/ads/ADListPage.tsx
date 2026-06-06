@@ -31,7 +31,7 @@ import {
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useADs, useDeleteAD } from '../../services/queries/ad';
 import { FilterState } from '../../constants/filters';
-import { AD } from '../../types/ad';
+import { AD, isAdEndDateBeforeToday } from '../../types/ad';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -57,14 +57,6 @@ const PAGE_CONFIG = {
 
 function formatAdScheduleDate(value?: string | null): string {
   return value ? formatDate(value, 'display') : '—';
-}
-
-/** True when end_at is set and strictly before the current moment (campaign ended). */
-function isAdEndDateOverdue(endAt?: string | null): boolean {
-  if (!endAt) return false;
-  const end = new Date(endAt);
-  if (Number.isNaN(end.getTime())) return false;
-  return end.getTime() < Date.now();
 }
 
 function formatAdDisplayLocation(ad: AD): string {
@@ -361,7 +353,7 @@ const ADListPage: React.FC = () => {
       label: 'End',
       render: (_value, ad) => {
         if (!ad) return <Typography variant="body2">No data</Typography>;
-        const overdue = isAdEndDateOverdue(ad.end_at);
+        const overdue = isAdEndDateBeforeToday(ad.end_at);
         return (
           <Typography variant="body2" color={overdue ? 'error' : 'textSecondary'}>
             {formatAdScheduleDate(ad.end_at)}
@@ -595,7 +587,7 @@ const ADListPage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant="caption"
-                  color={isAdEndDateOverdue(ad.end_at) ? 'error' : 'textSecondary'}
+                  color={isAdEndDateBeforeToday(ad.end_at) ? 'error' : 'textSecondary'}
                   display="block"
                 >
                   End: {formatAdScheduleDate(ad.end_at)}
