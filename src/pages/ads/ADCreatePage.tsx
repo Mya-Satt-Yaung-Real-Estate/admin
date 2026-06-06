@@ -33,7 +33,7 @@ import { ActionAlert, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
-import { ADFormData, adRequiresCompanyUser } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, isAdEndDateExpired } from '../../types/ad';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 import { Media } from '../../types/media';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -351,6 +351,14 @@ const ADCreatePage: React.FC = () => {
                       label="Status (Active/Inactive)"
                     />
                   </Grid>
+
+                  {isAdEndDateExpired(formik.values.end_at) && (
+                    <Grid item xs={12}>
+                      <Alert severity="warning">
+                        This ad&apos;s end date is in the past. It will remain inactive until you set a future end date.
+                      </Alert>
+                    </Grid>
+                  )}
 
                   {/* Date Fields */}
                   <Grid item xs={12} sm={6}>

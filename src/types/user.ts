@@ -198,3 +198,9 @@ export interface CreateUserResponse {
     };
   };
 }
+
+export function getCompanyUserSelectLabel(user: RegularUser): string {
+  const label = user.company_profile?.company_name ?? user.name;
+  const phone = user.phone ?? user.company_profile?.phone_number ?? '—';
+  return `${label} (${phone})`;
+}

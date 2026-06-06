@@ -1,6 +1,6 @@
 import React from 'react';
 import { Autocomplete, FormControl, TextField } from '@mui/material';
-import { RegularUser } from '../../../types/user';
+import { getCompanyUserSelectLabel, RegularUser } from '../../../types/user';
 
 interface CompanyUserSelectProps {
   userId?: number | null;
@@ -36,10 +36,7 @@ export const CompanyUserSelect: React.FC<CompanyUserSelectProps> = ({
         value={selected}
         onChange={(_e, value) => onUserIdChange(value?.id)}
         onBlur={onBlur}
-        getOptionLabel={(option) => {
-          const label = option.company_profile?.company_name ?? option.name;
-          return `${label} (${option.email})`;
-        }}
+        getOptionLabel={getCompanyUserSelectLabel}
         isOptionEqualToValue={(option, value) => option.id === value.id}
         renderInput={(params) => (
           <TextField
