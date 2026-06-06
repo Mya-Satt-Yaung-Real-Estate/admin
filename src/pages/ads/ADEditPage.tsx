@@ -111,7 +111,7 @@ const ADEditPage: React.FC = () => {
 
   // Update AD mutation
   const updateADMutation = useUpdateAD();
-  const { data: usersResponse, isLoading: usersLoading } = useUsers({ user_type: 'company' });
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({ user_type: 'company', status: 'active' });
 
   // Upload Media Mutation (currently unused but kept for future functionality)
   // const uploadMediaMutation = useUploadMedia();
