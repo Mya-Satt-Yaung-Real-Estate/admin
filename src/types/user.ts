@@ -207,3 +207,8 @@ export function getCompanyUserSelectLabel(user: RegularUser): string {
   const phone = user.phone ?? user.company_profile?.phone_number ?? '—';
   return `${label} (${phone})`;
 }
+
+export function getUserSelectLabel(user: RegularUser): string {
+  const phone = user.phone ?? user.company_profile?.phone_number ?? '—';
+  return `${user.name} (${phone}) - ${user.user_type}`;
+}
