@@ -24,7 +24,7 @@ import PageHeader from '../../components/layout/PageHeader';
 import { ActionAlert, LoadingSpinner, PageErrorState } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 import { useAD } from '../../services/queries/ad';
-import { AD } from '../../types/ad';
+import { AD, adRequiresCompanyUser } from '../../types/ad';
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 
 const ADViewPage: React.FC = () => {
@@ -385,9 +385,52 @@ const ADViewPage: React.FC = () => {
                      ad.display_location === 'detail-page-asidebar-2' ? 'Detail Page Sidebar 2' :
                      ad.display_location === 'home-page-asidebar' ? 'Home page Main Slider' :
                      ad.display_location === 'homepage_block' ? 'Homepage Block' :
+                     ad.display_location === 'home_grid_ads' ? 'Home Grid ADS' :
                      String(ad.display_location).replace('-', ' ')}
                   </Typography>
                 </Grid>
+
+                {ad.display_location === 'home_grid_ads' && ad.grid_index != null && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="textSecondary">
+                      Grid Slot
+                    </Typography>
+                    <Typography variant="body1">
+                      Grid {ad.grid_index}
+                    </Typography>
+                  </Grid>
+                )}
+
+                {adRequiresCompanyUser(ad.display_location) && (
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 1 }} />
+                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+                      Company User
+                    </Typography>
+                    {ad.user ? (
+                      <Grid container spacing={1.5}>
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="textSecondary">
+                            User Name
+                          </Typography>
+                          <Typography variant="body2">{ad.user.name}</Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="textSecondary">
+                            Company Name
+                          </Typography>
+                          <Typography variant="body2">
+                            {ad.user.company_name ?? ad.user.name}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    ) : (
+                      <Typography variant="body2" color="textSecondary">
+                        No company user assigned
+                      </Typography>
+                    )}
+                  </Grid>
+                )}
 
                 {ad.start_at && (
                   <Grid item xs={12}>
