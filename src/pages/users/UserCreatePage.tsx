@@ -139,6 +139,7 @@ const UserCreatePage: React.FC = () => {
       verification_status: 'pending' as 'pending' | 'approved',
       show_on_homepage: false,
       show_on_property_detail: false,
+      our_market: false,
     },
     validationSchema: createUserSchema,
     onSubmit: async (values) => {
@@ -164,6 +165,7 @@ const UserCreatePage: React.FC = () => {
           userData.verification_status = values.verification_status;
           userData.show_on_homepage = values.show_on_homepage;
           userData.show_on_property_detail = values.show_on_property_detail;
+          userData.our_market = values.our_market;
         }
 
         if (profileImage) {
@@ -223,6 +225,7 @@ const UserCreatePage: React.FC = () => {
       formik.setFieldValue('verification_status', 'pending');
       formik.setFieldValue('show_on_homepage', false);
       formik.setFieldValue('show_on_property_detail', false);
+      formik.setFieldValue('our_market', false);
     }
   };
 
@@ -231,6 +234,7 @@ const UserCreatePage: React.FC = () => {
     if (verificationStatus !== 'approved') {
       formik.setFieldValue('show_on_homepage', false);
       formik.setFieldValue('show_on_property_detail', false);
+      formik.setFieldValue('our_market', false);
     }
   };
 
@@ -589,9 +593,19 @@ const UserCreatePage: React.FC = () => {
                 }
                 label="Show on property detail (partner logos)"
               />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formik.values.our_market}
+                    onChange={(_, checked) => formik.setFieldValue('our_market', checked)}
+                    disabled={formik.values.verification_status !== 'approved'}
+                  />
+                }
+                label="Are you Jade Market?"
+              />
               {formik.values.verification_status !== 'approved' && (
                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5 }}>
-                  Approve the company first to enable partner logo display.
+                  Approve the company first to enable partner logo display and Jade Market.
                 </Typography>
               )}
             </Grid>

@@ -18,18 +18,20 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Divider,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
   Person as PersonIcon,
-  Email as EmailIcon,
   Business as BusinessIcon,
   CalendarToday as CalendarIcon,
   Star as StarIcon,
   Phone as PhoneIcon,
   Fingerprint as FingerprintIcon,
+  LocationOn as LocationIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import SingleImageUpload from '../../components/ui/SingleImageUpload';
 import { Media } from '../../types/media';
@@ -46,7 +48,6 @@ import { UpdateRegularUserData } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
 import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
-import { USER_PROFILE_PHOTO_UPLOAD_HEIGHTS } from '../../constants/profilePhotoUpload';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -56,6 +57,11 @@ const PAGE_CONFIG = {
   title: 'Edit User Status',
   description: 'Update user account status',
   backButtonPath: '/users',
+} as const;
+
+const EDIT_PROFILE_PHOTO_UPLOAD_HEIGHTS = {
+  dropzoneHeight: 320,
+  previewImageHeight: 240,
 } as const;
 
 // ============================================================================
@@ -70,6 +76,7 @@ const UserEditPage: React.FC = () => {
   const [verificationStatus, setVerificationStatus] = useState<string>('pending');
   const [showOnHomepage, setShowOnHomepage] = useState(false);
   const [showOnPropertyDetail, setShowOnPropertyDetail] = useState(false);
+  const [ourMarket, setOurMarket] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [profileImage, setProfileImage] = useState<Media | null>(null);
   const [profileImageDirty, setProfileImageDirty] = useState(false);
@@ -93,6 +100,7 @@ const UserEditPage: React.FC = () => {
       setVerificationStatus(typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
       setShowOnHomepage(Boolean(user.company_profile?.show_on_homepage));
       setShowOnPropertyDetail(Boolean(user.company_profile?.show_on_property_detail));
+      setOurMarket(Boolean(user.company_profile?.our_market));
       setHasChanges(false);
       setProfileImageDirty(false);
       if (user.profile_media_id != null && user.profile_image_url) {
@@ -130,6 +138,7 @@ const UserEditPage: React.FC = () => {
     if (newVerificationStatus !== 'approved') {
       setShowOnHomepage(false);
       setShowOnPropertyDetail(false);
+      setOurMarket(false);
     }
   };
 
@@ -152,15 +161,17 @@ const UserEditPage: React.FC = () => {
     let verificationStatusChanged = false;
     let showOnHomepageChanged = false;
     let showOnPropertyDetailChanged = false;
+    let ourMarketChanged = false;
     if (user.user_type === 'company') {
       verificationStatusChanged = verificationStatus !== (typeof user.verification_status === 'string' ? user.verification_status || 'pending' : 'pending');
       showOnHomepageChanged = showOnHomepage !== Boolean(user.company_profile?.show_on_homepage);
       showOnPropertyDetailChanged = showOnPropertyDetail !== Boolean(user.company_profile?.show_on_property_detail);
+      ourMarketChanged = ourMarket !== Boolean(user.company_profile?.our_market);
     }
     setHasChanges(
-      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || showOnPropertyDetailChanged || profileImageDirty
+      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || showOnPropertyDetailChanged || ourMarketChanged || profileImageDirty
     );
-  }, [status, memberLevel, verificationStatus, showOnHomepage, showOnPropertyDetail, user, profileImageDirty]);
+  }, [status, memberLevel, verificationStatus, showOnHomepage, showOnPropertyDetail, ourMarket, user, profileImageDirty]);
 
   const handleSubmit = async () => {
     if (!user || !hasChanges) return;
@@ -174,6 +185,7 @@ const UserEditPage: React.FC = () => {
       updateData.verification_status = verificationStatus as 'pending' | 'approved';
       updateData.show_on_homepage = showOnHomepage;
       updateData.show_on_property_detail = showOnPropertyDetail;
+      updateData.our_market = ourMarket;
     }
 
     if (profileImageDirty) {
@@ -268,8 +280,8 @@ const UserEditPage: React.FC = () => {
                   onImageUpload={handleProfileImageUpload}
                   onImageDelete={handleProfileImageDelete}
                   onUploadError={(msg) => showError(msg, true)}
-                  dropzoneHeight={USER_PROFILE_PHOTO_UPLOAD_HEIGHTS.dropzoneHeight}
-                  previewImageHeight={USER_PROFILE_PHOTO_UPLOAD_HEIGHTS.previewImageHeight}
+                  dropzoneHeight={EDIT_PROFILE_PHOTO_UPLOAD_HEIGHTS.dropzoneHeight}
+                  previewImageHeight={EDIT_PROFILE_PHOTO_UPLOAD_HEIGHTS.previewImageHeight}
                 />
               </Box>
             </CardContent>
@@ -296,7 +308,22 @@ const UserEditPage: React.FC = () => {
                 </Button>
               </Box>
               
-              <List>
+              <List
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 0.5,
+                  '& .MuiListItem-root': {
+                    px: 0,
+                    alignItems: 'flex-start',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    minWidth: 36,
+                    mt: 0.5,
+                  },
+                }}
+              >
                 <ListItem>
                   <ListItemIcon>
                     <PersonIcon />
@@ -309,25 +336,13 @@ const UserEditPage: React.FC = () => {
                 
                 <ListItem>
                   <ListItemIcon>
-                    <EmailIcon />
+                    <PhoneIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Email"
-                    secondary={user.email}
+                    primary="Phone Number"
+                    secondary={user.phone || user.company_profile?.phone_number || 'N/A'}
                   />
                 </ListItem>
-
-                {user.user_type === 'individual' && (
-                  <ListItem>
-                    <ListItemIcon>
-                      <PhoneIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Phone Number"
-                      secondary={user.phone}
-                    />
-                  </ListItem>
-                )}
                 
                 <ListItem>
                   <ListItemIcon>
@@ -338,6 +353,83 @@ const UserEditPage: React.FC = () => {
                     secondary={user.user_type === 'company' ? 'Company' : 'Individual'}
                   />
                 </ListItem>
+
+                {user.user_type === 'company' && user.company_profile && (
+                  <>
+                    <Divider sx={{ my: 1, gridColumn: '1 / -1' }} />
+                    <ListItem sx={{ gridColumn: '1 / -1' }}>
+                      <ListItemText
+                        primary={
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            Company Information
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Company Name"
+                        secondary={user.company_profile.company_name || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <StarIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Company Type"
+                        secondary={user.company_profile.company_type_name || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <PhoneIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Company Phone"
+                        secondary={user.company_profile.phone_number || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <LocationIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Location"
+                        secondary={user.company_profile.location_en || user.company_profile.location_mm || 'N/A'}
+                      />
+                    </ListItem>
+
+                    <ListItem>
+                      <ListItemIcon>
+                        <BusinessIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Business Address"
+                        secondary={user.company_profile.address || 'N/A'}
+                      />
+                    </ListItem>
+
+                    {user.company_profile.description && (
+                      <ListItem sx={{ gridColumn: '1 / -1' }}>
+                        <ListItemIcon>
+                          <DescriptionIcon />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Description"
+                          secondary={user.company_profile.description}
+                        />
+                      </ListItem>
+                    )}
+                  </>
+                )}
                 
                 <ListItem>
                   <ListItemIcon>
@@ -363,117 +455,110 @@ const UserEditPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Status Edit Section */}
+        {/* Account Settings Edit Section */}
         <Grid item xs={12}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Account Status
+              Account Settings
             </Typography>
             
             <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-              Change the user's account status. Active users can access the platform, 
-              while inactive users will be restricted from logging in.
+              Change the user's account status, member level, and company verification settings.
             </Typography>
 
-            <Box sx={{ mb: 3 }}>
-              <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                <InputLabel>Account Status</InputLabel>
-                <Select
-                  value={status ? 'active' : 'inactive'}
-                  label="Account Status"
-                  onChange={(e) => handleStatusChange(e.target.value === 'active')}
-                >
-                  <MenuItem value="active">Active</MenuItem>
-                  <MenuItem value="inactive">Inactive</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={user.user_type === 'company' ? 4 : 6}>
+                <FormControl fullWidth>
+                  <InputLabel>Account Status</InputLabel>
+                  <Select
+                    value={status ? 'active' : 'inactive'}
+                    label="Account Status"
+                    onChange={(e) => handleStatusChange(e.target.value === 'active')}
+                  >
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="inactive">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={user.user_type === 'company' ? 4 : 6}>
+                <FormControl fullWidth>
+                  <InputLabel>Member Level</InputLabel>
+                  <Select
+                    value={memberLevel}
+                    label="Member Level"
+                    onChange={(e) => handleMemberLevelChange(e.target.value)}
+                  >
+                    {MEMBER_LEVEL_OPTIONS.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {user.user_type === 'company' && (
+                <Grid item xs={12} md={4}>
+                  <FormControl fullWidth>
+                    <InputLabel>Verification Status</InputLabel>
+                    <Select
+                      value={verificationStatus}
+                      label="Verification Status"
+                      onChange={(e) => handleVerificationStatusChange(e.target.value)}
+                    >
+                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="approved">Approved</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+            </Grid>
           </Paper>
         </Grid>
 
-        {/* Member Level Edit Section */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Member Level
-            </Typography>
-            
-            <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-              Change the user's member level. Member levels determine the user's privileges 
-              and benefits within the platform.
-            </Typography>
-
-            <Box sx={{ mb: 3 }}>
-              <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                <InputLabel>Member Level</InputLabel>
-                <Select
-                  value={memberLevel}
-                  label="Member Level"
-                  onChange={(e) => handleMemberLevelChange(e.target.value)}
-                >
-                  {MEMBER_LEVEL_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Verification Status Edit Section */}
         {user.user_type === 'company' && (
           <Grid item xs={12}>
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Verification Status
-              </Typography>
-              
-              <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>
-                Change the user's verification status. Approved users may have access to additional features.
+                Status / Options
               </Typography>
 
-              <Box sx={{ mb: 3 }}>
-                <FormControl fullWidth sx={{ maxWidth: 300 }}>
-                  <InputLabel>Verification Status</InputLabel>
-                  <Select
-                    value={verificationStatus}
-                    label="Verification Status"
-                    onChange={(e) => handleVerificationStatusChange(e.target.value)}
-                  >
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="approved">Approved</MenuItem>
-                  </Select>
-                </FormControl>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showOnHomepage}
+                      onChange={(_, checked) => setShowOnHomepage(checked)}
+                      disabled={verificationStatus !== 'approved'}
+                    />
+                  }
+                  label="Show on homepage (partner logos)"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={showOnPropertyDetail}
+                      onChange={(_, checked) => setShowOnPropertyDetail(checked)}
+                      disabled={verificationStatus !== 'approved'}
+                    />
+                  }
+                  label="Show on property detail (partner logos)"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={ourMarket}
+                      onChange={(_, checked) => setOurMarket(checked)}
+                      disabled={verificationStatus !== 'approved'}
+                    />
+                  }
+                  label="Are you Jade Market?"
+                />
               </Box>
-
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ mt: 2 }}>
-                Partner Logo Display
-              </Typography>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showOnHomepage}
-                    onChange={(_, checked) => setShowOnHomepage(checked)}
-                    disabled={verificationStatus !== 'approved'}
-                  />
-                }
-                label="Show on homepage (partner logos)"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={showOnPropertyDetail}
-                    onChange={(_, checked) => setShowOnPropertyDetail(checked)}
-                    disabled={verificationStatus !== 'approved'}
-                  />
-                }
-                label="Show on property detail (partner logos)"
-              />
               {verificationStatus !== 'approved' && (
                 <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5 }}>
-                  Approve the company first to enable this.
+                  Approve the company first to enable this and Jade Market.
                 </Typography>
               )}
             </Paper>
