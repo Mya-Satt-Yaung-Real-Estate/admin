@@ -374,6 +374,23 @@ const UserListPage: React.FC = () => {
       hidden: isMobile,
     },
     {
+      id: 'showOnPropertyDetail',
+      label: 'Property detail',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        if (user.user_type !== 'company') {
+          return <Typography variant="body2" color="textSecondary">—</Typography>;
+        }
+        const on = Boolean(user.company_profile?.show_on_property_detail);
+        return (
+          <Typography variant="body2" fontWeight={500} color={on ? 'success.main' : 'error.main'}>
+            {on ? 'Yes' : 'No'}
+          </Typography>
+        );
+      },
+      hidden: isMobile,
+    },
+    {
       id: 'lastLogin',
       label: 'Last Login',
       render: (_value, user) => {
@@ -551,6 +568,9 @@ const UserListPage: React.FC = () => {
                   ? [{
                       label: user.company_profile?.show_on_homepage ? 'Homepage: Yes' : 'Homepage: No',
                       color: user.company_profile?.show_on_homepage ? ('success' as const) : ('error' as const),
+                    }, {
+                      label: user.company_profile?.show_on_property_detail ? 'Property detail: Yes' : 'Property detail: No',
+                      color: user.company_profile?.show_on_property_detail ? ('success' as const) : ('error' as const),
                     }]
                   : []),
                 {

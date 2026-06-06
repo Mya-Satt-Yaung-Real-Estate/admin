@@ -305,6 +305,27 @@ const UserDetailPage: React.FC = () => {
                     />
                   </ListItem>
                 )}
+                {user.user_type === 'company' && user.company_profile && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <HomeIcon />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Show on property detail"
+                      secondary={
+                        user.company_profile.show_on_property_detail ? (
+                          <Typography component="span" variant="body2" color="success.main" fontWeight={500}>
+                            Yes
+                          </Typography>
+                        ) : (
+                          <Typography component="span" variant="body2" color="error.main" fontWeight={500}>
+                            No
+                          </Typography>
+                        )
+                      }
+                    />
+                  </ListItem>
+                )}
               </List>
               <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
             </CardContent>

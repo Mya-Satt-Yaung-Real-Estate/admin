@@ -6,6 +6,7 @@ import {
   Button,
   Typography,
   FormControl,
+  FormControlLabel,
   InputLabel,
   Select,
   MenuItem,
@@ -15,6 +16,7 @@ import {
   Autocomplete,
   Card,
   CardContent,
+  Switch,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -134,6 +136,9 @@ const UserCreatePage: React.FC = () => {
       region_id: '',
       township_id: '',
       description: '',
+      verification_status: 'pending' as 'pending' | 'approved',
+      show_on_homepage: false,
+      show_on_property_detail: false,
     },
     validationSchema: createUserSchema,
     onSubmit: async (values) => {
@@ -156,6 +161,9 @@ const UserCreatePage: React.FC = () => {
           userData.region_id = Number(values.region_id);
           userData.township_id = Number(values.township_id);
           userData.description = values.description;
+          userData.verification_status = values.verification_status;
+          userData.show_on_homepage = values.show_on_homepage;
+          userData.show_on_property_detail = values.show_on_property_detail;
         }
 
         if (profileImage) {
@@ -178,11 +186,11 @@ const UserCreatePage: React.FC = () => {
           navigate('/users');
         }
       } catch (error: any) {
-        if (error.response && error.response.data && error.response.data.errors) {
-          const validationErrors = error.response.data.errors;
-          Object.keys(validationErrors).forEach((fieldName) => {
-            formik.setFieldError(fieldName, validationErrors[fieldName][0]);
+        if (error.errors) {
+          Object.keys(error.errors).forEach((fieldName) => {
+            formik.setFieldError(fieldName, error.errors[fieldName][0]);
           });
+          showError(error.message || 'Please fix the errors below.');
         } else {
           showError(error.message || 'Failed to create user');
         }
@@ -212,6 +220,17 @@ const UserCreatePage: React.FC = () => {
       formik.setFieldValue('region_id', '');
       formik.setFieldValue('township_id', '');
       formik.setFieldValue('description', '');
+      formik.setFieldValue('verification_status', 'pending');
+      formik.setFieldValue('show_on_homepage', false);
+      formik.setFieldValue('show_on_property_detail', false);
+    }
+  };
+
+  const handleVerificationStatusChange = (verificationStatus: 'pending' | 'approved') => {
+    formik.setFieldValue('verification_status', verificationStatus);
+    if (verificationStatus !== 'approved') {
+      formik.setFieldValue('show_on_homepage', false);
+      formik.setFieldValue('show_on_property_detail', false);
     }
   };
 
@@ -530,6 +549,51 @@ const UserCreatePage: React.FC = () => {
                     error={formik.touched.description && Boolean(formik.errors.description)}
                     helperText={formik.touched.description && formik.errors.description}
               />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <FormControl fullWidth>
+                <InputLabel>Verification Status</InputLabel>
+                <Select
+                  value={formik.values.verification_status}
+                  label="Verification Status"
+                  onChange={(e) => handleVerificationStatusChange(e.target.value as 'pending' | 'approved')}
+                >
+                  <MenuItem value="pending">Pending</MenuItem>
+                  <MenuItem value="approved">Approved</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Partner Logo Display
+              </Typography>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formik.values.show_on_homepage}
+                    onChange={(_, checked) => formik.setFieldValue('show_on_homepage', checked)}
+                    disabled={formik.values.verification_status !== 'approved'}
+                  />
+                }
+                label="Show on homepage (partner logos)"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formik.values.show_on_property_detail}
+                    onChange={(_, checked) => formik.setFieldValue('show_on_property_detail', checked)}
+                    disabled={formik.values.verification_status !== 'approved'}
+                  />
+                }
+                label="Show on property detail (partner logos)"
+              />
+              {formik.values.verification_status !== 'approved' && (
+                <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5 }}>
+                  Approve the company first to enable partner logo display.
+                </Typography>
+              )}
             </Grid>
               </>
             )}
