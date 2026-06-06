@@ -1,8 +1,10 @@
 export interface YoutubeVideo {
   id: number;
   name: string;
+  slug: string;
   description: string | null;
   youtube_link: string;
+  view_count: number;
   status: boolean;
   created_at: string;
   updated_at: string;
