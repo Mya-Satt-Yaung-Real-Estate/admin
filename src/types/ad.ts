@@ -168,16 +168,36 @@ export function adRequiresCompanyUser(displayLocation: string): boolean {
   return Boolean(displayLocation) && displayLocation !== AD_DISPLAY_LOCATION_MAIN_SLIDER;
 }
 
-/** True when the end date (YYYY-MM-DD or ISO string) is before today. */
-export function isAdEndDateExpired(endAt: string | null | undefined): boolean {
-  if (!endAt) {
-    return false;
+export const AD_END_DATE_WARNING =
+  'The end date is today or in the past. Set a future end date if you want this ad to stay active longer.';
+
+function localDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseEndDate(endAt: string): string | null {
+  if (/^\d{4}-\d{2}-\d{2}/.test(endAt)) {
+    return endAt.slice(0, 10);
   }
+  const parsed = new Date(endAt);
+  return Number.isNaN(parsed.getTime()) ? null : localDateString(parsed);
+}
 
-  const datePart = endAt.slice(0, 10);
-  const end = new Date(`${datePart}T23:59:59`);
+/** Show UI warning when end date is today or earlier. */
+export function isAdEndDateExpired(endAt: string | null | undefined): boolean {
+  if (!endAt) return false;
+  const end = parseEndDate(endAt);
+  return end !== null && end <= localDateString(new Date());
+}
 
-  return !Number.isNaN(end.getTime()) && end < new Date();
+/** End date is before today (matches API: active allowed when end date is today or later). */
+export function isAdEndDateBeforeToday(endAt: string | null | undefined): boolean {
+  if (!endAt) return false;
+  const end = parseEndDate(endAt);
+  return end !== null && end < localDateString(new Date());
 }
 
 // Display location options
