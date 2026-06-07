@@ -218,6 +218,16 @@ const PointPackageListPage: React.FC = () => {
       ),
     },
     {
+      id: 'expiry_days',
+      label: 'Expiry Days',
+      align: 'center',
+      render: (value) => (
+        <Typography variant="body2" color="textSecondary">
+          {value != null ? `${value} days` : 'System default days'}
+        </Typography>
+      ),
+    },
+    {
       id: 'total_purchases',
       label: 'Purchases',
       align: 'center',
@@ -362,6 +372,11 @@ const PointPackageListPage: React.FC = () => {
                     color: pointPackage.is_active ? 'success' : 'error',
                   }}
                   chips={[
+                    {
+                      label: pointPackage.expiry_days != null
+                        ? `${pointPackage.expiry_days} days expiry`
+                        : 'No expiry set',
+                    },
                     {
                       label: `${pointPackage.total_purchases || 0} purchases`,
                       color: 'info',

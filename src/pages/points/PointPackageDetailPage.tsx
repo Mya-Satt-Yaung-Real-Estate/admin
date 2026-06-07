@@ -154,6 +154,15 @@ const PointPackageDetailPage: React.FC = () => {
 
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+              Expiry Days
+            </Typography>
+            <Typography variant="body1" fontWeight={500}>
+              {pointPackage.expiry_days ?? 'System default'}
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" color="textSecondary" gutterBottom>
               Formatted Price
             </Typography>
             <Typography variant="body1" fontWeight={500}>

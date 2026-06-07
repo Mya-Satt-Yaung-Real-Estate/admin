@@ -6,6 +6,7 @@ export interface PointPackage {
   slug: string;
   points: number;
   price_mmk: number;
+  expiry_days?: number | null;
   formatted_price: string;
   description_en?: string;
   description_mm?: string;
@@ -27,6 +28,7 @@ export interface CreatePointPackageData {
   name_mm: string;
   points: number;
   price_mmk: number;
+  expiry_days?: number | null;
   description_en?: string;
   description_mm?: string;
   is_active?: boolean;
@@ -37,6 +39,7 @@ export interface UpdatePointPackageData {
   name_mm?: string;
   points?: number;
   price_mmk?: number;
+  expiry_days?: number | null;
   description_en?: string;
   description_mm?: string;
   is_active?: boolean;

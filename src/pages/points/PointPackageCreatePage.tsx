@@ -38,6 +38,7 @@ const PointPackageCreatePage: React.FC = () => {
     name_mm: '',
     points: '',
     price_mmk: '',
+    expiry_days: '',
     description_en: '',
     description_mm: '',
   });
@@ -96,6 +97,15 @@ const PointPackageCreatePage: React.FC = () => {
       newErrors.description_mm = 'Myanmar description must be less than 500 characters';
     }
 
+    if (formData.expiry_days.trim()) {
+      const expiryDays = parseInt(formData.expiry_days);
+      if (isNaN(expiryDays) || expiryDays < 1) {
+        newErrors.expiry_days = 'Expiry days must be at least 1';
+      } else if (expiryDays > 3650) {
+        newErrors.expiry_days = 'Expiry days cannot exceed 3,650';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -113,6 +123,7 @@ const PointPackageCreatePage: React.FC = () => {
         name_mm: formData.name_mm.trim(),
         points: parseInt(formData.points),
         price_mmk: parseInt(formData.price_mmk),
+        expiry_days: formData.expiry_days.trim() ? parseInt(formData.expiry_days) : undefined,
         description_en: formData.description_en.trim() || undefined,
         description_mm: formData.description_mm.trim() || undefined,
         is_active: isActive,
@@ -229,6 +240,21 @@ const PointPackageCreatePage: React.FC = () => {
                 required
                 placeholder="Enter price in MMK"
                 inputProps={{ min: 500, max: 10000000 }}
+              />
+            </Grid>
+
+            {/* Expiry Days */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Expiry Days"
+                type="number"
+                value={formData.expiry_days}
+                onChange={(e) => handleInputChange('expiry_days', e.target.value)}
+                error={!!errors.expiry_days}
+                helperText={errors.expiry_days || 'Leave empty to use system default'}
+                placeholder="Enter expiry days"
+                inputProps={{ min: 1, max: 3650 }}
               />
             </Grid>
 
