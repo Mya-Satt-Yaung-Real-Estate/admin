@@ -6,6 +6,7 @@ export interface PointTransaction {
   transaction_type: 'CREDIT' | 'DEBIT';
   points_amount: number;
   balance_before: number;
+  balance_after: number;
   reference_type: string;
   reference_id: number;
   description: string;
@@ -14,6 +15,7 @@ export interface PointTransaction {
 
 export interface PointTransactionFilters {
   search?: string;
+  user_id?: string | number;
   transaction_type?: string;
   reference_type?: string;
   page?: number;

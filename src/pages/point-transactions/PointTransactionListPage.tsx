@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -23,6 +23,7 @@ import { MobileCard, MobileCardAction } from '../../components/common/MobileCard
 import { Pagination, StatusChip, PageErrorState, PageEmptyState, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useAlertSystem, useManualSearch } from '../../hooks';
 import { usePointTransactions, usePointTransactionStatistics } from '../../services/queries/pointTransactions';
+import { useUsers } from '../../services/queries/users';
 import { FilterState } from '../../constants/filters';
 import { PointTransaction, TRANSACTION_TYPES, REFERENCE_TYPES } from '../../types/pointTransaction';
 import { formatDate } from '../../constants/dateFormats';
@@ -33,6 +34,7 @@ import { formatDate } from '../../constants/dateFormats';
 
 interface PointTransactionFilters extends FilterState {
   searchTerm: string;
+  userFilter: string;
   transactionTypeFilter: string;
   referenceTypeFilter: string;
 }
@@ -46,28 +48,6 @@ const PAGE_CONFIG = {
   description: 'View and manage point transactions',
 } as const;
 
-// Filter fields
-const filterFields: FilterField[] = [
-  {
-    key: 'searchTerm',
-    type: 'search',
-    label: 'Search',
-    placeholder: 'Search by user name, email, or description...',
-  },
-  {
-    key: 'transactionTypeFilter',
-    type: 'select',
-    label: 'Transaction Type',
-    options: [...TRANSACTION_TYPES],
-  },
-  {
-    key: 'referenceTypeFilter',
-    type: 'select',
-    label: 'Reference Type',
-    options: [...REFERENCE_TYPES],
-  },
-];
-
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
@@ -75,6 +55,7 @@ const filterFields: FilterField[] = [
 const PointTransactionListPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [userSearchTerm, setUserSearchTerm] = useState('');
 
   // ========================================================================
   // HOOKS & STATE
@@ -92,6 +73,7 @@ const PointTransactionListPage: React.FC = () => {
 
   const { filters, setFilter } = useFilters<PointTransactionFilters>({
     searchTerm: '', // This will be overridden by manual search
+    userFilter: '',
     transactionTypeFilter: 'all',
     referenceTypeFilter: 'all',
   });
@@ -103,6 +85,7 @@ const PointTransactionListPage: React.FC = () => {
     page: page + 1, // API uses 1-based pagination
     per_page: rowsPerPage,
     search: searchTerm || undefined, // Use manual search term
+    user_id: filters.userFilter || undefined,
     transaction_type: filters.transactionTypeFilter !== 'all' ? filters.transactionTypeFilter : undefined,
     reference_type: filters.referenceTypeFilter !== 'all' ? filters.referenceTypeFilter : undefined,
     sort_by: 'created_at',
@@ -111,6 +94,14 @@ const PointTransactionListPage: React.FC = () => {
 
   // Point transaction statistics for dashboard cards
   const { data: statistics } = usePointTransactionStatistics();
+
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({
+    page: 1,
+    per_page: 20,
+    search: userSearchTerm || undefined,
+    sort_by: 'name',
+    sort_direction: 'asc',
+  });
 
   // Alert system hook
   const { alert, showSuccess, clearAlert } = useAlertSystem();
@@ -122,6 +113,45 @@ const PointTransactionListPage: React.FC = () => {
   // Extract transactions data (already filtered and paginated by server)
   const transactions = transactionsResponse?.data || [];
   const pagination = transactionsResponse?.pagination;
+
+  const userOptions = useMemo(() => {
+    return (usersResponse?.data || []).map((user) => ({
+      value: String(user.id),
+      label: `${user.name}${user.email ? ` (${user.email})` : ''}`,
+    }));
+  }, [usersResponse]);
+
+  const filterFields: FilterField[] = useMemo(() => [
+    {
+      key: 'searchTerm',
+      type: 'search',
+      label: 'Search',
+      placeholder: 'Search by transaction description...',
+    },
+    {
+      key: 'userFilter',
+      type: 'autocomplete',
+      label: 'User',
+      placeholder: 'Search user...',
+      options: userOptions,
+      loading: usersLoading,
+      noOptionsText: userSearchTerm ? 'No users found' : 'Type to search users',
+      onInputChange: setUserSearchTerm,
+      width: { xs: '100%', sm: 300 },
+    },
+    {
+      key: 'transactionTypeFilter',
+      type: 'select',
+      label: 'Transaction Type',
+      options: [...TRANSACTION_TYPES],
+    },
+    {
+      key: 'referenceTypeFilter',
+      type: 'select',
+      label: 'Reference Type',
+      options: [...REFERENCE_TYPES],
+    },
+  ], [userOptions, usersLoading, userSearchTerm]);
 
   // Server-side filtering and pagination - no client-side processing needed
   const filteredTransactions = transactions;
@@ -235,13 +265,10 @@ const PointTransactionListPage: React.FC = () => {
       label: 'Balance After',
       render: (_value, transaction) => {
         if (!transaction) return <Typography variant="body2">No data</Typography>;
-        const balanceAfter = transaction.transaction_type === 'CREDIT' 
-          ? transaction.balance_before + transaction.points_amount
-          : transaction.balance_before - transaction.points_amount;
         return (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Typography variant="body2" fontWeight="500" color="primary.main">
-              {balanceAfter}
+              {transaction.balance_after}
             </Typography>
             {transaction.transaction_type === 'CREDIT' ? (
               <TrendingUpIcon sx={{ fontSize: 14, color: 'success.main' }} />
@@ -348,6 +375,7 @@ const PointTransactionListPage: React.FC = () => {
     } else {
       // Use regular filter for other inputs
       setFilter(key as keyof PointTransactionFilters, value);
+      handleChangePage({} as any, 0);
     }
   };
 
@@ -355,8 +383,10 @@ const PointTransactionListPage: React.FC = () => {
   const handleClearFilters = () => {
     // Clear search
     clearSearch();
+    setUserSearchTerm('');
     
     // Reset all filters to default values
+    setFilter('userFilter', '');
     setFilter('transactionTypeFilter', 'all');
     setFilter('referenceTypeFilter', 'all');
     
@@ -431,12 +461,7 @@ const PointTransactionListPage: React.FC = () => {
               />
             ))
           ) : filteredTransactions.length > 0 ? (
-            paginatedTransactions.map((transaction, index) => {
-              const balanceAfter = transaction.transaction_type === 'CREDIT' 
-                ? transaction.balance_before + transaction.points_amount
-                : transaction.balance_before - transaction.points_amount;
-              
-              return (
+            paginatedTransactions.map((transaction, index) => (
                 <MobileCard
                   key={transaction.id}
                   title={`${transaction.transaction_type} - ${transaction.points_amount} points`}
@@ -456,7 +481,7 @@ const PointTransactionListPage: React.FC = () => {
                       color: 'info',
                     },
                     {
-                      label: `After: ${balanceAfter}`,
+                      label: `After: ${transaction.balance_after}`,
                       color: 'primary',
                     },
                     {
@@ -482,8 +507,7 @@ const PointTransactionListPage: React.FC = () => {
                   }}
                   clickable={true}
                 />
-              );
-            })
+              ))
           ) : (
             <PageEmptyState
               title="No Point Transactions Found"
