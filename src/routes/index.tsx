@@ -20,6 +20,7 @@ import { userRoutes } from './users';
 import { analyticsRoutes } from './analytics';
 import { settingsRoutes } from './settings';
 import { systemConfigurationRoutes } from './system-configurations';
+import { projectRoutes } from './projects';
 import { advertisementRoutes } from './advertisements';
 import { eventRoutes } from './events';
 import { newsArticleCategoryRoutes } from './news-article-categories';
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
   ...wardRoutes,
   ...yarpyatRoutes,
   ...propertyRoutes,
+  ...projectRoutes,
   ...propertyTypeRoutes,
   ...propertyListingTypeRoutes,
   ...pointRoutes,

@@ -7,6 +7,7 @@ export * from './roles';
 export * from './permissions';
 export * from './locations';
 export * from './properties';
+export * from './projects';
 export * from './points';
 export * from './systemConfiguration';
 export * from './advertisements';
