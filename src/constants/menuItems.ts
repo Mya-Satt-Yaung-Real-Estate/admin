@@ -11,6 +11,11 @@ export const MENU_ITEMS = [
     path: '/properties',
   },
   {
+    text: 'Projects',
+    iconName: 'Business',
+    path: '/projects',
+  },
+  {
     text: 'Wanting Listings',
     iconName: 'WantingList',
     path: '/wanting-listings',

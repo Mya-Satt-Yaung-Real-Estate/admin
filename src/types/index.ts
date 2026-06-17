@@ -6,6 +6,7 @@ export * from './role';
 export * from './permission';
 export * from './location';
 export * from './property';
+export * from './project';
 export * from './user';
 export * from './ui';
 export * from './point';
