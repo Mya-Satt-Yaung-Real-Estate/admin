@@ -30,10 +30,12 @@ export interface AD {
     name: string;
     slug?: string;
     email?: string;
+    phone?: string | null;
     user_type: 'admin' | 'individual' | 'company';
     company_id?: number;
     company_name?: string;
     company_slug?: string;
+    company_phone?: string | null;
   };
 
   // Media info
@@ -166,6 +168,27 @@ export const AD_DISPLAY_LOCATION_MAIN_SLIDER = 'home-page-asidebar' as const;
 
 export function adRequiresCompanyUser(displayLocation: string): boolean {
   return Boolean(displayLocation) && displayLocation !== AD_DISPLAY_LOCATION_MAIN_SLIDER;
+}
+
+export interface AdCompanyColumnInfo {
+  userName: string;
+  companyName: string;
+  phone: string;
+}
+
+export function getAdCompanyColumnInfo(ad: AD): AdCompanyColumnInfo | null {
+  if (!ad.user || ad.user.user_type !== 'company') {
+    return null;
+  }
+
+  const phone =
+    String(ad.user.phone ?? ad.user.company_phone ?? '').trim() || '—';
+
+  return {
+    userName: ad.user.name,
+    companyName: ad.user.company_name ?? ad.user.name,
+    phone,
+  };
 }
 
 export const AD_END_DATE_WARNING =
