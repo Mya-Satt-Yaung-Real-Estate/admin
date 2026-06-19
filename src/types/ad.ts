@@ -181,10 +181,19 @@ function localDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function parseEndDate(endAt: string): string | null {
-  if (/^\d{4}-\d{2}-\d{2}/.test(endAt)) {
-    return endAt.slice(0, 10);
+function parseEndDate(endAt: string): string | null 
+{
+  // If endAt is already in 'YYYY-MM-DD' format, return it directly.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(endAt)) {
+    return endAt;
   }
+
+  // If endAt is in MySQL DATETIME format, extract and return the YYYY-MM-DD part
+  const mysqlDatetime = endAt.match(/^(\d{4}-\d{2}-\d{2}) \d{2}:\d{2}:\d{2}$/);
+  if (mysqlDatetime) {
+    return mysqlDatetime[1];
+  }
+
   const parsed = new Date(endAt);
   return Number.isNaN(parsed.getTime()) ? null : localDateString(parsed);
 }
