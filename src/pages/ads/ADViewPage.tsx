@@ -24,7 +24,7 @@ import PageHeader from '../../components/layout/PageHeader';
 import { ActionAlert, LoadingSpinner, PageErrorState } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 import { useAD } from '../../services/queries/ad';
-import { AD, adRequiresCompanyUser } from '../../types/ad';
+import { AD, adRequiresCompanyUser, getAdCompanyColumnInfo } from '../../types/ad';
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 
 const ADViewPage: React.FC = () => {
@@ -407,7 +407,7 @@ const ADViewPage: React.FC = () => {
                     <Typography variant="subtitle2" color="textSecondary" gutterBottom>
                       Company User
                     </Typography>
-                    {ad.user ? (
+                    {ad.user && ad.user.user_type === 'company' ? (
                       <Grid container spacing={1.5}>
                         <Grid item xs={12}>
                           <Typography variant="caption" color="textSecondary">
@@ -421,6 +421,14 @@ const ADViewPage: React.FC = () => {
                           </Typography>
                           <Typography variant="body2">
                             {ad.user.company_name ?? ad.user.name}
+                          </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="caption" color="textSecondary">
+                            Phone
+                          </Typography>
+                          <Typography variant="body2">
+                            {getAdCompanyColumnInfo(ad)?.phone ?? '—'}
                           </Typography>
                         </Grid>
                       </Grid>

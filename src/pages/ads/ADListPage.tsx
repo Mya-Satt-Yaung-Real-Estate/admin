@@ -31,7 +31,7 @@ import {
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { useADs, useDeleteAD } from '../../services/queries/ad';
 import { FilterState } from '../../constants/filters';
-import { AD, isAdEndDateBeforeToday } from '../../types/ad';
+import { AD, getAdCompanyColumnInfo, isAdEndDateBeforeToday } from '../../types/ad';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -281,6 +281,37 @@ const ADListPage: React.FC = () => {
           </Box>
         );
       },
+    },
+    {
+      id: 'company',
+      label: 'Company',
+      render: (_value, ad) => {
+        if (!ad) return <Typography variant="body2">No data</Typography>;
+
+        const companyInfo = getAdCompanyColumnInfo(ad);
+        if (!companyInfo) {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              —
+            </Typography>
+          );
+        }
+
+        return (
+          <Box sx={{ maxWidth: 220, minWidth: 0 }}>
+            <Typography variant="body2" fontWeight="600">
+              {companyInfo.userName}  
+            </Typography>
+            <Typography variant="caption" color="textSecondary" display="block">
+              {companyInfo.companyName}
+            </Typography>
+            <Typography variant="caption" color="textSecondary" display="block">
+              {companyInfo.phone}
+            </Typography>
+          </Box>
+        );
+      },
+      hidden: isMobile,
     },
     {
       id: 'description',
@@ -582,6 +613,24 @@ const ADListPage: React.FC = () => {
               ]}
             >
               <Box sx={{ mt: 1 }}>
+                {(() => {
+                  const companyInfo = getAdCompanyColumnInfo(ad);
+                  if (!companyInfo) return null;
+
+                  return (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="caption" color="textSecondary" display="block">
+                        User: {companyInfo.userName}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" display="block">
+                        Company: {companyInfo.companyName}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" display="block">
+                        Phone: {companyInfo.phone}
+                      </Typography>
+                    </Box>
+                  );
+                })()}
                 <Typography variant="caption" color="textSecondary" display="block">
                   Start: {formatAdScheduleDate(ad.start_at)}
                 </Typography>
