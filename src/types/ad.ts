@@ -169,7 +169,10 @@ export function adRequiresCompanyUser(displayLocation: string): boolean {
 }
 
 export const AD_END_DATE_WARNING =
-  'The end date is today or in the past. Set a future end date if you want this ad to stay active longer.';
+  'The end date is today. Set a future end date if you want this ad to stay active longer.';
+
+export const AD_ACTIVE_PAST_SCHEDULE_MESSAGE =
+  'Cannot set this AD to Active — the schedule has already ended. Extend the end date to today or later or keep status Inactive.';
 
 function localDateString(date: Date): string {
   const y = date.getFullYear();
@@ -198,6 +201,24 @@ export function isAdEndDateBeforeToday(endAt: string | null | undefined): boolea
   if (!endAt) return false;
   const end = parseEndDate(endAt);
   return end !== null && end < localDateString(new Date());
+}
+
+/** Entire schedule has ended (both dates set and end date is before today). */
+export function isAdScheduleFullyPast(
+  startAt: string | null | undefined,
+  endAt: string | null | undefined
+): boolean {
+  if (!startAt || !endAt) return false;
+  return isAdEndDateBeforeToday(endAt);
+}
+
+/** Active status conflicts with a schedule that has already ended. */
+export function isAdActiveWithPastSchedule(
+  status: boolean,
+  startAt: string | null | undefined,
+  endAt: string | null | undefined
+): boolean {
+  return Boolean(status) && isAdScheduleFullyPast(startAt, endAt);
 }
 
 // Display location options

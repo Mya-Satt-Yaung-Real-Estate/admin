@@ -33,7 +33,7 @@ import { ActionAlert, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, isAdEndDateExpired } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast } from '../../types/ad';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 import { Media } from '../../types/media';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -85,6 +85,16 @@ const validationSchema = Yup.object({
       if (!start_at || !value) return true;
       return new Date(value) > new Date(start_at);
     }),
+  // Validate: prevent AD from being set to Active if the schedule has already ended
+  status: Yup.boolean().test(
+    'active-past-schedule',
+    AD_ACTIVE_PAST_SCHEDULE_MESSAGE,
+    function(value) {
+      if (!value) return true;
+      const { start_at, end_at } = this.parent;
+      return !isAdScheduleFullyPast(start_at, end_at);
+    }
+  ),
   media_id: Yup.number()
     .required('Please upload an image')
     .min(1, 'Please upload an image')
@@ -178,6 +188,7 @@ const ADCreatePage: React.FC = () => {
         display_location: true,
         start_at: true,
         end_at: true,
+        status: true,
         media_id: true,
         link_text: true,
         user_id: true,
@@ -213,7 +224,21 @@ const ADCreatePage: React.FC = () => {
         }
       } catch (error: any) {
         console.error('Error creating AD:', error);
-        showError(error.message || 'Failed to create AD. Please try again.');
+
+        // Handle API validation errors
+        let errorMessage = 'Failed to create AD. Please try again.';
+        if (error.errors) {
+          const firstErrorField = Object.keys(error.errors)[0];
+          if (firstErrorField) {
+            errorMessage = error.errors[firstErrorField][0];
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+
+        // Show error message
+        showError(errorMessage);
+        createADMutation.reset();
       }
     },
   });
@@ -231,20 +256,7 @@ const ADCreatePage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error Alert */}
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      {/* Create Error Alert */}
-      {createADMutation.isError && (
-        <ActionAlert
-          error={{
-            show: true,
-            message: createADMutation.error?.message || 'Failed to create AD'
-          }}
-          sx={{ mb: 2 }}
-          onClose={() => createADMutation.reset()}
-        />
-      )}
 
       <form onSubmit={formik.handleSubmit}>
         <Grid container spacing={3}>
@@ -392,7 +404,17 @@ const ADCreatePage: React.FC = () => {
                     />
                   </Grid>
 
-                  {isAdEndDateExpired(formik.values.end_at) && (
+                  {/* Active status conflicts with a schedule that has already ended. */}
+                  {isAdActiveWithPastSchedule(formik.values.status, formik.values.start_at, formik.values.end_at) && (
+                    <Grid item xs={12}>
+                      <Alert severity="error">{AD_ACTIVE_PAST_SCHEDULE_MESSAGE}</Alert>
+                    </Grid>
+                  )}
+
+                  {/* The end date is today. Set a future end date if you want this ad to stay active longer. */}
+                  {!isAdActiveWithPastSchedule(formik.values.status, formik.values.start_at, formik.values.end_at) &&
+                    formik.values.status &&
+                    isAdEndDateExpired(formik.values.end_at) && (
                     <Grid item xs={12}>
                       <Alert severity="warning">{AD_END_DATE_WARNING}</Alert>
                     </Grid>

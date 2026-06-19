@@ -34,7 +34,7 @@ import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { useAD, useUpdateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
 import { Media } from '../../types/media';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, isAdEndDateExpired } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 
@@ -76,6 +76,31 @@ const validationSchema = Yup.object({
       then: (schema) => schema.required('Select a company user').positive('Select a company user'),
       otherwise: (schema) => schema.nullable().strip(),
     }),
+
+  // Validate: start date is required
+  start_at: Yup.string()
+    .required('Start date is required'),
+
+  // Validate: end date must be after start date
+  end_at: Yup.string()
+    .required('End date is required')
+    .test('end-after-start', 'End date must be after start date', function(value) {
+      const { start_at } = this.parent;
+      if (!start_at || !value) return true;
+      return new Date(value) > new Date(start_at);
+    }),
+  
+  // Validate: prevent AD from being set to Active if the schedule has already ended
+  status: Yup.boolean().test(
+    'active-past-schedule',
+    AD_ACTIVE_PAST_SCHEDULE_MESSAGE,
+    function(value) {
+      if (!value) return true;
+      const { start_at, end_at } = this.parent;
+      return !isAdScheduleFullyPast(start_at, end_at);
+    }
+  ),
+
   media_id: Yup.number().required('Media ID is required').positive('Media ID must be a positive number'),
   // Link text is required if link has value and link_type is not image_link
   link_text: Yup.string().nullable().when(['link', 'link_type'], {
@@ -316,20 +341,17 @@ const ADEditPage: React.FC = () => {
       // Extract API response message
       let errorMessage = 'Failed to update AD. Please try again.';
 
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.errors) {
-        // Extract specific field errors
-        const fieldErrors = error.response.data.errors;
-        const firstErrorField = Object.keys(fieldErrors)[0];
+      if (error.errors) {
+        const firstErrorField = Object.keys(error.errors)[0];
         if (firstErrorField) {
-          errorMessage = fieldErrors[firstErrorField][0];
+          errorMessage = error.errors[firstErrorField][0];
         }
       } else if (error.message) {
         errorMessage = error.message;
       }
 
       showError(errorMessage);
+      updateADMutation.reset();
     }
   };
 
@@ -346,20 +368,7 @@ const ADEditPage: React.FC = () => {
         }}
       />
 
-      {/* Success/Error Alert */}
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
-
-      {/* Update Error Alert */}
-      {updateADMutation.isError && (
-        <ActionAlert
-          error={{
-            show: true,
-            message: updateADMutation.error?.message || 'Failed to update AD'
-          }}
-          sx={{ mb: 2 }}
-          onClose={() => updateADMutation.reset()}
-        />
-      )}
 
       <Formik
         initialValues={initialValues}
@@ -551,7 +560,17 @@ const ADEditPage: React.FC = () => {
                         />
                       </Grid>
 
-                      {isAdEndDateExpired(values.end_at) && (
+                      {/* Active status conflicts with a schedule that has already ended. */}
+                      {isAdActiveWithPastSchedule(values.status, values.start_at, values.end_at) && (
+                        <Grid item xs={12}>
+                          <Alert severity="error">{AD_ACTIVE_PAST_SCHEDULE_MESSAGE}</Alert>
+                        </Grid>
+                      )}
+
+                      {/* The end date is today. Set a future end date if you want this ad to stay active longer. */}
+                      {!isAdActiveWithPastSchedule(values.status, values.start_at, values.end_at) &&
+                        values.status &&
+                        isAdEndDateExpired(values.end_at) && (
                         <Grid item xs={12}>
                           <Alert severity="warning">{AD_END_DATE_WARNING}</Alert>
                         </Grid>
