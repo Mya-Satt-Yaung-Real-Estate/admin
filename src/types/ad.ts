@@ -191,6 +191,41 @@ export function getAdCompanyColumnInfo(ad: AD): AdCompanyColumnInfo | null {
   };
 }
 
+const AD_OPTIONAL_NULLABLE_STRING_FIELDS = [
+  'title_en',
+  'title_mm',
+  'description_en',
+  'description_mm',
+  'link',
+  'link_text',
+  'text_color_code',
+  'payment_date',
+] as const;
+
+/**
+ * Convert cleared optional AD form fields to null before API submit.
+ */
+export function normalizeAdFormPayload<T extends Partial<ADFormData>>(data: T): T {
+  const result = { ...data } as Record<string, unknown>;
+
+  for (const field of AD_OPTIONAL_NULLABLE_STRING_FIELDS) {
+    const value = result[field];
+    if (value === '' || value === undefined) {
+      result[field] = null;
+    }
+  }
+
+  if (result.price === '' || result.price === undefined) {
+    result.price = null;
+  }
+
+  if (!result.link) {
+    result.link_text = null;
+  }
+
+  return result as T;
+}
+
 export const AD_END_DATE_WARNING =
   'The end date is today. Set a future end date if you want this ad to stay active longer.';
 
