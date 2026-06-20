@@ -209,7 +209,7 @@ const PointPackageDetailPage: React.FC = () => {
               User Points Count
             </Typography>
             <Typography variant="body1" fontWeight={500}>
-              {pointPackage.user_points_count || 0}
+              {(pointPackage.user_points_count || 0).toLocaleString()} points
             </Typography>
           </Grid>
 
