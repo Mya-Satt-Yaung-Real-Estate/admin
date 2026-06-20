@@ -33,7 +33,7 @@ import { ActionAlert, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload } from '../../types/ad';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 import { Media } from '../../types/media';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -203,14 +203,14 @@ const ADCreatePage: React.FC = () => {
         const mediaId = uploadedImage?.id || values.media_id;
 
         // Filter out undefined values and ensure required fields are present
-        const adData: ADFormData = {
+        const adData: ADFormData = normalizeAdFormPayload({
           ...values,
           link_type: values.link_type as "button_link" | "text_link" | "image_link",
           display_location: values.display_location as ADFormData['display_location'],
           grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
           user_id: adRequiresCompanyUser(values.display_location) ? values.user_id : undefined,
           media_id: mediaId,
-        };
+        });
 
         console.log('AD data to submit:', adData);
         const response = await createADMutation.mutateAsync(adData);

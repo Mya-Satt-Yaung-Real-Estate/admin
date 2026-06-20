@@ -34,7 +34,7 @@ import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { useAD, useUpdateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
 import { Media } from '../../types/media';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 
@@ -111,7 +111,10 @@ const validationSchema = Yup.object({
   }),
   text_color_code: Yup.string()
     .nullable()
-    .matches(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color code (e.g., #000000)'),
+    .test('hex-or-empty', 'Must be a valid hex color code (e.g., #000000)', (value) => {
+      if (!value || !String(value).trim()) return true;
+      return /^#[0-9A-Fa-f]{6}$/.test(String(value));
+    }),
   payment_date: Yup.string().nullable(),
 });
 
@@ -312,12 +315,12 @@ const ADEditPage: React.FC = () => {
                      (values.media_id > 0 ? values.media_id : originalMediaId);
 
       // Prepare AD data
-      const adData: Partial<ADFormData> = {
+      const adData: Partial<ADFormData> = normalizeAdFormPayload({
         ...values,
         grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
         user_id: adRequiresCompanyUser(values.display_location) ? values.user_id : undefined,
         media_id: mediaId,
-      };
+      });
 
       console.log('📦 AD data to submit:', adData);
       console.log('🔄 Calling update mutation...');
