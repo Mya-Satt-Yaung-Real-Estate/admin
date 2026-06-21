@@ -34,7 +34,7 @@ import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { useAD, useUpdateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
 import { Media } from '../../types/media';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload, AD_FORM_SUBMIT_TOUCH_FIELDS, getFirstYupFormError, buildTouchedFieldsForFormErrors } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 
@@ -69,13 +69,15 @@ const validationSchema = Yup.object({
       then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
       otherwise: (schema) => schema.nullable(),
     }),
-  user_id: Yup.number()
-    .nullable()
-    .when('display_location', {
-      is: (loc: string) => adRequiresCompanyUser(loc),
-      then: (schema) => schema.required('Select a company user').positive('Select a company user'),
-      otherwise: (schema) => schema.nullable().strip(),
-    }),
+  user_id: Yup.mixed().when('display_location', {
+    is: (loc: string) => adRequiresCompanyUser(loc),
+    then: () =>
+      Yup.number()
+        .typeError('Select a company user')
+        .required('Select a company user')
+        .positive('Select a company user'),
+    otherwise: () => Yup.mixed().nullable().strip(),
+  }),
 
   // Validate: start date is required
   start_at: Yup.string()
@@ -161,7 +163,7 @@ const ADEditPage: React.FC = () => {
         type: image.type || 'image',
         filename: image.filename || `AD Image ${ad.data.id}`,
         size: image.size || 0,
-        formatted_size: image.formatted_size || 'N/A',
+        formatted_size: image.formatted_size || '',
         mime_type: image.mime_type || 'image/jpeg',
         is_primary: image.is_primary ?? true,
         status: image.status || 'completed',
@@ -177,7 +179,7 @@ const ADEditPage: React.FC = () => {
         type: (ad.data.media as any).type || 'image',
         filename: (ad.data.media as any).filename || `AD Media ${ad.data.id}`,
         size: (ad.data.media as any).size || 0,
-        formatted_size: (ad.data.media as any).formatted_size || 'N/A',
+        formatted_size: (ad.data.media as any).formatted_size || '',
         mime_type: (ad.data.media as any).mime_type || 'image/jpeg',
         is_primary: (ad.data.media as any).is_primary ?? true,
         status: (ad.data.media as any).status || 'completed',
@@ -196,7 +198,7 @@ const ADEditPage: React.FC = () => {
         type: imageToUse.type || 'image',
         filename: imageToUse.filename || `AD Image ${ad.data.id}`,
         size: imageToUse.size || 0,
-        formatted_size: imageToUse.formatted_size || 'N/A',
+        formatted_size: imageToUse.formatted_size || '',
         mime_type: imageToUse.mime_type || 'image/jpeg',
         is_primary: imageToUse.is_primary ?? true,
         status: imageToUse.status || 'completed',
@@ -213,7 +215,7 @@ const ADEditPage: React.FC = () => {
         type: image.type || 'image',
         filename: image.filename || `AD Image ${ad.data.id}`,
         size: image.size || 0,
-        formatted_size: image.formatted_size || 'N/A',
+        formatted_size: image.formatted_size || '',
         mime_type: image.mime_type || 'image/jpeg',
         is_primary: image.is_primary ?? true,
         status: image.status || 'completed',
@@ -229,7 +231,7 @@ const ADEditPage: React.FC = () => {
         type: 'image',
         filename: `AD Image ${ad.data.id}`,
         size: 0, // Size not available in this format
-        formatted_size: 'N/A',
+        formatted_size: '',
         mime_type: 'image/jpeg', // Default assumption
         is_primary: true,
         status: 'completed',
@@ -379,7 +381,7 @@ const ADEditPage: React.FC = () => {
         onSubmit={handleSubmit}
         enableReinitialize={true}
       >
-        {({ values, errors, touched, handleChange, setFieldValue, setFieldTouched, handleSubmit }) => {
+        {({ values, errors, touched, handleChange, setFieldValue, setFieldTouched, validateForm, setTouched, submitForm, submitCount }) => {
           // Store setFieldValue for use in Dialog
           useEffect(() => {
             setFormikSetFieldValue(() => setFieldValue);
@@ -393,7 +395,7 @@ const ADEditPage: React.FC = () => {
               type: media.type || 'image',
               filename: media.filename || 'Uploaded Image',
               size: media.size || 0,
-              formatted_size: media.formatted_size || 'N/A',
+              formatted_size: media.formatted_size || '',
               mime_type: media.mime_type || 'image/jpeg',
               is_primary: media.is_primary ?? false,
               status: media.status || 'completed',
@@ -415,6 +417,24 @@ const ADEditPage: React.FC = () => {
             }
           };
 
+          // Validate the form, show error if invalid, otherwise submit form when update button is clicked
+          const handleUpdateClick = async () => {
+            const validationErrors = await validateForm();
+            const errorKeys = Object.keys(validationErrors);
+            if (errorKeys.length > 0) {
+              setTouched({
+                ...AD_FORM_SUBMIT_TOUCH_FIELDS,
+                ...buildTouchedFieldsForFormErrors(validationErrors as Record<string, unknown>),
+              });
+              showError(
+                getFirstYupFormError(validationErrors as Record<string, unknown>)
+                  ?? 'Please fix the validation errors before updating.'
+              );
+              return;
+            }
+            submitForm();
+          };
+  
           return (
           <Form>
             <Grid container spacing={3}>
@@ -469,11 +489,15 @@ const ADEditPage: React.FC = () => {
                         <Grid item xs={12} sm={6}>
                           <CompanyUserSelect
                             userId={values.user_id}
-                            onUserIdChange={(id) => setFieldValue('user_id', id)}
+                            onUserIdChange={(id) => {
+                              setFieldValue('user_id', id ?? null);
+                              setFieldTouched('user_id', true, false);
+                            }}
                             users={usersResponse?.data || []}
                             usersLoading={usersLoading}
                             error={errors.user_id as string | undefined}
                             touched={touched.user_id}
+                            submitAttempted={submitCount > 0}
                             onBlur={() => setFieldTouched('user_id', true)}
                           />
                         </Grid>
@@ -864,7 +888,7 @@ const ADEditPage: React.FC = () => {
 
                 {/* Form Actions */}
                 <FormActions
-                  onSubmit={handleSubmit}
+                  onSubmit={handleUpdateClick}
                   onCancel={() => navigate('/ads')}
                   submitText={updateADMutation.isPending ? "Updating AD..." : "Update AD"}
                   isSubmitting={updateADMutation.isPending}

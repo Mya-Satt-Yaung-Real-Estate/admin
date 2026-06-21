@@ -226,6 +226,48 @@ export function normalizeAdFormPayload<T extends Partial<ADFormData>>(data: T): 
   return result as T;
 }
 
+// Fields that should be touched (set to true) when the form is submitted.
+export const AD_FORM_SUBMIT_TOUCH_FIELDS: Record<string, boolean> = {
+  display_location: true,
+  start_at: true,
+  end_at: true,
+  status: true,
+  media_id: true,
+  link_text: true,
+  user_id: true,
+  grid_index: true,
+  link: true,
+  title_en: true,
+  title_mm: true,
+  description_en: true,
+  description_mm: true,
+  text_color_code: true,
+};
+
+// Return the first error message string from a (possibly nested) Yup errors object.
+export function getFirstYupFormError(errors: Record<string, unknown>): string | null {
+  for (const value of Object.values(errors)) {
+    if (typeof value === 'string' && value.trim()) {
+      return value;
+    }
+    if (value && typeof value === 'object') {
+      const nested = getFirstYupFormError(value as Record<string, unknown>);
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+  return null;
+}
+
+// Mark every field in the "errors" object as touched (set to true)
+export function buildTouchedFieldsForFormErrors(errors: Record<string, unknown>): Record<string, boolean> {
+  return Object.keys(errors).reduce<Record<string, boolean>>((acc, key) => {
+    acc[key] = true;
+    return acc;
+  }, {});
+}
+
 export const AD_END_DATE_WARNING =
   'The end date is today. Set a future end date if you want this ad to stay active longer.';
 

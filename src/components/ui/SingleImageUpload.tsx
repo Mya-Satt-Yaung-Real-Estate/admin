@@ -100,6 +100,19 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
 
   const canUpload = !uploadedImage && !uploading;
 
+  // Helper to get file size text for display, but hides it if missing or not available
+  const getDisplayFileSize = (media: Media): string | null => {
+    const label = media.formatted_size?.trim();
+    if (!label) {
+      return null;
+    }
+    const normalized = label.toUpperCase();
+    if (normalized === 'N/A' || normalized === 'UNKNOWN') {
+      return null;
+    }
+    return label;
+  };
+
   return (
     <Box>
 
@@ -212,13 +225,21 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
                 </IconButton>
               </Box>
               
-              <CardContent sx={{ py: 1, height: 30, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <CardContent sx={{ py: 1, minHeight: 30, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <Typography variant="caption" noWrap>
                   {uploadedImage.filename}
                 </Typography>
-                <Typography variant="caption" display="block" color="textSecondary">
-                  {uploadedImage.formatted_size}
-                </Typography>
+                {(() => {
+                  const fileSizeLabel = getDisplayFileSize(uploadedImage);
+                  if (!fileSizeLabel) {
+                    return null;
+                  }
+                  return (
+                    <Typography variant="caption" display="block" color="textSecondary">
+                      {fileSizeLabel}
+                    </Typography>
+                  );
+                })()}
               </CardContent>
             </Card>
           </Box>
