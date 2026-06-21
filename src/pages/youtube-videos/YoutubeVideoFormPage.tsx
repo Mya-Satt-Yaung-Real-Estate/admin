@@ -60,7 +60,7 @@ const YoutubeVideoFormPage: React.FC = () => {
   }, [isEditMode, videoResponse]);
 
   const pageTitle = useMemo(
-    () => (isEditMode ? 'Edit YouTube Video' : 'Create YouTube Video'),
+    () => (isEditMode ? 'Edit Jade Home Tour Video' : 'Create Jade Home Tour Video'),
     [isEditMode]
   );
 
@@ -102,10 +102,10 @@ const YoutubeVideoFormPage: React.FC = () => {
     try {
       if (isEditMode) {
         await updateVideoMutation.mutateAsync({ id: videoId, data: payload });
-        navigate('/youtube-videos?success=' + encodeURIComponent('YouTube video updated successfully.'));
+        navigate('/youtube-videos?success=' + encodeURIComponent('Jade Home Tour video updated successfully.'));
       } else {
         await createVideoMutation.mutateAsync(payload);
-        navigate('/youtube-videos?success=' + encodeURIComponent('YouTube video created successfully.'));
+        navigate('/youtube-videos?success=' + encodeURIComponent('Jade Home Tour video created successfully.'));
       }
     } catch (error: any) {
       if (error?.errors) {
@@ -115,7 +115,7 @@ const YoutubeVideoFormPage: React.FC = () => {
         });
         setErrors(apiErrors);
       } else {
-        showError(error?.message || 'Failed to save YouTube video.', true);
+        showError(error?.message || 'Failed to save Jade Home Tour video.', true);
       }
     }
   };
@@ -128,7 +128,7 @@ const YoutubeVideoFormPage: React.FC = () => {
     return (
       <PageErrorState
         error={error}
-        title="Failed to load YouTube video"
+        title="Failed to load Jade Home Tour video"
         message="Please try refreshing the page."
       />
     );
@@ -138,10 +138,10 @@ const YoutubeVideoFormPage: React.FC = () => {
     <Box>
       <PageHeader
         title={pageTitle}
-        subtitle={isEditMode ? 'Update YouTube video details' : 'Add a new YouTube video'}
-        breadcrumbs={`Dashboard / YouTube Videos / ${isEditMode ? 'Edit' : 'Create'}`}
+        subtitle={isEditMode ? 'Update Jade Home Tour video details' : 'Add a new Jade Home Tour video'}
+        breadcrumbs={`Dashboard / Jade Home Tour / ${isEditMode ? 'Edit' : 'Create'}`}
         actionButton={{
-          text: 'Back to YouTube Videos',
+          text: 'Back to Jade Home Tour',
           icon: <ArrowBackIcon />,
           onClick: () => navigate('/youtube-videos'),
         }}
@@ -227,10 +227,10 @@ const YoutubeVideoFormPage: React.FC = () => {
                 disabled={isSubmitting}
               >
                 {isSubmitting
-                  ? `${isEditMode ? 'Update YouTube Video' : 'Create YouTube Video'}...`
+                  ? `${isEditMode ? 'Update Jade Home Tour Video' : 'Create Jade Home Tour Video'}...`
                   : isEditMode
-                    ? 'Update YouTube Video'
-                    : 'Create YouTube Video'}
+                    ? 'Update Jade Home Tour Video'
+                    : 'Create Jade Home Tour Video'}
               </Button>
             </Stack>
           </Box>

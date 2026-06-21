@@ -26,7 +26,7 @@ export const MENU_ITEMS = [
     path: '/advertisements',
   },
   {
-    text: 'YouTube',
+    text: 'Jade Home Tour',
     iconName: 'YouTube',
     path: '/youtube-videos',
   },

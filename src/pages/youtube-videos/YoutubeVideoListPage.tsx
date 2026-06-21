@@ -13,6 +13,7 @@ import {
   Edit as EditIcon,
   YouTube as YouTubeIcon,
   OpenInNew as OpenInNewIcon,
+  Visibility as ViewCountIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -75,8 +76,8 @@ const YoutubeVideoListPage: React.FC = () => {
     }
 
     deleteVideoMutation.mutate(video.id, {
-      onSuccess: () => showSuccess('YouTube video deleted successfully.'),
-      onError: (error: any) => showError(error?.message || 'Failed to delete YouTube video.', true),
+      onSuccess: () => showSuccess('Jade Home Tour video deleted successfully.'),
+      onError: (error: any) => showError(error?.message || 'Failed to delete Jade Home Tour video.', true),
     });
   }, [deleteVideoMutation, showError, showSuccess]);
 
@@ -149,6 +150,16 @@ const YoutubeVideoListPage: React.FC = () => {
       ),
     },
     {
+      id: 'view_count',
+      label: 'Views',
+      render: (_, video) => (
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <ViewCountIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+          <Typography variant="body2">{video.view_count ?? 0}</Typography>
+        </Stack>
+      ),
+    },
+    {
       id: 'created_at',
       label: 'Created',
       render: (_, video) => <Typography variant="body2">{video.created_at}</Typography>,
@@ -178,7 +189,7 @@ const YoutubeVideoListPage: React.FC = () => {
     return (
       <PageErrorState
         error={error}
-        title="Failed to load YouTube videos"
+        title="Failed to load Jade Home Tour videos"
         message="Please try refreshing the page."
       />
     );
@@ -187,11 +198,11 @@ const YoutubeVideoListPage: React.FC = () => {
   return (
     <Box>
       <PageHeader
-        title="YouTube Video Management"
-        subtitle="Manage YouTube video list content"
-        breadcrumbs="Dashboard / YouTube Videos"
+        title="Jade Home Tour Management"
+        subtitle="Manage Jade Home Tour video list content"
+        breadcrumbs="Dashboard / Jade Home Tour"
         actionButton={{
-          text: 'Add YouTube Video',
+          text: 'Add Jade Home Tour Video',
           icon: <AddIcon />,
           onClick: () => navigate('/youtube-videos/create'),
         }}
@@ -223,7 +234,7 @@ const YoutubeVideoListPage: React.FC = () => {
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         loading={isLoading}
-        emptyMessage="No YouTube videos found"
+        emptyMessage="No Jade Home Tour videos found"
         getRowKey={(video) => video.id}
         showRowNumbers
       />
