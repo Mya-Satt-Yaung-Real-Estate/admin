@@ -60,7 +60,7 @@ export interface RegularUser {
   user_type_label?: string;
   member_level: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active: boolean;
-  verification_status?: 'pending' | 'approved';
+  verification_status?: 'pending' | 'approved' | 'rejected';
   last_login_at?: string;
   last_active_at?: string;
   email_verified_at?: string;
@@ -111,7 +111,7 @@ export interface CreateRegularUserData {
   region_id?: number;
   township_id?: number;
   description?: string;
-  verification_status?: 'pending' | 'approved';
+  verification_status?: 'pending' | 'approved' | 'rejected';
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
   our_market?: boolean;
@@ -123,7 +123,7 @@ export interface UpdateRegularUserData {
   user_type?: 'company' | 'individual';
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
-  verification_status?: 'pending' | 'approved';
+  verification_status?: 'pending' | 'approved' | 'rejected';
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
   our_market?: boolean;
