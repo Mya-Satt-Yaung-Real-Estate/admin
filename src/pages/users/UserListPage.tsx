@@ -41,7 +41,40 @@ interface UserFilters extends FilterState {
   memberLevelFilter: string;
   statusFilter: string;
   verificationStatusFilter: string;
+  jadeMarketFilter: string;
+  homepageFilter: string;
+  propertyDetailFilter: string;
 }
+
+const YES_NO_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+];
+
+/**
+ * Company-only yes/no filter for company_profile boolean flags.
+ */
+const matchesCompanyFlag = (
+  user: RegularUser,
+  filterValue: string,
+  flag: 'our_market' | 'show_on_homepage' | 'show_on_property_detail',
+) => {
+  if (filterValue === 'all') return true;
+  if (user.user_type !== 'company') return false;
+  const isOn = Boolean(user.company_profile?.[flag]);
+  return filterValue === 'yes' ? isOn : !isOn;
+};
+
+/**
+ * Verification lives on company_profiles; list API exposes it as user.verification_status.
+ */
+const getCompanyVerificationStatus = (user: RegularUser): string | null => {
+  if (user.user_type !== 'company') return null;
+  const status = user.verification_status;
+  if (typeof status === 'string' && status.trim() !== '') return status;
+  return 'pending';
+};
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -101,7 +134,26 @@ const FILTER_FIELDS: FilterField[] = [
       { value: 'all', label: 'All' },
       { value: 'pending', label: 'Pending' },
       { value: 'approved', label: 'Approved' },
+      { value: 'rejected', label: 'Rejected' },
     ],
+  },
+  {
+    key: 'jadeMarketFilter',
+    type: 'select',
+    label: 'Jade Market',
+    options: YES_NO_FILTER_OPTIONS,
+  },
+  {
+    key: 'homepageFilter',
+    type: 'select',
+    label: 'Homepage',
+    options: YES_NO_FILTER_OPTIONS,
+  },
+  {
+    key: 'propertyDetailFilter',
+    type: 'select',
+    label: 'Property detail',
+    options: YES_NO_FILTER_OPTIONS,
   },
 ];
 
@@ -126,12 +178,16 @@ const UserListPage: React.FC = () => {
   const {
     filters,
     setFilter,
+    resetFilters,
   } = useFilters<UserFilters>({
     searchTerm: '',
     userTypeFilter: 'all',
     memberLevelFilter: 'all',
     statusFilter: 'all',
     verificationStatusFilter: 'all',
+    jadeMarketFilter: 'all',
+    homepageFilter: 'all',
+    propertyDetailFilter: 'all',
   });
 
   // Alert system hook
@@ -172,9 +228,14 @@ const UserListPage: React.FC = () => {
         (filters.statusFilter === 'inactive' && !user.is_active);
 
       const matchesVerificationStatus = filters.verificationStatusFilter === 'all' ||
-        (user.user_type === 'company' && user.verification_status === filters.verificationStatusFilter);
+        getCompanyVerificationStatus(user) === filters.verificationStatusFilter;
 
-      return matchesSearch && matchesUserType && matchesMemberLevel && matchesStatus && matchesVerificationStatus;
+      const matchesJadeMarket = matchesCompanyFlag(user, filters.jadeMarketFilter, 'our_market');
+      const matchesHomepage = matchesCompanyFlag(user, filters.homepageFilter, 'show_on_homepage');
+      const matchesPropertyDetail = matchesCompanyFlag(user, filters.propertyDetailFilter, 'show_on_property_detail');
+
+      return matchesSearch && matchesUserType && matchesMemberLevel && matchesStatus && matchesVerificationStatus
+        && matchesJadeMarket && matchesHomepage && matchesPropertyDetail;
     });
   }, [users, filters]);
 
@@ -330,12 +391,9 @@ const UserListPage: React.FC = () => {
       label: 'Verification Status',
       render: (_value, user) => {
         if (!user) return <Typography variant="body2">No data</Typography>;
-        if (user.user_type !== 'company') {
-          return <Typography variant="body2" color="textSecondary">N/A</Typography>;
-        }
-        const verificationStatus = typeof user.verification_status === 'string' ? user.verification_status : '';
-        if (!verificationStatus || verificationStatus.trim() === '') {
-          return <Typography variant="body2" color="textSecondary">Not Submitted</Typography>;
+        const verificationStatus = getCompanyVerificationStatus(user);
+        if (!verificationStatus) {
+          return <Typography variant="body2" color="textSecondary">—</Typography>;
         }
         return (
           <StatusChip 
@@ -469,6 +527,11 @@ const UserListPage: React.FC = () => {
     navigate('/users/create');
   };
 
+  const handleClearFilters = () => {
+    resetFilters();
+    handleChangePage({} as React.MouseEvent, 0);
+  };
+
   // ========================================================================
   // RENDER
   // ========================================================================
@@ -513,13 +576,15 @@ const UserListPage: React.FC = () => {
         filters={filters}
         onFilterChange={(key, value) => setFilter(key as keyof UserFilters, value)}
         fields={FILTER_FIELDS}
+        showClearButton
+        onClearFilters={handleClearFilters}
       />
 
       {/* Empty state */}
       {filteredUsers.length === 0 && !isLoading && (
         <PageEmptyState
           title="No Users Found"
-          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all' || filters.verificationStatusFilter !== 'all'
+          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all' || filters.verificationStatusFilter !== 'all' || filters.jadeMarketFilter !== 'all' || filters.homepageFilter !== 'all' || filters.propertyDetailFilter !== 'all'
             ? "No users match your current filters. Try adjusting your search criteria."
             : "No users have been created yet."
           }
@@ -543,16 +608,16 @@ const UserListPage: React.FC = () => {
               }}
               chips={[
                 ...(() => {
-                  if (user.user_type === 'company') {
-                    const verificationStatus = typeof user.verification_status === 'string' ? user.verification_status : '';
-                    if (verificationStatus && verificationStatus.trim() !== '') {
-                      return [{
-                        label: verificationStatus.charAt(0).toUpperCase() + verificationStatus.slice(1),
-                        color: verificationStatus === 'approved' ? 'primary' as const : 'warning' as const,
-                      }];
-                    }
-                  }
-                  return [];
+                  const verificationStatus = getCompanyVerificationStatus(user);
+                  if (!verificationStatus) return [];
+                  return [{
+                    label: verificationStatus.charAt(0).toUpperCase() + verificationStatus.slice(1),
+                    color: verificationStatus === 'approved'
+                      ? 'primary' as const
+                      : verificationStatus === 'rejected'
+                        ? 'error' as const
+                        : 'warning' as const,
+                  }];
                 })(),
                 ...(user.user_type === 'company'
                   ? [{
