@@ -116,15 +116,28 @@ const ADViewPage: React.FC = () => {
   };
 
   // Helper function to get image size from different possible sources
-  const getImageSize = (ad: AD): string => {
+  const getImageSize = (ad: AD): string | null => {
+    const normalizeSizeLabel = (value?: string | null): string | null => {
+      const label = value?.trim();
+      if (!label) {
+        return null;
+      }
+      const normalized = label.toUpperCase();
+      if (normalized === 'N/A' || normalized === 'UNKNOWN') {
+        return null;
+      }
+      return label;
+    };
+
     // Check for images (singular object) - current API response format
     if ((ad as any).images && typeof (ad as any).images === 'object' && !Array.isArray((ad as any).images)) {
       const images = (ad as any).images;
       if (images.size) {
         return `${Math.round(images.size / 1024)} KB`;
       }
-      if (images.formatted_size) {
-        return images.formatted_size;
+      const formattedSize = normalizeSizeLabel(images.formatted_size);
+      if (formattedSize) {
+        return formattedSize;
       }
     }
 
@@ -139,6 +152,10 @@ const ADViewPage: React.FC = () => {
       if (imageToUse?.size) {
         return `${Math.round(imageToUse.size / 1024)} KB`;
       }
+      const formattedSize = normalizeSizeLabel(imageToUse?.formatted_size);
+      if (formattedSize) {
+        return formattedSize;
+      }
     }
 
     // Handle case where API returns single image object instead of array
@@ -147,24 +164,25 @@ const ADViewPage: React.FC = () => {
     }
 
     // Handle formatted_size if available
-    if ((ad.media as any)?.formatted_size) {
-      return (ad.media as any).formatted_size;
+    const mediaFormattedSize = normalizeSizeLabel((ad.media as any)?.formatted_size);
+    if (mediaFormattedSize) {
+      return mediaFormattedSize;
     }
 
-    // Check for formatted_size in image data
-    if ((ad as any).image && Array.isArray((ad as any).image) && (ad as any).image.length > 0) {
-      const primaryImage = (ad as any).image.find((img: any) => img.is_primary);
-      const imageToUse = primaryImage || (ad as any).image[0];
-      if (imageToUse?.formatted_size) {
-        return imageToUse.formatted_size;
+    if ((ad as any).image && typeof (ad as any).image === 'object') {
+      const formattedSize = normalizeSizeLabel((ad as any).image.formatted_size);
+      if (formattedSize) {
+        return formattedSize;
       }
     }
 
-    if ((ad as any).image && typeof (ad as any).image === 'object' && (ad as any).image.formatted_size) {
-      return (ad as any).image.formatted_size;
-    }
+    return null;
+  };
 
-    return 'N/A';
+  const getImageCaption = (ad: AD): string => {
+    const filename = getImageFilename(ad) || 'AD Image';
+    const sizeLabel = getImageSize(ad);
+    return sizeLabel ? `${filename} (${sizeLabel})` : filename;
   };
 
 
@@ -335,7 +353,7 @@ const ADViewPage: React.FC = () => {
                         }}
                       />
                       <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        {getImageFilename(ad) || 'AD Image'} ({getImageSize(ad) || 'N/A'})
+                        {getImageCaption(ad)}
                       </Typography>
                     </Box>
                   ) : (

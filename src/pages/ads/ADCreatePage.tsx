@@ -33,7 +33,7 @@ import { ActionAlert, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload, AD_FORM_SUBMIT_TOUCH_FIELDS, getFirstYupFormError, buildTouchedFieldsForFormErrors } from '../../types/ad';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
 import { Media } from '../../types/media';
 import { FormActions } from '../../components/forms/shared/FormActions';
@@ -69,13 +69,15 @@ const validationSchema = Yup.object({
       then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
       otherwise: (schema) => schema.nullable(),
     }),
-  user_id: Yup.number()
-    .nullable()
-    .when('display_location', {
-      is: (loc: string) => adRequiresCompanyUser(loc),
-      then: (schema) => schema.required('Select a company user').positive('Select a company user'),
-      otherwise: (schema) => schema.nullable().strip(),
-    }),
+  user_id: Yup.mixed().when('display_location', {
+    is: (loc: string) => adRequiresCompanyUser(loc),
+    then: () =>
+      Yup.number()
+        .typeError('Select a company user')
+        .required('Select a company user')
+        .positive('Select a company user'),
+    otherwise: () => Yup.mixed().nullable().strip(),
+  }),
   start_at: Yup.string()
     .required('Start date is required'),
   end_at: Yup.string()
@@ -182,19 +184,7 @@ const ADCreatePage: React.FC = () => {
       media_id: 0,
     },
     validationSchema,
-    onSubmit: async (values, { setTouched }) => {
-      // Mark all required fields as touched to show validation errors on submit
-      setTouched({
-        display_location: true,
-        start_at: true,
-        end_at: true,
-        status: true,
-        media_id: true,
-        link_text: true,
-        user_id: true,
-        grid_index: true,
-      });
-
+    onSubmit: async (values) => {
       try {
         console.log('Form submission started');
         console.log('Form values:', values);
@@ -242,6 +232,24 @@ const ADCreatePage: React.FC = () => {
       }
     },
   });
+
+  // This function triggers form validation, shows errors if present, otherwise submits the form.
+  const handleCreateClick = async () => {
+    const validationErrors = await formik.validateForm();
+    const errorKeys = Object.keys(validationErrors);
+    if (errorKeys.length > 0) {
+      formik.setTouched({
+        ...AD_FORM_SUBMIT_TOUCH_FIELDS,
+        ...buildTouchedFieldsForFormErrors(validationErrors as Record<string, unknown>),
+      });
+      showError(
+        getFirstYupFormError(validationErrors as Record<string, unknown>)
+          ?? 'Please fix the validation errors before creating.'
+      );
+      return;
+    }
+    formik.submitForm();
+  };
 
   return (
     <Box>
@@ -310,11 +318,15 @@ const ADCreatePage: React.FC = () => {
                     <Grid item xs={12} sm={6}>
                       <CompanyUserSelect
                         userId={formik.values.user_id}
-                        onUserIdChange={(id) => formik.setFieldValue('user_id', id)}
+                        onUserIdChange={(id) => {
+                          formik.setFieldValue('user_id', id ?? null);
+                          formik.setFieldTouched('user_id', true, false);
+                        }}
                         users={usersResponse?.data || []}
                         usersLoading={usersLoading}
                         error={formik.errors.user_id as string | undefined}
                         touched={formik.touched.user_id}
+                        submitAttempted={formik.submitCount > 0}
                         onBlur={() => formik.setFieldTouched('user_id', true)}
                       />
                     </Grid>
@@ -711,7 +723,7 @@ const ADCreatePage: React.FC = () => {
 
             {/* Form Actions */}
             <FormActions
-              onSubmit={formik.handleSubmit}
+              onSubmit={handleCreateClick}
               onCancel={() => navigate('/ads')}
               submitText={createADMutation.isPending ? "Creating AD..." : "Create AD"}
               isSubmitting={createADMutation.isPending}

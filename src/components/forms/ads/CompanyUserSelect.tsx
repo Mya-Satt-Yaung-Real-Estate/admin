@@ -9,6 +9,7 @@ interface CompanyUserSelectProps {
   usersLoading?: boolean;
   error?: string;
   touched?: boolean;
+  submitAttempted?: boolean;
   onBlur?: () => void;
   disabled?: boolean;
 }
@@ -20,12 +21,13 @@ export const CompanyUserSelect: React.FC<CompanyUserSelectProps> = ({
   usersLoading = false,
   error,
   touched,
+  submitAttempted = false,
   onBlur,
   disabled = false,
 }) => {
   const companyUsers = users.filter((u) => u.user_type === 'company');
   const selected = companyUsers.find((u) => u.id === userId) ?? null;
-  const hasError = Boolean(touched && error);
+  const hasError = Boolean(error && (touched || submitAttempted));
 
   return (
     <FormControl fullWidth variant="outlined" error={hasError}>
