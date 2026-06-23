@@ -10,12 +10,28 @@ import {
 import { Business as BusinessIcon, Person as PersonIcon } from '@mui/icons-material';
 import { FormSection } from '../shared/FormSection';
 
+interface UserOption {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  user_type?: string;
+}
+
+/**
+ * Dropdown label: name + phone (falls back to email if phone missing).
+ */
+const formatUserOptionLabel = (user: UserOption): string => {
+  const contact = user.phone?.trim() || user.email || 'N/A';
+  return `${user.name} (${contact})`;
+};
+
 interface AdvertisementModeSectionProps {
   isPlatformAdvertisement: boolean;
   onPlatformAdvertisementChange: (value: boolean) => void;
   userId?: number;
   onUserIdChange: (value: number | undefined) => void;
-  users?: any[];
+  users?: UserOption[];
   usersLoading?: boolean;
   errors?: any;
   touched?: any;
@@ -70,7 +86,7 @@ export const AdvertisementModeSection: React.FC<AdvertisementModeSectionProps> =
                   if (selectedUser) {
                     return (
                       <Typography variant="body2" color="text.secondary">
-                        {selectedUser.name} ({selectedUser.email}) - {selectedUser.user_type || 'user'}
+                        {formatUserOptionLabel(selectedUser)} - {selectedUser.user_type || 'user'}
                       </Typography>
                     );
                   }
@@ -138,7 +154,7 @@ export const AdvertisementModeSection: React.FC<AdvertisementModeSectionProps> =
               <Autocomplete
                 size="small"
                 options={users}
-                getOptionLabel={(option) => `${option.name} (${option.email})`}
+                getOptionLabel={formatUserOptionLabel}
                 value={users.find(user => user.id === userId) || null}
                 onChange={(_, newValue) => onUserIdChange(newValue?.id)}
                 loading={usersLoading}
