@@ -92,6 +92,7 @@ export interface RegularUser {
   // Profile image (admin edit / user site)
   profile_image_url?: string | null;
   profile_media_id?: number | null;
+  cover_image_url?: string | null;
 }
 
 export interface CreateRegularUserData {
@@ -129,6 +130,8 @@ export interface UpdateRegularUserData {
   our_market?: boolean;
   /** Set or clear profile image (admin). Omit to leave unchanged. */
   media_id?: number | null;
+  /** Set or clear cover image (admin). Omit to leave unchanged. */
+  cover_media_id?: number | null;
 }
 
 export interface RegularUserFilters {
@@ -202,8 +205,16 @@ export interface CreateUserResponse {
   };
 }
 
+export function getRegularUserDisplayName(user: Pick<RegularUser, 'name' | 'user_type' | 'company_profile'>): string {
+  if (user.user_type === 'company' && user.company_profile?.company_name) {
+    return user.company_profile.company_name;
+  }
+
+  return user.name;
+}
+
 export function getCompanyUserSelectLabel(user: RegularUser): string {
-  const label = user.company_profile?.company_name ?? user.name;
+  const label = getRegularUserDisplayName(user);
   const phone = user.phone ?? user.company_profile?.phone_number ?? '—';
   return `${label} (${phone})`;
 }

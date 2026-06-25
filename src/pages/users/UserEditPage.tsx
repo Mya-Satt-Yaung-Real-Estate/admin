@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Paper,
   Button,
   Typography,
   FormControl,
@@ -32,6 +31,7 @@ import {
   Fingerprint as FingerprintIcon,
   LocationOn as LocationIcon,
   Description as DescriptionIcon,
+  Home as HomeIcon,
 } from '@mui/icons-material';
 import SingleImageUpload from '../../components/ui/SingleImageUpload';
 import { Media } from '../../types/media';
@@ -44,10 +44,11 @@ import {
   ActionAlert,
 } from '../../components/ui';
 import { useUser, useUpdateUser, useClearBiometricUser } from '../../services/queries/users';
-import { UpdateRegularUserData } from '../../types/user';
+import { UpdateRegularUserData, getRegularUserDisplayName } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
 import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
+import { DETAIL_ICON_SX, detailListSx, USER_EDIT_IMAGE_MIN_HEIGHT } from './userPageShared';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -57,11 +58,6 @@ const PAGE_CONFIG = {
   title: 'Edit User Status',
   description: 'Update user account status',
   backButtonPath: '/users',
-} as const;
-
-const EDIT_PROFILE_PHOTO_UPLOAD_HEIGHTS = {
-  dropzoneHeight: 320,
-  previewImageHeight: 240,
 } as const;
 
 // ============================================================================
@@ -80,6 +76,8 @@ const UserEditPage: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [profileImage, setProfileImage] = useState<Media | null>(null);
   const [profileImageDirty, setProfileImageDirty] = useState(false);
+  const [coverImage, setCoverImage] = useState<Media | null>(null);
+  const [coverImageDirty, setCoverImageDirty] = useState(false);
 
   // Hooks
   const { alert, showSuccess, showError } = useAlertSystem();
@@ -103,6 +101,7 @@ const UserEditPage: React.FC = () => {
       setOurMarket(Boolean(user.company_profile?.our_market));
       setHasChanges(false);
       setProfileImageDirty(false);
+      setCoverImageDirty(false);
       if (user.profile_media_id != null && user.profile_image_url) {
         setProfileImage({
           id: user.profile_media_id,
@@ -118,6 +117,22 @@ const UserEditPage: React.FC = () => {
         });
       } else {
         setProfileImage(null);
+      }
+      if (user.cover_image_url) {
+        setCoverImage({
+          id: 0,
+          type: 'image',
+          filename: 'cover',
+          size: 0,
+          formatted_size: '',
+          mime_type: 'image/jpeg',
+          is_primary: false,
+          status: 'completed',
+          url: user.cover_image_url,
+          created_at: new Date().toISOString(),
+        });
+      } else {
+        setCoverImage(null);
       }
     }
   }, [user]);
@@ -169,9 +184,9 @@ const UserEditPage: React.FC = () => {
       ourMarketChanged = ourMarket !== Boolean(user.company_profile?.our_market);
     }
     setHasChanges(
-      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || showOnPropertyDetailChanged || ourMarketChanged || profileImageDirty
+      statusChanged || memberLevelChanged || verificationStatusChanged || showOnHomepageChanged || showOnPropertyDetailChanged || ourMarketChanged || profileImageDirty || coverImageDirty
     );
-  }, [status, memberLevel, verificationStatus, showOnHomepage, showOnPropertyDetail, ourMarket, user, profileImageDirty]);
+  }, [status, memberLevel, verificationStatus, showOnHomepage, showOnPropertyDetail, ourMarket, user, profileImageDirty, coverImageDirty]);
 
   const handleSubmit = async () => {
     if (!user || !hasChanges) return;
@@ -190,6 +205,10 @@ const UserEditPage: React.FC = () => {
 
     if (profileImageDirty) {
       updateData.media_id = profileImage?.id ?? null;
+    }
+
+    if (coverImageDirty) {
+      updateData.cover_media_id = coverImage?.id ? coverImage.id : null;
     }
 
     try {
@@ -214,6 +233,16 @@ const UserEditPage: React.FC = () => {
   const handleProfileImageDelete = (_mediaId: number) => {
     setProfileImage(null);
     setProfileImageDirty(true);
+  };
+
+  const handleCoverImageUpload = (media: Media) => {
+    setCoverImage(media);
+    setCoverImageDirty(true);
+  };
+
+  const handleCoverImageDelete = (_mediaId: number) => {
+    setCoverImage(null);
+    setCoverImageDirty(true);
   };
 
   // Loading state
@@ -251,7 +280,7 @@ const UserEditPage: React.FC = () => {
       <PageHeader
         title={PAGE_CONFIG.title}
         breadcrumbs="Dashboard / User Management / Edit User Status"
-        subtitle={`Update status for ${user.name}`}
+        subtitle={`Update status for ${getRegularUserDisplayName(user)}`}
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,
@@ -259,39 +288,81 @@ const UserEditPage: React.FC = () => {
         }}
       />
 
-      <Grid container spacing={3} alignItems="stretch">
+      <Grid container spacing={3} alignItems="flex-start">
         {/* Profile photo */}
-        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
-          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <Grid item xs={12} md={3} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardContent
               sx={{
-                p: 3,
-                flex: 1,
+                p: 2,
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom alignSelf="flex-start" width="100%">
                 Profile photo
               </Typography>
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: USER_EDIT_IMAGE_MIN_HEIGHT,
+                  flexShrink: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
                 <SingleImageUpload
+                  fillContainer
+                  compact
                   uploadedImage={profileImage}
                   onImageUpload={handleProfileImageUpload}
                   onImageDelete={handleProfileImageDelete}
                   onUploadError={(msg) => showError(msg, true)}
-                  dropzoneHeight={EDIT_PROFILE_PHOTO_UPLOAD_HEIGHTS.dropzoneHeight}
-                  previewImageHeight={EDIT_PROFILE_PHOTO_UPLOAD_HEIGHTS.previewImageHeight}
                 />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* User Information */}
-        <Grid item xs={12} md={8} sx={{ display: 'flex' }}>
-          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Cover photo */}
+        <Grid item xs={12} md={5} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <CardContent
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                Cover photo
+              </Typography>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: USER_EDIT_IMAGE_MIN_HEIGHT,
+                  flexShrink: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <SingleImageUpload
+                  fillContainer
+                  compact
+                  uploadedImage={coverImage}
+                  onImageUpload={handleCoverImageUpload}
+                  onImageDelete={handleCoverImageDelete}
+                  onUploadError={(msg) => showError(msg, true)}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* User Information — full width */}
+        <Grid item xs={12}>
+          <Card sx={{ width: '100%' }}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 <Typography variant="h6">
                   User Information
@@ -307,46 +378,31 @@ const UserEditPage: React.FC = () => {
                   {clearBiometricMutation.isPending ? 'Clearing…' : 'Clear Biometric Data'}
                 </Button>
               </Box>
-              
-              <List
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, minmax(0, 1fr))' },
-                  columnGap: 3,
-                  rowGap: 0.5,
-                  '& .MuiListItem-root': {
-                    px: 0,
-                    alignItems: 'flex-start',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    minWidth: 36,
-                    mt: 0.5,
-                  },
-                }}
-              >
+
+              <List sx={detailListSx}>
                 <ListItem>
                   <ListItemIcon>
-                    <PersonIcon />
+                    <PersonIcon sx={DETAIL_ICON_SX.person} />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Name"
+                    primary={user.user_type === 'company' ? 'Account Name' : 'Name'}
                     secondary={user.name}
                   />
                 </ListItem>
-                
+
                 <ListItem>
                   <ListItemIcon>
-                    <PhoneIcon />
+                    <PhoneIcon sx={DETAIL_ICON_SX.phone} />
                   </ListItemIcon>
                   <ListItemText
                     primary="Phone Number"
                     secondary={user.phone || user.company_profile?.phone_number || 'N/A'}
                   />
                 </ListItem>
-                
+
                 <ListItem>
                   <ListItemIcon>
-                    <BusinessIcon />
+                    <BusinessIcon sx={DETAIL_ICON_SX.business} />
                   </ListItemIcon>
                   <ListItemText
                     primary="User Type"
@@ -354,22 +410,39 @@ const UserEditPage: React.FC = () => {
                   />
                 </ListItem>
 
-                {user.user_type === 'company' && user.company_profile && (
-                  <>
-                    <Divider sx={{ my: 1, gridColumn: '1 / -1' }} />
-                    <ListItem sx={{ gridColumn: '1 / -1' }}>
-                      <ListItemText
-                        primary={
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            Company Information
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <StarIcon sx={DETAIL_ICON_SX.star} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Member Level"
+                    secondary={user.member_level}
+                  />
+                </ListItem>
 
+                {user.user_type !== 'company' && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <CalendarIcon sx={DETAIL_ICON_SX.calendar} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Created"
+                      secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
+                    />
+                  </ListItem>
+                )}
+              </List>
+
+              {user.user_type === 'company' && user.company_profile && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                    Company Information
+                  </Typography>
+                  <List sx={detailListSx}>
                     <ListItem>
                       <ListItemIcon>
-                        <BusinessIcon />
+                        <BusinessIcon sx={DETAIL_ICON_SX.business} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Company Name"
@@ -379,7 +452,7 @@ const UserEditPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <StarIcon />
+                        <StarIcon sx={DETAIL_ICON_SX.star} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Company Type"
@@ -389,7 +462,7 @@ const UserEditPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <PhoneIcon />
+                        <PhoneIcon sx={DETAIL_ICON_SX.phone} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Company Phone"
@@ -399,7 +472,7 @@ const UserEditPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <LocationIcon />
+                        <LocationIcon sx={DETAIL_ICON_SX.location} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Location"
@@ -409,7 +482,7 @@ const UserEditPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <BusinessIcon />
+                        <BusinessIcon sx={DETAIL_ICON_SX.business} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Business Address"
@@ -417,10 +490,20 @@ const UserEditPage: React.FC = () => {
                       />
                     </ListItem>
 
+                    <ListItem>
+                      <ListItemIcon>
+                        <CalendarIcon sx={DETAIL_ICON_SX.calendar} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Created"
+                        secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
+                      />
+                    </ListItem>
+
                     {user.company_profile.description && (
-                      <ListItem sx={{ gridColumn: '1 / -1' }}>
+                      <ListItem sx={{ gridColumn: { xs: '1', lg: '1 / -1' } }}>
                         <ListItemIcon>
-                          <DescriptionIcon />
+                          <DescriptionIcon sx={DETAIL_ICON_SX.description} />
                         </ListItemIcon>
                         <ListItemText
                           primary="Description"
@@ -428,36 +511,17 @@ const UserEditPage: React.FC = () => {
                         />
                       </ListItem>
                     )}
-                  </>
-                )}
-                
-                <ListItem>
-                  <ListItemIcon>
-                    <StarIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Member Level"
-                    secondary={user.member_level}
-                  />
-                </ListItem>
-                
-                <ListItem>
-                  <ListItemIcon>
-                    <CalendarIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Created"
-                    secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
-                  />
-                </ListItem>
-              </List>
+                  </List>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
 
         {/* Account Settings Edit Section */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
+          <Card>
+            <CardContent>
             <Typography variant="h6" gutterBottom>
               Account Settings
             </Typography>
@@ -514,17 +578,19 @@ const UserEditPage: React.FC = () => {
                 </Grid>
               )}
             </Grid>
-          </Paper>
+            </CardContent>
+          </Card>
         </Grid>
 
         {user.user_type === 'company' && (
           <Grid item xs={12}>
-            <Paper sx={{ p: 3 }}>
+            <Card>
+              <CardContent>
               <Typography variant="h6" gutterBottom>
                 Status / Options
               </Typography>
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -533,7 +599,12 @@ const UserEditPage: React.FC = () => {
                       disabled={verificationStatus !== 'approved'}
                     />
                   }
-                  label="Show on homepage (partner logos)"
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <HomeIcon sx={{ ...DETAIL_ICON_SX.home, fontSize: 20 }} />
+                      Show on homepage (partner logos)
+                    </Box>
+                  }
                 />
                 <FormControlLabel
                   control={
@@ -543,7 +614,12 @@ const UserEditPage: React.FC = () => {
                       disabled={verificationStatus !== 'approved'}
                     />
                   }
-                  label="Show on property detail (partner logos)"
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <HomeIcon sx={{ ...DETAIL_ICON_SX.home, fontSize: 20 }} />
+                      Show on property detail (partner logos)
+                    </Box>
+                  }
                 />
                 <FormControlLabel
                   control={
@@ -553,7 +629,12 @@ const UserEditPage: React.FC = () => {
                       disabled={verificationStatus !== 'approved'}
                     />
                   }
-                  label="Are you Jade Market?"
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <StarIcon sx={{ ...DETAIL_ICON_SX.star, fontSize: 20 }} />
+                      Are you Jade Market?
+                    </Box>
+                  }
                 />
               </Box>
               {verificationStatus !== 'approved' && (
@@ -561,13 +642,15 @@ const UserEditPage: React.FC = () => {
                   Approve the company first to enable this and Jade Market.
                 </Typography>
               )}
-            </Paper>
+              </CardContent>
+            </Card>
           </Grid>
         )}
 
         {/* Actions Section */}
         <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
+          <Card>
+            <CardContent>
             {hasChanges && (
               <Alert severity="info" sx={{ mb: 3 }}>
                 You have unsaved changes. Click "Save Changes" to apply the new settings.
@@ -615,7 +698,8 @@ const UserEditPage: React.FC = () => {
                 </Button>
               </Box>
             </Box>
-          </Paper>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>
