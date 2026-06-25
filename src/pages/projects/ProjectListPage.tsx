@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
+import { formatProjectPriceRange } from '../../utils/formatProjectPrice';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
@@ -318,7 +319,9 @@ const ProjectListPage: React.FC = () => {
         id: 'price',
         label: 'Price Range',
         render: (_value, project) => (
-          <Typography variant="body2">{project.price?.range || '—'}</Typography>
+          <Typography variant="body2">
+            {formatProjectPriceRange(project.price?.range, project.price?.currency) || '—'}
+          </Typography>
         ),
         hidden: isMobile,
       },
