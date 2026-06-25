@@ -1,12 +1,14 @@
 // Event Registration Types
 
+import type { MemberLevel } from '../constants/memberLevels';
+
 export interface EventRegistrationUser {
   id: number;
   name: string | null;
   slug: string;
   email: string;
   user_type: 'company' | 'individual';
-  member_level: 'bronze' | 'silver' | 'gold' | 'platinum';
+  member_level: MemberLevel;
   is_active: boolean;
   created_at: string;
   phone: string | null;

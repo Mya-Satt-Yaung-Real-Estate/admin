@@ -29,10 +29,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
       return verificationStatusMap[status] || status;
     } else if (type === 'member_level') {
       const memberLevelMap: Record<string, string> = {
+        basic: 'Basic',
         bronze: 'Bronze',
         silver: 'Silver',
         gold: 'Gold',
-        platinum: 'Platinum',
+        premium: 'Premium',
+        platinum: 'Premium', // legacy
       };
       return memberLevelMap[status] || status;
     } else if (type === 'transaction_type') {
@@ -92,29 +94,41 @@ export const StatusChip: React.FC<StatusChipProps> = ({
       return verificationColorMap[status] || verificationColorMap.pending;
     } else if (type === 'member_level') {
       const memberLevelColorMap: Record<string, { text: string; border: string; hoverBg: string; hoverBorder: string }> = {
+        basic: {
+          text: '#64748B',
+          border: '#94A3B8',
+          hoverBg: '#F8FAFC',
+          hoverBorder: '#64748B',
+        },
         bronze: {
-          text: '#CD7F32', // Bronze color
+          text: '#CD7F32',
           border: '#CD7F32',
           hoverBg: '#FDF8F3',
           hoverBorder: '#B8860B',
         },
         silver: {
-          text: '#C0C0C0', // Silver color
+          text: '#C0C0C0',
           border: '#C0C0C0',
           hoverBg: '#F8F9FA',
           hoverBorder: '#A9A9A9',
         },
         gold: {
-          text: '#FFD700', // Gold color
+          text: '#FFD700',
           border: '#FFD700',
           hoverBg: '#FFFBEB',
           hoverBorder: '#DAA520',
         },
+        premium: {
+          text: '#9333EA',
+          border: '#A855F7',
+          hoverBg: '#FAF5FF',
+          hoverBorder: '#7E22CE',
+        },
         platinum: {
-          text: '#E5E4E2', // Platinum color
-          border: '#E5E4E2',
-          hoverBg: '#F5F5F5',
-          hoverBorder: '#B8B8B8',
+          text: '#9333EA',
+          border: '#A855F7',
+          hoverBg: '#FAF5FF',
+          hoverBorder: '#7E22CE',
         },
       };
       return memberLevelColorMap[status] || memberLevelColorMap.bronze;
