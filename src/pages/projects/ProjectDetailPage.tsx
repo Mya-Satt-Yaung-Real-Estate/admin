@@ -53,6 +53,8 @@ const getConditionLabel = (condition: Project['condition']): string =>
   PROJECT_CONDITIONS.find((item) => item.value === condition)?.label
   ?? condition.replace(/_/g, ' ');
 
+import { formatProjectCurrencyLabel, formatProjectPriceRange } from '../../utils/formatProjectPrice';
+
 const getConditionChipColor = (
   condition: Project['condition']
 ): 'info' | 'success' | 'warning' | 'default' => {
@@ -355,11 +357,11 @@ const ProjectDetailPage: React.FC = () => {
               <Divider sx={{ mb: 2 }} />
 
               <Typography variant="h4" color="success.main" fontWeight={600} gutterBottom>
-                {project.price?.range || '—'}
+                {formatProjectPriceRange(project.price?.range, project.price?.currency) || '—'}
               </Typography>
               {(project.price?.min != null || project.price?.max != null) && (
                 <Typography variant="body2" color="text.secondary">
-                  {project.price?.currency || 'MMK'}
+                  {formatProjectCurrencyLabel(project.price?.currency)}
                 </Typography>
               )}
             </CardContent>
