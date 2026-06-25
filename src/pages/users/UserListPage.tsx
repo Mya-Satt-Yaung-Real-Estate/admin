@@ -114,10 +114,11 @@ const FILTER_FIELDS: FilterField[] = [
     label: 'Member Level',
     options: [
       { value: 'all', label: 'All Levels' },
+      { value: 'basic', label: 'Basic' },
       { value: 'bronze', label: 'Bronze' },
       { value: 'silver', label: 'Silver' },
       { value: 'gold', label: 'Gold' },
-      { value: 'platinum', label: 'Platinum' },
+      { value: 'premium', label: 'Premium' },
     ],
   },
   {

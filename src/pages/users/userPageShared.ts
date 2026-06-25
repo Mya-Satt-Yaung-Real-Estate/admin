@@ -1,4 +1,5 @@
 import * as Yup from 'yup';
+import { MEMBER_LEVEL_VALUES } from '../../constants/memberLevels';
 
 export const DEFAULT_COVER_IMAGE = 'https://msy-demo.s3.ap-southeast-1.amazonaws.com/default/default-cover.jpeg';
 
@@ -80,7 +81,7 @@ export const createUserValidationSchema = Yup.object().shape({
     .oneOf(['individual', 'company'], 'Invalid user type'),
   member_level: Yup.string()
     .required('Member level is required')
-    .oneOf(['bronze', 'silver', 'gold', 'platinum'], 'Invalid member level'),
+    .oneOf([...MEMBER_LEVEL_VALUES], 'Invalid member level'),
   is_active: Yup.string().oneOf(['true', 'false']),
   company_name: Yup.string().when('user_type', {
     is: 'company',

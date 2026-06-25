@@ -1,5 +1,7 @@
 // User types for regular users (companies/individuals)
 
+import type { MemberLevel } from '../constants/memberLevels';
+
 export interface CompanyProfile {
   id: number;
   company_name: string;
@@ -58,7 +60,7 @@ export interface RegularUser {
   phone?: string;
   user_type: 'company' | 'individual';
   user_type_label?: string;
-  member_level: 'bronze' | 'silver' | 'gold' | 'platinum';
+  member_level: MemberLevel;
   is_active: boolean;
   verification_status?: 'pending' | 'approved' | 'rejected';
   last_login_at?: string;
@@ -99,7 +101,7 @@ export interface CreateRegularUserData {
   name: string;
   email?: string;
   user_type: 'company' | 'individual';
-  member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
+  member_level?: MemberLevel;
   is_active?: boolean;
   /** Optional profile image (upload via /api/v1/media first). */
   media_id?: number;
@@ -123,7 +125,7 @@ export interface UpdateRegularUserData {
   name?: string;
   email?: string;
   user_type?: 'company' | 'individual';
-  member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
+  member_level?: MemberLevel;
   is_active?: boolean;
   verification_status?: 'pending' | 'approved' | 'rejected';
   show_on_homepage?: boolean;

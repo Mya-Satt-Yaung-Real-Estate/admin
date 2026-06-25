@@ -64,10 +64,12 @@ const EventRegistrationModal: React.FC<EventRegistrationModalProps> = ({
   onPerPageChange,
 }) => {
   const getMemberLevelColor = (level: string) => {
-    switch (level) {
+    switch (level.toLowerCase()) {
+      case 'basic': return 'default';
       case 'bronze': return 'default';
       case 'silver': return 'secondary';
       case 'gold': return 'warning';
+      case 'premium':
       case 'platinum': return 'primary';
       default: return 'default';
     }

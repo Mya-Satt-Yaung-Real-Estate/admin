@@ -47,7 +47,7 @@ import { useUser, useUpdateUser, useClearBiometricUser } from '../../services/qu
 import { UpdateRegularUserData, getRegularUserDisplayName } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
-import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
+import { MEMBER_LEVEL_OPTIONS, MemberLevel } from '../../constants/memberLevels';
 import { DETAIL_ICON_SX, detailListSx, USER_EDIT_IMAGE_MIN_HEIGHT } from './userPageShared';
 
 // ============================================================================
@@ -193,7 +193,7 @@ const UserEditPage: React.FC = () => {
 
     const updateData: UpdateRegularUserData = {
       is_active: status,
-      member_level: memberLevel as 'bronze' | 'silver' | 'gold' | 'platinum',
+      member_level: memberLevel as MemberLevel,
     };
 
     if (user.user_type === 'company') {

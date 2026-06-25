@@ -32,7 +32,7 @@ import { useCompanyTypes } from '../../services/queries/companies';
 import { useRegions, useTownships } from '../../services/queries/locations';
 import { CreateRegularUserData } from '../../types/user';
 import { useAlertSystem } from '../../hooks';
-import { MEMBER_LEVEL_OPTIONS } from '../../constants/memberLevels';
+import { MEMBER_LEVEL_OPTIONS, MemberLevel } from '../../constants/memberLevels';
 import {
   DETAIL_ICON_SX,
   USER_EDIT_IMAGE_MIN_HEIGHT,
@@ -82,7 +82,7 @@ const UserCreatePage: React.FC = () => {
       email: '',
       phone: '',
       user_type: 'individual' as 'individual' | 'company',
-      member_level: 'silver' as 'bronze' | 'silver' | 'gold' | 'platinum',
+      member_level: 'silver' as MemberLevel,
       is_active: 'true' as string,
       // Company-specific fields
       company_name: '',
