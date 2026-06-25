@@ -97,13 +97,14 @@ export interface RegularUser {
 
 export interface CreateRegularUserData {
   name: string;
-  email: string;
-  password: string;
+  email?: string;
   user_type: 'company' | 'individual';
   member_level?: 'bronze' | 'silver' | 'gold' | 'platinum';
   is_active?: boolean;
   /** Optional profile image (upload via /api/v1/media first). */
   media_id?: number;
+  /** Optional cover image (upload via /api/v1/media first). */
+  cover_media_id?: number;
   // Company-specific fields
   company_name?: string;
   company_type_id?: number;
