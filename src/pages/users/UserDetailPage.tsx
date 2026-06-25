@@ -2,8 +2,6 @@ import React from 'react';
 import {
   Box,
   Typography,
-  Avatar,
-  Chip,
   Grid,
   Card,
   CardContent,
@@ -33,7 +31,6 @@ import PageHeader from '../../components/layout/PageHeader';
 import { 
   PageLoadingState, 
   PageErrorState, 
-  StatusChip,
   UserPointStatistics,
   UserPointPackages,
   UserPointTransactions,
@@ -41,8 +38,10 @@ import {
   ActionAlert,
 } from '../../components/ui';
 import { useUser, useClearBiometricUser } from '../../services/queries/users';
+import { getRegularUserDisplayName } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
+import { DEFAULT_COVER_IMAGE, DETAIL_ICON_SX, detailListSx, USER_EDIT_IMAGE_MIN_HEIGHT } from './userPageShared';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -116,21 +115,13 @@ const UserDetailPage: React.FC = () => {
     );
   }
 
-  const getUserTypeIcon = () => {
-    return user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />;
-  };
-
-  const getUserTypeColor = () => {
-    return user.user_type === 'company' ? 'primary.main' : 'secondary.main';
-  };
-
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <ActionAlert {...alert} />
       <PageHeader
         title={PAGE_CONFIG.title}
         breadcrumbs="Dashboard / User Management / User Details"
-        subtitle={`Viewing details for ${user.name}`}
+        subtitle={`Viewing details for ${getRegularUserDisplayName(user)}`}
         actionButton={{
           text: 'Back to Users',
           icon: <ArrowBackIcon />,
@@ -138,75 +129,102 @@ const UserDetailPage: React.FC = () => {
         }}
       />
 
-      <Grid container spacing={3} alignItems="stretch">
+      <Grid container spacing={3} alignItems="flex-start">
         {/* Profile photo */}
-        <Grid item xs={12} md={4} sx={{ display: 'flex' }}>
-          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <Grid item xs={12} md={3} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardContent
               sx={{
-                p: 3,
-                flex: 1,
+                p: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                textAlign: 'center',
               }}
             >
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom textAlign="left">
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom alignSelf="flex-start" width="100%">
                 Profile photo
               </Typography>
-              <Avatar
-                sx={{
-                  width: 220,
-                  height: 220,
-                  mx: 'auto',
-                  mb: 2,
-                  bgcolor: user.profile_image_url ? 'transparent' : getUserTypeColor(),
-                  fontSize: '4rem',
-                }}
-                src={user.profile_image_url || undefined}
-              >
-                {!user.profile_image_url ? getUserTypeIcon() : null}
-              </Avatar>
-
-              <Typography variant="h5" gutterBottom>
-                {user.name}
-              </Typography>
-
-              <Typography variant="body2" color="textSecondary" gutterBottom>
-                {user.email}
-              </Typography>
-
               <Box
                 sx={{
-                  mt: 2,
+                  width: '100%',
+                  height: USER_EDIT_IMAGE_MIN_HEIGHT,
+                  flexShrink: 0,
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  bgcolor: 'grey.100',
+                  boxSizing: 'border-box',
+                  border: '2px solid',
+                  borderColor: 'divider',
                   display: 'flex',
-                  gap: 1,
-                  flexWrap: 'wrap',
+                  alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <Chip
-                  label={user.user_type === 'company' ? 'Company' : 'Individual'}
-                  color={user.user_type === 'company' ? 'primary' : 'secondary'}
-                  size="small"
-                />
-                <StatusChip status={user.is_active ? 'active' : 'inactive'} />
-                {user.user_type === 'company' && (
-                  <StatusChip
-                    status={user.verification_status || 'pending'}
-                    statusType="verification_status"
+                {user.profile_image_url ? (
+                  <Box
+                    component="img"
+                    src={user.profile_image_url}
+                    alt={`${getRegularUserDisplayName(user)} profile`}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
                   />
+                ) : (
+                  <PersonIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                 )}
               </Box>
-              <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
             </CardContent>
           </Card>
         </Grid>
 
-        {/* User Details */}
-        <Grid item xs={12} md={8} sx={{ display: 'flex' }}>
-          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Cover photo */}
+        <Grid item xs={12} md={5} sx={{ display: 'flex' }}>
+          <Card sx={{ width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <CardContent
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                Cover photo
+              </Typography>
+              <Box
+                sx={{
+                  width: '100%',
+                  height: USER_EDIT_IMAGE_MIN_HEIGHT,
+                  flexShrink: 0,
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  bgcolor: 'grey.100',
+                  boxSizing: 'border-box',
+                  border: '2px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box
+                  component="img"
+                  src={user.cover_image_url || DEFAULT_COVER_IMAGE}
+                  alt={`${getRegularUserDisplayName(user)} cover`}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                  }}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* User Information — full width */}
+        <Grid item xs={12}>
+          <Card sx={{ width: '100%' }}>
+            <CardContent sx={{ display: 'flex', flexDirection: 'column' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                 <Typography variant="h6">
                   User Information
@@ -233,35 +251,20 @@ const UserDetailPage: React.FC = () => {
                 </Box>
               </Box>
               
-              <List
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', lg: 'repeat(3, minmax(0, 1fr))' },
-                  columnGap: 3,
-                  rowGap: 0.5,
-                  '& .MuiListItem-root': {
-                    px: 0,
-                    alignItems: 'flex-start',
-                  },
-                  '& .MuiListItemIcon-root': {
-                    minWidth: 36,
-                    mt: 0.5,
-                  },
-                }}
-              >
+              <List sx={detailListSx}>
                 <ListItem>
                   <ListItemIcon>
-                    <PersonIcon />
+                    <PersonIcon sx={DETAIL_ICON_SX.person} />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Name"
+                    primary={user.user_type === 'company' ? 'Account Name' : 'Name'}
                     secondary={user.name}
                   />
                 </ListItem>
-                
+
                 <ListItem>
                   <ListItemIcon>
-                    <PhoneIcon />
+                    <PhoneIcon sx={DETAIL_ICON_SX.phone} />
                   </ListItemIcon>
                   <ListItemText
                     primary="Phone Number"
@@ -271,7 +274,7 @@ const UserDetailPage: React.FC = () => {
 
                 <ListItem>
                   <ListItemIcon>
-                    <BusinessIcon />
+                    <BusinessIcon sx={DETAIL_ICON_SX.business} />
                   </ListItemIcon>
                   <ListItemText
                     primary="User Type"
@@ -279,22 +282,39 @@ const UserDetailPage: React.FC = () => {
                   />
                 </ListItem>
 
-                {user.user_type === 'company' && user.company_profile && (
-                  <>
-                    <Divider sx={{ my: 1, gridColumn: '1 / -1' }} />
-                    <ListItem sx={{ gridColumn: '1 / -1' }}>
-                      <ListItemText
-                        primary={
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            Company Information
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <StarIcon sx={DETAIL_ICON_SX.star} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Member Level"
+                    secondary={user.member_level}
+                  />
+                </ListItem>
 
+                {user.user_type !== 'company' && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <CalendarIcon sx={DETAIL_ICON_SX.calendar} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Created"
+                      secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
+                    />
+                  </ListItem>
+                )}
+              </List>
+
+              {user.user_type === 'company' && user.company_profile && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
+                    Company Information
+                  </Typography>
+                  <List sx={detailListSx}>
                     <ListItem>
                       <ListItemIcon>
-                        <BusinessIcon />
+                        <BusinessIcon sx={DETAIL_ICON_SX.business} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Company Name"
@@ -304,7 +324,7 @@ const UserDetailPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <StarIcon />
+                        <StarIcon sx={DETAIL_ICON_SX.star} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Company Type"
@@ -314,7 +334,7 @@ const UserDetailPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <PhoneIcon />
+                        <PhoneIcon sx={DETAIL_ICON_SX.phone} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Company Phone"
@@ -324,7 +344,7 @@ const UserDetailPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <LocationIcon />
+                        <LocationIcon sx={DETAIL_ICON_SX.location} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Location"
@@ -334,49 +354,38 @@ const UserDetailPage: React.FC = () => {
 
                     <ListItem>
                       <ListItemIcon>
-                        <BusinessIcon />
+                        <BusinessIcon sx={DETAIL_ICON_SX.business} />
                       </ListItemIcon>
                       <ListItemText
                         primary="Business Address"
                         secondary={user.company_profile.address || 'N/A'}
                       />
                     </ListItem>
-                  </>
-                )}
 
-                <ListItem>
-                  <ListItemIcon>
-                    <StarIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Member Level"
-                    secondary={user.member_level}
-                  />
-                </ListItem>
-                
-                <ListItem>
-                  <ListItemIcon>
-                    <CalendarIcon />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Created"
-                    secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
-                  />
-                </ListItem>
+                    <ListItem>
+                      <ListItemIcon>
+                        <CalendarIcon sx={DETAIL_ICON_SX.calendar} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Created"
+                        secondary={user.created_at ? formatDate(user.created_at) : 'N/A'}
+                      />
+                    </ListItem>
 
-                {user.user_type === 'company' && user.company_profile?.description && (
-                  <ListItem sx={{ gridColumn: '1 / -1' }}>
-                    <ListItemIcon>
-                      <DescriptionIcon />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Description"
-                      secondary={user.company_profile.description}
-                    />
-                  </ListItem>
-                )}
-              </List>
-              <Box sx={{ flex: 1, minHeight: 0 }} aria-hidden />
+                    {user.company_profile.description && (
+                      <ListItem sx={{ gridColumn: { xs: '1', lg: '1 / -1' } }}>
+                        <ListItemIcon>
+                          <DescriptionIcon sx={DETAIL_ICON_SX.description} />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Description"
+                          secondary={user.company_profile.description}
+                        />
+                      </ListItem>
+                    )}
+                  </List>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -407,7 +416,7 @@ const UserDetailPage: React.FC = () => {
                 >
                   <ListItem>
                     <ListItemIcon>
-                      <HomeIcon />
+                      <HomeIcon sx={DETAIL_ICON_SX.home} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Show on homepage"
@@ -427,7 +436,7 @@ const UserDetailPage: React.FC = () => {
 
                   <ListItem>
                     <ListItemIcon>
-                      <HomeIcon />
+                      <HomeIcon sx={DETAIL_ICON_SX.home} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Show on property detail"
@@ -447,7 +456,7 @@ const UserDetailPage: React.FC = () => {
 
                   <ListItem>
                     <ListItemIcon>
-                      <StarIcon />
+                      <StarIcon sx={DETAIL_ICON_SX.star} />
                     </ListItemIcon>
                     <ListItemText
                       primary="Are you Jade Market?"

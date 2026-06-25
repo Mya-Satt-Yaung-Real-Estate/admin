@@ -28,7 +28,7 @@ import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyStat
 import { usePagination, useFilters, useAlertSystem } from '../../hooks';
 import { useUsers } from '../../services/queries/users';
 import { FilterState } from '../../constants/filters';
-import { RegularUser } from '../../types/user';
+import { RegularUser, getRegularUserDisplayName } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -93,6 +93,10 @@ const FILTER_FIELDS: FilterField[] = [
     type: 'search',
     label: 'Search',
     placeholder: 'Search by name or phone...',
+    minWidth: { xs: 220, sm: 280 },
+    maxWidth: { sm: 320 },
+    flexGrow: 0,
+    width: { xs: '100%', sm: 280 },
   },
   {
     key: 'userTypeFilter',
@@ -210,10 +214,14 @@ const UserListPage: React.FC = () => {
     return users.filter((user) => {
       const searchTerm = (filters.searchTerm ?? '').toLowerCase();
       const userName = (user.name ?? '').toLowerCase();
+      const companyName = (user.company_profile?.company_name ?? '').toLowerCase();
+      const displayName = getRegularUserDisplayName(user).toLowerCase();
       const userEmail = (user.email ?? '').toLowerCase();
       const userPhone = (user.phone ?? '').toLowerCase();
       const matchesSearch = !filters.searchTerm ||
+        displayName.includes(searchTerm) ||
         userName.includes(searchTerm) ||
+        companyName.includes(searchTerm) ||
         userEmail.includes(searchTerm) ||
         userPhone.includes(searchTerm);
 
@@ -273,18 +281,6 @@ const UserListPage: React.FC = () => {
       color: 'warning',
       icon: <PersonIcon />,
     },
-    {
-      title: 'Total Properties',
-      value: users.reduce((sum, user) => sum + (user.property_count || 0), 0),
-      color: 'secondary',
-      icon: <HomeIcon />,
-    },
-    {
-      title: 'Total Points',
-      value: users.reduce((sum, user) => sum + (user.point_balance || 0), 0).toLocaleString(),
-      color: 'error',
-      icon: <DiamondIcon />,
-    },
   ], [users]);
 
   // ========================================================================
@@ -305,7 +301,7 @@ const UserListPage: React.FC = () => {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                 <Typography variant="subtitle2" fontWeight="600">
-                  {user.name}
+                  {getRegularUserDisplayName(user)}
                 </Typography>
                 <StatusChip
                   status={user.member_level}
@@ -597,7 +593,7 @@ const UserListPage: React.FC = () => {
           {paginatedUsers.map((user) => (
             <MobileCard
               key={user.id}
-              title={user.name}
+              title={getRegularUserDisplayName(user)}
               subtitle={user.phone || '-'}
               description={`${user.user_type === 'company' ? 'Company' : 'Individual'} • ${user.member_level} member • ${user.property_count || 0} properties • ${user.point_balance || 0} points`}
               avatar={user.user_type === 'company' ? <BusinessIcon /> : <PersonIcon />}

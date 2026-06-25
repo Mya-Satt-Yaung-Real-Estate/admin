@@ -23,7 +23,10 @@ export interface FilterField {
   label: string;
   options?: FilterOption[];
   placeholder?: string;
-  width?: string | number;
+  width?: string | number | Record<string, string | number>;
+  minWidth?: string | number | Record<string, string | number>;
+  maxWidth?: string | number | Record<string, string | number>;
+  flexGrow?: number;
   required?: boolean;
 }
 
@@ -88,9 +91,9 @@ export function StandardFilters({
               ) : undefined,
             }}
             sx={{
-              minWidth: { xs: 250, sm: 350 },
-              maxWidth: { sm: 450 },
-              flexGrow: field.key === 'searchTerm' ? 1 : 0,
+              minWidth: field.minWidth ?? { xs: 250, sm: 350 },
+              maxWidth: field.maxWidth ?? { sm: 450 },
+              flexGrow: field.flexGrow ?? (field.key === 'searchTerm' ? 1 : 0),
               width: field.width,
             }}
           />
