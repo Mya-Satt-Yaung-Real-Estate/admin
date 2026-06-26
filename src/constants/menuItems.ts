@@ -246,6 +246,11 @@ export const MENU_ITEMS = [
         iconName: 'Settings',
         path: '/settings/app-version',
       },
+      {
+        text: 'Explore Category',
+        iconName: 'Category',
+        path: '/home-explore-categories',
+      },
     ],
     requiresDeveloperAccess: true,
   },
