@@ -41,6 +41,7 @@ import { youtubeVideoRoutes } from './youtube-videos';
 import { contactUsRoutes } from './contact-us';
 import { wantingListRoutes } from './wanted-listings';
 import { adsRoutes } from './ads';
+import { homeExploreCategoryRoutes } from './home-explore-categories';
 
 // Lazy load NotFoundPage
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -85,6 +86,7 @@ export const router = createBrowserRouter([
     ...contactUsRoutes,
     ...wantingListRoutes,
     ...adsRoutes,
+    ...homeExploreCategoryRoutes,
 
   // Catch-all route
   {
