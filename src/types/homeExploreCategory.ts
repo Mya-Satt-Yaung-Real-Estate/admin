@@ -37,7 +37,7 @@ export interface HomeExploreCategoryReorderItem {
   sort_order: number;
 }
 
-export const HOME_EXPLORE_CATEGORY_MAX_ACTIVE = 7;
+export const HOME_EXPLORE_CATEGORY_MAX_ACTIVE = 9;
 
 export const HOME_EXPLORE_CATEGORY_ICON_OPTIONS = [
   { value: 'crown', label: 'Crown (Premium)' },
