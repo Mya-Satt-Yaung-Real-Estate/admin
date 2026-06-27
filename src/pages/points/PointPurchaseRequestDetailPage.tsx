@@ -83,8 +83,8 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
       request: requestData.data,
       notes: '',
       reason: '',
-      payment_method: requestData.data.payment_method,
-      payment_reference: requestData.data.payment_reference,
+      payment_method: requestData.data.payment_method || '',
+      payment_reference: requestData.data.payment_reference || '',
       errors: {},
     });
   };
@@ -98,8 +98,8 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
       request: requestData.data,
       notes: '',
       reason: '',
-      payment_method: requestData.data.payment_method,
-      payment_reference: requestData.data.payment_reference,
+      payment_method: requestData.data.payment_method || '',
+      payment_reference: requestData.data.payment_reference || '',
       errors: {},
     });
   };
@@ -299,12 +299,14 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                   <StarIcon sx={{ fontSize: 20, color: 'success.main' }} />
                   <Typography variant="h6" fontWeight={600}>
-                    {request.package.name_en}
+                    {request.package?.name_en || 'Unknown Package'}
                   </Typography>
                 </Box>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                  {request.package.name_mm}
-                </Typography>
+                {request.package?.name_mm && (
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                    {request.package.name_mm}
+                  </Typography>
+                )}
               </Grid>
 
               {/* Points and Price */}
@@ -428,31 +430,39 @@ const PointPurchaseRequestDetailPage: React.FC = () => {
                     Name
                   </Typography>
                   <Typography variant="body1" fontWeight={500} sx={{ mb: 2 }}>
-                    {request.user.name}
+                    {request.user?.name || 'Unknown User'}
                   </Typography>
 
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    Email
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {request.user.email}
-                  </Typography>
+                  {request.user?.email && (
+                    <>
+                      <Typography variant="body2" color="textSecondary" gutterBottom>
+                        Email
+                      </Typography>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        {request.user.email}
+                      </Typography>
+                    </>
+                  )}
 
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
-                    User Type
-                  </Typography>
-                  <Chip
-                    label={request.user.user_type}
-                    color="primary"
-                    size="small"
-                    sx={{ mb: 2 }}
-                  />
+                  {request.user?.user_type && (
+                    <>
+                      <Typography variant="body2" color="textSecondary" gutterBottom>
+                        User Type
+                      </Typography>
+                      <Chip
+                        label={request.user.user_type}
+                        color="primary"
+                        size="small"
+                        sx={{ mb: 2 }}
+                      />
+                    </>
+                  )}
 
                   <Typography variant="body2" color="textSecondary" gutterBottom>
                     Current Point Balance
                   </Typography>
                   <Typography variant="body1" fontWeight={600} color="primary.main">
-                    {request.user.current_point_balance?.toLocaleString() || 0} points
+                    {request.user?.current_point_balance?.toLocaleString() || 0} points
                   </Typography>
                 </CardContent>
               </Card>

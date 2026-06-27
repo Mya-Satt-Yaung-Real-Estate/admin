@@ -147,11 +147,17 @@ const PointPurchaseRequestListPage: React.FC = () => {
     // Filter by search term
     if (filters.searchTerm) {
       const searchLower = filters.searchTerm.toLowerCase();
-      filtered = filtered.filter(request => 
-        request.user.name.toLowerCase().includes(searchLower) ||
-        request.user.email.toLowerCase().includes(searchLower) ||
-        request.id.toString().includes(searchLower)
-      );
+      filtered = filtered.filter(request => {
+        const userName = request.user?.name?.toLowerCase() || '';
+        const userEmail = request.user?.email?.toLowerCase() || '';
+        const requestId = request.id?.toString() || '';
+
+        return (
+          userName.includes(searchLower) ||
+          userEmail.includes(searchLower) ||
+          requestId.includes(searchLower)
+        );
+      });
     }
 
     // Filter by status
@@ -290,8 +296,8 @@ const PointPurchaseRequestListPage: React.FC = () => {
       request,
       notes: '',
       reason: '',
-      payment_method: request.payment_method,
-      payment_reference: request.payment_reference,
+      payment_method: request.payment_method || '',
+      payment_reference: request.payment_reference || '',
       errors: {},
     });
   };
@@ -303,8 +309,8 @@ const PointPurchaseRequestListPage: React.FC = () => {
       request,
       notes: '',
       reason: '',
-      payment_method: request.payment_method,
-      payment_reference: request.payment_reference,
+      payment_method: request.payment_method || '',
+      payment_reference: request.payment_reference || '',
       errors: {},
     });
   };
@@ -412,17 +418,21 @@ const PointPurchaseRequestListPage: React.FC = () => {
       render: (_, row) => (
         <Box>
           <Typography variant="body2" fontWeight={500}>
-            {row.user.name}
+            {row.user?.name || 'Unknown User'}
           </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {row.user.email}
-          </Typography>
-          <Chip
-            label={row.user.user_type}
-            size="small"
-            variant="outlined"
-            sx={{ mt: 0.5 }}
-          />
+          {row.user?.email && (
+            <Typography variant="caption" color="textSecondary">
+              {row.user.email}
+            </Typography>
+          )}
+          {row.user?.user_type && (
+            <Chip
+              label={row.user.user_type}
+              size="small"
+              variant="outlined"
+              sx={{ mt: 0.5 }}
+            />
+          )}
         </Box>
       ),
     },
@@ -432,11 +442,13 @@ const PointPurchaseRequestListPage: React.FC = () => {
       render: (_, row) => (
         <Box>
           <Typography variant="body2" fontWeight={500}>
-            {row.package.name_en}
+            {row.package?.name_en || 'Unknown Package'}
           </Typography>
-          <Typography variant="caption" color="textSecondary">
-            {row.package.name_mm}
-          </Typography>
+          {row.package?.name_mm && (
+            <Typography variant="caption" color="textSecondary">
+              {row.package.name_mm}
+            </Typography>
+          )}
         </Box>
       ),
     },
@@ -459,7 +471,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
       align: 'right',
       render: (_, row) => (
         <Typography variant="body2" fontWeight={500} color="success.main">
-          {row.formatted_price}
+          {row.formatted_price || '-'}
         </Typography>
       ),
     },
@@ -470,7 +482,7 @@ const PointPurchaseRequestListPage: React.FC = () => {
              render: (_, row) => (
          <Box>
            <Typography variant="body2" fontWeight={500}>
-             {row.status === 'approved' ? row.formatted_payment_method : '-'}
+             {row.status === 'approved' ? (row.formatted_payment_method || '-') : '-'}
            </Typography>
          </Box>
        ),
@@ -602,9 +614,9 @@ const PointPurchaseRequestListPage: React.FC = () => {
                 <MobileCard
                   key={request.id}
                   title={`Request #${request.id}`}
-                  subtitle={request.user.name}
-                  description={`${request.package.name_en} • ${(request.points_requested || 0).toLocaleString()} points`}
-                  avatar={request.user.user_type === 'company' ? <PersonIcon /> : <PersonIcon />}
+                  subtitle={request.user?.name || 'Unknown User'}
+                  description={`${request.package?.name_en || 'Unknown Package'} • ${(request.points_requested || 0).toLocaleString()} points`}
+                  avatar={<PersonIcon />}
                   avatarColor="primary.main"
                                       status={{
                       label: request.status_label,
@@ -614,11 +626,11 @@ const PointPurchaseRequestListPage: React.FC = () => {
                     }}
                   chips={[
                     {
-                      label: request.formatted_payment_method,
+                      label: request.formatted_payment_method || '-',
                       color: 'info',
                     },
                     {
-                      label: request.formatted_price,
+                      label: request.formatted_price || '-',
                       color: 'primary',
                     },
                   ]}

@@ -74,11 +74,11 @@ const ApproveRejectDialog: React.FC<ApproveRejectDialogProps> = ({
             </Box>
             <Box>
               <Typography variant="caption" color="textSecondary">User</Typography>
-              <Typography variant="body2" fontWeight={500}>{dialog.request?.user.name}</Typography>
+              <Typography variant="body2" fontWeight={500}>{dialog.request?.user?.name || 'Unknown User'}</Typography>
             </Box>
             <Box>
               <Typography variant="caption" color="textSecondary">Package</Typography>
-              <Typography variant="body2" fontWeight={500}>{dialog.request?.package.name_en}</Typography>
+              <Typography variant="body2" fontWeight={500}>{dialog.request?.package?.name_en || 'Unknown Package'}</Typography>
             </Box>
             <Box>
               <Typography variant="caption" color="textSecondary">Points</Typography>
@@ -86,11 +86,11 @@ const ApproveRejectDialog: React.FC<ApproveRejectDialogProps> = ({
             </Box>
             <Box>
               <Typography variant="caption" color="textSecondary">Price</Typography>
-              <Typography variant="body2" fontWeight={500}>{dialog.request?.formatted_price}</Typography>
+              <Typography variant="body2" fontWeight={500}>{dialog.request?.formatted_price || '-'}</Typography>
             </Box>
             <Box>
               <Typography variant="caption" color="textSecondary">Payment Method</Typography>
-              <Typography variant="body2" fontWeight={500}>{dialog.request?.formatted_payment_method}</Typography>
+              <Typography variant="body2" fontWeight={500}>{dialog.request?.formatted_payment_method || '-'}</Typography>
             </Box>
           </Box>
           <Box>

@@ -50,19 +50,19 @@ export interface PointPurchaseRequest {
   id: number;
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   status_label: string;
-  payment_method: string;
-  formatted_payment_method: string;
-  payment_reference: string;
-  payment_date: string;
+  payment_method: string | null;
+  formatted_payment_method: string | null;
+  payment_reference: string | null;
+  payment_date: string | null;
   requested_at: string;
-  approved_at?: string;
+  approved_at?: string | null;
   user: {
     id: number;
-    name: string;
-    email: string;
+    name: string | null;
+    email: string | null;
     user_type: 'individual' | 'company';
     current_point_balance: number;
-  };
+  } | null;
   package: {
     id: number;
     name_en: string;
@@ -71,10 +71,10 @@ export interface PointPurchaseRequest {
     points: number;
     price_mmk: number;
     formatted_price: string;
-  };
+  } | null;
   points_requested: number;
   price_mmk: number;
-  formatted_price: string;
+  formatted_price: string | null;
   approved_by?: {
     id: number;
     name: string;

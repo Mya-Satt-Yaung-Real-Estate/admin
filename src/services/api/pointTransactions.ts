@@ -4,6 +4,7 @@ import { PointTransaction, PointTransactionStatistics } from '../../types/pointT
 
 // Point Transactions-specific query parameters interface
 export interface PointTransactionQueryParams extends QueryParams {
+  user_id?: string | number;
   transaction_type?: string;
   reference_type?: string;
 }

@@ -8,6 +8,8 @@ import {
   MenuItem,
   InputAdornment,
   IconButton,
+  Autocomplete,
+  CircularProgress,
 } from '@mui/material';
 import { Search as SearchIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { FILTER_CONFIG } from '../../constants/filters';
@@ -19,7 +21,7 @@ export interface FilterOption {
 
 export interface FilterField {
   key: string;
-  type: 'search' | 'select' | 'multiselect' | 'date';
+  type: 'search' | 'select' | 'multiselect' | 'date' | 'autocomplete';
   label: string;
   options?: FilterOption[];
   placeholder?: string;
@@ -28,6 +30,9 @@ export interface FilterField {
   maxWidth?: string | number | Record<string, string | number>;
   flexGrow?: number;
   required?: boolean;
+  loading?: boolean;
+  noOptionsText?: string;
+  onInputChange?: (value: string) => void;
 }
 
 export interface StandardFiltersProps {
@@ -122,6 +127,48 @@ export function StandardFilters({
             </Select>
           </FormControl>
         );
+
+      case 'autocomplete': {
+        const selectedOption = field.options?.find((option) => option.value === value) || null;
+
+        return (
+          <Autocomplete
+            key={field.key}
+            options={field.options || []}
+            value={selectedOption}
+            loading={field.loading}
+            noOptionsText={field.noOptionsText || 'No options'}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, selected) => option.value === selected.value}
+            onChange={(_, selected) => handleFilterChange(field.key, selected?.value || '')}
+            onInputChange={(_, inputValue, reason) => {
+              if (reason === 'input' || reason === 'clear') {
+                field.onInputChange?.(inputValue);
+              }
+            }}
+            sx={{
+              minWidth: { xs: 250, sm: 260 },
+              width: field.width,
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label={field.label}
+                placeholder={field.placeholder}
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {field.loading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+          />
+        );
+      }
 
       case 'date':
         return (
