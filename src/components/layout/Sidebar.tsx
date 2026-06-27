@@ -48,6 +48,11 @@ import {
 import Logo from './Logo';
 import SidebarItem from './SidebarItem';
 import { MenuItem } from '@/types';
+import {
+  hasDeveloperAccess,
+  isMarketerOnlyAccess,
+  MARKETER_ALLOWED_MENU_ITEMS,
+} from '@/constants/accessControl';
 
 interface SidebarProps {
   menuItems: MenuItem[];
@@ -179,20 +184,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     setOpenDropdown(prev => prev === dropdownText ? null : dropdownText);
   }, []);
 
-  // Developer access control
+  // Developer / marketer access control
   const { user } = useAuthStore();
-  const developerEmails = [
-    'admin@jadeproperty.site',
-    'admin@myasattyaung.com', 
-    'myasattyaung.dev@gmail.com'
-  ];
-  const hasDeveloperAccess = user?.email && developerEmails.includes(user.email);
+  const marketerOnlyAccess = isMarketerOnlyAccess(user?.email);
 
   // Filter menu items based on access control
-  const allMenuItems = menuItems.filter(item => {
-    if (item.requiresDeveloperAccess) {
-      return hasDeveloperAccess;
+  const allMenuItems = menuItems.filter((item) => {
+    if (marketerOnlyAccess) {
+      if (item.isDivider) {
+        return false;
+      }
+
+      return MARKETER_ALLOWED_MENU_ITEMS.includes(item.text);
     }
+
+    if (item.requiresDeveloperAccess) {
+      return hasDeveloperAccess(user?.email);
+    }
+
     return true;
   });
 
