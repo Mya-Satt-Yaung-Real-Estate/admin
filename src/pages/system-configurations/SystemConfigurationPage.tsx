@@ -44,6 +44,7 @@ import {
   Security as SecurityIcon,
   ContactPhone as ContactIcon,
   Assignment as AssignmentIcon,
+  Payment as PaymentIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -103,6 +104,12 @@ const CONFIG_CATEGORIES = {
     description: 'Manage validation rules and limits',
     icon: <SecurityIcon />,
     color: '#7b1fa2',
+  },
+  payment_integration: {
+    name: 'Payment Integration',
+    description: 'Enable or disable online payment for point purchases',
+    icon: <PaymentIcon />,
+    color: '#00897b',
   },
   contact_information: {
     name: 'Contact Information',

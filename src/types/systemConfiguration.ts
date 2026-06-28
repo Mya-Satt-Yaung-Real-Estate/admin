@@ -106,6 +106,7 @@ export const CONFIGURATION_CATEGORIES = [
   'request_statuses',
   'admin',
   'validation',
+  'payment_integration',
   'cache',
   'reporting',
   'property',
