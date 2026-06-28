@@ -408,13 +408,15 @@ const ADViewPage: React.FC = () => {
                   </Typography>
                 </Grid>
 
-                {ad.display_location === 'home_grid_ads' && ad.grid_index != null && (
+                {(ad.display_location === 'home_grid_ads' || ad.display_location === 'homepage_block') && ad.grid_index != null && (
                   <Grid item xs={12}>
                     <Typography variant="subtitle2" color="textSecondary">
-                      Grid Slot
+                      {ad.display_location === 'homepage_block' ? 'Block Slot' : 'Grid Slot'}
                     </Typography>
                     <Typography variant="body1">
-                      Grid {ad.grid_index}
+                      {ad.display_location === 'homepage_block'
+                        ? (ad.grid_index === 1 ? 'Left' : ad.grid_index === 2 ? 'Right' : `Slot ${ad.grid_index}`)
+                        : `Grid ${ad.grid_index}`}
                     </Typography>
                   </Grid>
                 )}

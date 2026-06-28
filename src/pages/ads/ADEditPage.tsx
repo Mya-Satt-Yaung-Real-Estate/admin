@@ -34,9 +34,10 @@ import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { useAD, useUpdateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
 import { Media } from '../../types/media';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload, AD_FORM_SUBMIT_TOUCH_FIELDS, getFirstYupFormError, buildTouchedFieldsForFormErrors } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, adUsesGridIndex, applyDisplayLocationSlotDefaults, defaultAdGridIndex, normalizeAdGridIndex, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload, AD_FORM_SUBMIT_TOUCH_FIELDS, getFirstYupFormError, buildTouchedFieldsForFormErrors } from '../../types/ad';
 import { FormActions } from '../../components/forms/shared/FormActions';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
+import { AdSlotSelect } from '../../components/forms/ads/AdSlotSelect';
 
 // ============================================================================
 // VALIDATION SCHEMA
@@ -65,8 +66,18 @@ const validationSchema = Yup.object({
   grid_index: Yup.number()
     .nullable()
     .when('display_location', {
-      is: 'home_grid_ads',
-      then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
+      is: (loc: string) => adUsesGridIndex(loc),
+      then: (schema) =>
+        schema
+          .required('Select slot')
+          .integer()
+          .min(1)
+          .test('max-slot', 'Invalid slot for this display location', function (value) {
+            const max = adUsesGridIndex(this.parent.display_location)
+              ? (this.parent.display_location === 'homepage_block' ? 2 : 4)
+              : 0;
+            return value != null && value >= 1 && value <= max;
+          }),
       otherwise: (schema) => schema.nullable(),
     }),
   user_id: Yup.mixed().when('display_location', {
@@ -298,7 +309,7 @@ const ADEditPage: React.FC = () => {
     is_paid: adData.is_paid || false,
     is_published: adData.is_published || false,
     display_location: adData.display_location || 'homepage_block',
-    grid_index: adData.grid_index ?? null,
+    grid_index: defaultAdGridIndex(adData.display_location || 'homepage_block', adData.grid_index),
     user_id: adData.user_id ?? adData.user?.id ?? undefined,
     payment_date: adData.payment_date || '',
     start_at: formatDateForInput(adData.start_at),
@@ -319,7 +330,9 @@ const ADEditPage: React.FC = () => {
       // Prepare AD data
       const adData: Partial<ADFormData> = normalizeAdFormPayload({
         ...values,
-        grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
+        grid_index: adUsesGridIndex(values.display_location)
+          ? normalizeAdGridIndex(values.grid_index) ?? applyDisplayLocationSlotDefaults(values.display_location, null)
+          : null,
         user_id: adRequiresCompanyUser(values.display_location) ? values.user_id : undefined,
         media_id: mediaId,
       });
@@ -461,10 +474,13 @@ const ADEditPage: React.FC = () => {
                               if (v === 'home-page-asidebar') {
                                 setFieldValue('user_id', undefined);
                                 setFieldValue('grid_index', null);
-                              } else if (v !== 'home_grid_ads') {
+                              } else if (adUsesGridIndex(v)) {
+                                setFieldValue(
+                                  'grid_index',
+                                  applyDisplayLocationSlotDefaults(v, values.grid_index)
+                                );
+                              } else {
                                 setFieldValue('grid_index', null);
-                              } else if (values.grid_index == null) {
-                                setFieldValue('grid_index', 1);
                               }
                             }}
                             onBlur={() => {}}
@@ -485,6 +501,19 @@ const ADEditPage: React.FC = () => {
                         </FormControl>
                       </Grid>
 
+                      {adUsesGridIndex(values.display_location) && (
+                        <Grid item xs={12} sm={6}>
+                          <AdSlotSelect
+                            displayLocation={values.display_location}
+                            gridIndex={values.grid_index}
+                            onGridIndexChange={(n) => setFieldValue('grid_index', n)}
+                            onBlur={() => setFieldTouched('grid_index', true)}
+                            error={errors.grid_index as string | undefined}
+                            touched={touched.grid_index}
+                          />
+                        </Grid>
+                      )}
+
                       {adRequiresCompanyUser(values.display_location) && (
                         <Grid item xs={12} sm={6}>
                           <CompanyUserSelect
@@ -500,35 +529,6 @@ const ADEditPage: React.FC = () => {
                             submitAttempted={submitCount > 0}
                             onBlur={() => setFieldTouched('user_id', true)}
                           />
-                        </Grid>
-                      )}
-
-                      {values.display_location === 'home_grid_ads' && (
-                        <Grid item xs={12} sm={6}>
-                          <FormControl fullWidth variant="outlined">
-                            <InputLabel id="grid_index-label">Grid slot *</InputLabel>
-                            <Select
-                              labelId="grid_index-label"
-                              id="grid_index"
-                              name="grid_index"
-                              value={values.grid_index ?? ''}
-                              onChange={(e) => {
-                                const n = e.target.value === '' ? null : Number(e.target.value);
-                                setFieldValue('grid_index', n);
-                              }}
-                              onBlur={() => {}}
-                              label="Grid slot *"
-                              error={touched.grid_index && Boolean(errors.grid_index)}
-                            >
-                              <MenuItem value={1}>Grid 1</MenuItem>
-                              <MenuItem value={2}>Grid 2</MenuItem>
-                              <MenuItem value={3}>Grid 3</MenuItem>
-                              <MenuItem value={4}>Grid 4</MenuItem>
-                            </Select>
-                            {touched.grid_index && errors.grid_index && (
-                              <FormHelperText error>{errors.grid_index as string}</FormHelperText>
-                            )}
-                          </FormControl>
                         </Grid>
                       )}
 
@@ -869,7 +869,7 @@ const ADEditPage: React.FC = () => {
                             <>Recommended image size: <strong>1920 x 1080 pixels (16:9 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
                           )}
                           {values.display_location === 'homepage_block' && (
-                            <>Recommended image size: <strong>400-450 x 160 pixels (2.5:1 to 2.8:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                            <>Recommended image size: <strong>1200 × 440 px</strong> (same as Home Grid). Max file size: <strong>1.5 MB</strong></>
                           )}
                           {(values.display_location === 'detail-page-asidebar' ||
                             values.display_location === 'detail-page-asidebar-2') && (

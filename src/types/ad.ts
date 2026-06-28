@@ -143,7 +143,7 @@ export interface ADStatisticsResponse {
 
 // Display location limits
 export const DISPLAY_LOCATION_LIMITS = {
-  'homepage_block': 3,       // Maximum 3 active ads
+  'homepage_block': 3,       // Maximum 3 active ads per block slot (grid_index 1–2)
   'home-page-asidebar': 3,   // Maximum 3 active ads
   'detail-page-asidebar': 3, // Maximum 3 active ads
   'detail-page-asidebar-2': 3, // Maximum 3 active ads (second sidebar strip)
@@ -168,6 +168,54 @@ export const AD_DISPLAY_LOCATION_MAIN_SLIDER = 'home-page-asidebar' as const;
 
 export function adRequiresCompanyUser(displayLocation: string): boolean {
   return Boolean(displayLocation) && displayLocation !== AD_DISPLAY_LOCATION_MAIN_SLIDER;
+}
+
+export function adUsesGridIndex(displayLocation: string): boolean {
+  return displayLocation === 'home_grid_ads' || displayLocation === 'homepage_block';
+}
+
+export function adGridIndexMax(displayLocation: string): number {
+  if (displayLocation === 'home_grid_ads') return 4;
+  if (displayLocation === 'homepage_block') return 2;
+  return 0;
+}
+
+export function adGridSlotLabel(displayLocation: string, gridIndex: number): string {
+  if (displayLocation === 'homepage_block') {
+    return gridIndex === 1 ? 'Left' : gridIndex === 2 ? 'Right' : `Slot ${gridIndex}`;
+  }
+  return `Grid ${gridIndex}`;
+}
+
+/** Coerce API/form values to a slot number or null. */
+export function normalizeAdGridIndex(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Default slot when a location requires grid_index but legacy data has none. */
+export function defaultAdGridIndex(displayLocation: string, gridIndex: unknown): number | null {
+  const normalized = normalizeAdGridIndex(gridIndex);
+  if (normalized != null) return normalized;
+  return adUsesGridIndex(displayLocation) ? 1 : null;
+}
+
+/** MUI Select value — always string for reliable MenuItem matching. */
+export function adGridIndexSelectValue(gridIndex: number | null | undefined): string {
+  const n = normalizeAdGridIndex(gridIndex);
+  return n != null ? String(n) : '';
+}
+
+export function applyDisplayLocationSlotDefaults(
+  displayLocation: string,
+  currentGridIndex: unknown
+): number | null {
+  if (!adUsesGridIndex(displayLocation)) return null;
+  const max = adGridIndexMax(displayLocation);
+  const current = normalizeAdGridIndex(currentGridIndex);
+  if (current == null || current < 1 || current > max) return 1;
+  return current;
 }
 
 export interface AdCompanyColumnInfo {

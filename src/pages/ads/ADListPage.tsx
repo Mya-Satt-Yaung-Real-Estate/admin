@@ -63,10 +63,12 @@ function formatAdDisplayLocation(ad: AD): string {
   if (ad.display_location === 'home_grid_ads') {
     return ad.grid_index != null ? `Home Grid ADS · Grid ${ad.grid_index}` : 'Home Grid ADS';
   }
+  if (ad.display_location === 'homepage_block') {
+    return ad.grid_index != null ? `Homepage Block · ${ad.grid_index === 1 ? 'Left' : ad.grid_index === 2 ? 'Right' : `Slot ${ad.grid_index}`}` : 'Homepage Block';
+  }
   if (ad.display_location === 'detail-page-asidebar') return 'Detail Page Sidebar 1';
   if (ad.display_location === 'detail-page-asidebar-2') return 'Detail Page Sidebar 2';
   if (ad.display_location === 'home-page-asidebar') return 'Home page Main Slider';
-  if (ad.display_location === 'homepage_block') return 'Homepage Block';
   return String(ad.display_location).replace(/-/g, ' ');
 }
 

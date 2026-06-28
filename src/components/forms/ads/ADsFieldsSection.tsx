@@ -12,6 +12,11 @@ import {
   Box,
 } from '@mui/material';
 import { FormSection } from '../shared/FormSection';
+import {
+  adUsesGridIndex,
+  applyDisplayLocationSlotDefaults,
+} from '../../../types/ad';
+import { AdSlotSelect } from './AdSlotSelect';
 
 interface ADsFieldsSectionProps {
   values: {
@@ -257,10 +262,16 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
               onChange={(e) => {
                 const v = e.target.value;
                 setFieldValue('display_location', v);
-                if (v !== 'home_grid_ads') {
+                if (v === 'home-page-asidebar') {
+                  setFieldValue('user_id', undefined);
                   setFieldValue('grid_index', null);
-                } else if (values.grid_index == null) {
-                  setFieldValue('grid_index', 1);
+                } else if (adUsesGridIndex(v)) {
+                  setFieldValue(
+                    'grid_index',
+                    applyDisplayLocationSlotDefaults(v, values.grid_index)
+                  );
+                } else {
+                  setFieldValue('grid_index', null);
                 }
               }}
               onBlur={handleBlur}
@@ -278,31 +289,16 @@ export const ADsFieldsSection: React.FC<ADsFieldsSectionProps> = ({
           </FormControl>
         </Grid>
 
-        {values.display_location === 'home_grid_ads' && (
+        {adUsesGridIndex(values.display_location) && (
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth variant="outlined" error={touched.grid_index && Boolean(errors.grid_index)}>
-              <InputLabel id="grid_index-label">Grid slot *</InputLabel>
-              <Select
-                labelId="grid_index-label"
-                id="grid_index"
-                name="grid_index"
-                value={values.grid_index ?? ''}
-                onChange={(e) => {
-                  const n = e.target.value === '' ? null : Number(e.target.value);
-                  setFieldValue('grid_index', n);
-                }}
-                onBlur={handleBlur}
-                label="Grid slot *"
-              >
-                <MenuItem value={1}>Grid 1</MenuItem>
-                <MenuItem value={2}>Grid 2</MenuItem>
-                <MenuItem value={3}>Grid 3</MenuItem>
-                <MenuItem value={4}>Grid 4</MenuItem>
-              </Select>
-              {touched.grid_index && errors.grid_index && (
-                <FormHelperText>{errors.grid_index}</FormHelperText>
-              )}
-            </FormControl>
+            <AdSlotSelect
+              displayLocation={values.display_location}
+              gridIndex={values.grid_index}
+              onGridIndexChange={(n) => setFieldValue('grid_index', n)}
+              onBlur={handleBlur}
+              error={errors.grid_index}
+              touched={touched.grid_index}
+            />
           </Grid>
         )}
 

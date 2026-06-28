@@ -33,8 +33,9 @@ import { ActionAlert, SingleImageUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAD } from '../../services/queries/ad';
 import { useUsers } from '../../services/queries/users';
-import { ADFormData, adRequiresCompanyUser, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload, AD_FORM_SUBMIT_TOUCH_FIELDS, getFirstYupFormError, buildTouchedFieldsForFormErrors } from '../../types/ad';
+import { ADFormData, adRequiresCompanyUser, adUsesGridIndex, applyDisplayLocationSlotDefaults, normalizeAdGridIndex, AD_END_DATE_WARNING, AD_ACTIVE_PAST_SCHEDULE_MESSAGE, isAdEndDateExpired, isAdActiveWithPastSchedule, isAdScheduleFullyPast, normalizeAdFormPayload, AD_FORM_SUBMIT_TOUCH_FIELDS, getFirstYupFormError, buildTouchedFieldsForFormErrors } from '../../types/ad';
 import { CompanyUserSelect } from '../../components/forms/ads/CompanyUserSelect';
+import { AdSlotSelect } from '../../components/forms/ads/AdSlotSelect';
 import { Media } from '../../types/media';
 import { FormActions } from '../../components/forms/shared/FormActions';
 
@@ -65,8 +66,18 @@ const validationSchema = Yup.object({
   grid_index: Yup.number()
     .nullable()
     .when('display_location', {
-      is: 'home_grid_ads',
-      then: (schema) => schema.required('Select grid slot').min(1).max(4).integer(),
+      is: (loc: string) => adUsesGridIndex(loc),
+      then: (schema) =>
+        schema
+          .required('Select slot')
+          .integer()
+          .min(1)
+          .test('max-slot', 'Invalid slot for this display location', function (value) {
+            const max = adUsesGridIndex(this.parent.display_location)
+              ? (this.parent.display_location === 'homepage_block' ? 2 : 4)
+              : 0;
+            return value != null && value >= 1 && value <= max;
+          }),
       otherwise: (schema) => schema.nullable(),
     }),
   user_id: Yup.mixed().when('display_location', {
@@ -197,7 +208,9 @@ const ADCreatePage: React.FC = () => {
           ...values,
           link_type: values.link_type as "button_link" | "text_link" | "image_link",
           display_location: values.display_location as ADFormData['display_location'],
-          grid_index: values.display_location === 'home_grid_ads' ? values.grid_index ?? null : null,
+          grid_index: adUsesGridIndex(values.display_location)
+            ? normalizeAdGridIndex(values.grid_index) ?? applyDisplayLocationSlotDefaults(values.display_location, null)
+            : null,
           user_id: adRequiresCompanyUser(values.display_location) ? values.user_id : undefined,
           media_id: mediaId,
         });
@@ -290,10 +303,13 @@ const ADCreatePage: React.FC = () => {
                           if (v === 'home-page-asidebar') {
                             formik.setFieldValue('user_id', undefined);
                             formik.setFieldValue('grid_index', null);
-                          } else if (v !== 'home_grid_ads') {
+                          } else if (adUsesGridIndex(v)) {
+                            formik.setFieldValue(
+                              'grid_index',
+                              applyDisplayLocationSlotDefaults(v, formik.values.grid_index)
+                            );
+                          } else {
                             formik.setFieldValue('grid_index', null);
-                          } else if (formik.values.grid_index == null) {
-                            formik.setFieldValue('grid_index', 1);
                           }
                         }}
                         onBlur={formik.handleBlur}
@@ -314,6 +330,19 @@ const ADCreatePage: React.FC = () => {
                     </FormControl>
                   </Grid>
 
+                  {adUsesGridIndex(formik.values.display_location) && (
+                    <Grid item xs={12} sm={6}>
+                      <AdSlotSelect
+                        displayLocation={formik.values.display_location}
+                        gridIndex={formik.values.grid_index}
+                        onGridIndexChange={(n) => formik.setFieldValue('grid_index', n)}
+                        onBlur={() => formik.setFieldTouched('grid_index', true)}
+                        error={formik.errors.grid_index as string | undefined}
+                        touched={formik.touched.grid_index}
+                      />
+                    </Grid>
+                  )}
+
                   {adRequiresCompanyUser(formik.values.display_location) && (
                     <Grid item xs={12} sm={6}>
                       <CompanyUserSelect
@@ -329,35 +358,6 @@ const ADCreatePage: React.FC = () => {
                         submitAttempted={formik.submitCount > 0}
                         onBlur={() => formik.setFieldTouched('user_id', true)}
                       />
-                    </Grid>
-                  )}
-
-                  {formik.values.display_location === 'home_grid_ads' && (
-                    <Grid item xs={12} sm={6}>
-                      <FormControl fullWidth variant="outlined">
-                        <InputLabel id="grid_index-label">Grid slot *</InputLabel>
-                        <Select
-                          labelId="grid_index-label"
-                          id="grid_index"
-                          name="grid_index"
-                          value={formik.values.grid_index ?? ''}
-                          onChange={(e) => {
-                            const n = e.target.value === '' ? null : Number(e.target.value);
-                            formik.setFieldValue('grid_index', n);
-                          }}
-                          onBlur={formik.handleBlur}
-                          label="Grid slot *"
-                          error={formik.touched.grid_index && Boolean(formik.errors.grid_index)}
-                        >
-                          <MenuItem value={1}>Grid 1</MenuItem>
-                          <MenuItem value={2}>Grid 2</MenuItem>
-                          <MenuItem value={3}>Grid 3</MenuItem>
-                          <MenuItem value={4}>Grid 4</MenuItem>
-                        </Select>
-                        {formik.touched.grid_index && formik.errors.grid_index && (
-                          <FormHelperText error>{formik.errors.grid_index as string}</FormHelperText>
-                        )}
-                      </FormControl>
                     </Grid>
                   )}
 
@@ -698,7 +698,7 @@ const ADCreatePage: React.FC = () => {
                         <>Recommended image size: <strong>1920 x 1080 pixels (16:9 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
                       )}
                       {formik.values.display_location === 'homepage_block' && (
-                        <>Recommended image size: <strong>400-450 x 160 pixels (2.5:1 to 2.8:1 ratio)</strong>. Max file size: <strong>1.5 MB</strong></>
+                        <>Recommended image size: <strong>1200 × 440 px</strong> (same as Home Grid). Max file size: <strong>1.5 MB</strong></>
                       )}
                       {(formik.values.display_location === 'detail-page-asidebar' ||
                         formik.values.display_location === 'detail-page-asidebar-2') && (
