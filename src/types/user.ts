@@ -14,6 +14,8 @@ export interface CompanyProfile {
   view_count: number;
   location_en: string;
   location_mm: string;
+  region_id?: number;
+  township_id?: number;
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
   our_market?: boolean;
@@ -124,10 +126,15 @@ export interface CreateRegularUserData {
 export interface UpdateRegularUserData {
   name?: string;
   email?: string;
-  user_type?: 'company' | 'individual';
   member_level?: MemberLevel;
   is_active?: boolean;
   verification_status?: 'pending' | 'approved' | 'rejected';
+  company_name?: string;
+  company_type_id?: number;
+  address?: string;
+  region_id?: number;
+  township_id?: number;
+  description?: string;
   show_on_homepage?: boolean;
   show_on_property_detail?: boolean;
   our_market?: boolean;

@@ -61,6 +61,64 @@ const requiredSelectId = (message: string) =>
     .positive(message)
     .integer(message);
 
+export const USER_EDIT_SUBMIT_TOUCH_FIELDS: Record<string, boolean> = {
+  name: true,
+  email: true,
+  member_level: true,
+  is_active: true,
+  company_name: true,
+  company_type_id: true,
+  address: true,
+  region_id: true,
+  township_id: true,
+  description: true,
+};
+
+export const editUserValidationSchema = Yup.object().shape({
+  name: Yup.string()
+    .trim()
+    .required('Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(255, 'Name must be less than 255 characters'),
+  email: Yup.string()
+    .trim()
+    .transform((value) => (value === '' ? undefined : value))
+    .optional()
+    .email('Please enter a valid email address'),
+  user_type: Yup.string().oneOf(['individual', 'company']),
+  member_level: Yup.string()
+    .required('Member level is required')
+    .oneOf([...MEMBER_LEVEL_VALUES], 'Invalid member level'),
+  is_active: Yup.string().oneOf(['true', 'false']),
+  company_name: Yup.string().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.trim().required('Company name is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  company_type_id: Yup.number().when('user_type', {
+    is: 'company',
+    then: () => requiredSelectId('Company type is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  address: Yup.string().when('user_type', {
+    is: 'company',
+    then: (schema) => schema.trim().required('Business address is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  region_id: Yup.number().when('user_type', {
+    is: 'company',
+    then: () => requiredSelectId('Region is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  township_id: Yup.number().when('user_type', {
+    is: 'company',
+    then: () => requiredSelectId('Township is required'),
+    otherwise: (schema) => schema.optional(),
+  }),
+  description: Yup.string().trim().optional(),
+  verification_status: Yup.string().oneOf(['pending', 'approved', 'rejected']),
+});
+
 export const createUserValidationSchema = Yup.object().shape({
   name: Yup.string()
     .trim()
