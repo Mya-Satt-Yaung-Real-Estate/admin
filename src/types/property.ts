@@ -28,6 +28,7 @@ export interface Property {
   bank_installment_available?: boolean;
   tan_tan_tan?: boolean;
   is_trending?: boolean;
+  is_direct_owner?: boolean;
   features?: string[];
   location: {
     region: Region;
@@ -144,6 +145,7 @@ export interface CreatePropertyData {
   bank_installment_available?: boolean;
   tan_tan_tan?: boolean;
   is_trending?: boolean;
+  is_direct_owner?: boolean;
   features?: string[];
   
   // Contact information

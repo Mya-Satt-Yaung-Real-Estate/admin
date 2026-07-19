@@ -200,6 +200,7 @@ const PropertyEditPage: React.FC = () => {
     bank_installment_available: propertyData.bank_installment_available || false,
     tan_tan_tan: propertyData.tan_tan_tan || false,
     is_trending: propertyData.is_trending || false,
+    is_direct_owner: propertyData.is_direct_owner || false,
     features: propertyData.features || [],
     
     // Contact information
@@ -236,6 +237,7 @@ const PropertyEditPage: React.FC = () => {
         price_amount: values.price_lakh,
         tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
         is_trending: Boolean(values.is_trending), // Ensure boolean type
+        is_direct_owner: Boolean(values.is_direct_owner),
         features: values.features || [], // Ensure features array
         phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
         email: values.email?.trim() || undefined, // Handle empty email as undefined
@@ -467,6 +469,10 @@ const PropertyEditPage: React.FC = () => {
                   values={values}
                   handleChange={handleChange}
                   setFieldValue={setFieldValue}
+                  showDirectOwner={
+                    !values.is_platform_property &&
+                    users.find((u: any) => u.id === values.user_id)?.user_type === 'individual'
+                  }
                 />
 
                 {/* Point System Information */}

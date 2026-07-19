@@ -18,12 +18,17 @@ interface StatusSectionProps {
   values: any;
   handleChange: (e: React.ChangeEvent<any> | SelectChangeEvent<any>) => void;
   setFieldValue?: (field: string, value: any) => void;
+  /**
+   * Show Direct Owner only for User Property + individual user.
+   */
+  showDirectOwner?: boolean;
 }
 
 export const StatusSection: React.FC<StatusSectionProps> = ({
   values,
   handleChange,
   setFieldValue,
+  showDirectOwner = false,
 }) => {
   return (
     <FormSection 
@@ -122,6 +127,27 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
             </Alert>
           )}
         </Grid>
+
+        {showDirectOwner ? (
+          <Grid item xs={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  name="is_direct_owner"
+                  checked={Boolean(values.is_direct_owner)}
+                  onChange={(e) => {
+                    if (setFieldValue) {
+                      setFieldValue('is_direct_owner', e.target.checked);
+                    } else {
+                      handleChange(e);
+                    }
+                  }}
+                />
+              }
+              label="Direct Owner"
+            />
+          </Grid>
+        ) : null}
       </Grid>
     </FormSection>
   );

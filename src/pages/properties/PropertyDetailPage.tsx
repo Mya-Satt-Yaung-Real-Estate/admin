@@ -563,6 +563,13 @@ const PropertyDetailPage: React.FC = () => {
                         icon={<TrendingUpIcon />}
                       />
                     )}
+                    {property.is_direct_owner && (
+                      <Chip
+                        label="Direct Owner"
+                        color="error"
+                        size="small"
+                      />
+                    )}
                   </Box>
                 </Box>
               </Box>

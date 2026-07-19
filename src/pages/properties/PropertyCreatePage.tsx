@@ -96,6 +96,7 @@ const PropertyCreatePage: React.FC = () => {
       bank_installment_available: false,
       tan_tan_tan: false,
       is_trending: false,
+      is_direct_owner: false,
       features: [] as string[],
       owner_name: '',
       phone_numbers: [''],
@@ -122,6 +123,7 @@ const PropertyCreatePage: React.FC = () => {
           area_sqft: values.area_sqft || 0,
           tan_tan_tan: Boolean(values.tan_tan_tan), // Ensure boolean type
           is_trending: Boolean(values.is_trending), // Ensure boolean type
+          is_direct_owner: Boolean(values.is_direct_owner),
           features: values.features || [], // Ensure features array
           phone_numbers: phoneNumbers.filter(phone => phone.trim() !== ''),
           email: values.email?.trim() || undefined, // Handle empty email as undefined
@@ -274,12 +276,17 @@ const PropertyCreatePage: React.FC = () => {
                 formik.setFieldValue('is_platform_property', value);
                 if (value) {
                   formik.setFieldValue('user_id', undefined);
+                  formik.setFieldValue('is_direct_owner', false);
                 }
               }}
               userId={formik.values.user_id}
               onUserIdChange={(value) => {
                 formik.setFieldValue('user_id', value);
                 formik.setFieldTouched('user_id', true);
+                const selectedUser = (users?.data || []).find((u: any) => u.id === value);
+                if (selectedUser?.user_type !== 'individual') {
+                  formik.setFieldValue('is_direct_owner', false);
+                }
               }}
               users={users?.data || []}
               usersLoading={usersLoading}
@@ -357,6 +364,10 @@ const PropertyCreatePage: React.FC = () => {
               values={formik.values}
               handleChange={formik.handleChange}
               setFieldValue={formik.setFieldValue}
+              showDirectOwner={
+                !formik.values.is_platform_property &&
+                (users?.data || []).find((u: any) => u.id === formik.values.user_id)?.user_type === 'individual'
+              }
             />
 
             {/* Point System Information */}
