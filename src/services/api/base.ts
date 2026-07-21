@@ -3,6 +3,13 @@ const API_BASE_URL = import.meta.env.DEV
   ? '/api' // Use proxy in development (now points to localhost:8000)
   : (import.meta.env.VITE_API_URL || 'https://api.jade-property.com/api/v1/admin');
 
+/**
+ * V2 Admin API base (Share Profit Listings and other V2 modules).
+ */
+const API_V2_BASE_URL = import.meta.env.DEV
+  ? '/api-v2'
+  : (import.meta.env.VITE_API_V2_URL || 'https://api.jade-property.com/api/v2/admin');
+
 // Simple API response type
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -70,12 +77,15 @@ function getAuthToken(): string | null {
   }
 }
 
-// Base API request function
-export async function apiRequest<T>(
+/**
+ * Shared fetch used by V1 and V2 admin API clients.
+ */
+async function executeApiRequest<T>(
+  baseUrl: string,
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${baseUrl}${endpoint}`;
   
   // Get auth token
   const token = getAuthToken();
@@ -171,4 +181,22 @@ export async function apiRequest<T>(
     }
     throw error;
   }
+}
+
+// Base API request function (V1 Admin)
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  return executeApiRequest<T>(API_BASE_URL, endpoint, options);
+}
+
+/**
+ * V2 Admin API request (e.g. /api/v2/admin/share-profit-listings).
+ */
+export async function apiV2Request<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  return executeApiRequest<T>(API_V2_BASE_URL, endpoint, options);
 }

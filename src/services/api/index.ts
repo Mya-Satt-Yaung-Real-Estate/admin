@@ -21,6 +21,7 @@ export * from './announcements';
 export * from './lawyers';
 export * from './youtubeVideos';
 export * from './wantingListings';
+export * from './shareProfitListings';
 export * from './dashboard';
 export * from './appSettings';
 

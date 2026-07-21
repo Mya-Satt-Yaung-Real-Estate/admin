@@ -40,6 +40,7 @@ import { lawyerRoutes } from './lawyers';
 import { youtubeVideoRoutes } from './youtube-videos';
 import { contactUsRoutes } from './contact-us';
 import { wantingListRoutes } from './wanted-listings';
+import { shareProfitListingRoutes } from './share-profit-listings';
 import { adsRoutes } from './ads';
 import { homeExploreCategoryRoutes } from './home-explore-categories';
 
@@ -85,6 +86,7 @@ export const router = createBrowserRouter([
     ...lawyerRoutes,
     ...contactUsRoutes,
     ...wantingListRoutes,
+    ...shareProfitListingRoutes,
     ...adsRoutes,
     ...homeExploreCategoryRoutes,
 

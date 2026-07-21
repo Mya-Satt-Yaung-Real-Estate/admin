@@ -40,6 +40,7 @@ import {
   PersonAdd as PersonAddIcon,
   ShoppingCart as ShoppingCartIcon,
   FolderSpecial as WantingListIcon,
+  Handshake as ShareProfitIcon,
   Speed as SpeedIcon,
   AttachMoney as AttachMoneyIcon,
   Percent as PercentIcon,
@@ -141,6 +142,8 @@ export const getIconComponent = (iconName: string): React.ReactNode => {
       return <AccountBalanceIcon />;
     case 'WantingList':
       return <WantingListIcon />;
+    case 'ShareProfit':
+      return <ShareProfitIcon />;
     case 'Speed':
       return <SpeedIcon />;
     case 'AttachMoney':

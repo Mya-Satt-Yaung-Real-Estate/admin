@@ -45,6 +45,7 @@ import {
   ContactPhone as ContactIcon,
   Assignment as AssignmentIcon,
   Payment as PaymentIcon,
+  Handshake as HandshakeIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -86,6 +87,12 @@ const CONFIG_CATEGORIES = {
     description: 'Configure wanted list settings and costs',
     icon: <AssignmentIcon />,
     color: '#0288d1',
+  },
+  share_profit_listing: {
+    name: 'Share Profit Listing',
+    description: 'Configure share profit listing expiration',
+    icon: <HandshakeIcon />,
+    color: '#6d4c41',
   },
   media: {
     name: 'Media',

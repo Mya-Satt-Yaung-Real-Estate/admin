@@ -21,6 +21,11 @@ export const MENU_ITEMS = [
     path: '/wanting-listings',
   },
   {
+    text: 'Share Profit Listings',
+    iconName: 'ShareProfit',
+    path: '/share-profit-listings',
+  },
+  {
     text: 'Advertisements',
     iconName: 'Campaign',
     path: '/advertisements',

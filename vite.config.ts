@@ -14,6 +14,15 @@ export default defineConfig({
     port: 3000,
     open: true,
     proxy: {
+      /**
+       * V2 Admin APIs (Share Profit Listings, etc.)
+       */
+      '/api-v2': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api-v2/, '/api/v2/admin'),
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
