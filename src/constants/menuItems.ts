@@ -10,7 +10,7 @@ export const MENU_ITEMS = [
     iconName: 'HomeWork',
     path: '/properties',
   },
-  {
+  { 
     text: 'Projects',
     iconName: 'Business',
     path: '/projects',
