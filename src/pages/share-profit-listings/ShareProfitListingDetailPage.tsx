@@ -43,10 +43,12 @@ import {
   useToggleShareProfitListingStatus,
   useApproveShareProfitListing,
   useRejectShareProfitListing,
+  useRenewShareProfitListing,
 } from '../../services/queries/shareProfitListings';
+import { useConfiguration } from '../../services/queries/systemConfiguration';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
-import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ActionAlert, ConfirmationDialog } from '../../components/ui';
+import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ActionAlert, ConfirmationDialog, RenewButton } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 
 const ShareProfitListingDetailPage: React.FC = () => {
@@ -61,17 +63,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
   const toggleShareProfitListingStatusMutation = useToggleShareProfitListingStatus();
   const approveShareProfitListingMutation = useApproveShareProfitListing();
   const rejectShareProfitListingMutation = useRejectShareProfitListing();
-
-  // Alert system hook
-  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
-
-  // Delete confirmation hook
-  const {
-    deleteState,
-    openDeleteConfirmation,
-    closeDeleteConfirmation,
-    handleConfirmDelete,
-  } = useDeleteConfirmation();
+  const renewShareProfitListingMutation = useRenewShareProfitListing();
 
   // Restore confirmation state
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
@@ -83,6 +75,31 @@ const ShareProfitListingDetailPage: React.FC = () => {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
+
+  /**
+   * Load renewal days only when renew dialog is open.
+   */
+  const { data: renewalConfigResponse } = useConfiguration(
+    renewConfirmOpen ? 'share_profit_listing.renewal_days' : ''
+  );
+  const renewalDays =
+    Number(
+      renewalConfigResponse?.data?.typed_value ??
+        renewalConfigResponse?.data?.config_value ??
+        30
+    ) || 30;
+
+  // Alert system hook
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+
+  // Delete confirmation hook
+  const {
+    deleteState,
+    openDeleteConfirmation,
+    closeDeleteConfirmation,
+    handleConfirmDelete,
+  } = useDeleteConfirmation();
 
   // Extract share profit listing data
   const shareProfitListing = shareProfitListingResponse?.data;
@@ -187,6 +204,25 @@ const ShareProfitListingDetailPage: React.FC = () => {
       refetch();
     } catch (error: any) {
       showError(error.message || 'Failed to reject share profit listing. Please try again.', true);
+    }
+  };
+
+  const handleConfirmRenew = async () => {
+    if (!shareProfitListing) return;
+
+    try {
+      const response = await renewShareProfitListingMutation.mutateAsync(shareProfitListing.slug);
+      const newExpiry = response.data?.renewal_info?.new_expiry;
+      const expiryDate = newExpiry ? new Date(newExpiry).toLocaleDateString() : 'N/A';
+
+      showSuccess(
+        `${shareProfitListing.title} renewed successfully! New expiry: ${expiryDate}`,
+        true
+      );
+      setRenewConfirmOpen(false);
+      refetch();
+    } catch (error: any) {
+      showError(error.message || 'Failed to renew share profit listing. Please try again.', true);
     }
   };
 
@@ -329,6 +365,14 @@ const ShareProfitListingDetailPage: React.FC = () => {
                   <DeleteIcon />
                 </IconButton>
               </Tooltip>
+
+              {shareProfitListing.status?.is_expired && (
+                <RenewButton
+                  onClick={() => setRenewConfirmOpen(true)}
+                  disabled={renewShareProfitListingMutation.isPending}
+                  tooltip="Renew Share Profit Listing"
+                />
+              )}
             </>
           );
         })()}
@@ -574,7 +618,11 @@ const ShareProfitListingDetailPage: React.FC = () => {
                 </Grid>
                 {shareProfitListing?.status?.expires_at && (
                   <Grid item xs={12}>
-                    <Typography variant="body2" color="textSecondary">
+                    <Typography
+                      variant="body2"
+                      color={shareProfitListing.status?.is_expired ? 'error' : 'textSecondary'}
+                      fontWeight={shareProfitListing.status?.is_expired ? 600 : 400}
+                    >
                       Expires: {formatDate(shareProfitListing.status.expires_at, 'display')}
                     </Typography>
                   </Grid>
@@ -749,6 +797,21 @@ const ShareProfitListingDetailPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmationDialog
+        open={renewConfirmOpen}
+        onClose={() => setRenewConfirmOpen(false)}
+        onConfirm={handleConfirmRenew}
+        title="Renew Share Profit Listing"
+        message={`Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`}
+        itemName={shareProfitListing?.title}
+        itemType="share profit listing"
+        action="custom"
+        actionLabel="Renew"
+        actionColor="warning"
+        isLoading={renewShareProfitListingMutation.isPending}
+        error={renewShareProfitListingMutation.error?.message}
+      />
     </Box>
   );
 };

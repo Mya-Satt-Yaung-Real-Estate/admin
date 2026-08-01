@@ -115,4 +115,19 @@ export const shareProfitListingsAPI = {
       method: 'POST',
       body: JSON.stringify({ action: 'reject', reason }),
     }),
+
+  /**
+   * Renew expired listing (extends expires_at by configured renewal days).
+   */
+  renew: (slug: string) =>
+    apiV2Request<{
+      listing: ShareProfitListing;
+      renewal_info: {
+        previous_expiry: string | null;
+        new_expiry: string | null;
+        duration_days: number;
+      };
+    }>(`/share-profit-listings/${slug}/renew`, {
+      method: 'POST',
+    }),
 };

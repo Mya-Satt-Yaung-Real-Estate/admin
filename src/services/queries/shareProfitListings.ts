@@ -218,3 +218,16 @@ export const useRejectShareProfitListing = () => {
     },
   });
 };
+
+export const useRenewShareProfitListing = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (slug: string) => shareProfitListingsAPI.renew(slug),
+    onSuccess: (_response, slug) => {
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.detail(slug) });
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.statistics() });
+    },
+  });
+};
