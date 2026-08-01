@@ -13,6 +13,7 @@ import {
   ListItemIcon,
   ListItemText,
   Chip,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -1168,6 +1169,12 @@ const ShareProfitListingListPage: React.FC = () => {
           onClick: handleAddShareProfitListing
         }}
       />
+
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Public users can view a listing only when it is <strong>Active</strong>,{' '}
+        <strong>not expired</strong>, <strong>Approved</strong>, and{' '}
+        <strong>Published</strong> (Published is the default on create).
+      </Alert>
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
