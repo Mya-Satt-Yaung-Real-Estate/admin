@@ -52,7 +52,6 @@ const ShareProfitListingCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const createShareProfitListingMutation = useCreateShareProfitListing();
   const [errors, setErrors] = useState<ShareProfitListingFormErrors>({});
-  const [showValidationSummary, setShowValidationSummary] = useState(false);
 
   // Master data queries
   const { data: propertyTypesResponse, isLoading: propertyTypesLoading } = usePropertyTypes();
@@ -147,6 +146,11 @@ const ShareProfitListingCreatePage: React.FC = () => {
      * Optional owner. Empty = current admin (API default).
      */
     user_id: null as number | null,
+    /**
+     * Default pending — admin can choose approved/rejected on create.
+     */
+    verification_status: 'pending' as 'pending' | 'approved' | 'rejected',
+    rejection_reason: '',
   });
 
   // Filter townships based on the selected region's ID
@@ -223,7 +227,6 @@ const ShareProfitListingCreatePage: React.FC = () => {
   const validateForm = (): boolean => {
     const nextErrors = validateShareProfitListingForm(formData, uploadedMedia.length);
     setErrors(nextErrors);
-    setShowValidationSummary(hasShareProfitListingFormErrors(nextErrors));
 
     if (hasShareProfitListingFormErrors(nextErrors)) {
       scrollToFirstShareProfitListingError(nextErrors);
@@ -267,6 +270,11 @@ const ShareProfitListingCreatePage: React.FC = () => {
         createData.user_id = formData.user_id;
       }
 
+      createData.verification_status = formData.verification_status || 'pending';
+      if (formData.verification_status === 'rejected' && formData.rejection_reason.trim()) {
+        createData.rejection_reason = formData.rejection_reason.trim();
+      }
+
       await createShareProfitListingMutation.mutateAsync(createData);
 
       navigate(`/share-profit-listings?success=${encodeURIComponent('Share profit listing created successfully!')}`);
@@ -276,7 +284,10 @@ const ShareProfitListingCreatePage: React.FC = () => {
       if (error?.errors) {
         const apiErrors = mapApiErrorsToFormErrors(error.errors);
         setErrors(apiErrors);
-        setShowValidationSummary(true);
+        /**
+         * Keep the mutation Alert as the real API message.
+         * Do not show a second "fix highlighted fields" banner near the selects.
+         */
         scrollToFirstShareProfitListingError(apiErrors);
         return;
       }
@@ -312,12 +323,6 @@ const ShareProfitListingCreatePage: React.FC = () => {
 
       {!createShareProfitListingMutation.isPending && (
         <form onSubmit={handleSubmit} noValidate>
-          {showValidationSummary && hasShareProfitListingFormErrors(errors) && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Please fix the highlighted fields below.
-            </Alert>
-          )}
-
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -457,6 +462,50 @@ const ShareProfitListingCreatePage: React.FC = () => {
                       </FormHelperText>
                     </FormControl>
                   </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth variant="outlined">
+                      <InputLabel id="verification-status-label" shrink>
+                        Verification Status
+                      </InputLabel>
+                      <Select
+                        labelId="verification-status-label"
+                        id="verification_status"
+                        name="verification_status"
+                        value={formData.verification_status}
+                        label="Verification Status"
+                        onChange={(e) =>
+                          handleSelectChange(
+                            'verification_status',
+                            e.target.value as 'pending' | 'approved' | 'rejected'
+                          )
+                        }
+                      >
+                        <MenuItem value="pending">Pending</MenuItem>
+                        <MenuItem value="approved">Approved</MenuItem>
+                        <MenuItem value="rejected">Rejected</MenuItem>
+                      </Select>
+                      <FormHelperText>
+                        Default is Pending. Choose Approved to skip review, or Rejected with a reason.
+                      </FormHelperText>
+                    </FormControl>
+                  </Grid>
+                  {formData.verification_status === 'rejected' && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        id="rejection_reason"
+                        label="Rejection Reason"
+                        name="rejection_reason"
+                        value={formData.rejection_reason}
+                        onChange={handleChange}
+                        required
+                        multiline
+                        rows={2}
+                        error={Boolean(errors.rejection_reason)}
+                        helperText={errors.rejection_reason || 'Required when status is Rejected.'}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
@@ -627,21 +676,27 @@ const ShareProfitListingCreatePage: React.FC = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
+                    id="min_area"
                     label="Min Area (sqft)"
                     name="min_area"
                     value={formData.min_area || ''}
                     onChange={handleChange}
                     type="number"
+                    error={Boolean(errors.min_area)}
+                    helperText={errors.min_area}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
+                    id="max_area"
                     label="Max Area (sqft)"
                     name="max_area"
                     value={formData.max_area || ''}
                     onChange={handleChange}
                     type="number"
+                    error={Boolean(errors.max_area)}
+                    helperText={errors.max_area}
                   />
                 </Grid>
               </Grid>

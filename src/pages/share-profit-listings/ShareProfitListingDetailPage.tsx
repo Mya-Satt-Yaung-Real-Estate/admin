@@ -10,6 +10,11 @@ import {
   Button,
   IconButton,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -31,7 +36,14 @@ import {
   Email as EmailIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useShareProfitListing, useDeleteShareProfitListing, useRestoreShareProfitListing, useToggleShareProfitListingStatus } from '../../services/queries/shareProfitListings';
+import {
+  useShareProfitListing,
+  useDeleteShareProfitListing,
+  useRestoreShareProfitListing,
+  useToggleShareProfitListingStatus,
+  useApproveShareProfitListing,
+  useRejectShareProfitListing,
+} from '../../services/queries/shareProfitListings';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ActionAlert, ConfirmationDialog } from '../../components/ui';
@@ -47,6 +59,8 @@ const ShareProfitListingDetailPage: React.FC = () => {
   const deleteShareProfitListingMutation = useDeleteShareProfitListing();
   const restoreShareProfitListingMutation = useRestoreShareProfitListing();
   const toggleShareProfitListingStatusMutation = useToggleShareProfitListingStatus();
+  const approveShareProfitListingMutation = useApproveShareProfitListing();
+  const rejectShareProfitListingMutation = useRejectShareProfitListing();
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -64,6 +78,11 @@ const ShareProfitListingDetailPage: React.FC = () => {
 
   // Toggle status confirmation state
   const [toggleStatusConfirmOpen, setToggleStatusConfirmOpen] = useState(false);
+
+  // Verification dialogs
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Extract share profit listing data
   const shareProfitListing = shareProfitListingResponse?.data;
@@ -138,6 +157,36 @@ const ShareProfitListingDetailPage: React.FC = () => {
       refetch();
     } catch (error: any) {
       showError(error.message || 'Failed to toggle status. Please try again.', true);
+    }
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!shareProfitListing) return;
+
+    try {
+      await approveShareProfitListingMutation.mutateAsync(shareProfitListing.slug);
+      showSuccess(`${shareProfitListing.title} approved successfully!`, true);
+      setApproveDialogOpen(false);
+      refetch();
+    } catch (error: any) {
+      showError(error.message || 'Failed to approve share profit listing. Please try again.', true);
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (!shareProfitListing || !rejectionReason.trim()) return;
+
+    try {
+      await rejectShareProfitListingMutation.mutateAsync({
+        slug: shareProfitListing.slug,
+        reason: rejectionReason.trim(),
+      });
+      showSuccess(`${shareProfitListing.title} rejected successfully!`, true);
+      setRejectDialogOpen(false);
+      setRejectionReason('');
+      refetch();
+    } catch (error: any) {
+      showError(error.message || 'Failed to reject share profit listing. Please try again.', true);
     }
   };
 
@@ -230,6 +279,29 @@ const ShareProfitListingDetailPage: React.FC = () => {
           ) : (
             // For active records, show status, edit, and delete buttons
             <>
+              {shareProfitListing.status?.verification_status === 'pending' && (
+                <>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<CheckCircleIcon />}
+                    onClick={() => setApproveDialogOpen(true)}
+                    disabled={approveShareProfitListingMutation.isPending}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<CancelIcon />}
+                    onClick={() => setRejectDialogOpen(true)}
+                    disabled={rejectShareProfitListingMutation.isPending}
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+
               <Tooltip title={shareProfitListing.is_active ? "Disable Share Profit Listing" : "Enable Share Profit Listing"}>
                 <IconButton
                   color={shareProfitListing.is_active ? "error" : "success"}
@@ -275,11 +347,21 @@ const ShareProfitListingDetailPage: React.FC = () => {
                   <Typography variant="h6" color="textSecondary" gutterBottom>
                     {shareProfitListing?.description || 'N/A'}
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
                     <StatusChip status={shareProfitListing?.status?.status || 'unknown'} />
+                    <StatusChip
+                      status={shareProfitListing?.status?.verification_status || 'pending'}
+                      statusType="verification_status"
+                    />
                     <StatusChip status={shareProfitListing?.wanted_type || 'unknown'} />
                     <StatusChip status={shareProfitListing?.is_active ? 'active' : 'inactive'} />
                   </Box>
+                  {shareProfitListing?.status?.verification_status === 'rejected' &&
+                    shareProfitListing?.status?.rejection_reason && (
+                      <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                        Rejection reason: {shareProfitListing.status.rejection_reason}
+                      </Typography>
+                    )}
                 </Box>
               </Box>
 
@@ -587,6 +669,86 @@ const ShareProfitListingDetailPage: React.FC = () => {
         isLoading={toggleShareProfitListingStatusMutation.isPending}
         error={toggleShareProfitListingStatusMutation.error?.message}
       />
+
+      <Dialog
+        open={approveDialogOpen}
+        onClose={() => setApproveDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Approve Share Profit Listing</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Are you sure you want to approve this share profit listing?
+          </Typography>
+          <Typography variant="body1" fontWeight="500">
+            {shareProfitListing?.title}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setApproveDialogOpen(false)}
+            disabled={approveShareProfitListingMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmApprove}
+            color="success"
+            variant="contained"
+            disabled={approveShareProfitListingMutation.isPending}
+          >
+            {approveShareProfitListingMutation.isPending ? 'Approving...' : 'Approve'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={rejectDialogOpen}
+        onClose={() => {
+          setRejectDialogOpen(false);
+          setRejectionReason('');
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Reject Share Profit Listing</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Rejecting: <strong>{shareProfitListing?.title}</strong>
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Rejection Reason"
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Enter the reason for rejection..."
+            error={rejectionReason.trim() === ''}
+            helperText={rejectionReason.trim() === '' ? 'Rejection reason is required' : ''}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setRejectDialogOpen(false);
+              setRejectionReason('');
+            }}
+            disabled={rejectShareProfitListingMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmReject}
+            color="error"
+            variant="contained"
+            disabled={rejectShareProfitListingMutation.isPending || rejectionReason.trim() === ''}
+          >
+            {rejectShareProfitListingMutation.isPending ? 'Rejecting...' : 'Reject'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

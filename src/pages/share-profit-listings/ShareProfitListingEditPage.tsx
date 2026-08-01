@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -21,9 +21,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useShareProfitListing, useUpdateShareProfitListing } from '../../services/queries/shareProfitListings';
 import { usePropertyTypes } from '../../services/queries/properties';
 import { useRegions, useTownships } from '../../services/queries/locations';
+import { useUsers } from '../../services/queries/users';
 import { MediaUpload } from '../../components/ui';
 import PageHeader from '../../components/layout/PageHeader';
 import { Media } from '../../types/media';
+import { getUserSelectLabel, RegularUser } from '../../types/user';
 import { UpdateShareProfitListingData } from '../../types/shareProfitListing';
 import {
   ShareProfitListingFormErrorField,
@@ -51,12 +53,18 @@ const ShareProfitListingEditPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const updateShareProfitListingMutation = useUpdateShareProfitListing();
   const [errors, setErrors] = React.useState<ShareProfitListingFormErrors>({});
-  const [showValidationSummary, setShowValidationSummary] = React.useState(false);
 
   // Master data queries
   const { data: propertyTypesResponse, isLoading: propertyTypesLoading } = usePropertyTypes();
   const { data: regionsResponse, isLoading: regionsLoading } = useRegions();
   const { data: townshipsResponse } = useTownships();
+  /**
+   * Active individual + company users only (admins already excluded by users API).
+   */
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({
+    status: 'active',
+    per_page: 20,
+  });
 
   /**
    * Existing photos from API + newly uploaded ones.
@@ -90,6 +98,42 @@ const ShareProfitListingEditPage: React.FC = () => {
     error,
   } = useShareProfitListing(slug!);
 
+  const listing = shareProfitListingResponse?.data;
+
+  const ownerUsers = useMemo(() => {
+    const rawUsers: RegularUser[] = Array.isArray((usersResponse as any)?.data)
+      ? (usersResponse as any).data
+      : Array.isArray(usersResponse)
+        ? (usersResponse as RegularUser[])
+        : [];
+
+    const filtered = rawUsers.filter(
+      (user) => user.user_type === 'individual' || user.user_type === 'company'
+    );
+
+    /**
+     * Keep current owner in the list even if they are admin / not in the filtered set.
+     */
+    const currentOwnerId = listing?.user?.id;
+    if (
+      currentOwnerId &&
+      listing?.user &&
+      !filtered.some((user) => user.id === currentOwnerId)
+    ) {
+      filtered.unshift({
+        id: listing.user.id,
+        name: listing.user.name,
+        email: listing.user.email,
+        phone: '',
+        user_type: listing.user.user_type as RegularUser['user_type'],
+        member_level: listing.user.member_level,
+        status: 'active',
+      } as RegularUser);
+    }
+
+    return filtered;
+  }, [usersResponse, listing]);
+
   // Form state initialized from share profit listing data
   const [formData, setFormData] = React.useState({
     wanted_type: 'share_profit',
@@ -108,6 +152,9 @@ const ShareProfitListingEditPage: React.FC = () => {
     name: '',
     email: '',
     phone: '',
+    verification_status: 'pending' as 'pending' | 'approved' | 'rejected',
+    rejection_reason: '',
+    user_id: null as number | null,
   });
 
   // Filter townships based on selected region using useMemo
@@ -156,6 +203,13 @@ const ShareProfitListingEditPage: React.FC = () => {
         name: shareProfitListing.contact?.name || '',
         email: shareProfitListing.contact?.email || '',
         phone: shareProfitListing.contact?.phone || '',
+        verification_status: (['pending', 'approved', 'rejected'].includes(
+          shareProfitListing.status?.verification_status
+        )
+          ? shareProfitListing.status.verification_status
+          : 'pending') as 'pending' | 'approved' | 'rejected',
+        rejection_reason: shareProfitListing.status?.rejection_reason || '',
+        user_id: shareProfitListing.user?.id ?? null,
       });
 
       const images = shareProfitListing.media?.images || [];
@@ -248,7 +302,6 @@ const ShareProfitListingEditPage: React.FC = () => {
   const validateForm = (mediaCount: number): boolean => {
     const nextErrors = validateShareProfitListingForm(formData, mediaCount);
     setErrors(nextErrors);
-    setShowValidationSummary(hasShareProfitListingFormErrors(nextErrors));
 
     if (hasShareProfitListingFormErrors(nextErrors)) {
       scrollToFirstShareProfitListingError(nextErrors);
@@ -291,8 +344,17 @@ const ShareProfitListingEditPage: React.FC = () => {
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         status: (listing.status?.status as 'published' | 'draft' | 'closed') || 'published',
+        verification_status: formData.verification_status || 'pending',
         media_ids: allMedia.map((media) => media.id),
       };
+
+      if (formData.user_id) {
+        updateData.user_id = formData.user_id;
+      }
+
+      if (formData.verification_status === 'rejected') {
+        updateData.rejection_reason = formData.rejection_reason.trim();
+      }
 
       await updateShareProfitListingMutation.mutateAsync({ slug: slug!, data: updateData });
 
@@ -303,7 +365,10 @@ const ShareProfitListingEditPage: React.FC = () => {
       if (error?.errors) {
         const apiErrors = mapApiErrorsToFormErrors(error.errors);
         setErrors(apiErrors);
-        setShowValidationSummary(true);
+        /**
+         * Keep the mutation Alert as the real API message.
+         * Do not show a second "fix highlighted fields" banner near the selects.
+         */
         scrollToFirstShareProfitListingError(apiErrors);
       }
     }
@@ -367,12 +432,6 @@ const ShareProfitListingEditPage: React.FC = () => {
 
       {!updateShareProfitListingMutation.isPending && (
         <form onSubmit={handleSubmit} noValidate>
-          {showValidationSummary && hasShareProfitListingFormErrors(errors) && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              Please fix the highlighted fields below.
-            </Alert>
-          )}
-
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -452,6 +511,97 @@ const ShareProfitListingEditPage: React.FC = () => {
                     )}
                   </FormControl>
                 </Grid>
+                <Grid item xs={12}>
+                  <FormControl fullWidth variant="outlined">
+                    <InputLabel id="owner-user-label" shrink>
+                      Owner User
+                    </InputLabel>
+                    <Select
+                      labelId="owner-user-label"
+                      id="user_id"
+                      name="user_id"
+                      value={formData.user_id ?? ''}
+                      label="Owner User"
+                      disabled={usersLoading}
+                      displayEmpty
+                      renderValue={(selected) => {
+                        if (!selected) {
+                          return (
+                            <Box component="span" sx={emptySelectPlaceholderSx}>
+                              Keep current owner
+                            </Box>
+                          );
+                        }
+
+                        const selectedUser = ownerUsers.find((user) => user.id === Number(selected));
+                        return selectedUser ? getUserSelectLabel(selectedUser) : '';
+                      }}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({
+                          ...formData,
+                          user_id: value === '' ? null : Number(value),
+                        });
+                      }}
+                    >
+                      <MenuItem value="">
+                        <em>Keep current owner</em>
+                      </MenuItem>
+                      {ownerUsers.map((user) => (
+                        <MenuItem key={user.id} value={user.id}>
+                          {getUserSelectLabel(user)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    <FormHelperText>
+                      Active individual and company users. Current owner stays selected when the page loads.
+                    </FormHelperText>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth variant="outlined">
+                    <InputLabel id="verification-status-label" shrink>
+                      Verification Status
+                    </InputLabel>
+                    <Select
+                      labelId="verification-status-label"
+                      id="verification_status"
+                      name="verification_status"
+                      value={formData.verification_status}
+                      label="Verification Status"
+                      onChange={(e) =>
+                        handleSelectChange(
+                          'verification_status',
+                          e.target.value as 'pending' | 'approved' | 'rejected'
+                        )
+                      }
+                    >
+                      <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="approved">Approved</MenuItem>
+                      <MenuItem value="rejected">Rejected</MenuItem>
+                    </Select>
+                    <FormHelperText>
+                      Change to Pending, Approved, or Rejected without using the detail Approve/Reject actions.
+                    </FormHelperText>
+                  </FormControl>
+                </Grid>
+                {formData.verification_status === 'rejected' && (
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      id="rejection_reason"
+                      label="Rejection Reason"
+                      name="rejection_reason"
+                      value={formData.rejection_reason}
+                      onChange={handleChange}
+                      required
+                      multiline
+                      rows={2}
+                      error={Boolean(errors.rejection_reason)}
+                      helperText={errors.rejection_reason || 'Required when status is Rejected.'}
+                    />
+                  </Grid>
+                )}
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -621,21 +771,27 @@ const ShareProfitListingEditPage: React.FC = () => {
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
+                    id="min_area"
                     label="Min Area (sqft)"
                     name="min_area"
                     value={formData.min_area || ''}
                     onChange={handleChange}
                     type="number"
+                    error={Boolean(errors.min_area)}
+                    helperText={errors.min_area}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
+                    id="max_area"
                     label="Max Area (sqft)"
                     name="max_area"
                     value={formData.max_area || ''}
                     onChange={handleChange}
                     type="number"
+                    error={Boolean(errors.max_area)}
+                    helperText={errors.max_area}
                   />
                 </Grid>
               </Grid>

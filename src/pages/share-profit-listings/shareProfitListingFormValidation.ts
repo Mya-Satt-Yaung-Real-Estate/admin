@@ -11,9 +11,13 @@ export interface ShareProfitListingFormValues {
   township_id: number | null;
   min_budget: number;
   max_budget: number;
+  min_area?: number;
+  max_area?: number;
   name: string;
   email: string;
   phone: string;
+  verification_status?: 'pending' | 'approved' | 'rejected';
+  rejection_reason?: string;
 }
 
 export type ShareProfitListingFormErrorField =
@@ -25,10 +29,13 @@ export type ShareProfitListingFormErrorField =
   | 'township_id'
   | 'min_budget'
   | 'max_budget'
+  | 'min_area'
+  | 'max_area'
   | 'name'
   | 'email'
   | 'phone'
-  | 'media_ids';
+  | 'media_ids'
+  | 'rejection_reason';
 
 export type ShareProfitListingFormErrors = Partial<
   Record<ShareProfitListingFormErrorField, string>
@@ -39,11 +46,14 @@ const ALLOWED_WANTED_TYPES = ['buyer', 'renter', 'seller', 'share_profit'];
 const FIELD_ORDER: ShareProfitListingFormErrorField[] = [
   'wanted_type',
   'property_type_id',
+  'rejection_reason',
   'title',
   'region_id',
   'township_id',
   'min_budget',
   'max_budget',
+  'min_area',
+  'max_area',
   'media_ids',
   'name',
   'email',
@@ -62,6 +72,10 @@ export function validateShareProfitListingForm(
 
   if (!formData.property_type_id) {
     errors.property_type_id = 'Property type is required';
+  }
+
+  if (formData.verification_status === 'rejected' && !formData.rejection_reason?.trim()) {
+    errors.rejection_reason = 'Rejection reason is required';
   }
 
   if (!formData.title.trim()) {
@@ -92,6 +106,13 @@ export function validateShareProfitListingForm(
     errors.max_budget = 'Max budget must be greater than or equal to min budget';
   }
 
+  const minArea = formData.min_area ?? 0;
+  const maxArea = formData.max_area ?? 0;
+  if (minArea > 0 && maxArea > 0 && minArea > maxArea) {
+    errors.min_area = 'Minimum area must be less than or equal to maximum area';
+    errors.max_area = 'Maximum area must be greater than or equal to minimum area';
+  }
+
   if (!formData.name.trim()) {
     errors.name = 'Full name is required';
   }
@@ -111,12 +132,20 @@ export function validateShareProfitListingForm(
   return errors;
 }
 
+/**
+ * Only keep API keys that match known form fields (ignore unrelated keys).
+ */
 export function mapApiErrorsToFormErrors(
   apiErrors: Record<string, string[]>
 ): ShareProfitListingFormErrors {
+  const allowedFields = new Set<string>(FIELD_ORDER);
   const errors: ShareProfitListingFormErrors = {};
 
   Object.entries(apiErrors).forEach(([field, messages]) => {
+    if (!allowedFields.has(field)) {
+      return;
+    }
+
     const message = Array.isArray(messages) ? messages[0] : String(messages);
     errors[field as ShareProfitListingFormErrorField] = message;
   });

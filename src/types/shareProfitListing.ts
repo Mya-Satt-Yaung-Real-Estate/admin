@@ -58,6 +58,8 @@ export interface Status {
   is_expired: boolean;
   is_published: boolean;
   expires_at: string | null;
+  verified_at?: string | null;
+  rejection_reason?: string | null;
 }
 
 export interface User {
@@ -142,6 +144,14 @@ export interface CreateShareProfitListingData {
    * Optional owner. If omitted, API uses current admin.
    */
   user_id?: number | null;
+  /**
+   * Admin create: pending | approved | rejected. Omit → API defaults to pending.
+   */
+  verification_status?: 'pending' | 'approved' | 'rejected';
+  /**
+   * Required when verification_status is rejected.
+   */
+  rejection_reason?: string | null;
   media_ids: number[];
 }
 
@@ -163,5 +173,17 @@ export interface UpdateShareProfitListingData {
   phone?: string;
   email?: string;
   status?: 'draft' | 'published' | 'closed';
+  /**
+   * Admin edit: pending | approved | rejected.
+   */
+  verification_status?: 'pending' | 'approved' | 'rejected';
+  /**
+   * Required when verification_status is rejected.
+   */
+  rejection_reason?: string | null;
+  /**
+   * Optional owner change. If omitted, API keeps current owner.
+   */
+  user_id?: number | null;
   media_ids: number[];
 }

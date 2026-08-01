@@ -10,6 +10,7 @@ import {
 
 export interface ShareProfitListingQueryParams extends QueryParams {
   wanted_type?: string;
+  verification_status?: string;
   property_type_id?: number;
   prefer_region_id?: number;
   prefer_township_id?: number;
@@ -96,4 +97,22 @@ export const shareProfitListingsAPI = {
 
   forceDelete: (slug: string) =>
     apiV2Request(`/share-profit-listings/${slug}/force`, { method: 'DELETE' }),
+
+  /**
+   * Approve listing (Admin verification).
+   */
+  approve: (slug: string) =>
+    apiV2Request<ShareProfitListing>(`/share-profit-listings/${slug}/verification`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'approve' }),
+    }),
+
+  /**
+   * Reject listing with required reason (Admin verification).
+   */
+  reject: (slug: string, reason: string) =>
+    apiV2Request<ShareProfitListing>(`/share-profit-listings/${slug}/verification`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'reject', reason }),
+    }),
 };

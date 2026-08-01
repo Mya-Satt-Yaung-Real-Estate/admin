@@ -37,7 +37,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert } from '../../components/ui';
+import { Pagination, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, StatusChip } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useShareProfitListings, useShareProfitListingStatistics, useDeleteShareProfitListing, useRestoreShareProfitListing, useToggleShareProfitListingStatus } from '../../services/queries/shareProfitListings';
 import { usePropertyTypes } from '../../services/queries/properties';
@@ -53,6 +53,7 @@ import { formatDate } from '../../constants/dateFormats';
 interface ShareProfitListingFilters extends FilterState {
   searchTerm: string;
   typeFilter: string;
+  verificationFilter: string;
   regionFilter: string;
   townshipFilter: string;
   propertyTypeFilter: string;
@@ -108,6 +109,7 @@ const ShareProfitListingListPage: React.FC = () => {
   const { filters, setFilter } = useFilters<ShareProfitListingFilters>({
     searchTerm: '', // This will be overridden by manual search
     typeFilter: 'all',
+    verificationFilter: 'all',
     regionFilter: 'all',
     townshipFilter: 'all',
     propertyTypeFilter: 'all',
@@ -192,6 +194,7 @@ const ShareProfitListingListPage: React.FC = () => {
     per_page: 100, // Fetch a large number of records to ensure we have enough after classification
     search: searchTerm || undefined, // Use manual search term
     wanted_type: filters.typeFilter !== 'all' ? filters.typeFilter : undefined,
+    verification_status: filters.verificationFilter !== 'all' ? filters.verificationFilter : undefined,
     property_type_id: filters.propertyTypeFilter !== 'all' && !isNaN(Number(filters.propertyTypeFilter)) ? Number(filters.propertyTypeFilter) : undefined,
     prefer_region_id: filters.regionFilter !== 'all' && !isNaN(Number(filters.regionFilter)) ? Number(filters.regionFilter) : undefined,
     prefer_township_id: filters.townshipFilter !== 'all' && !isNaN(Number(filters.townshipFilter)) ? Number(filters.townshipFilter) : undefined,
@@ -396,6 +399,17 @@ const ShareProfitListingListPage: React.FC = () => {
         ],
       },
       {
+        key: 'verificationFilter',
+        type: 'select',
+        label: 'Verification',
+        options: [
+          { value: 'all', label: 'All Status' },
+          { value: 'pending', label: 'Pending' },
+          { value: 'approved', label: 'Approved' },
+          { value: 'rejected', label: 'Rejected' },
+        ],
+      },
+      {
         key: 'propertyTypeFilter',
         type: 'select',
         label: 'Property Type',
@@ -481,12 +495,24 @@ const ShareProfitListingListPage: React.FC = () => {
       color: 'primary',
       icon: <HomeIcon />,
     },
-    // {
-    //   title: 'Published',
-    //   value: statistics?.data?.published || 0,
-    //   color: 'success',
-    //   icon: <CheckCircleIcon />,
-    // },
+    {
+      title: 'Pending',
+      value: statistics?.data?.pending || 0,
+      color: 'warning',
+      icon: <CancelIcon />,
+    },
+    {
+      title: 'Approved',
+      value: statistics?.data?.approved || 0,
+      color: 'success',
+      icon: <CheckCircleIcon />,
+    },
+    {
+      title: 'Rejected',
+      value: statistics?.data?.rejected || 0,
+      color: 'error',
+      icon: <CancelIcon />,
+    },
     {
       title: 'Buyers',
       value: statistics?.data?.by_type?.buyer || 0,
@@ -581,6 +607,25 @@ const ShareProfitListingListPage: React.FC = () => {
                 px: 1,
               }
             }}
+          />
+        );
+      },
+      hidden: isMobile,
+    },
+    {
+      id: 'verification',
+      label: 'Verification',
+      render: (_value, shareProfitListing) => {
+        if (!shareProfitListing || typeof shareProfitListing !== 'object') {
+          return <Typography variant="body2">No data</Typography>;
+        }
+
+        const verificationStatus = shareProfitListing.status?.verification_status || 'pending';
+
+        return (
+          <StatusChip
+            status={verificationStatus}
+            statusType="verification_status"
           />
         );
       },
@@ -1056,6 +1101,7 @@ const ShareProfitListingListPage: React.FC = () => {
 
     // Reset all filters to default values
     setFilter('typeFilter', 'all');
+    setFilter('verificationFilter', 'all');
     setFilter('regionFilter', 'all');
     setFilter('townshipFilter', 'all');
     setFilter('propertyTypeFilter', 'all');

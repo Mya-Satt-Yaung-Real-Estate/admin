@@ -191,3 +191,30 @@ export const useForceDeleteShareProfitListing = () => {
     },
   });
 };
+
+export const useApproveShareProfitListing = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (slug: string) => shareProfitListingsAPI.approve(slug),
+    onSuccess: (response, slug) => {
+      queryClient.setQueryData(shareProfitListingKeys.detail(slug), response);
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.statistics() });
+    },
+  });
+};
+
+export const useRejectShareProfitListing = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, reason }: { slug: string; reason: string }) =>
+      shareProfitListingsAPI.reject(slug, reason),
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(shareProfitListingKeys.detail(variables.slug), response);
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: shareProfitListingKeys.statistics() });
+    },
+  });
+};
