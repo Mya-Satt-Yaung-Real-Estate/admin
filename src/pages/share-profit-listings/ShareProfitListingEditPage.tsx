@@ -27,6 +27,7 @@ import { MediaUpload } from '../../components/ui';
 import PageHeader from '../../components/layout/PageHeader';
 import { Media } from '../../types/media';
 import { getUserSelectLabel, RegularUser } from '../../types/user';
+import { MEMBER_LEVELS, MemberLevel } from '../../constants/memberLevels';
 import { UpdateShareProfitListingData } from '../../types/shareProfitListing';
 import {
   ShareProfitListingFormErrorField,
@@ -121,15 +122,27 @@ const ShareProfitListingEditPage: React.FC = () => {
       listing?.user &&
       !filtered.some((user) => user.id === currentOwnerId)
     ) {
+      /**
+       * Display-only stub so Autocomplete can show the current owner.
+       * Fill required RegularUser fields with safe defaults for tsc.
+       */
       filtered.unshift({
         id: listing.user.id,
         name: listing.user.name,
+        slug: '',
         email: listing.user.email,
         phone: '',
         user_type: listing.user.user_type as RegularUser['user_type'],
-        member_level: listing.user.member_level,
-        status: 'active',
-      } as RegularUser);
+        member_level: (listing.user.member_level as MemberLevel) || MEMBER_LEVELS.BASIC,
+        is_active: true,
+        created_at: '',
+        updated_at: '',
+        property_count: 0,
+        point_balance: 0,
+        total_points_allocated: 0,
+        total_points_consumed: 0,
+        point_packages_count: 0,
+      });
     }
 
     return filtered;
