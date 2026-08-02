@@ -68,6 +68,7 @@ export interface User {
   email: string;
   user_type: string;
   member_level: string;
+  company_name?: string | null;
 }
 
 export interface MediaImage {

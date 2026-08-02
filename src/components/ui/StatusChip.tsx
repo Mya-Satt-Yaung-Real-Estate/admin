@@ -63,6 +63,11 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         // Appointment statuses
         confirmed: 'Confirmed',
         completed: 'Completed',
+        // Share profit / wanted listing types
+        buyer: 'Buyer',
+        renter: 'Renter',
+        seller: 'Seller',
+        share_profit: 'Share Profit',
       };
       return statusMap[status] || status;
     }

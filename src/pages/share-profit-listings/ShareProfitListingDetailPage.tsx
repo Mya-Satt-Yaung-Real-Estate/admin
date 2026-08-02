@@ -663,7 +663,17 @@ const ShareProfitListingDetailPage: React.FC = () => {
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={12}>
+                  {shareProfitListing.user.user_type === 'company' && (
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                        <BusinessIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                        <Typography variant="body2" fontWeight="500">
+                          Company Name: {shareProfitListing.user.company_name || 'N/A'}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
+                  <Grid item xs={12} sm={6}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                       <PersonIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                       <Typography variant="body2" fontWeight="500">

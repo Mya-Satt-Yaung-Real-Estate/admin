@@ -15,6 +15,7 @@ import {
   Alert,
   CircularProgress,
   FormHelperText,
+  Autocomplete,
 } from '@mui/material';
 import { Edit as EditIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -511,50 +512,35 @@ const ShareProfitListingEditPage: React.FC = () => {
                     )}
                   </FormControl>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid item xs={12} md={6}>
                   <FormControl fullWidth variant="outlined">
-                    <InputLabel id="owner-user-label" shrink>
-                      Owner User
-                    </InputLabel>
-                    <Select
-                      labelId="owner-user-label"
+                    <Autocomplete
                       id="user_id"
-                      name="user_id"
-                      value={formData.user_id ?? ''}
-                      label="Owner User"
-                      disabled={usersLoading}
-                      displayEmpty
-                      renderValue={(selected) => {
-                        if (!selected) {
-                          return (
-                            <Box component="span" sx={emptySelectPlaceholderSx}>
-                              Keep current owner
-                            </Box>
-                          );
-                        }
-
-                        const selectedUser = ownerUsers.find((user) => user.id === Number(selected));
-                        return selectedUser ? getUserSelectLabel(selectedUser) : '';
-                      }}
-                      onChange={(e) => {
-                        const value = e.target.value;
+                      options={ownerUsers}
+                      loading={usersLoading}
+                      value={ownerUsers.find((user) => user.id === formData.user_id) ?? null}
+                      onChange={(_event, selectedUser) => {
                         setFormData({
                           ...formData,
-                          user_id: value === '' ? null : Number(value),
+                          user_id: selectedUser?.id ?? null,
                         });
                       }}
-                    >
-                      <MenuItem value="">
-                        <em>Keep current owner</em>
-                      </MenuItem>
-                      {ownerUsers.map((user) => (
-                        <MenuItem key={user.id} value={user.id}>
-                          {getUserSelectLabel(user)}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                      getOptionLabel={(user) => getUserSelectLabel(user)}
+                      isOptionEqualToValue={(option, value) => option.id === value.id}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Owner User"
+                          placeholder="Search name or phone..."
+                          InputLabelProps={{
+                            ...params.InputLabelProps,
+                            shrink: true,
+                          }}
+                        />
+                      )}
+                    />
                     <FormHelperText>
-                      Active individual and company users. Current owner stays selected when the page loads.
+                      Active individual and company users. Clear to keep the current owner on save.
                     </FormHelperText>
                   </FormControl>
                 </Grid>
