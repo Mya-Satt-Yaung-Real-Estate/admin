@@ -53,6 +53,11 @@ export const shareProfitListingsAPI = {
         seller: number;
         share_profit: number;
       };
+      renewal?: {
+        days: number;
+        points_enabled: boolean;
+        point_cost: number;
+      };
     }>('/share-profit-listings/statistics');
   },
 
@@ -126,6 +131,8 @@ export const shareProfitListingsAPI = {
         previous_expiry: string | null;
         new_expiry: string | null;
         duration_days: number;
+        points_enabled?: boolean;
+        points_consumed?: number;
       };
     }>(`/share-profit-listings/${slug}/renew`, {
       method: 'POST',

@@ -44,8 +44,8 @@ import {
   useApproveShareProfitListing,
   useRejectShareProfitListing,
   useRenewShareProfitListing,
+  useShareProfitListingStatistics,
 } from '../../services/queries/shareProfitListings';
-import { useConfiguration } from '../../services/queries/systemConfiguration';
 import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ActionAlert, ConfirmationDialog, RenewButton } from '../../components/ui';
@@ -64,6 +64,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
   const approveShareProfitListingMutation = useApproveShareProfitListing();
   const rejectShareProfitListingMutation = useRejectShareProfitListing();
   const renewShareProfitListingMutation = useRenewShareProfitListing();
+  const { data: statistics } = useShareProfitListingStatistics();
 
   // Restore confirmation state
   const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
@@ -77,18 +78,9 @@ const ShareProfitListingDetailPage: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [renewConfirmOpen, setRenewConfirmOpen] = useState(false);
 
-  /**
-   * Load renewal days only when renew dialog is open.
-   */
-  const { data: renewalConfigResponse } = useConfiguration(
-    renewConfirmOpen ? 'share_profit_listing.renewal_days' : ''
-  );
-  const renewalDays =
-    Number(
-      renewalConfigResponse?.data?.typed_value ??
-        renewalConfigResponse?.data?.config_value ??
-        30
-    ) || 30;
+  const renewalDays = statistics?.data?.renewal?.days ?? 30;
+  const renewalPointsEnabled = Boolean(statistics?.data?.renewal?.points_enabled);
+  const renewalPointCost = statistics?.data?.renewal?.point_cost ?? 0;
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -214,9 +206,12 @@ const ShareProfitListingDetailPage: React.FC = () => {
       const response = await renewShareProfitListingMutation.mutateAsync(shareProfitListing.slug);
       const newExpiry = response.data?.renewal_info?.new_expiry;
       const expiryDate = newExpiry ? new Date(newExpiry).toLocaleDateString() : 'N/A';
+      const pointsConsumed = response.data?.renewal_info?.points_consumed ?? 0;
 
       showSuccess(
-        `${shareProfitListing.title} renewed successfully! New expiry: ${expiryDate}`,
+        pointsConsumed > 0
+          ? `${shareProfitListing.title} renewed! New expiry: ${expiryDate}. Points used: ${pointsConsumed}.`
+          : `${shareProfitListing.title} renewed successfully! New expiry: ${expiryDate}`,
         true
       );
       setRenewConfirmOpen(false);
@@ -803,7 +798,11 @@ const ShareProfitListingDetailPage: React.FC = () => {
         onClose={() => setRenewConfirmOpen(false)}
         onConfirm={handleConfirmRenew}
         title="Renew Share Profit Listing"
-        message={`Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`}
+        message={
+          renewalPointsEnabled
+            ? `Extend expiry by ${renewalDays} days. Listing owner will be charged ${renewalPointCost} points first, then renew. Active status is not changed.`
+            : `Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`
+        }
         itemName={shareProfitListing?.title}
         itemType="share profit listing"
         action="custom"

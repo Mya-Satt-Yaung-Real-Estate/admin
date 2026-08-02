@@ -42,7 +42,6 @@ import { MobileCard, MobileCardAction } from '../../components/common/MobileCard
 import { Pagination, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ConfirmationDialog, ActionAlert, StatusChip } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useShareProfitListings, useShareProfitListingStatistics, useDeleteShareProfitListing, useRestoreShareProfitListing, useToggleShareProfitListingStatus, useRenewShareProfitListing } from '../../services/queries/shareProfitListings';
-import { useConfiguration } from '../../services/queries/systemConfiguration';
 import { usePropertyTypes } from '../../services/queries/properties';
 import { useRegions, useTownships } from '../../services/queries/locations';
 import { FilterState } from '../../constants/filters';
@@ -227,18 +226,9 @@ const ShareProfitListingListPage: React.FC = () => {
   const toggleShareProfitListingStatusMutation = useToggleShareProfitListingStatus();
   const renewShareProfitListingMutation = useRenewShareProfitListing();
 
-  /**
-   * Load renewal days only when renew dialog is open.
-   */
-  const { data: renewalConfigResponse } = useConfiguration(
-    renewConfirmOpen ? 'share_profit_listing.renewal_days' : ''
-  );
-  const renewalDays =
-    Number(
-      renewalConfigResponse?.data?.typed_value ??
-        renewalConfigResponse?.data?.config_value ??
-        30
-    ) || 30;
+  const renewalDays = statistics?.data?.renewal?.days ?? 30;
+  const renewalPointsEnabled = Boolean(statistics?.data?.renewal?.points_enabled);
+  const renewalPointCost = statistics?.data?.renewal?.point_cost ?? 0;
 
   // Alert system hook
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
@@ -1085,9 +1075,12 @@ const ShareProfitListingListPage: React.FC = () => {
       const response = await renewShareProfitListingMutation.mutateAsync(shareProfitListingToRenew.slug);
       const newExpiry = response.data?.renewal_info?.new_expiry;
       const expiryDate = newExpiry ? new Date(newExpiry).toLocaleDateString() : 'N/A';
+      const pointsConsumed = response.data?.renewal_info?.points_consumed ?? 0;
 
       showSuccess(
-        `${shareProfitListingToRenew.title} renewed successfully! New expiry: ${expiryDate}`,
+        pointsConsumed > 0
+          ? `${shareProfitListingToRenew.title} renewed! New expiry: ${expiryDate}. Points used: ${pointsConsumed}.`
+          : `${shareProfitListingToRenew.title} renewed successfully! New expiry: ${expiryDate}`,
         true
       );
       setRenewConfirmOpen(false);
@@ -1499,7 +1492,11 @@ const ShareProfitListingListPage: React.FC = () => {
         }}
         onConfirm={handleConfirmRenew}
         title="Renew Share Profit Listing"
-        message={`Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`}
+        message={
+          renewalPointsEnabled
+            ? `Extend expiry by ${renewalDays} days. Listing owner will be charged ${renewalPointCost} points first, then renew. Active status is not changed.`
+            : `Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`
+        }
         itemName={shareProfitListingToRenew?.title}
         itemType="share profit listing"
         action="custom"
