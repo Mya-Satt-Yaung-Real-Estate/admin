@@ -49,9 +49,9 @@ export const shareProfitListingsAPI = {
       rejected: number;
       by_type: {
         buyer: number;
-        renter: number;
         seller: number;
-        share_profit: number;
+        for_rent: number;
+        renter: number;
       };
       renewal?: {
         days: number;

@@ -30,6 +30,11 @@ import { getUserSelectLabel, RegularUser } from '../../types/user';
 import { MEMBER_LEVELS, MemberLevel } from '../../constants/memberLevels';
 import { UpdateShareProfitListingData } from '../../types/shareProfitListing';
 import {
+  PARTNERSHIP_POST,
+  PARTNERSHIP_WANTED_TYPE_LABELS,
+  PARTNERSHIP_WANTED_TYPE_OPTIONS,
+} from '../../constants/partnershipPosts';
+import {
   ShareProfitListingFormErrorField,
   ShareProfitListingFormErrors,
   hasShareProfitListingFormErrors,
@@ -42,13 +47,6 @@ import {
  * MUI outlined Select needs shrink + renderValue to avoid label/placeholder overlap.
  */
 const emptySelectPlaceholderSx = { color: 'text.secondary' };
-
-const WANTED_TYPE_LABELS: Record<string, string> = {
-  buyer: 'Buyer',
-  renter: 'Renter',
-  seller: 'Seller',
-  share_profit: 'Share Profit',
-};
 
 const ShareProfitListingEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -150,7 +148,7 @@ const ShareProfitListingEditPage: React.FC = () => {
 
   // Form state initialized from share profit listing data
   const [formData, setFormData] = React.useState({
-    wanted_type: 'share_profit',
+    wanted_type: 'for_rent',
     property_type_id: 1,
     title: '',
     description: '',
@@ -372,7 +370,7 @@ const ShareProfitListingEditPage: React.FC = () => {
 
       await updateShareProfitListingMutation.mutateAsync({ slug: slug!, data: updateData });
 
-      navigate(`/share-profit-listings?success=${encodeURIComponent('Share profit listing updated successfully!')}`);
+      navigate(`/share-profit-listings?success=${encodeURIComponent('Partnership post updated successfully!')}`);
     } catch (error: any) {
       console.error('Error updating share profit listing:', error);
 
@@ -420,10 +418,10 @@ const ShareProfitListingEditPage: React.FC = () => {
   return (
     <Box>
       <PageHeader
-        title={`Edit Share Profit Listing: ${shareProfitListing.title}`}
-        breadcrumbs={`Dashboard / Share Profit Listing Management / ${shareProfitListing.title} / Edit`}
+        title={`Edit ${PARTNERSHIP_POST.singular}: ${shareProfitListing.title}`}
+        breadcrumbs={`Dashboard / ${PARTNERSHIP_POST.management} / ${shareProfitListing.title} / Edit`}
         actionButton={{
-          text: 'Back to Share Profit Listing',
+          text: PARTNERSHIP_POST.backToList,
           icon: <ArrowBackIcon />,
           onClick: () => navigate('/share-profit-listings')
         }}
@@ -475,13 +473,14 @@ const ShareProfitListingEditPage: React.FC = () => {
                           );
                         }
 
-                        return WANTED_TYPE_LABELS[selected] || selected;
+                        return PARTNERSHIP_WANTED_TYPE_LABELS[selected as keyof typeof PARTNERSHIP_WANTED_TYPE_LABELS] || selected;
                       }}
                     >
-                      <MenuItem value="buyer">Buyer</MenuItem>
-                      <MenuItem value="renter">Renter</MenuItem>
-                      <MenuItem value="seller">Seller</MenuItem>
-                      <MenuItem value="share_profit">Share Profit</MenuItem>
+                      {PARTNERSHIP_WANTED_TYPE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
                     </Select>
                     {errors.wanted_type && (
                       <FormHelperText error>{errors.wanted_type}</FormHelperText>
@@ -897,7 +896,7 @@ const ShareProfitListingEditPage: React.FC = () => {
                   startIcon={<EditIcon />}
                   disabled={updateShareProfitListingMutation.isPending}
                 >
-                  {updateShareProfitListingMutation.isPending ? 'Updating...' : 'Update Share Profit Listing'}
+                  {updateShareProfitListingMutation.isPending ? 'Updating...' : PARTNERSHIP_POST.updateButton}
                 </Button>
               </Box>
             </CardContent>

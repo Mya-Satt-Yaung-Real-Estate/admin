@@ -67,7 +67,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         buyer: 'Buyer',
         renter: 'Renter',
         seller: 'Seller',
-        share_profit: 'Share Profit',
+        for_rent: 'For Rent',
       };
       return statusMap[status] || status;
     }

@@ -29,6 +29,11 @@ import { Media } from '../../types/media';
 import { getUserSelectLabel, RegularUser } from '../../types/user';
 import { CreateShareProfitListingData } from '../../types/shareProfitListing';
 import {
+  PARTNERSHIP_POST,
+  PARTNERSHIP_WANTED_TYPE_LABELS,
+  PARTNERSHIP_WANTED_TYPE_OPTIONS,
+} from '../../constants/partnershipPosts';
+import {
   ShareProfitListingFormErrorField,
   ShareProfitListingFormErrors,
   hasShareProfitListingFormErrors,
@@ -41,13 +46,6 @@ import {
  * MUI outlined Select needs shrink + renderValue to avoid label/placeholder overlap.
  */
 const emptySelectPlaceholderSx = { color: 'text.secondary' };
-
-const WANTED_TYPE_LABELS: Record<string, string> = {
-  buyer: 'Buyer',
-  renter: 'Renter',
-  seller: 'Seller',
-  share_profit: 'Share Profit',
-};
 
 const ShareProfitListingCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -278,7 +276,7 @@ const ShareProfitListingCreatePage: React.FC = () => {
 
       await createShareProfitListingMutation.mutateAsync(createData);
 
-      navigate(`/share-profit-listings?success=${encodeURIComponent('Share profit listing created successfully!')}`);
+      navigate(`/share-profit-listings?success=${encodeURIComponent('Partnership post created successfully!')}`);
     } catch (error: any) {
       console.error('Error creating share profit listing:', error);
 
@@ -298,10 +296,10 @@ const ShareProfitListingCreatePage: React.FC = () => {
   return (
     <Box>
       <PageHeader
-        title="Create New Share Profit Listing"
-        breadcrumbs="Dashboard / Share Profit Listing Management / Create Share Profit Listing"
+        title={PARTNERSHIP_POST.createTitle}
+        breadcrumbs={PARTNERSHIP_POST.createBreadcrumb}
         actionButton={{
-          text: 'Back to Share Profit Listings',
+          text: PARTNERSHIP_POST.backToList,
           icon: <ArrowBackIcon />,
           onClick: () => navigate('/share-profit-listings')
         }}
@@ -362,14 +360,15 @@ const ShareProfitListingCreatePage: React.FC = () => {
                             );
                           }
 
-                          return WANTED_TYPE_LABELS[selected] || selected;
-                        }}
-                      >
-                        <MenuItem value="buyer">Buyer</MenuItem>
-                        <MenuItem value="renter">Renter</MenuItem>
-                        <MenuItem value="seller">Seller</MenuItem>
-                        <MenuItem value="share_profit">Share Profit</MenuItem>
-                      </Select>
+                        return PARTNERSHIP_WANTED_TYPE_LABELS[selected as keyof typeof PARTNERSHIP_WANTED_TYPE_LABELS] || selected;
+                      }}
+                    >
+                      {PARTNERSHIP_WANTED_TYPE_OPTIONS.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
                       {errors.wanted_type ? (
                         <FormHelperText error>{errors.wanted_type}</FormHelperText>
                       ) : (
@@ -789,7 +788,7 @@ const ShareProfitListingCreatePage: React.FC = () => {
                   startIcon={<AddIcon />}
                   disabled={createShareProfitListingMutation.isPending}
                 >
-                  {createShareProfitListingMutation.isPending ? 'Creating...' : 'Create Share Profit Listing'}
+                  {createShareProfitListingMutation.isPending ? 'Creating...' : PARTNERSHIP_POST.createButton}
                 </Button>
               </Box>
             </CardContent>

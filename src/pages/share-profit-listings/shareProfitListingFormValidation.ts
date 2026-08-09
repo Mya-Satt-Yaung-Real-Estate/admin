@@ -41,7 +41,7 @@ export type ShareProfitListingFormErrors = Partial<
   Record<ShareProfitListingFormErrorField, string>
 >;
 
-const ALLOWED_WANTED_TYPES = ['buyer', 'renter', 'seller', 'share_profit'];
+const ALLOWED_WANTED_TYPES = ['buyer', 'seller', 'for_rent', 'renter'];
 
 const FIELD_ORDER: ShareProfitListingFormErrorField[] = [
   'wanted_type',

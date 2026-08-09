@@ -46,6 +46,11 @@ import { usePropertyTypes } from '../../services/queries/properties';
 import { useRegions, useTownships } from '../../services/queries/locations';
 import { FilterState } from '../../constants/filters';
 import { ShareProfitListing } from '../../types/shareProfitListing';
+import {
+  PARTNERSHIP_POST,
+  PARTNERSHIP_WANTED_TYPE_LABELS,
+  PARTNERSHIP_WANTED_TYPE_OPTIONS,
+} from '../../constants/partnershipPosts';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -72,9 +77,9 @@ interface ShareProfitListingFilters extends FilterState {
 // ============================================================================
 
 const PAGE_CONFIG = {
-  title: 'Share Profit Listing Management',
-  description: 'Manage property share profit listings',
-  createButtonText: 'Add Share Profit Listing',
+  title: PARTNERSHIP_POST.management,
+  description: PARTNERSHIP_POST.description,
+  createButtonText: PARTNERSHIP_POST.addButton,
   createButtonPath: '/share-profit-listings/create',
 } as const;
 
@@ -408,10 +413,10 @@ const ShareProfitListingListPage: React.FC = () => {
         label: 'Type',
         options: [
           { value: 'all', label: 'All Types' },
-          { value: 'buyer', label: 'Buyer' },
-          { value: 'renter', label: 'Renter' },
-          { value: 'seller', label: 'Seller' },
-          { value: 'share_profit', label: 'Share Profit' },
+          ...PARTNERSHIP_WANTED_TYPE_OPTIONS.map((option) => ({
+            value: option.value,
+            label: option.label,
+          })),
         ],
       },
       {
@@ -506,7 +511,7 @@ const ShareProfitListingListPage: React.FC = () => {
 
   const statsCards: StatCard[] = useMemo(() => [
     {
-      title: 'Total Share Profit Listings',
+      title: PARTNERSHIP_POST.totalStat,
       value: statistics?.data?.total || 0,
       color: 'primary',
       icon: <HomeIcon />,
@@ -530,28 +535,28 @@ const ShareProfitListingListPage: React.FC = () => {
       icon: <CancelIcon />,
     },
     {
-      title: 'Buyers',
+      title: PARTNERSHIP_WANTED_TYPE_LABELS.buyer,
       value: statistics?.data?.by_type?.buyer || 0,
       color: 'info',
       icon: <PersonIcon />,
     },
     {
-      title: 'Renters',
-      value: statistics?.data?.by_type?.renter || 0,
-      color: 'warning',
-      icon: <BusinessIcon />,
-    },
-    {
-      title: 'Sellers',
+      title: PARTNERSHIP_WANTED_TYPE_LABELS.seller,
       value: statistics?.data?.by_type?.seller || 0,
       color: 'success',
       icon: <BusinessIcon />,
     },
     {
-      title: 'Share Profit',
-      value: statistics?.data?.by_type?.share_profit || 0,
+      title: PARTNERSHIP_WANTED_TYPE_LABELS.for_rent,
+      value: statistics?.data?.by_type?.for_rent || 0,
       color: 'secondary',
       icon: <PersonIcon />,
+    },
+    {
+      title: PARTNERSHIP_WANTED_TYPE_LABELS.renter,
+      value: statistics?.data?.by_type?.renter || 0,
+      color: 'warning',
+      icon: <BusinessIcon />,
     },
   ], [statistics]);
 
@@ -591,21 +596,17 @@ const ShareProfitListingListPage: React.FC = () => {
           ? shareProfitListing.wanted_type
           : 'unknown';
 
-        // Since StatusChip doesn't support buyer/renter, create a custom chip-like element
-        let chipLabel = 'Unknown';
-        let chipColor = 'default';
+        const chipLabel =
+          PARTNERSHIP_WANTED_TYPE_LABELS[wantedType as keyof typeof PARTNERSHIP_WANTED_TYPE_LABELS] || 'Unknown';
+        let chipColor: 'primary' | 'secondary' | 'default' | 'success' | 'info' = 'default';
 
         if (wantedType === 'buyer') {
-          chipLabel = 'Buyer';
           chipColor = 'primary';
         } else if (wantedType === 'renter') {
-          chipLabel = 'Renter';
           chipColor = 'secondary';
         } else if (wantedType === 'seller') {
-          chipLabel = 'Seller';
           chipColor = 'success';
-        } else if (wantedType === 'share_profit') {
-          chipLabel = 'Share Profit';
+        } else if (wantedType === 'for_rent') {
           chipColor = 'info';
         }
 
@@ -613,7 +614,7 @@ const ShareProfitListingListPage: React.FC = () => {
           <Chip
             label={chipLabel}
             size="small"
-            color={chipColor as 'primary' | 'secondary' | 'default' | 'success' | 'info'}
+            color={chipColor}
             variant="outlined"
             sx={{
               borderRadius: 2,
@@ -1037,7 +1038,7 @@ const ShareProfitListingListPage: React.FC = () => {
   const handleDeleteShareProfitListing = (shareProfitListing: ShareProfitListing) => {
     openDeleteConfirmation(
       shareProfitListing.title,
-      'share profit listinging',
+      'partnership post',
       async () => {
         try {
           await deleteShareProfitListingMutation.mutateAsync(shareProfitListing.slug);
@@ -1051,7 +1052,7 @@ const ShareProfitListingListPage: React.FC = () => {
             const errorMessages = Object.values((error as any).response.data.errors).flat();
             showError(errorMessages.join('\n'), true);
           } else {
-            showError(error.message || 'Failed to delete share profit listinging. Please try again.', true);
+            showError(error.message || 'Failed to delete partnership post. Please try again.', true);
           }
         }
       }
@@ -1086,7 +1087,7 @@ const ShareProfitListingListPage: React.FC = () => {
       setRenewConfirmOpen(false);
       setShareProfitListingToRenew(null);
     } catch (error: any) {
-      showError(error?.message || 'Failed to renew share profit listing. Please try again.', true);
+      showError(error?.message || 'Failed to renew partnership post. Please try again.', true);
     }
   };
 
@@ -1107,7 +1108,7 @@ const ShareProfitListingListPage: React.FC = () => {
         const errorMessages = Object.values((error as any).response.data.errors).flat();
         showError(errorMessages.join('\n'), true);
       } else {
-        showError(error.message || 'Failed to restore share profit listinging. Please try again.', true);
+        showError(error.message || 'Failed to restore partnership post. Please try again.', true);
       }
     }
   };
@@ -1182,7 +1183,7 @@ const ShareProfitListingListPage: React.FC = () => {
 
   // Error state - show inline error instead of full page error
   if (error) {
-    let errorMessage = error.message || 'An error occurred while loading share profit listingings';
+    let errorMessage = error.message || 'An error occurred while loading partnership posts';
 
     // Handle validation errors from API response (only if error has response property)
     if ((error as any)?.response?.data?.message) {
@@ -1196,8 +1197,8 @@ const ShareProfitListingListPage: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <PageHeader
-          title="Share Profit Listings"
-          subtitle="Manage share profit listing entries"
+          title={PARTNERSHIP_POST.module}
+          subtitle={PARTNERSHIP_POST.description}
           actionButton={{
             text: "Refresh",
             icon: <MoreVertIcon />,
@@ -1207,7 +1208,7 @@ const ShareProfitListingListPage: React.FC = () => {
         <Box sx={{ mt: 2 }}>
           <PageErrorState
             error={error}
-            title="Error Loading Share Profit Listings"
+            title={PARTNERSHIP_POST.errorLoading}
             message={errorMessage}
             onRetry={() => window.location.reload()}
           />
@@ -1220,7 +1221,7 @@ const ShareProfitListingListPage: React.FC = () => {
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title={PAGE_CONFIG.title}
-        breadcrumbs="Dashboard / Share Profit Listing Management"
+        breadcrumbs={PARTNERSHIP_POST.listBreadcrumb}
         subtitle={PAGE_CONFIG.description}
         actionButton={{
           text: PAGE_CONFIG.createButtonText,
@@ -1264,12 +1265,12 @@ const ShareProfitListingListPage: React.FC = () => {
           aria-label="share profit listinging status tabs"
         >
           <Tab
-            label={`Active Share Profit Listings`}
+            label={PARTNERSHIP_POST.activeTab}
             id="wanting-list-tab-0"
             aria-controls="wanting-list-tabpanel-0"
           />
           <Tab
-            label={`Deleted Share Profit Listings`}
+            label={PARTNERSHIP_POST.deletedTab}
             id="wanting-list-tab-1"
             aria-controls="wanting-list-tabpanel-1"
           />
@@ -1293,8 +1294,8 @@ const ShareProfitListingListPage: React.FC = () => {
           ) : error ? (
             <PageErrorState
               error={error}
-              title="Error Loading Share Profit Listings"
-              message={(error as any)?.message || 'Failed to load share profit listingings'}
+              title={PARTNERSHIP_POST.errorLoading}
+              message={(error as any)?.message || 'Failed to load partnership posts'}
               onRetry={() => window.location.reload()}
             />
           ) : filteredShareProfitListings.length > 0 ? (
@@ -1328,15 +1329,9 @@ const ShareProfitListingListPage: React.FC = () => {
                   ? [
                       {
                         label: typeof shareProfitListing.wanted_type === 'string'
-                          ? shareProfitListing.wanted_type === 'buyer'
-                            ? 'Buyer'
-                            : shareProfitListing.wanted_type === 'renter'
-                              ? 'Renter'
-                              : shareProfitListing.wanted_type === 'seller'
-                                ? 'Seller'
-                                : shareProfitListing.wanted_type === 'share_profit'
-                                  ? 'Share Profit'
-                                  : shareProfitListing.wanted_type
+                          ? PARTNERSHIP_WANTED_TYPE_LABELS[
+                              shareProfitListing.wanted_type as keyof typeof PARTNERSHIP_WANTED_TYPE_LABELS
+                            ] || shareProfitListing.wanted_type
                           : 'Unknown',
                         color: typeof shareProfitListing.wanted_type === 'string' && shareProfitListing.wanted_type === 'buyer' ? 'primary' : 'secondary',
                       },
@@ -1366,8 +1361,8 @@ const ShareProfitListingListPage: React.FC = () => {
             ))
           ) : (
             <PageEmptyState
-              title="No Share Profit Listings Found"
-              message="No share profit listingings match your current filters. Try adjusting your search criteria."
+              title={PARTNERSHIP_POST.notFound}
+              message="No partnership posts match your current filters. Try adjusting your search criteria."
             />
           )}
           <Pagination
@@ -1384,16 +1379,16 @@ const ShareProfitListingListPage: React.FC = () => {
         error ? (
           <PageErrorState
             error={error}
-            title="Error Loading Share Profit Listings"
-            message={(error as any)?.message || 'Failed to load share profit listingings'}
+            title={PARTNERSHIP_POST.errorLoading}
+            message={(error as any)?.message || 'Failed to load partnership posts'}
             onRetry={() => window.location.reload()}
           />
         ) : filteredShareProfitListings.length === 0 && !isInitialLoading ? (
           <PageEmptyState
-            title="No Share Profit Listings Found"
+            title={PARTNERSHIP_POST.notFound}
             message={searchTerm || filters.typeFilter !== 'all' || filters.regionFilter !== 'all' || filters.townshipFilter !== 'all' || filters.propertyTypeFilter !== 'all'
-              ? "No share profit listingings match your current filters. Try adjusting your search criteria."
-              : "No share profit listingings have been created yet."
+              ? "No partnership posts match your current filters. Try adjusting your search criteria."
+              : "No partnership posts have been created yet."
             }
           />
         ) : (
@@ -1478,7 +1473,7 @@ const ShareProfitListingListPage: React.FC = () => {
         }}
         onConfirm={handleConfirmRestore}
         itemName={shareProfitListingToRestore?.title}
-        itemType="share profit listing"
+        itemType={PARTNERSHIP_POST.itemType}
         action="restore"
         isLoading={restoreShareProfitListingMutation.isPending}
         error={restoreShareProfitListingMutation.error?.message}
@@ -1491,14 +1486,14 @@ const ShareProfitListingListPage: React.FC = () => {
           setShareProfitListingToRenew(null);
         }}
         onConfirm={handleConfirmRenew}
-        title="Renew Share Profit Listing"
+        title={PARTNERSHIP_POST.renewTitle}
         message={
           renewalPointsEnabled
             ? `Extend expiry by ${renewalDays} days. Listing owner will be charged ${renewalPointCost} points first, then renew. Active status is not changed.`
             : `Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`
         }
         itemName={shareProfitListingToRenew?.title}
-        itemType="share profit listing"
+        itemType={PARTNERSHIP_POST.itemType}
         action="custom"
         actionLabel="Renew"
         actionColor="warning"

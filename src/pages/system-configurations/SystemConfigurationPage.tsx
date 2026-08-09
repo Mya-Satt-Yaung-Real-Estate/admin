@@ -89,7 +89,7 @@ const CONFIG_CATEGORIES = {
     color: '#0288d1',
   },
   share_profit_listing: {
-    name: 'Share Profit Listing',
+    name: 'Partnership Posts',
     description: 'Configure share profit listing expiration',
     icon: <HandshakeIcon />,
     color: '#6d4c41',

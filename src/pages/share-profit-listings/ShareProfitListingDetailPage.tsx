@@ -50,6 +50,10 @@ import { useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import PageHeader from '../../components/layout/PageHeader';
 import { StatusChip, PageLoadingState, PageErrorState, DeleteConfirmationDialog, ActionAlert, ConfirmationDialog, RenewButton } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
+import {
+  PARTNERSHIP_POST,
+  PARTNERSHIP_WANTED_TYPE_LABELS,
+} from '../../constants/partnershipPosts';
 
 const ShareProfitListingDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -117,14 +121,14 @@ const ShareProfitListingDetailPage: React.FC = () => {
 
     openDeleteConfirmation(
       shareProfitListing.title,
-      'share profit listing',
+      'partnership post',
       async () => {
         try {
           await deleteShareProfitListingMutation.mutateAsync(shareProfitListing.slug);
           showSuccess(`${shareProfitListing.title} deleted successfully!`, true);
           navigate('/share-profit-listings');
         } catch (error: any) {
-          showError(error.message || 'Failed to delete share profit listing. Please try again.', true);
+          showError(error.message || 'Failed to delete partnership post. Please try again.', true);
         }
       }
     );
@@ -144,7 +148,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
       // Redirect to the list page after successful restoration
       navigate('/share-profit-listings');
     } catch (error: any) {
-      showError(error.message || 'Failed to restore share profit listing. Please try again.', true);
+      showError(error.message || 'Failed to restore partnership post. Please try again.', true);
     }
   };
 
@@ -178,7 +182,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
       setApproveDialogOpen(false);
       refetch();
     } catch (error: any) {
-      showError(error.message || 'Failed to approve share profit listing. Please try again.', true);
+      showError(error.message || 'Failed to approve partnership post. Please try again.', true);
     }
   };
 
@@ -195,7 +199,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
       setRejectionReason('');
       refetch();
     } catch (error: any) {
-      showError(error.message || 'Failed to reject share profit listing. Please try again.', true);
+      showError(error.message || 'Failed to reject partnership post. Please try again.', true);
     }
   };
 
@@ -217,18 +221,18 @@ const ShareProfitListingDetailPage: React.FC = () => {
       setRenewConfirmOpen(false);
       refetch();
     } catch (error: any) {
-      showError(error.message || 'Failed to renew share profit listing. Please try again.', true);
+      showError(error.message || 'Failed to renew partnership post. Please try again.', true);
     }
   };
 
   // Loading state
   if (isLoading) {
-    return <PageLoadingState title="Loading Share Profit Listing Details" />;
+    return <PageLoadingState title={PARTNERSHIP_POST.loadingDetails} />;
   }
 
   // Show loading state during refetch to ensure fresh data is displayed
   if (isFetching && !shareProfitListingResponse?.data) {
-    return <PageLoadingState title="Refreshing Share Profit Listing Details" />;
+    return <PageLoadingState title={PARTNERSHIP_POST.refreshingDetails} />;
   }
 
   // Error state
@@ -236,7 +240,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
     return (
       <PageErrorState
         error={error}
-        title="Error Loading Share Profit Listing"
+        title={PARTNERSHIP_POST.errorLoading}
         message={error.message}
         onRetry={() => window.location.reload()}
       />
@@ -247,16 +251,16 @@ const ShareProfitListingDetailPage: React.FC = () => {
   if (!shareProfitListing) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>Share Profit Listing Not Found</Typography>
+        <Typography variant="h6" gutterBottom>{PARTNERSHIP_POST.notFoundTitle}</Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          The share profit listing you're looking for doesn't exist or has been removed.
+          {PARTNERSHIP_POST.notFoundBody}
         </Typography>
         <Button
           variant="contained"
           startIcon={<ArrowBackIcon />}
           onClick={handleBack}
         >
-          Back to Share Profit Listings
+          {PARTNERSHIP_POST.backToList}
         </Button>
       </Box>
     );
@@ -267,9 +271,9 @@ const ShareProfitListingDetailPage: React.FC = () => {
       <PageHeader
         title={shareProfitListing.title}
         subtitle={typeof shareProfitListing.description === 'string' && shareProfitListing.description.length > 0 ? shareProfitListing.description.substring(0, 50) + '...' : 'N/A'}
-        breadcrumbs="Dashboard / Share Profit Listing Management / Share Profit Listing Details"
+        breadcrumbs={PARTNERSHIP_POST.detailsBreadcrumb}
         actionButton={{
-          text: 'Back to Share Profit Listings',
+          text: PARTNERSHIP_POST.backToList,
           icon: <ArrowBackIcon />,
           onClick: () => navigate('/share-profit-listings')
         }}
@@ -298,7 +302,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
 
           return isDeleted ? (
             // For deleted records, show restore button
-            <Tooltip title="Restore Share Profit Listing">
+            <Tooltip title="Restore Partnership Post">
               <IconButton
                 color="success"
                 onClick={handleRestore}
@@ -333,7 +337,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
                 </>
               )}
 
-              <Tooltip title={shareProfitListing.is_active ? "Disable Share Profit Listing" : "Enable Share Profit Listing"}>
+              <Tooltip title={shareProfitListing.is_active ? "Disable Partnership Post" : "Enable Partnership Post"}>
                 <IconButton
                   color={shareProfitListing.is_active ? "error" : "success"}
                   onClick={handleToggleStatus}
@@ -343,7 +347,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
                 </IconButton>
               </Tooltip>
 
-              <Tooltip title="Edit Share Profit Listing">
+              <Tooltip title="Edit Partnership Post">
                 <IconButton
                   color="primary"
                   onClick={handleEdit}
@@ -351,7 +355,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
                   <EditIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Delete Share Profit Listing">
+              <Tooltip title="Delete Partnership Post">
                 <IconButton
                   color="error"
                   onClick={handleDelete}
@@ -365,7 +369,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
                 <RenewButton
                   onClick={() => setRenewConfirmOpen(true)}
                   disabled={renewShareProfitListingMutation.isPending}
-                  tooltip="Renew Share Profit Listing"
+                  tooltip="Renew Partnership Post"
                 />
               )}
             </>
@@ -406,10 +410,10 @@ const ShareProfitListingDetailPage: React.FC = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              {/* Share Profit Listing Details */}
+              {/* {PARTNERSHIP_POST.detailsTitle} */}
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Share Profit Listing Details
+                  {PARTNERSHIP_POST.detailsTitle}
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -420,7 +424,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
                           || (shareProfitListing?.wanted_type === 'buyer' ? 'Buyer'
                             : shareProfitListing?.wanted_type === 'renter' ? 'Renter'
                             : shareProfitListing?.wanted_type === 'seller' ? 'Seller'
-                            : shareProfitListing?.wanted_type === 'share_profit' ? 'Share Profit'
+                            : shareProfitListing?.wanted_type === 'for_rent' ? PARTNERSHIP_WANTED_TYPE_LABELS.for_rent
                             : shareProfitListing?.wanted_type || 'N/A')}
                       </Typography>
                     </Box>
@@ -705,7 +709,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
         onClose={() => setRestoreConfirmOpen(false)}
         onConfirm={handleConfirmRestore}
         itemName={shareProfitListing?.title}
-        itemType="share profit listing"
+        itemType={PARTNERSHIP_POST.itemType}
         action="restore"
         isLoading={restoreShareProfitListingMutation.isPending}
         error={restoreShareProfitListingMutation.error?.message}
@@ -717,7 +721,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
         onClose={() => setToggleStatusConfirmOpen(false)}
         onConfirm={handleConfirmToggleStatus}
         itemName={shareProfitListing?.title}
-        itemType="share profit listing"
+        itemType={PARTNERSHIP_POST.itemType}
         action="custom"
         isLoading={toggleShareProfitListingStatusMutation.isPending}
         error={toggleShareProfitListingStatusMutation.error?.message}
@@ -729,10 +733,10 @@ const ShareProfitListingDetailPage: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Approve Share Profit Listing</DialogTitle>
+        <DialogTitle>{PARTNERSHIP_POST.approveTitle}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-            Are you sure you want to approve this share profit listing?
+            Are you sure you want to approve this partnership post?
           </Typography>
           <Typography variant="body1" fontWeight="500">
             {shareProfitListing?.title}
@@ -765,7 +769,7 @@ const ShareProfitListingDetailPage: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Reject Share Profit Listing</DialogTitle>
+        <DialogTitle>{PARTNERSHIP_POST.rejectTitle}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
             Rejecting: <strong>{shareProfitListing?.title}</strong>
@@ -807,14 +811,14 @@ const ShareProfitListingDetailPage: React.FC = () => {
         open={renewConfirmOpen}
         onClose={() => setRenewConfirmOpen(false)}
         onConfirm={handleConfirmRenew}
-        title="Renew Share Profit Listing"
+        title={PARTNERSHIP_POST.renewTitle}
         message={
           renewalPointsEnabled
             ? `Extend expiry by ${renewalDays} days. Listing owner will be charged ${renewalPointCost} points first, then renew. Active status is not changed.`
             : `Extend expiry by ${renewalDays} days (from system config). Active status is not changed.`
         }
         itemName={shareProfitListing?.title}
-        itemType="share profit listing"
+        itemType={PARTNERSHIP_POST.itemType}
         action="custom"
         actionLabel="Renew"
         actionColor="warning"

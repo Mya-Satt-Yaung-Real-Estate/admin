@@ -89,7 +89,7 @@ export interface ShareProfitListingMedia {
   images_count?: number;
 }
 
-export type ShareProfitWantedType = 'buyer' | 'renter' | 'seller' | 'share_profit';
+export type ShareProfitWantedType = 'buyer' | 'seller' | 'for_rent' | 'renter';
 
 export interface ShareProfitListing {
   id: number;
