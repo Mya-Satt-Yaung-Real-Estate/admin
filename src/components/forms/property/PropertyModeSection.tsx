@@ -77,7 +77,7 @@ export const PropertyModeSection: React.FC<PropertyModeSectionProps> = ({
                   if (selectedUser) {
                     return (
                       <Typography variant="body2" color="text.secondary">
-                        {selectedUser.name} ({selectedUser.email}) - {selectedUser.user_type || 'user'}
+                        {selectedUser.name} ({selectedUser.phone || 'No phone'}) - {selectedUser.user_type || 'user'}
                       </Typography>
                     );
                   }
@@ -145,7 +145,7 @@ export const PropertyModeSection: React.FC<PropertyModeSectionProps> = ({
               <Autocomplete
                 size="small"
                 options={users}
-                getOptionLabel={(option) => `${option.name} (${option.email})`}
+                getOptionLabel={(option) => `${option.name} (${option.phone || 'No phone'})`}
                 isOptionEqualToValue={(option, selected) => option.id === selected.id}
                 value={users.find(user => user.id === userId) || null}
                 onChange={(_, newValue) => onUserIdChange(newValue?.id)}
