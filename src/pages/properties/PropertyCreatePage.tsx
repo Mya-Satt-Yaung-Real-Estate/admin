@@ -273,19 +273,39 @@ const PropertyCreatePage: React.FC = () => {
             <PropertyModeSection
               isPlatformProperty={formik.values.is_platform_property}
               onPlatformPropertyChange={(value) => {
-                formik.setFieldValue('is_platform_property', value);
+                /**
+                 * One setValues call so validation never sees a half-updated mode/user pair.
+                 */
+                formik.setValues({
+                  ...formik.values,
+                  is_platform_property: value,
+                  user_id: value ? undefined : formik.values.user_id,
+                  is_direct_owner: value ? false : formik.values.is_direct_owner,
+                });
                 if (value) {
-                  formik.setFieldValue('user_id', undefined);
-                  formik.setFieldValue('is_direct_owner', false);
+                  formik.setFieldError('user_id', undefined);
                 }
               }}
               userId={formik.values.user_id}
               onUserIdChange={(value) => {
-                formik.setFieldValue('user_id', value);
-                formik.setFieldTouched('user_id', true);
-                const selectedUser = (users?.data || []).find((u: any) => u.id === value);
-                if (selectedUser?.user_type !== 'individual') {
-                  formik.setFieldValue('is_direct_owner', false);
+                /**
+                 * Atomic update + forced error clear.
+                 * Chained setFieldValue calls race: a later validate can run on stale
+                 * state.values where user_id is still undefined and re-apply this error.
+                 */
+                const nextUserId = value != null ? Number(value) : undefined;
+                const selectedUser = (users?.data || []).find((u: { id: number }) => u.id === nextUserId);
+                formik.setValues({
+                  ...formik.values,
+                  user_id: nextUserId,
+                  is_direct_owner:
+                    selectedUser?.user_type === 'individual'
+                      ? formik.values.is_direct_owner
+                      : false,
+                });
+                formik.setFieldTouched('user_id', true, false);
+                if (nextUserId != null && nextUserId >= 1) {
+                  formik.setFieldError('user_id', undefined);
                 }
               }}
               users={users?.data || []}

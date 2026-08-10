@@ -72,11 +72,23 @@ export const propertyBaseSchema = Yup.object({
 export const propertyDualModeSchema = Yup.object({
   // Dual-mode fields
   is_platform_property: Yup.boolean().required(),
-  user_id: Yup.number().min(1, 'User is required for user properties').when('is_platform_property', {
-    is: false,
-    then: (schema) => schema.required('User is required for user properties'),
-    otherwise: (schema) => schema.optional(),
-  }),
+  /**
+   * Use a function `is` — Yup can mishandle bare `is: false` (falsy check).
+   * nullable + transform keeps cleared Autocomplete values out of number().min().
+   */
+  user_id: Yup.number()
+    .nullable()
+    .transform((value, originalValue) =>
+      originalValue === '' || originalValue === null || originalValue === undefined ? null : value
+    )
+    .when('is_platform_property', {
+      is: (isPlatform: boolean) => isPlatform === false,
+      then: (schema) =>
+        schema
+          .required('User is required for user properties')
+          .min(1, 'User is required for user properties'),
+      otherwise: (schema) => schema.notRequired().nullable(),
+    }),
 });
 
 // Complete validation schema for property create form

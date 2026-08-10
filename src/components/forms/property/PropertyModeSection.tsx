@@ -34,6 +34,12 @@ export const PropertyModeSection: React.FC<PropertyModeSectionProps> = ({
   touched = {},
   disabled = false,
 }) => {
+  /**
+   * Never show "required" when a user is already selected — Formik can
+   * keep a stale errors.user_id after async validation races.
+   */
+  const showUserIdError = Boolean(touched.user_id && errors.user_id && !userId);
+
   return (
     <FormSection title="Property Mode">
       {disabled ? (
@@ -140,6 +146,7 @@ export const PropertyModeSection: React.FC<PropertyModeSectionProps> = ({
                 size="small"
                 options={users}
                 getOptionLabel={(option) => `${option.name} (${option.email})`}
+                isOptionEqualToValue={(option, selected) => option.id === selected.id}
                 value={users.find(user => user.id === userId) || null}
                 onChange={(_, newValue) => onUserIdChange(newValue?.id)}
                 loading={usersLoading}
@@ -149,8 +156,8 @@ export const PropertyModeSection: React.FC<PropertyModeSectionProps> = ({
                     label="Select User"
                     placeholder="Select User"
                     size="small"
-                    error={touched.user_id && Boolean(errors.user_id)}
-                    helperText={touched.user_id && errors.user_id}
+                    error={showUserIdError}
+                    helperText={showUserIdError ? errors.user_id : undefined}
                   />
                 )}
               />
