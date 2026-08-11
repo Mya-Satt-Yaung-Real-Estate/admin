@@ -14,6 +14,7 @@ export { default as ConfigurationCategoryCard } from './ConfigurationCategoryCar
 export { default as EnhancedMultiSelect } from './EnhancedMultiSelect';
 export { default as Pagination } from './Pagination';
 export { default as StatusChip } from './StatusChip';
+export { default as FeatureBadgeChip, PREMIUM_FEATURE_BADGE_SX } from './FeatureBadgeChip';
 export { default as UserPointStatistics } from './UserPointStatistics';
 export { default as UserPointPackages } from './UserPointPackages';
 export { default as UserPointTransactions } from './UserPointTransactions';

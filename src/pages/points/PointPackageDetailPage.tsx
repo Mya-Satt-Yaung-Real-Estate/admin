@@ -17,7 +17,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePointPackage } from '../../services/queries/points';
 import PageHeader from '../../components/layout/PageHeader';
-import { PageLoadingState, StatusChip } from '../../components/ui';
+import { PageLoadingState, StatusChip, FeatureBadgeChip } from '../../components/ui';
 import { formatDate } from '../../constants/dateFormats';
 
 const PointPackageDetailPage: React.FC = () => {
@@ -159,6 +159,19 @@ const PointPackageDetailPage: React.FC = () => {
             <Typography variant="body1" fontWeight={500}>
               {pointPackage.expiry_days ?? 'System default'}
             </Typography>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle2" color="textSecondary" gutterBottom>
+              Feature Badge
+            </Typography>
+            {pointPackage.feature ? (
+              <FeatureBadgeChip label={pointPackage.feature} />
+            ) : (
+              <Typography variant="body2" color="textSecondary">
+                —
+              </Typography>
+            )}
           </Grid>
 
           <Grid item xs={12} md={6}>

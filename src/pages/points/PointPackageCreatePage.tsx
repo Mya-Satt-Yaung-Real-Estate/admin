@@ -41,6 +41,7 @@ const PointPackageCreatePage: React.FC = () => {
     expiry_days: '',
     description_en: '',
     description_mm: '',
+    feature: '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -106,6 +107,10 @@ const PointPackageCreatePage: React.FC = () => {
       }
     }
 
+    if (formData.feature && formData.feature.length > 50) {
+      newErrors.feature = 'Feature badge must be 50 characters or less';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -126,6 +131,7 @@ const PointPackageCreatePage: React.FC = () => {
         expiry_days: formData.expiry_days.trim() ? parseInt(formData.expiry_days) : undefined,
         description_en: formData.description_en.trim() || undefined,
         description_mm: formData.description_mm.trim() || undefined,
+        feature: formData.feature.trim() || null,
         is_active: isActive,
       };
 
@@ -255,6 +261,20 @@ const PointPackageCreatePage: React.FC = () => {
                 helperText={errors.expiry_days || 'Leave empty to use system default'}
                 placeholder="Enter expiry days"
                 inputProps={{ min: 1, max: 3650 }}
+              />
+            </Grid>
+
+            {/* Feature Badge */}
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Feature Badge"
+                value={formData.feature}
+                onChange={(e) => handleInputChange('feature', e.target.value)}
+                error={!!errors.feature}
+                helperText={errors.feature || 'Optional label shown on mobile (e.g. Popular, Best Value). Leave empty to hide.'}
+                placeholder="e.g. Popular, Best Value"
+                inputProps={{ maxLength: 50 }}
               />
             </Grid>
 

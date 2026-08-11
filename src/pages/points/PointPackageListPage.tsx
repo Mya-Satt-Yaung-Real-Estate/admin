@@ -22,7 +22,7 @@ import { StandardTable, TableColumn } from '../../components/common/StandardTabl
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
-import { Pagination, StatusChip, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
+import { Pagination, StatusChip, FeatureBadgeChip, PREMIUM_FEATURE_BADGE_SX, PageLoadingState, PageErrorState, PageEmptyState, DeleteConfirmationDialog, ActionAlert } from '../../components/ui';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem } from '../../hooks';
 import { usePointPackages, useDeletePointPackage } from '../../services/queries/points';
 import { FilterState } from '../../constants/filters';
@@ -193,6 +193,19 @@ const PointPackageListPage: React.FC = () => {
           </Typography>
         </Box>
       ),
+    },
+    {
+      id: 'feature',
+      label: 'Feature Badge',
+      align: 'center',
+      render: (_, row) =>
+        row.feature ? (
+          <FeatureBadgeChip label={row.feature} />
+        ) : (
+          <Typography variant="body2" color="textSecondary">
+            —
+          </Typography>
+        ),
     },
     {
       id: 'points',
@@ -372,6 +385,15 @@ const PointPackageListPage: React.FC = () => {
                     color: pointPackage.is_active ? 'success' : 'error',
                   }}
                   chips={[
+                  ...(pointPackage.feature
+                    ? [
+                        {
+                          label: pointPackage.feature,
+                          variant: 'outlined' as const,
+                          sx: PREMIUM_FEATURE_BADGE_SX,
+                        },
+                      ]
+                    : []),
                     {
                       label: pointPackage.expiry_days != null
                         ? `${pointPackage.expiry_days} days expiry`
@@ -379,11 +401,11 @@ const PointPackageListPage: React.FC = () => {
                     },
                     {
                       label: `${pointPackage.total_purchases || 0} purchases`,
-                      color: 'info',
+                      color: 'info' as const,
                     },
                     {
                       label: `${(pointPackage.total_revenue || 0).toLocaleString()} MMK revenue`,
-                      color: 'primary',
+                      color: 'primary' as const,
                     },
                   ]}
                   actions={createMobileCardActions(pointPackage)}

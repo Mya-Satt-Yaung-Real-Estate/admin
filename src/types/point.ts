@@ -10,6 +10,7 @@ export interface PointPackage {
   formatted_price: string;
   description_en?: string;
   description_mm?: string;
+  feature?: string | null;
   is_active: boolean;
   is_available: boolean;
   total_purchases: number;
@@ -31,6 +32,7 @@ export interface CreatePointPackageData {
   expiry_days?: number | null;
   description_en?: string;
   description_mm?: string;
+  feature?: string | null;
   is_active?: boolean;
 }
 
@@ -42,6 +44,7 @@ export interface UpdatePointPackageData {
   expiry_days?: number | null;
   description_en?: string;
   description_mm?: string;
+  feature?: string | null;
   is_active?: boolean;
 }
 

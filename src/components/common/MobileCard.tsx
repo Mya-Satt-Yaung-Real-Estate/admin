@@ -41,6 +41,7 @@ export interface MobileCardProps {
     label: string;
     color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success' | 'default';
     variant?: 'filled' | 'outlined';
+    sx?: import('@mui/material').SxProps;
   }>;
   
   // Actions
@@ -248,6 +249,7 @@ export const MobileCard: React.FC<MobileCardProps> = ({
               size="small"
               color={chip.color || 'default'}
               variant={chip.variant || 'outlined'}
+              sx={chip.sx}
             />
           ))}
         </Box>
