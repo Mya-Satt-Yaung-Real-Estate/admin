@@ -491,13 +491,13 @@ const ShareProfitListingDetailPage: React.FC = () => {
               </Box>
 
               {/* Additional Requirements */}
-              {shareProfitListing?.additional_requirement && (
+              {shareProfitListing?.address && (
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="h6" gutterBottom>
-                    Additional Requirements
+                    Address
                   </Typography>
                   <Typography variant="body1" color="textSecondary">
-                    {shareProfitListing.additional_requirement}
+                    {shareProfitListing.address}
                   </Typography>
                 </Box>
               )}

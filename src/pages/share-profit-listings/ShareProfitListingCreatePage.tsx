@@ -136,7 +136,7 @@ const ShareProfitListingCreatePage: React.FC = () => {
     area_range: '', // For backward compatibility
     min_area: 0,
     max_area: 0,
-    additional_requirement: '',
+    address: '',
     name: '',
     email: '',
     phone: '',
@@ -250,14 +250,14 @@ const ShareProfitListingCreatePage: React.FC = () => {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         region_id: formData.region_id!,
-        township_id: formData.township_id!,
+        township_id: formData.township_id ?? undefined,
         min_budget: formData.min_budget || 0,
         max_budget: formData.max_budget || 0,
         bedrooms: formData.bedrooms,
         bathrooms: formData.bathrooms,
         min_area: formData.min_area || 0,
         max_area: formData.max_area || 0,
-        additional_requirement: formData.additional_requirement,
+        address: formData.address.trim() || undefined,
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
@@ -565,7 +565,7 @@ const ShareProfitListingCreatePage: React.FC = () => {
                   </FormControl>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <FormControl fullWidth variant="outlined" required error={Boolean(errors.township_id)}>
+                  <FormControl fullWidth variant="outlined" error={Boolean(errors.township_id)}>
                     <InputLabel id="township-label" shrink>
                       Township
                     </InputLabel>
@@ -689,15 +689,15 @@ const ShareProfitListingCreatePage: React.FC = () => {
               <Divider sx={{ my: 3 }} />
 
               <Typography variant="h6" gutterBottom>
-                Additional Requirements
+                Address
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
-                    label="Additional Requirements"
-                    name="additional_requirement"
-                    value={formData.additional_requirement}
+                    label="Address"
+                    name="address"
+                    value={formData.address}
                     onChange={handleChange}
                     multiline
                     rows={3}

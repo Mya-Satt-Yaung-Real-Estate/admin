@@ -13,6 +13,7 @@ export interface ShareProfitListingFormValues {
   max_budget: number;
   min_area?: number;
   max_area?: number;
+  address?: string;
   name: string;
   email: string;
   phone: string;
@@ -31,6 +32,7 @@ export type ShareProfitListingFormErrorField =
   | 'max_budget'
   | 'min_area'
   | 'max_area'
+  | 'address'
   | 'name'
   | 'email'
   | 'phone'
@@ -54,6 +56,7 @@ const FIELD_ORDER: ShareProfitListingFormErrorField[] = [
   'max_budget',
   'min_area',
   'max_area',
+  'address',
   'media_ids',
   'name',
   'email',
@@ -84,10 +87,6 @@ export function validateShareProfitListingForm(
 
   if (!formData.region_id) {
     errors.region_id = 'Region is required';
-  }
-
-  if (!formData.township_id) {
-    errors.township_id = 'Township is required';
   }
 
   if (!formData.min_budget || formData.min_budget <= 0) {

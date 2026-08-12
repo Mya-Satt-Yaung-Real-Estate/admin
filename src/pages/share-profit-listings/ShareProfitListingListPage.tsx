@@ -579,8 +579,8 @@ const ShareProfitListingListPage: React.FC = () => {
             <Typography variant="caption" color="textSecondary">
               {typeof shareProfitListing.description === 'string' && shareProfitListing.description.length > 0
                 ? shareProfitListing.description.substring(0, 50) + '...'
-                : typeof shareProfitListing.additional_requirement === 'string' && shareProfitListing.additional_requirement.length > 0
-                ? shareProfitListing.additional_requirement.substring(0, 50) + '...'
+                : typeof shareProfitListing.address === 'string' && shareProfitListing.address.length > 0
+                ? shareProfitListing.address.substring(0, 50) + '...'
                 : 'N/A'}
             </Typography>
           </Box>
@@ -680,7 +680,7 @@ const ShareProfitListingListPage: React.FC = () => {
         if (shareProfitListing.preferred_location?.region) {
           // Use the preferred_location format from API
           regionName = shareProfitListing.preferred_location.region.name_en || 'N/A';
-          townshipName = shareProfitListing.preferred_location.township.name_en || 'N/A';
+          townshipName = shareProfitListing.preferred_location.township?.name_en || 'N/A';
         } else if (shareProfitListing.location) {
           // Use the location format (fallback)
           regionName = shareProfitListing.location.region_en || 'N/A';
@@ -1305,8 +1305,8 @@ const ShareProfitListingListPage: React.FC = () => {
                 title={shareProfitListing.title}
                 subtitle={typeof shareProfitListing.description === 'string' && shareProfitListing.description.length > 0
                   ? shareProfitListing.description.substring(0, 50) + '...'
-                  : typeof shareProfitListing.additional_requirement === 'string' && shareProfitListing.additional_requirement.length > 0
-                  ? shareProfitListing.additional_requirement.substring(0, 50) + '...'
+                  : typeof shareProfitListing.address === 'string' && shareProfitListing.address.length > 0
+                  ? shareProfitListing.address.substring(0, 50) + '...'
                   : 'N/A'}
                 rowNumber={((activeTab === 0 ? activePage : deletedPage) * rowsPerPage) + index + 1}
                 showRowNumber={true}
@@ -1341,9 +1341,9 @@ const ShareProfitListingListPage: React.FC = () => {
                       },
                       {
                         label: shareProfitListing.preferred_location?.region
-                          ? `${shareProfitListing.preferred_location.region.name_en || 'N/A'}, ${shareProfitListing.preferred_location.township.name_en || 'N/A'}`
+                          ? `${shareProfitListing.preferred_location.region.name_en || 'N/A'}${shareProfitListing.preferred_location.township?.name_en ? `, ${shareProfitListing.preferred_location.township.name_en}` : ''}`
                           : shareProfitListing.location
-                          ? `${shareProfitListing.location.region_en || 'N/A'}, ${shareProfitListing.location.township_en || 'N/A'}`
+                          ? `${shareProfitListing.location.region_en || 'N/A'}${shareProfitListing.location.township_en ? `, ${shareProfitListing.location.township_en}` : ''}`
                           : 'N/A',
                         color: 'warning',
                       },

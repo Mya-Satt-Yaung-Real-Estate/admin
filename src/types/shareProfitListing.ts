@@ -22,7 +22,7 @@ export interface PropertyType {
 
 export interface PreferredLocation {
   region: Region;
-  township: Township;
+  township: Township | null;
 }
 
 export interface Location {
@@ -98,7 +98,7 @@ export interface ShareProfitListing {
   wanted_type_label: string;
   title: string;
   description: string;
-  additional_requirement?: string;
+  address?: string | null;
   property_type: PropertyType;
   preferred_location?: PreferredLocation;
   location?: Location;
@@ -129,14 +129,14 @@ export interface CreateShareProfitListingData {
   description?: string;
   property_type_id: number;
   region_id: number;
-  township_id: number;
+  township_id?: number | null;
   min_budget?: number;
   max_budget?: number;
   bedrooms?: number;
   bathrooms?: number;
   min_area?: number;
   max_area?: number;
-  additional_requirement?: string;
+  address?: string | null;
   name: string;
   phone: string;
   email?: string;
@@ -169,7 +169,7 @@ export interface UpdateShareProfitListingData {
   bathrooms?: number;
   min_area?: number;
   max_area?: number;
-  additional_requirement?: string;
+  address?: string | null;
   name?: string;
   phone?: string;
   email?: string;
