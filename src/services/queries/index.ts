@@ -24,6 +24,7 @@ export * from './lawyers';
 export * from './youtubeVideos';
 export * from './wantingListings';
 export * from './shareProfitListings';
+export * from './activities';
 export * from './dashboard';
 
 // Export query keys for external use
@@ -32,6 +33,7 @@ export { adminUserKeys } from './adminUsers';
 export { userKeys } from './users';
 export { wantingListKeys } from './wantingListings';
 export { shareProfitListingKeys } from './shareProfitListings';
+export { activityKeys } from './activities';
 export { propertyKeys } from './properties';
 export { projectKeys } from './projects';
 export { roleKeys } from './roles';

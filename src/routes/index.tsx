@@ -41,6 +41,7 @@ import { youtubeVideoRoutes } from './youtube-videos';
 import { contactUsRoutes } from './contact-us';
 import { wantingListRoutes } from './wanted-listings';
 import { shareProfitListingRoutes } from './share-profit-listings';
+import { activityRoutes } from './activities';
 import { adsRoutes } from './ads';
 import { homeExploreCategoryRoutes } from './home-explore-categories';
 
@@ -87,6 +88,7 @@ export const router = createBrowserRouter([
     ...contactUsRoutes,
     ...wantingListRoutes,
     ...shareProfitListingRoutes,
+    ...activityRoutes,
     ...adsRoutes,
     ...homeExploreCategoryRoutes,
 

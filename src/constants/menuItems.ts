@@ -31,6 +31,11 @@ export const MENU_ITEMS = [
     path: '/advertisements',
   },
   {
+    text: 'Activities',
+    iconName: 'Activities',
+    path: '/activities',
+  },
+  {
     text: 'Jade Home Tour',
     iconName: 'YouTube',
     path: '/youtube-videos',
