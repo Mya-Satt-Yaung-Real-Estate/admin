@@ -10,6 +10,8 @@ export interface PropertyQueryParams extends QueryParams {
   listing_type?: string;
   expired?: string | boolean;
   is_trending?: boolean;
+  is_direct_owner?: boolean;
+  user_id?: number | string;
   deleted?: string | boolean;
 }
 
@@ -25,8 +27,8 @@ export function buildCleanQueryString(params?: Record<string, any>): string {
   // Convert boolean values to proper string representation for Laravel
   const processedParams = Object.fromEntries(
     Object.entries(filteredParams).map(([key, value]) => {
-      if (key === 'is_trending' && typeof value === 'boolean') {
-        // Special handling for is_trending to ensure Laravel compatibility
+      if ((key === 'is_trending' || key === 'is_direct_owner') && typeof value === 'boolean') {
+        // Special handling for booleans to ensure Laravel compatibility
         return [key, value ? '1' : '0'];
       }
       if (key === 'deleted' && typeof value === 'boolean') {

@@ -46,8 +46,10 @@ import { Pagination, StatusChip, PageErrorState, PageEmptyState, DeleteConfirmat
 import { ReferralAssignmentModal } from '../../components/modals/ReferralAssignmentModal';
 import { usePagination, useFilters, useDeleteConfirmation, useAlertSystem, useManualSearch } from '../../hooks';
 import { useProperties, usePropertyStatistics, useDeleteProperty, useRestoreProperty, useRenewProperty, useApproveProperty, useRejectProperty, usePropertyTypes, usePropertyListingTypes } from '../../services/queries/properties';
+import { useUsers } from '../../services/queries/users';
 import { FilterState } from '../../constants/filters';
 import { Property } from '../../types/property';
+import { getUserSelectLabel } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 
 // ============================================================================
@@ -62,6 +64,8 @@ interface PropertyFilters extends FilterState {
   listingTypeFilter: string;
   expiredFilter: string;
   isTrendingFilter: string;
+  isDirectOwnerFilter: string;
+  userFilter: string;
 }
 
 // ============================================================================
@@ -76,7 +80,14 @@ const PAGE_CONFIG = {
 } as const;
 
 // Filter fields will be generated dynamically from API data
-const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterField[] => [
+const createFilterFields = (
+  propertyTypes: any[],
+  listingTypes: any[],
+  userOptions: { value: string; label: string }[],
+  usersLoading: boolean,
+  userSearchTerm: string,
+  onUserInputChange: (value: string) => void,
+): FilterField[] => [
   {
     key: 'searchTerm',
     type: 'search',
@@ -150,6 +161,27 @@ const createFilterFields = (propertyTypes: any[], listingTypes: any[]): FilterFi
       { value: 'false', label: 'Non-Premium Only' },
     ],
   },
+  {
+    key: 'isDirectOwnerFilter',
+    type: 'select',
+    label: 'Direct Owner',
+    options: [
+      { value: 'all', label: 'All Properties' },
+      { value: 'true', label: 'Direct Owner Only' },
+      { value: 'false', label: 'Non-Direct Owner Only' },
+    ],
+  },
+  {
+    key: 'userFilter',
+    type: 'autocomplete',
+    label: 'User',
+    placeholder: 'Search user...',
+    options: userOptions,
+    loading: usersLoading,
+    noOptionsText: userSearchTerm ? 'No users found' : 'Type to search users',
+    onInputChange: onUserInputChange,
+    width: { xs: '100%', sm: 300 },
+  },
 ];
 
 // ============================================================================
@@ -175,6 +207,8 @@ const PropertyListPage: React.FC = () => {
     handleKeyPress,
   } = useManualSearch('');
 
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+
   const { filters, setFilter } = useFilters<PropertyFilters>({
     searchTerm: '', // This will be overridden by manual search
     statusFilter: 'all',
@@ -183,6 +217,8 @@ const PropertyListPage: React.FC = () => {
     listingTypeFilter: 'all',
     expiredFilter: 'all',
     isTrendingFilter: 'all',
+    isDirectOwnerFilter: 'all',
+    userFilter: '',
   });
 
   const { page, rowsPerPage, handleChangePage, handleChangeRowsPerPage } = usePagination();
@@ -237,6 +273,8 @@ const PropertyListPage: React.FC = () => {
     listing_type: filters.listingTypeFilter !== 'all' ? filters.listingTypeFilter : undefined,
     expired: filters.expiredFilter === 'expired' ? 'true' : undefined,
     is_trending: filters.isTrendingFilter !== 'all' ? filters.isTrendingFilter === 'true' : undefined,
+    is_direct_owner: filters.isDirectOwnerFilter !== 'all' ? filters.isDirectOwnerFilter === 'true' : undefined,
+    user_id: filters.userFilter || undefined,
     deleted: activeTab === 1 ? 'true' : 'false', // Show deleted properties when tab 1 is active, show non-deleted when tab 0 is active
     sort_by: 'created_at',
     sort_direction: 'desc',
@@ -252,6 +290,14 @@ const PropertyListPage: React.FC = () => {
 
   const { data: listingTypesResponse } = usePropertyListingTypes({
     per_page: 100, // Get all listing types
+  });
+
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({
+    page: 1,
+    per_page: 20,
+    search: userSearchTerm || undefined,
+    sort_by: 'name',
+    sort_direction: 'asc',
   });
 
   // Delete and restore mutations
@@ -449,9 +495,23 @@ const PropertyListPage: React.FC = () => {
   // Extract master data
   const propertyTypes = propertyTypesResponse?.data || [];
   const listingTypes = listingTypesResponse?.data || [];
+
+  const userOptions = useMemo(() => {
+    return (usersResponse?.data || []).map((user) => ({
+      value: String(user.id),
+      label: getUserSelectLabel(user),
+    }));
+  }, [usersResponse]);
   
   // Create dynamic filter fields
-  const filterFields = createFilterFields(propertyTypes, listingTypes);
+  const filterFields = createFilterFields(
+    propertyTypes,
+    listingTypes,
+    userOptions,
+    usersLoading,
+    userSearchTerm,
+    setUserSearchTerm,
+  );
 
   // Server-side filtering and pagination - no client-side processing needed
   const filteredProperties = properties;
@@ -1141,6 +1201,7 @@ const PropertyListPage: React.FC = () => {
     } else {
       // Use regular filter for other inputs
       setFilter(key as keyof PropertyFilters, value);
+      handleChangePage({} as any, 0);
     }
   };
 
@@ -1156,6 +1217,9 @@ const PropertyListPage: React.FC = () => {
     setFilter('listingTypeFilter', 'all');
     setFilter('expiredFilter', 'all');
     setFilter('isTrendingFilter', 'all');
+    setFilter('isDirectOwnerFilter', 'all');
+    setFilter('userFilter', '');
+    setUserSearchTerm('');
     
     // Reset to first page
     handleChangePage({} as any, 0);
