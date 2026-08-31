@@ -44,12 +44,19 @@ interface UserFilters extends FilterState {
   jadeMarketFilter: string;
   homepageFilter: string;
   propertyDetailFilter: string;
+  mapAccessFilter: string;
 }
 
 const YES_NO_FILTER_OPTIONS = [
   { value: 'all', label: 'All' },
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },
+];
+
+const MAP_ACCESS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All' },
+  { value: 'enabled', label: 'Enabled' },
+  { value: 'disabled', label: 'Disabled' },
 ];
 
 /**
@@ -64,6 +71,15 @@ const matchesCompanyFlag = (
   if (user.user_type !== 'company') return false;
   const isOn = Boolean(user.company_profile?.[flag]);
   return filterValue === 'yes' ? isOn : !isOn;
+};
+
+/**
+ * Map pins access applies to all user types (individual + company).
+ */
+const matchesMapAccess = (user: RegularUser, filterValue: string) => {
+  if (filterValue === 'all') return true;
+  const isEnabled = Boolean(user.map_pins_access);
+  return filterValue === 'enabled' ? isEnabled : !isEnabled;
 };
 
 /**
@@ -132,6 +148,12 @@ const FILTER_FIELDS: FilterField[] = [
     ],
   },
   {
+    key: 'mapAccessFilter',
+    type: 'select',
+    label: 'Map access',
+    options: MAP_ACCESS_FILTER_OPTIONS,
+  },
+  {
     key: 'verificationStatusFilter',
     type: 'select',
     label: 'Verification Status',
@@ -189,6 +211,7 @@ const UserListPage: React.FC = () => {
     userTypeFilter: 'all',
     memberLevelFilter: 'all',
     statusFilter: 'all',
+    mapAccessFilter: 'all',
     verificationStatusFilter: 'all',
     jadeMarketFilter: 'all',
     homepageFilter: 'all',
@@ -242,9 +265,10 @@ const UserListPage: React.FC = () => {
       const matchesJadeMarket = matchesCompanyFlag(user, filters.jadeMarketFilter, 'our_market');
       const matchesHomepage = matchesCompanyFlag(user, filters.homepageFilter, 'show_on_homepage');
       const matchesPropertyDetail = matchesCompanyFlag(user, filters.propertyDetailFilter, 'show_on_property_detail');
+      const matchesMapAccessFilter = matchesMapAccess(user, filters.mapAccessFilter);
 
       return matchesSearch && matchesUserType && matchesMemberLevel && matchesStatus && matchesVerificationStatus
-        && matchesJadeMarket && matchesHomepage && matchesPropertyDetail;
+        && matchesJadeMarket && matchesHomepage && matchesPropertyDetail && matchesMapAccessFilter;
     });
   }, [users, filters]);
 
@@ -382,6 +406,20 @@ const UserListPage: React.FC = () => {
           />
         );
       },
+    },
+    {
+      id: 'mapAccess',
+      label: 'Map',
+      render: (_value, user) => {
+        if (!user) return <Typography variant="body2">No data</Typography>;
+        const isEnabled = Boolean(user.map_pins_access);
+        return (
+          <Typography variant="body2" fontWeight={500} color={isEnabled ? 'success.main' : 'error.main'}>
+            {isEnabled ? 'Enabled' : 'Disabled'}
+          </Typography>
+        );
+      },
+      hidden: isMobile,
     },
     {
       id: 'verificationStatus',
@@ -581,7 +619,7 @@ const UserListPage: React.FC = () => {
       {filteredUsers.length === 0 && !isLoading && (
         <PageEmptyState
           title="No Users Found"
-          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all' || filters.verificationStatusFilter !== 'all' || filters.jadeMarketFilter !== 'all' || filters.homepageFilter !== 'all' || filters.propertyDetailFilter !== 'all'
+          message={filters.searchTerm || filters.userTypeFilter !== 'all' || filters.memberLevelFilter !== 'all' || filters.statusFilter !== 'all' || filters.mapAccessFilter !== 'all' || filters.verificationStatusFilter !== 'all' || filters.jadeMarketFilter !== 'all' || filters.homepageFilter !== 'all' || filters.propertyDetailFilter !== 'all'
             ? "No users match your current filters. Try adjusting your search criteria."
             : "No users have been created yet."
           }
@@ -616,6 +654,10 @@ const UserListPage: React.FC = () => {
                         : 'warning' as const,
                   }];
                 })(),
+                {
+                  label: user.map_pins_access ? 'Map: Enabled' : 'Map: Disabled',
+                  color: user.map_pins_access ? ('success' as const) : ('error' as const),
+                },
                 ...(user.user_type === 'company'
                   ? [{
                       label: user.company_profile?.show_on_homepage ? 'Homepage: Yes' : 'Homepage: No',
