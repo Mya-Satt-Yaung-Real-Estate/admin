@@ -64,6 +64,7 @@ export interface RegularUser {
   user_type_label?: string;
   member_level: MemberLevel;
   is_active: boolean;
+  map_pins_access?: boolean;
   verification_status?: 'pending' | 'approved' | 'rejected';
   last_login_at?: string;
   last_active_at?: string;
@@ -105,6 +106,7 @@ export interface CreateRegularUserData {
   user_type: 'company' | 'individual';
   member_level?: MemberLevel;
   is_active?: boolean;
+  map_pins_access?: boolean;
   /** Optional profile image (upload via /api/v1/media first). */
   media_id?: number;
   /** Optional cover image (upload via /api/v1/media first). */
@@ -128,6 +130,7 @@ export interface UpdateRegularUserData {
   email?: string;
   member_level?: MemberLevel;
   is_active?: boolean;
+  map_pins_access?: boolean;
   verification_status?: 'pending' | 'approved' | 'rejected';
   company_name?: string;
   company_type_id?: number;

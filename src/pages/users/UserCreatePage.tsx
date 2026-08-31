@@ -95,6 +95,7 @@ const UserCreatePage: React.FC = () => {
       show_on_homepage: false,
       show_on_property_detail: false,
       our_market: false,
+      map_pins_access: false,
     },
     validationSchema: createUserValidationSchema,
     validateOnBlur: true,
@@ -106,6 +107,7 @@ const UserCreatePage: React.FC = () => {
           user_type: values.user_type,
           member_level: values.member_level,
           is_active: values.is_active === 'true',
+          map_pins_access: values.map_pins_access,
           phone: values.phone,
         };
 
@@ -439,6 +441,20 @@ const UserCreatePage: React.FC = () => {
                     </FormControl>
                   </Grid>
                 </Grid>
+                <Box sx={{ mt: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formik.values.map_pins_access}
+                        onChange={(_, checked) => formik.setFieldValue('map_pins_access', checked)}
+                      />
+                    }
+                    label="Map pins access (mobile property map)"
+                  />
+                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5, ml: 4.5 }}>
+                    When enabled, this user can open the mobile map and load property pins.
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           </Grid>

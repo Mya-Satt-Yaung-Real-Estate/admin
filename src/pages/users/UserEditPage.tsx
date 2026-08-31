@@ -77,6 +77,7 @@ const EMPTY_FORM_VALUES = {
   show_on_homepage: false,
   show_on_property_detail: false,
   our_market: false,
+  map_pins_access: false,
 };
 
 function buildEditInitialValues(user: RegularUser) {
@@ -96,6 +97,7 @@ function buildEditInitialValues(user: RegularUser) {
     show_on_homepage: Boolean(user.company_profile?.show_on_homepage),
     show_on_property_detail: Boolean(user.company_profile?.show_on_property_detail),
     our_market: Boolean(user.company_profile?.our_market),
+    map_pins_access: Boolean(user.map_pins_access),
   };
 }
 
@@ -177,6 +179,7 @@ const UserEditPage: React.FC = () => {
         name: values.name.trim(),
         member_level: values.member_level,
         is_active: values.is_active === 'true',
+        map_pins_access: values.map_pins_access,
       };
 
       const trimmedEmail = values.email.trim();
@@ -535,6 +538,20 @@ const UserEditPage: React.FC = () => {
                     </Grid>
                   )}
                 </Grid>
+                <Box sx={{ mt: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={formik.values.map_pins_access}
+                        onChange={(_, checked) => formik.setFieldValue('map_pins_access', checked)}
+                      />
+                    }
+                    label="Map pins access (mobile property map)"
+                  />
+                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5, ml: 4.5 }}>
+                    When enabled, this user can open the mobile map and load property pins.
+                  </Typography>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -776,6 +793,9 @@ const UserEditPage: React.FC = () => {
                     )}
                     <Typography variant="body2" color="textSecondary">
                       Current Member Level: <strong>{user.member_level}</strong>
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                      Map Pins Access: <strong>{user.map_pins_access ? 'Enabled' : 'Disabled'}</strong>
                     </Typography>
                   </Box>
 

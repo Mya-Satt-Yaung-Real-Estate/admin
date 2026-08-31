@@ -90,6 +90,7 @@ export const editUserValidationSchema = Yup.object().shape({
     .required('Member level is required')
     .oneOf([...MEMBER_LEVEL_VALUES], 'Invalid member level'),
   is_active: Yup.string().oneOf(['true', 'false']),
+  map_pins_access: Yup.boolean(),
   company_name: Yup.string().when('user_type', {
     is: 'company',
     then: (schema) => schema.trim().required('Company name is required'),
@@ -141,6 +142,7 @@ export const createUserValidationSchema = Yup.object().shape({
     .required('Member level is required')
     .oneOf([...MEMBER_LEVEL_VALUES], 'Invalid member level'),
   is_active: Yup.string().oneOf(['true', 'false']),
+  map_pins_access: Yup.boolean(),
   company_name: Yup.string().when('user_type', {
     is: 'company',
     then: (schema) => schema.trim().required('Company name is required'),
@@ -178,6 +180,7 @@ export const DETAIL_ICON_SX = {
   location: { color: 'error.main' },
   description: { color: 'secondary.main' },
   home: { color: 'primary.main' },
+  map: { color: 'success.main' },
 } as const;
 
 export const detailListSx = {

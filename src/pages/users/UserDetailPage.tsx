@@ -25,6 +25,7 @@ import {
   Star as StarIcon,
   Fingerprint as FingerprintIcon,
   Home as HomeIcon,
+  Map as MapIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -289,6 +290,16 @@ const UserDetailPage: React.FC = () => {
                   <ListItemText
                     primary="Member Level"
                     secondary={user.member_level}
+                  />
+                </ListItem>
+
+                <ListItem>
+                  <ListItemIcon>
+                    <MapIcon sx={DETAIL_ICON_SX.map} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Map Pins Access"
+                    secondary={user.map_pins_access ? 'Enabled' : 'Disabled'}
                   />
                 </ListItem>
 
