@@ -54,4 +54,9 @@ export const usersAPI = {
     apiRequest<{ success: boolean; message: string; data: { user: RegularUser } }>(`/users/${slug}/clear-biometric`, {
       method: 'POST',
     }),
+
+  revokeUser: (slug: string) =>
+    apiRequest<{ user: RegularUser; tokens_revoked: number }>(`/users/${slug}/revoke`, {
+      method: 'POST',
+    }),
 };

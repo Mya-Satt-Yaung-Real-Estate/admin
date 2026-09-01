@@ -136,3 +136,18 @@ export const useClearBiometricUser = () => {
     },
   });
 };
+
+export const useRevokeUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: usersAPI.revokeUser,
+    onSuccess: (response, slug) => {
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(slug) });
+      if (response?.data) {
+        queryClient.setQueryData(userKeys.detail(slug), response);
+      }
+    },
+  });
+};

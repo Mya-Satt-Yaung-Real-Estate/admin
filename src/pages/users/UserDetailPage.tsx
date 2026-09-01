@@ -12,6 +12,12 @@ import {
   ListItemIcon,
   Alert,
   Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -26,6 +32,8 @@ import {
   Fingerprint as FingerprintIcon,
   Home as HomeIcon,
   Map as MapIcon,
+  Devices as DevicesIcon,
+  Block as BlockIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
@@ -38,7 +46,7 @@ import {
   UserPropertyStatistics,
   ActionAlert,
 } from '../../components/ui';
-import { useUser, useClearBiometricUser } from '../../services/queries/users';
+import { useUser, useClearBiometricUser, useRevokeUser } from '../../services/queries/users';
 import { getRegularUserDisplayName } from '../../types/user';
 import { formatDate } from '../../constants/dateFormats';
 import { useAlertSystem } from '../../hooks';
@@ -68,6 +76,7 @@ const UserDetailPage: React.FC = () => {
   // Queries
   const { data: userData, isLoading, error } = useUser(slug || '');
   const clearBiometricMutation = useClearBiometricUser();
+  const revokeUserMutation = useRevokeUser();
 
   // Computed values
   const user = userData?.data?.user;
@@ -84,6 +93,18 @@ const UserDetailPage: React.FC = () => {
       showSuccess('Biometric data cleared. User can enable it again from the app.');
     } catch (err: any) {
       showError(err?.message || 'Failed to clear biometric data.', true);
+    }
+  };
+
+  const handleRevokeUser = async () => {
+    if (!slug) return;
+    if (!window.confirm('Revoke this user? They will be logged out and cannot log in until reactivated.')) return;
+    try {
+      const response = await revokeUserMutation.mutateAsync(slug);
+      const tokensRevoked = response?.data?.tokens_revoked ?? 0;
+      showSuccess(`User revoked. ${tokensRevoked} session(s) terminated.`);
+    } catch (err: any) {
+      showError(err?.message || 'Failed to revoke user.', true);
     }
   };
 
@@ -231,6 +252,16 @@ const UserDetailPage: React.FC = () => {
                   User Information
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<BlockIcon />}
+                    onClick={handleRevokeUser}
+                    disabled={!user.is_active || revokeUserMutation.isPending}
+                  >
+                    {revokeUserMutation.isPending ? 'Revoking…' : 'Revoke User'}
+                  </Button>
                   <Button
                     variant="outlined"
                     color="warning"
@@ -489,6 +520,54 @@ const UserDetailPage: React.FC = () => {
             </Card>
           </Grid>
         )}
+
+        <Grid item xs={12}>
+          <Card sx={{ width: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <DevicesIcon color="action" />
+                <Typography variant="h6">
+                  Registered Devices ({user.devices?.length ?? 0})
+                </Typography>
+              </Box>
+
+              {user.devices && user.devices.length > 0 ? (
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Device</TableCell>
+                        <TableCell>Platform</TableCell>
+                        <TableCell>OS</TableCell>
+                        <TableCell>App</TableCell>
+                        <TableCell>Last seen</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {user.devices.map((device) => (
+                        <TableRow key={device.id}>
+                          <TableCell>
+                            {device.device_name || device.device_model || device.device_id}
+                          </TableCell>
+                          <TableCell>{device.platform}</TableCell>
+                          <TableCell>{device.os_version || '—'}</TableCell>
+                          <TableCell>{device.app_version || '—'}</TableCell>
+                          <TableCell>
+                            {device.last_seen_at ? formatDate(device.last_seen_at) : '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No mobile devices registered yet.
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
         {/* Property Statistics */}
         <Grid item xs={12}>

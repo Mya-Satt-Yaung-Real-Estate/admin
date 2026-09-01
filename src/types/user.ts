@@ -54,6 +54,18 @@ export interface UserPointTransaction {
   created_at: string;
 }
 
+export interface UserDevice {
+  id: number;
+  device_id: string;
+  device_name?: string | null;
+  device_model?: string | null;
+  platform: string;
+  os_version?: string | null;
+  app_version?: string | null;
+  last_seen_at?: string | null;
+  created_at: string;
+}
+
 export interface RegularUser {
   id: number;
   name: string;
@@ -94,6 +106,7 @@ export interface RegularUser {
   // Biometric (admin detail / clear-biometric)
   biometric_enabled?: boolean;
   biometric_enabled_at?: string;
+  devices?: UserDevice[];
   // Profile image (admin edit / user site)
   profile_image_url?: string | null;
   profile_media_id?: number | null;
