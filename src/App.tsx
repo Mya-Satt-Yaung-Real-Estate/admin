@@ -7,7 +7,7 @@ import { router } from './routes';
 import { QueryProvider } from './providers/QueryProvider';
 import './index.css';
 import 'leaflet/dist/leaflet.css';
-
+ 
 function App() {
   return (
     <HelmetProvider>
