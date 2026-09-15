@@ -161,9 +161,20 @@ export const MENU_ITEMS = [
     path: '/loan-requests',
   },
   {
-    text: 'Users',
+    text: 'User',
     iconName: 'People',
-    path: '/users',
+    children: [
+      {
+        text: 'Users',
+        iconName: 'PersonAdd',
+        path: '/users',
+      },
+      {
+        text: 'Map Access Users',
+        iconName: 'LocationOn',
+        path: '/users/map-access',
+      },
+    ],
   },
   {
     text: 'Announcements',

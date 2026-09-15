@@ -151,3 +151,16 @@ export const useRevokeUser = () => {
     },
   });
 };
+
+export const useUpdateMapPinsAccess = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ slug, mapPinsAccess }: { slug: string; mapPinsAccess: boolean }) =>
+      usersAPI.updateMapPinsAccess(slug, mapPinsAccess),
+    onSuccess: (_response, { slug }) => {
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: userKeys.detail(slug) });
+    },
+  });
+};

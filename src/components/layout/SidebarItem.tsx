@@ -35,27 +35,42 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // Check if any child is currently selected (including nested routes)
-  const hasSelectedChild = childrenItems.some(child => {
-    if (child.path === currentPath) return true;
-    // Check if current path starts with child path (for nested routes like /events/create, /events/slug/edit)
-    return child.path && currentPath.startsWith(child.path + '/');
+  /**
+   * Prefer longest path match so /users/map-access counts as Map Access,
+   * not as a nested route under /users — same rule as child highlight.
+   */
+  const matchingChildren = childrenItems.filter((item) => {
+    if (!item.path) return false;
+    return currentPath === item.path || currentPath.startsWith(item.path + '/');
   });
-  
-  // Determine if this dropdown should be open
+  const bestChildMatch = [...matchingChildren].sort(
+    (a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0)
+  )[0];
+  const hasSelectedChild = Boolean(bestChildMatch);
+
+  /**
+   * openDropdown === null → auto-open when a child page is active
+   * openDropdown === ''   → user closed; stay closed even with selected child
+   * openDropdown === text → this menu is explicitly open
+   */
   const isOpen = openDropdown === text || (hasSelectedChild && openDropdown === null);
   
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onDropdownToggle) {
-      onDropdownToggle(text);
+    if (!onDropdownToggle) {
+      return;
     }
+    /**
+     * One click closes even when open via selected child (openDropdown === null).
+     * '' = user closed; null = allow auto-open again after navigation.
+     */
+    onDropdownToggle(isOpen ? '' : text);
   };
   
   // Collapse dropdown on mobile when a child is clicked
   const handleChildClick = (path: string) => {
     if (isMobile && onDropdownToggle) {
-      onDropdownToggle(text);
+      onDropdownToggle('');
     }
     onClick(path);
   };
@@ -133,12 +148,19 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
       <Collapse in={isOpen && !isCollapsed} timeout="auto" unmountOnExit>
         <List component="div" disablePadding id={`dropdown-list-${text}`}>
           {childrenItems.map((child) => {
-            // Check if this child item should be selected
-            const isChildSelected = Boolean(
-              currentPath === child.path || 
-              (child.path && currentPath.startsWith(child.path + '/'))
-            );
-            
+            /**
+             * Prefer longest matching path so /users/map-access
+             * does not also highlight the /users child.
+             */
+            const matchingChildren = childrenItems.filter((item) => {
+              if (!item.path) return false;
+              return currentPath === item.path || currentPath.startsWith(item.path + '/');
+            });
+            const bestMatch = [...matchingChildren].sort(
+              (a, b) => (b.path?.length ?? 0) - (a.path?.length ?? 0)
+            )[0];
+            const isChildSelected = Boolean(child.path && bestMatch?.path === child.path);
+
             return (
               <SidebarItem
                 key={child.text}

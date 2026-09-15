@@ -185,9 +185,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     onNavigate(path);
   }, [onNavigate]);
 
-  // Handle dropdown toggle
+  /**
+   * ''  = user closed this (or any) dropdown — do not auto-reopen
+   * null = after navigate — auto-open parent of active child
+   * name = that parent is explicitly open
+   */
   const handleDropdownToggle = useCallback((dropdownText: string) => {
-    setOpenDropdown(prev => prev === dropdownText ? null : dropdownText);
+    setOpenDropdown(dropdownText === '' ? '' : dropdownText);
   }, []);
 
   // Developer / marketer access control
