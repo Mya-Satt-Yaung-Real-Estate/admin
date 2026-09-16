@@ -46,6 +46,7 @@ import {
   Assignment as AssignmentIcon,
   Payment as PaymentIcon,
   Handshake as HandshakeIcon,
+  Map as MapIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -55,6 +56,7 @@ import { ActionAlert } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { systemConfigurationAPI } from '../../services/api';
 import { SystemConfiguration } from '../../types';
+import PropertyNoteApproverUserSelect from './PropertyNoteApproverUserSelect';
 
 // Configuration categories with related icons
 const CONFIG_CATEGORIES = {
@@ -93,6 +95,16 @@ const CONFIG_CATEGORIES = {
     description: 'Configure share profit listing expiration',
     icon: <HandshakeIcon />,
     color: '#6d4c41',
+  },
+  /**
+   * Property Note unlock: access days, approvers, admin-approval flag, unlock mode.
+   * Unlock point cost lives under Point System (point_system.property_note_unlock_cost).
+   */
+  property_note: {
+    name: 'Property Note',
+    description: 'Map tracker unlock days, approvers, and admin approval flag',
+    icon: <MapIcon />,
+    color: '#3B8880',
   },
   media: {
     name: 'Media',
@@ -281,6 +293,37 @@ const SystemConfigurationPage: React.FC = () => {
             />
           </RadioGroup>
         </FormControl>
+      );
+    }
+
+    /**
+     * Property Note admin-allow mode: whole user vs user+device.
+     */
+    if (config.config_key === 'property_note.unlock_mode') {
+      return (
+        <FormControl fullWidth>
+          <FormLabel component="legend">Unlock Mode</FormLabel>
+          <RadioGroup
+            value={value || 'user'}
+            onChange={(e) => handleFieldChange(config.config_key, e.target.value)}
+            row
+          >
+            <FormControlLabel value="user" control={<Radio />} label="User" />
+            <FormControlLabel value="user_device" control={<Radio />} label="User + Device" />
+          </RadioGroup>
+        </FormControl>
+      );
+    }
+
+    /**
+     * Approver list: searchable multi-select; still saved as JSON id array.
+     */
+    if (config.config_key === 'property_note.approver_user_ids') {
+      return (
+        <PropertyNoteApproverUserSelect
+          value={typeof value === 'string' ? value : JSON.stringify(value ?? [])}
+          onChange={(jsonArray) => handleFieldChange(config.config_key, jsonArray)}
+        />
       );
     }
 
