@@ -23,6 +23,7 @@ export * from './youtubeVideos';
 export * from './wantingListings';
 export * from './shareProfitListings';
 export * from './activities';
+export * from './propertyNoteAccessRequests';
 export * from './dashboard';
 export * from './appSettings';
 

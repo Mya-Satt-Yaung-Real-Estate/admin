@@ -55,6 +55,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         rejected: 'Rejected',
         deleted: 'Deleted',
         approved: 'Approved',
+        admin_approved: 'Admin Approved',
         under_review: 'Under Review',
         // Booking statuses
         accepted: 'Accepted',
@@ -196,6 +197,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           border: '#D97706',
           hoverBg: '#FFFBEB',
           hoverBorder: '#B45309',
+        },
+        admin_approved: {
+          text: '#0288D1', // Blue — waiting mobile approver
+          border: '#0288D1',
+          hoverBg: '#E1F5FE',
+          hoverBorder: '#01579B',
         },
         rejected: {
           text: '#DC2626', // Red

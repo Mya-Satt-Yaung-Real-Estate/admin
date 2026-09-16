@@ -176,6 +176,20 @@ export const MENU_ITEMS = [
       },
     ],
   },
+  /**
+   * Property Notes list held for later. Access Requests = A2 unlock approve/reject.
+   */
+  {
+    text: 'Property Note',
+    iconName: 'Map',
+    children: [
+      {
+        text: 'Access Requests',
+        iconName: 'RequestQuote',
+        path: '/property-note-access-requests',
+      },
+    ],
+  },
   {
     text: 'Announcements',
     iconName: 'Campaign',

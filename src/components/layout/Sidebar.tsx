@@ -17,6 +17,7 @@ import {
   Assessment as AssessmentIcon,
   Settings as SettingsIcon,
   LocationOn as LocationOnIcon,
+  Map as MapIcon,
   Campaign as CampaignIcon,
   RequestQuote as RequestQuoteIcon,
   HomeWork as HomeWorkIcon,
@@ -105,6 +106,8 @@ export const getIconComponent = (iconName: string): React.ReactNode => {
       return <AssessmentIcon />;
     case 'LocationOn':
       return <LocationOnIcon />;
+    case 'Map':
+      return <MapIcon />;
     case 'Home':
       return <HomeIcon />;
     case 'List':
