@@ -172,7 +172,7 @@ export const MENU_ITEMS = [
       {
         text: 'Map Access Users',
         iconName: 'LocationOn',
-        path: '/users/map-access',
+        path: '/map-access-users',
       },
     ],
   },

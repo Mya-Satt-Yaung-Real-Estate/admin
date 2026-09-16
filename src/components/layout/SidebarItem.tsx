@@ -36,8 +36,8 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   /**
-   * Prefer longest path match so /users/map-access counts as Map Access,
-   * not as a nested route under /users — same rule as child highlight.
+   * Prefer longest path match so nested child routes highlight correctly
+   * (e.g. /users/:slug vs a longer sibling path under the same parent).
    */
   const matchingChildren = childrenItems.filter((item) => {
     if (!item.path) return false;
@@ -149,8 +149,8 @@ const SidebarItemDropdown: React.FC<SidebarItemDropdownProps> = ({
         <List component="div" disablePadding id={`dropdown-list-${text}`}>
           {childrenItems.map((child) => {
             /**
-             * Prefer longest matching path so /users/map-access
-             * does not also highlight the /users child.
+             * Prefer longest matching path so nested routes highlight the
+             * most specific child under this parent menu.
              */
             const matchingChildren = childrenItems.filter((item) => {
               if (!item.path) return false;

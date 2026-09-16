@@ -59,13 +59,4 @@ export const usersAPI = {
     apiRequest<{ user: RegularUser; tokens_revoked: number }>(`/users/${slug}/revoke`, {
       method: 'POST',
     }),
-
-  /**
-   * Toggle map pins access without sending a full user update payload.
-   */
-  updateMapPinsAccess: (slug: string, mapPinsAccess: boolean) =>
-    apiRequest<{ user: RegularUser }>(`/users/${slug}/map-pins-access`, {
-      method: 'PATCH',
-      body: JSON.stringify({ map_pins_access: mapPinsAccess }),
-    }),
 };

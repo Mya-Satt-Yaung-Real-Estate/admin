@@ -29,7 +29,7 @@ import {
   StatusChip,
 } from '../../components/ui';
 import { useAlertSystem, useFilters, usePagination } from '../../hooks';
-import { useUpdateMapPinsAccess, useUsers } from '../../services/queries/users';
+import { useMapAccessUsers, useUpdateMapPinsAccess } from '../../services/queries/mapAccessUsers';
 import { FilterState } from '../../constants/filters';
 import { RegularUser, getRegularUserDisplayName } from '../../types/user';
 
@@ -104,7 +104,7 @@ const MapAccessUserListPage: React.FC = () => {
     userTypeFilter: 'all',
   });
 
-  const { data: usersResponse, isLoading, error } = useUsers({
+  const { data: usersResponse, isLoading, error } = useMapAccessUsers({
     per_page: 100,
     sort_by: 'created_at',
     sort_direction: 'desc',

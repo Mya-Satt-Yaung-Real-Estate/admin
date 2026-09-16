@@ -17,6 +17,7 @@ import { propertyListingTypeRoutes } from './property-listing-types';
 import { pointRoutes } from './points';
 import { companyTypeRoutes } from './company-types';
 import { userRoutes } from './users';
+import { mapAccessUserRoutes } from './map-access-users';
 import { analyticsRoutes } from './analytics';
 import { settingsRoutes } from './settings';
 import { systemConfigurationRoutes } from './system-configurations';
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
   ...propertyListingTypeRoutes,
   ...pointRoutes,
   ...companyTypeRoutes,
+  ...mapAccessUserRoutes,
   ...userRoutes,
   ...analyticsRoutes,
   ...settingsRoutes,
