@@ -184,16 +184,12 @@ const MapAccessUserListPage: React.FC = () => {
     [showError, showSuccess, updateMapAccess]
   );
 
-  const handleToggleRequest = useCallback(
-    (user: RegularUser, nextValue: boolean) => {
-      if (!nextValue) {
-        setConfirmState({ open: true, user, nextValue });
-        return;
-      }
-      void applyMapAccess(user, nextValue);
-    },
-    [applyMapAccess]
-  );
+  /**
+   * Always confirm before enable or disable — map access is a permission flip.
+   */
+  const handleToggleRequest = useCallback((user: RegularUser, nextValue: boolean) => {
+    setConfirmState({ open: true, user, nextValue });
+  }, []);
 
   const columns: TableColumn<RegularUser>[] = useMemo(
     () => [
@@ -420,15 +416,19 @@ const MapAccessUserListPage: React.FC = () => {
           }
           setConfirmState({ open: false, user: null, nextValue: false });
         }}
-        title="Disable map access?"
+        title={confirmState.nextValue ? 'Enable map access?' : 'Disable map access?'}
         message={
           confirmState.user
-            ? `Disable map pins access for ${getRegularUserDisplayName(confirmState.user)}?`
-            : 'Disable map pins access for this user?'
+            ? confirmState.nextValue
+              ? `Enable map pins access for ${getRegularUserDisplayName(confirmState.user)}?`
+              : `Disable map pins access for ${getRegularUserDisplayName(confirmState.user)}?`
+            : confirmState.nextValue
+              ? 'Enable map pins access for this user?'
+              : 'Disable map pins access for this user?'
         }
         action="custom"
-        actionLabel="Disable"
-        actionColor="warning"
+        actionLabel={confirmState.nextValue ? 'Enable' : 'Disable'}
+        actionColor={confirmState.nextValue ? 'primary' : 'warning'}
         isLoading={updateMapAccess.isPending}
       />
     </Box>
