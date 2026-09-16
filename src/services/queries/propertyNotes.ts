@@ -19,3 +19,12 @@ export const usePropertyNotes = (params?: PropertyNoteListFilters) => {
     placeholderData: keepPreviousData,
   });
 };
+
+export const usePropertyNote = (id: number) => {
+  return useQuery({
+    queryKey: propertyNoteKeys.detail(id),
+    queryFn: () => propertyNotesAPI.get(id),
+    enabled: Number.isFinite(id) && id > 0,
+    staleTime: 30 * 1000,
+  });
+};

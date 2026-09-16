@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
 import {
   Box,
+  IconButton,
   LinearProgress,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -12,12 +14,14 @@ import {
   Map as MapIcon,
   Person as PersonIcon,
   Key as RentedIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
 import { StatisticsCards, StatCard } from '../../components/common/StatisticsCards';
-import { MobileCard } from '../../components/common/MobileCard';
+import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import {
   PageEmptyState,
   PageErrorState,
@@ -61,6 +65,7 @@ const FILTER_FIELDS: FilterField[] = [
 ];
 
 const PropertyNoteListPage: React.FC = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -197,8 +202,27 @@ const PropertyNoteListPage: React.FC = () => {
         ),
         hidden: isMobile,
       },
+      {
+        id: 'actions',
+        label: 'Actions',
+        align: 'center',
+        render: (_value, row) => {
+          if (!row) return null;
+          return (
+            <Tooltip title="View details">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => navigate(`/property-notes/${row.id}`)}
+              >
+                <ViewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          );
+        },
+      },
     ],
-    [isMobile]
+    [isMobile, navigate]
   );
 
   if (isInitialLoading) {
@@ -251,24 +275,37 @@ const PropertyNoteListPage: React.FC = () => {
 
       {isMobile && notes.length > 0 ? (
         <Box>
-          {notes.map((note) => (
-            <MobileCard
-              key={note.id}
-              title={note.note_code}
-              subtitle={note.user?.name || '—'}
-              description={`${note.listing_type?.name_en || '—'} · ${note.township?.name_en || '—'}`}
-              avatar={<PersonIcon />}
-              status={{
-                label: note.status,
-                color:
-                  note.status === 'active'
-                    ? ('success' as const)
-                    : note.status === 'sold'
-                      ? ('info' as const)
-                      : ('warning' as const),
-              }}
-            />
-          ))}
+          {notes.map((note) => {
+            const actions: MobileCardAction[] = [
+              {
+                icon: <ViewIcon />,
+                tooltip: 'View details',
+                color: 'primary',
+                onClick: () => navigate(`/property-notes/${note.id}`),
+              },
+            ];
+            return (
+              <MobileCard
+                key={note.id}
+                title={note.note_code}
+                subtitle={note.user?.name || '—'}
+                description={`${note.listing_type?.name_en || '—'} · ${note.township?.name_en || '—'}`}
+                avatar={<PersonIcon />}
+                status={{
+                  label: note.status,
+                  color:
+                    note.status === 'active'
+                      ? ('success' as const)
+                      : note.status === 'sold'
+                        ? ('info' as const)
+                        : ('warning' as const),
+                }}
+                actions={actions}
+                clickable
+                onClick={() => navigate(`/property-notes/${note.id}`)}
+              />
+            );
+          })}
         </Box>
       ) : (
         notes.length > 0 && (
