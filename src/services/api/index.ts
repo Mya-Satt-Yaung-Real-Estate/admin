@@ -24,6 +24,7 @@ export * from './wantingListings';
 export * from './shareProfitListings';
 export * from './activities';
 export * from './propertyNoteAccessRequests';
+export * from './propertyNotes';
 export * from './dashboard';
 export * from './appSettings';
 
