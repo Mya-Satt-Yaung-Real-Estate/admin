@@ -1,5 +1,6 @@
 export { usePagination } from './usePagination';
 export { useFilters } from './useFilters';
+export { useDebouncedValue } from './useDebouncedValue';
 export { useLayout } from './useLayout';
 export { useDeleteConfirmation } from './useDeleteConfirmation';
 export { useAlertSystem } from './useAlertSystem';

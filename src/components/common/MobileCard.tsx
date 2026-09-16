@@ -17,6 +17,7 @@ export interface MobileCardAction {
   tooltip: string;
   color?: 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
   onClick: () => void;
+  disabled?: boolean;
 }
 
 export interface MobileCardProps {
@@ -91,6 +92,9 @@ export const MobileCard: React.FC<MobileCardProps> = ({
 
   const handleActionClick = (e: React.MouseEvent, action: MobileCardAction) => {
     e.stopPropagation();
+    if (action.disabled) {
+      return;
+    }
     action.onClick();
   };
 
@@ -270,13 +274,16 @@ export const MobileCard: React.FC<MobileCardProps> = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {actions.map((action, index) => (
             <Tooltip key={index} title={action.tooltip}>
-              <IconButton
-                size="small"
-                onClick={(e) => handleActionClick(e, action)}
-                color={action.color || 'default'}
-              >
-                {action.icon}
-              </IconButton>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={(e) => handleActionClick(e, action)}
+                  color={action.color || 'default'}
+                  disabled={action.disabled}
+                >
+                  {action.icon}
+                </IconButton>
+              </span>
             </Tooltip>
           ))}
         </Box>

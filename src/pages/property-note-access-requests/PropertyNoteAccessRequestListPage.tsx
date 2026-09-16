@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   IconButton,
+  LinearProgress,
   Tooltip,
   Typography,
   useMediaQuery,
@@ -27,7 +28,7 @@ import {
   PageLoadingState,
   StatusChip,
 } from '../../components/ui';
-import { useAlertSystem, useFilters, usePagination } from '../../hooks';
+import { useAlertSystem, useDebouncedValue, useFilters, usePagination } from '../../hooks';
 import {
   useApprovePropertyNoteAccessRequest,
   usePropertyNoteAccessRequests,
@@ -43,6 +44,9 @@ interface AccessRequestFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
 }
+
+/** Wait after typing before searching — avoids an API call per keystroke. */
+const SEARCH_DEBOUNCE_MS = 400;
 
 const FILTER_FIELDS: FilterField[] = [
   {
@@ -94,27 +98,37 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
     statusFilter: 'all',
   });
 
+  /**
+   * Input updates live; API uses this value only after idle SEARCH_DEBOUNCE_MS.
+   */
+  const debouncedSearch = useDebouncedValue(filters.searchTerm.trim(), SEARCH_DEBOUNCE_MS);
+
   useEffect(() => {
     handleChangePage(null, 0);
-  }, [filters.searchTerm, filters.statusFilter, handleChangePage]);
+  }, [debouncedSearch, filters.statusFilter, handleChangePage]);
 
   const listParams = useMemo(
     () => ({
       page: page + 1,
       per_page: rowsPerPage,
-      search: filters.searchTerm || undefined,
+      search: debouncedSearch || undefined,
       status:
         filters.statusFilter !== 'all'
           ? (filters.statusFilter as PropertyNoteAccessStatus)
           : undefined,
     }),
-    [page, rowsPerPage, filters.searchTerm, filters.statusFilter]
+    [page, rowsPerPage, debouncedSearch, filters.statusFilter]
   );
 
-  const { data, isLoading, error, refetch } = usePropertyNoteAccessRequests(listParams);
+  const { data, isLoading, isFetching, error, refetch } = usePropertyNoteAccessRequests(listParams);
   const requests = data?.data ?? [];
   const statistics = data?.statistics;
   const totalCount = data?.pagination?.total ?? requests.length;
+  /**
+   * Full-page loader only on first visit. Search/filter shows LinearProgress only.
+   */
+  const isInitialLoading = isLoading && !data;
+  const isRefreshing = isFetching && !isInitialLoading;
 
   const statsCards: StatCard[] = useMemo(
     () => [
@@ -264,40 +278,45 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         align: 'center',
         render: (_value, row) => {
           if (!row) return null;
-          const canApprove = row.status === 'pending';
-          const canReject = row.status === 'pending' || row.status === 'admin_approved';
+          const canAct = row.status === 'pending';
+          const busy = approveMutation.isPending || rejectMutation.isPending;
+          const approveTitle = canAct
+            ? 'Approve (send to mobile approvers)'
+            : row.status === 'admin_approved'
+              ? 'Waiting for mobile Approver'
+              : 'Only pending requests can be approved';
+          const rejectTitle = canAct
+            ? 'Reject'
+            : row.status === 'admin_approved'
+              ? 'Waiting for mobile Approver — Admin cannot reject'
+              : 'Only pending requests can be rejected';
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-              {canApprove && (
-                <Tooltip title="Approve (send to mobile approvers)">
+              <Tooltip title={approveTitle}>
+                <span>
                   <IconButton
                     size="small"
                     color="success"
                     onClick={() => handleApproveClick(row)}
-                    disabled={approveMutation.isPending || rejectMutation.isPending}
+                    disabled={!canAct || busy}
                   >
                     <ApproveIcon fontSize="small" />
                   </IconButton>
-                </Tooltip>
-              )}
-              {canReject && (
-                <Tooltip title="Reject">
+                </span>
+              </Tooltip>
+              <Tooltip title={rejectTitle}>
+                <span>
                   <IconButton
                     size="small"
                     color="error"
                     onClick={() => handleRejectClick(row)}
-                    disabled={approveMutation.isPending || rejectMutation.isPending}
+                    disabled={!canAct || busy}
                   >
                     <RejectIcon fontSize="small" />
                   </IconButton>
-                </Tooltip>
-              )}
-              {!canApprove && !canReject && (
-                <Typography variant="caption" color="text.secondary">
-                  —
-                </Typography>
-              )}
+                </span>
+              </Tooltip>
             </Box>
           );
         },
@@ -313,31 +332,48 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
   );
 
   const createMobileActions = (request: PropertyNoteAccessRequest): MobileCardAction[] => {
-    const actions: MobileCardAction[] = [];
-    if (request.status === 'pending') {
-      actions.push({
+    const canAct = request.status === 'pending';
+    const waitingApprover = request.status === 'admin_approved';
+
+    return [
+      {
         icon: <ApproveIcon />,
-        tooltip: 'Approve',
+        tooltip: canAct
+          ? 'Approve'
+          : waitingApprover
+            ? 'Waiting for mobile Approver'
+            : 'Only pending requests can be approved',
         color: 'success' as const,
-        onClick: () => handleApproveClick(request),
-      });
-    }
-    if (request.status === 'pending' || request.status === 'admin_approved') {
-      actions.push({
+        onClick: () => {
+          if (canAct) {
+            handleApproveClick(request);
+          }
+        },
+        disabled: !canAct,
+      },
+      {
         icon: <RejectIcon />,
-        tooltip: 'Reject',
+        tooltip: canAct
+          ? 'Reject'
+          : waitingApprover
+            ? 'Waiting for mobile Approver — Admin cannot reject'
+            : 'Only pending requests can be rejected',
         color: 'error' as const,
-        onClick: () => handleRejectClick(request),
-      });
-    }
-    return actions;
+        onClick: () => {
+          if (canAct) {
+            handleRejectClick(request);
+          }
+        },
+        disabled: !canAct,
+      },
+    ];
   };
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return <PageLoadingState title="Loading Access Requests" />;
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <PageErrorState
         error={error}
@@ -367,6 +403,13 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         showClearButton
         onClearFilters={resetFilters}
       />
+
+      {/**
+       * Fixed-height slot so LinearProgress does not push the table (no layout shake).
+       */}
+      <Box sx={{ height: 4, mb: 1 }}>
+        {isRefreshing ? <LinearProgress sx={{ height: 4, borderRadius: 1 }} /> : null}
+      </Box>
 
       {requests.length === 0 && (
         <PageEmptyState

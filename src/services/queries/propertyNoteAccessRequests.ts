@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { propertyNoteAccessRequestsAPI } from '../api/propertyNoteAccessRequests';
 import type { PropertyNoteAccessRequestFilters } from '../../types/propertyNoteAccess';
 
@@ -17,6 +17,11 @@ export const usePropertyNoteAccessRequests = (params?: PropertyNoteAccessRequest
     queryFn: () => propertyNoteAccessRequestsAPI.list(params),
     staleTime: 30 * 1000,
     refetchOnMount: true,
+    /**
+     * Keep the previous list on screen while a new search/filter page loads
+     * so typing does not flash a full-page loader.
+     */
+    placeholderData: keepPreviousData,
   });
 };
 
