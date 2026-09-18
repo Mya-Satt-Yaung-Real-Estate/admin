@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { propertyNoteAccessRequestsAPI } from '../api/propertyNoteAccessRequests';
-import type { PropertyNoteAccessRequestFilters } from '../../types/propertyNoteAccess';
+import type {
+  PropertyNoteAccessGrantPayload,
+  PropertyNoteAccessRequestFilters,
+} from '../../types/propertyNoteAccess';
 
 export const propertyNoteAccessKeys = {
   all: ['property-note-access-requests'] as const,
@@ -9,6 +12,7 @@ export const propertyNoteAccessKeys = {
     [...propertyNoteAccessKeys.lists(), params] as const,
   details: () => [...propertyNoteAccessKeys.all, 'detail'] as const,
   detail: (id: number) => [...propertyNoteAccessKeys.details(), id] as const,
+  grantOptions: () => [...propertyNoteAccessKeys.all, 'grant-options'] as const,
 };
 
 export const usePropertyNoteAccessRequests = (params?: PropertyNoteAccessRequestFilters) => {
@@ -22,6 +26,30 @@ export const usePropertyNoteAccessRequests = (params?: PropertyNoteAccessRequest
      * so typing does not flash a full-page loader.
      */
     placeholderData: keepPreviousData,
+  });
+};
+
+export const usePropertyNoteAccessGrantOptions = () => {
+  return useQuery({
+    queryKey: propertyNoteAccessKeys.grantOptions(),
+    queryFn: async () => {
+      const response = await propertyNoteAccessRequestsAPI.getGrantOptions();
+      return response.data;
+    },
+    staleTime: 60 * 1000,
+  });
+};
+
+export const useGrantPropertyNoteAccess = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: PropertyNoteAccessGrantPayload) =>
+      propertyNoteAccessRequestsAPI.grant(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.grantOptions() });
+    },
   });
 };
 

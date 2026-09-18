@@ -34,6 +34,7 @@ export interface PropertyNoteAccessRequest {
   status: PropertyNoteAccessStatus;
   source: string | null;
   points_amount: number;
+  apply_expiry: boolean;
   device_id: string | null;
   reject_reason: string | null;
   created_at: string | null;
@@ -44,6 +45,34 @@ export interface PropertyNoteAccessRequest {
   user: PropertyNoteAccessUser | null;
   admin: PropertyNoteAccessAdmin | null;
   approver: PropertyNoteAccessApprover | null;
+}
+
+export interface PropertyNoteAccessGrantPayload {
+  user_id: number;
+  charge_points?: boolean;
+  apply_expiry?: boolean;
+  require_approver?: boolean;
+}
+
+export interface PropertyNoteAccessGrantOptions {
+  unlock_point_cost: number;
+  access_days: number;
+  defaults: {
+    charge_points: boolean;
+    apply_expiry: boolean;
+    require_approver: boolean;
+  };
+  /**
+   * Users who already have usable access or a pending / admin_approved request.
+   */
+  blocked_user_ids: number[];
+}
+
+export interface PropertyNoteAccessGrantResult {
+  access: PropertyNoteAccessRequest;
+  awaiting_approver: boolean;
+  points_consumed: number;
+  remaining_balance: number;
 }
 
 export interface PropertyNoteAccessStatistics {

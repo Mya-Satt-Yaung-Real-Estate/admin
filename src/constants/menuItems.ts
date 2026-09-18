@@ -189,9 +189,14 @@ export const MENU_ITEMS = [
         path: '/property-notes',
       },
       {
-        text: 'Access Requests',
+        text: 'Access List',
         iconName: 'RequestQuote',
         path: '/property-note-access-requests',
+      },
+      {
+        text: 'Grant Access',
+        iconName: 'Key',
+        path: '/property-note-access-grant',
       },
     ],
   },  {

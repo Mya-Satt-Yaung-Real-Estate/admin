@@ -1,5 +1,8 @@
 import { apiV2Request, QueryParams } from './base';
 import type {
+  PropertyNoteAccessGrantOptions,
+  PropertyNoteAccessGrantPayload,
+  PropertyNoteAccessGrantResult,
   PropertyNoteAccessRequest,
   PropertyNoteAccessRequestFilters,
   PropertyNoteAccessRequestsListResponse,
@@ -50,6 +53,23 @@ export const propertyNoteAccessRequestsAPI = {
 
   get: (id: number) =>
     apiV2Request<PropertyNoteAccessRequest>(`/property-note-access-requests/${id}`),
+
+  getGrantOptions: () =>
+    apiV2Request<PropertyNoteAccessGrantOptions>('/property-note-access-requests/grant-options'),
+
+  /**
+   * Path A: Admin grants access with optional points / expiry / approver flags.
+   */
+  grant: (payload: PropertyNoteAccessGrantPayload) =>
+    apiV2Request<PropertyNoteAccessGrantResult>('/property-note-access-requests/grant', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: payload.user_id,
+        charge_points: payload.charge_points ?? true,
+        apply_expiry: payload.apply_expiry ?? true,
+        require_approver: payload.require_approver ?? true,
+      }),
+    }),
 
   approve: (id: number) =>
     apiV2Request<PropertyNoteAccessRequest>(`/property-note-access-requests/${id}/approve`, {
