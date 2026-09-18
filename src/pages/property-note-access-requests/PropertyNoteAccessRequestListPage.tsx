@@ -48,6 +48,16 @@ interface AccessRequestFilters extends FilterState {
 /** Wait after typing before searching — avoids an API call per keystroke. */
 const SEARCH_DEBOUNCE_MS = 400;
 
+/**
+ * True when expires_at is set and already in the past.
+ */
+const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
+  if (!expiresAt) return false;
+  const parsed = new Date(expiresAt.replace(' ', 'T'));
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now();
+};
+
 const FILTER_FIELDS: FilterField[] = [
   {
     key: 'searchTerm',
@@ -273,6 +283,26 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         hidden: isMobile,
       },
       {
+        id: 'expires_at',
+        label: 'Expires At',
+        render: (_value, row) => {
+          const expiresAt = row?.expires_at;
+          if (!expiresAt) {
+            return <Typography variant="body2">—</Typography>;
+          }
+          const expired = isExpiresAtPast(expiresAt);
+          return (
+            <Typography
+              variant="body2"
+              sx={expired ? { color: 'error.main', fontWeight: 600 } : undefined}
+            >
+              {expiresAt}
+            </Typography>
+          );
+        },
+        hidden: isMobile,
+      },
+      {
         id: 'actions',
         label: 'Actions',
         align: 'center',
@@ -429,7 +459,11 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
               key={request.id}
               title={request.user?.name || `Request #${request.id}`}
               subtitle={request.user?.phone || request.user?.email || '—'}
-              description={`Points: ${request.points_amount} · ${request.created_at || ''}`}
+              description={
+                isExpiresAtPast(request.expires_at)
+                  ? `Points: ${request.points_amount} · Expires: ${request.expires_at} (expired)`
+                  : `Points: ${request.points_amount} · Expires: ${request.expires_at || '—'}`
+              }
               avatar={<PersonIcon />}
               status={{
                 label: request.status.replace('_', ' '),
