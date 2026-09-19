@@ -52,6 +52,10 @@ export interface PropertyNoteAccessGrantPayload {
   charge_points?: boolean;
   apply_expiry?: boolean;
   require_approver?: boolean;
+  /**
+   * Users whose notes/pins the grantee may see on the map.
+   */
+  visible_user_ids?: number[];
 }
 
 export interface PropertyNoteAccessGrantOptions {
@@ -73,6 +77,7 @@ export interface PropertyNoteAccessGrantResult {
   awaiting_approver: boolean;
   points_consumed: number;
   remaining_balance: number;
+  visible_user_ids?: number[];
 }
 
 export interface PropertyNoteAccessStatistics {

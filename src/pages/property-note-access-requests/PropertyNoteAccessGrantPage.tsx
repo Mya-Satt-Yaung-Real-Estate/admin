@@ -51,7 +51,9 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   } = usePropertyNoteAccessGrantOptions();
 
   const [userSearch, setUserSearch] = useState('');
+  const [seeOthersSearch, setSeeOthersSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<RegularUser | null>(null);
+  const [seeOthersUsers, setSeeOthersUsers] = useState<RegularUser[]>([]);
   const [chargePoints, setChargePoints] = useState(true);
   const [applyExpiry, setApplyExpiry] = useState(true);
   const [requireApprover, setRequireApprover] = useState(true);
@@ -65,21 +67,33 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     status: 'active',
   });
 
-  const users = useMemo(() => {
+  const allActiveUsers = useMemo(() => {
     const rawUsers: RegularUser[] = Array.isArray((usersResponse as { data?: RegularUser[] })?.data)
       ? ((usersResponse as { data: RegularUser[] }).data)
       : Array.isArray(usersResponse)
         ? (usersResponse as RegularUser[])
         : [];
 
+    return rawUsers.filter(
+      (user) => user.user_type === 'individual' || user.user_type === 'company'
+    );
+  }, [usersResponse]);
+
+  const users = useMemo(() => {
     const blockedIds = new Set(grantOptions?.blocked_user_ids ?? []);
 
-    return rawUsers.filter(
-      (user) =>
-        (user.user_type === 'individual' || user.user_type === 'company') &&
-        !blockedIds.has(user.id)
-    );
-  }, [usersResponse, grantOptions?.blocked_user_ids]);
+    return allActiveUsers.filter((user) => !blockedIds.has(user.id));
+  }, [allActiveUsers, grantOptions?.blocked_user_ids]);
+
+  /**
+   * See-others list: any active user except the grantee.
+   */
+  const seeOthersOptions = useMemo(() => {
+    if (!selectedUser) {
+      return allActiveUsers;
+    }
+    return allActiveUsers.filter((user) => user.id !== selectedUser.id);
+  }, [allActiveUsers, selectedUser]);
 
   const unlockCost = grantOptions?.unlock_point_cost ?? 0;
   const accessDays = grantOptions?.access_days ?? 0;
@@ -87,6 +101,10 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   const previewPoints = chargePoints ? unlockCost : 0;
   const previewExpiry = applyExpiry ? `${accessDays} days` : 'Never expires';
   const previewStatus = requireApprover ? 'admin_approved → Approver' : 'approved (immediate)';
+  const previewSeeOthers =
+    seeOthersUsers.length === 0
+      ? 'Own data only'
+      : seeOthersUsers.map((user) => getRegularUserDisplayName(user)).join(', ');
 
   const handleGrantClick = () => {
     if (!selectedUser) {
@@ -106,18 +124,22 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
         charge_points: chargePoints,
         apply_expiry: applyExpiry,
         require_approver: requireApprover,
+        visible_user_ids: seeOthersUsers.map((user) => user.id),
       });
 
       const result = response.data;
+      const seeCount = result?.visible_user_ids?.length ?? seeOthersUsers.length;
       const message =
         response.message ||
         (result?.awaiting_approver
           ? 'Granted. Waiting for mobile approver.'
           : 'Property Note access granted.');
 
-      showSuccess(message);
+      showSuccess(seeCount > 0 ? `${message} See-others: ${seeCount} user(s).` : message);
       setSelectedUser(null);
       setUserSearch('');
+      setSeeOthersUsers([]);
+      setSeeOthersSearch('');
       setChargePoints(true);
       setApplyExpiry(true);
       setRequireApprover(true);
@@ -154,7 +176,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Grant Property Note Access"
-        subtitle="Path A — Admin enable with optional points, expiry, and approver"
+        subtitle="Path A — Admin enable with optional points, expiry, approver, and see-others"
         breadcrumbs="Dashboard / Property Note / Grant Access"
       />
 
@@ -174,6 +196,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
             if (value) {
               setUserError(null);
               setUserSearch(getUserSelectLabel(value));
+              setSeeOthersUsers((prev) => prev.filter((user) => user.id !== value.id));
             } else {
               setUserSearch('');
             }
@@ -210,6 +233,47 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
                 userError ??
                 `Eligible active users only (${users.length}). Already granted / awaiting approver hidden.`
               }
+            />
+          )}
+        />
+
+        <Typography variant="subtitle1" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
+          See others (optional)
+        </Typography>
+
+        <Autocomplete
+          multiple
+          options={seeOthersOptions}
+          loading={usersLoading}
+          value={seeOthersUsers}
+          onChange={(_event, value) => {
+            setSeeOthersUsers(value);
+          }}
+          inputValue={seeOthersSearch}
+          onInputChange={(_event, value, reason) => {
+            if (reason === 'input' || reason === 'clear') {
+              setSeeOthersSearch(value);
+            }
+          }}
+          getOptionLabel={(user) => getUserSelectLabel(user)}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          filterOptions={filterActiveUsers}
+          openOnFocus
+          disableCloseOnSelect
+          ListboxProps={{
+            style: { maxHeight: 280 },
+          }}
+          renderOption={(props, option) => (
+            <li {...props} key={option.id}>
+              {getUserSelectLabel(option)}
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="See others"
+              placeholder="Pick users whose notes/pins this user may see..."
+              helperText="Optional. Empty = own map data only. Grantee is excluded."
             />
           )}
         />
@@ -267,6 +331,9 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
           <Typography variant="body2">
             Preview — status: <strong>{previewStatus}</strong>
           </Typography>
+          <Typography variant="body2">
+            Preview — see others: <strong>{previewSeeOthers}</strong>
+          </Typography>
         </Box>
 
         <Button
@@ -288,7 +355,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
         title="Grant Property Note Access?"
         message={
           selectedUser
-            ? `Grant access to ${getRegularUserDisplayName(selectedUser)}? Points: ${previewPoints}. Expiry: ${previewExpiry}. Flow: ${previewStatus}.`
+            ? `Grant access to ${getRegularUserDisplayName(selectedUser)}? Points: ${previewPoints}. Expiry: ${previewExpiry}. Flow: ${previewStatus}. See others: ${previewSeeOthers}.`
             : 'Select a user first.'
         }
         action="custom"

@@ -68,6 +68,7 @@ export const propertyNoteAccessRequestsAPI = {
         charge_points: payload.charge_points ?? true,
         apply_expiry: payload.apply_expiry ?? true,
         require_approver: payload.require_approver ?? true,
+        visible_user_ids: payload.visible_user_ids ?? [],
       }),
     }),
 
