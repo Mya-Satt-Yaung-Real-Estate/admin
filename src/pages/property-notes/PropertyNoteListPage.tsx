@@ -30,39 +30,20 @@ import {
 } from '../../components/ui';
 import { useDebouncedValue, useFilters, usePagination } from '../../hooks';
 import { usePropertyNotes } from '../../services/queries/propertyNotes';
+import { usePropertyListingTypes } from '../../services/queries/properties';
 import { FilterState } from '../../constants/filters';
 import type { PropertyNote, PropertyNoteStatus } from '../../types/propertyNote';
 
 interface PropertyNoteFilters extends FilterState {
   searchTerm: string;
   statusFilter: string;
+  listingTypeFilter: string;
 }
 
 const SEARCH_DEBOUNCE_MS = 500;
 
-const FILTER_FIELDS: FilterField[] = [
-  {
-    key: 'searchTerm',
-    type: 'search',
-    label: 'Search',
-    placeholder: 'Search code, user, phone, ward, road...',
-    minWidth: { xs: 220, sm: 280 },
-    maxWidth: { sm: 340 },
-    flexGrow: 0,
-    width: { xs: '100%', sm: 300 },
-  },
-  {
-    key: 'statusFilter',
-    type: 'select',
-    label: 'Status',
-    options: [
-      { value: 'all', label: 'All Statuses' },
-      { value: 'active', label: 'Active' },
-      { value: 'sold', label: 'Sold' },
-      { value: 'rented', label: 'Rented' },
-    ],
-  },
-];
+/** Property notes only use Sale / Rent listing types. */
+const PROPERTY_NOTE_LISTING_SLUGS = new Set(['for-sale', 'for-rent']);
 
 const PropertyNoteListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -79,13 +60,64 @@ const PropertyNoteListPage: React.FC = () => {
   const { filters, setFilter, resetFilters } = useFilters<PropertyNoteFilters>({
     searchTerm: '',
     statusFilter: 'all',
+    listingTypeFilter: 'all',
   });
 
   const debouncedSearch = useDebouncedValue(filters.searchTerm.trim(), SEARCH_DEBOUNCE_MS);
 
+  const { data: listingTypesResponse } = usePropertyListingTypes({
+    per_page: 100,
+  });
+
+  const listingTypeOptions = useMemo(() => {
+    const types = (listingTypesResponse?.data ?? []).filter((type) =>
+      PROPERTY_NOTE_LISTING_SLUGS.has(type.slug)
+    );
+    return [
+      { value: 'all', label: 'All Types' },
+      ...types.map((type) => ({
+        value: String(type.id),
+        label: type.name_en,
+      })),
+    ];
+  }, [listingTypesResponse?.data]);
+
+  const filterFields: FilterField[] = useMemo(
+    () => [
+      {
+        key: 'searchTerm',
+        type: 'search',
+        label: 'Search',
+        placeholder: 'Search code, user, phone, ward, road...',
+        minWidth: { xs: 220, sm: 280 },
+        maxWidth: { sm: 340 },
+        flexGrow: 0,
+        width: { xs: '100%', sm: 300 },
+      },
+      {
+        key: 'listingTypeFilter',
+        type: 'select',
+        label: 'Type',
+        options: listingTypeOptions,
+      },
+      {
+        key: 'statusFilter',
+        type: 'select',
+        label: 'Status',
+        options: [
+          { value: 'all', label: 'All Statuses' },
+          { value: 'active', label: 'Active' },
+          { value: 'sold', label: 'Sold' },
+          { value: 'rented', label: 'Rented' },
+        ],
+      },
+    ],
+    [listingTypeOptions]
+  );
+
   useEffect(() => {
     handleChangePage(null, 0);
-  }, [debouncedSearch, filters.statusFilter, handleChangePage]);
+  }, [debouncedSearch, filters.statusFilter, filters.listingTypeFilter, handleChangePage]);
 
   const listParams = useMemo(
     () => ({
@@ -96,8 +128,12 @@ const PropertyNoteListPage: React.FC = () => {
         filters.statusFilter !== 'all'
           ? (filters.statusFilter as PropertyNoteStatus)
           : undefined,
+      listing_type_id:
+        filters.listingTypeFilter !== 'all'
+          ? Number(filters.listingTypeFilter)
+          : undefined,
     }),
-    [page, rowsPerPage, debouncedSearch, filters.statusFilter]
+    [page, rowsPerPage, debouncedSearch, filters.statusFilter, filters.listingTypeFilter]
   );
 
   const { data, isLoading, isFetching, error, refetch } = usePropertyNotes(listParams);
@@ -253,7 +289,7 @@ const PropertyNoteListPage: React.FC = () => {
       <StandardFilters
         filters={filters}
         onFilterChange={(key, value) => setFilter(key as keyof PropertyNoteFilters, value)}
-        fields={FILTER_FIELDS}
+        fields={filterFields}
         showClearButton
         onClearFilters={resetFilters}
       />
@@ -266,7 +302,9 @@ const PropertyNoteListPage: React.FC = () => {
         <PageEmptyState
           title="No property notes"
           message={
-            filters.searchTerm || filters.statusFilter !== 'all'
+            filters.searchTerm ||
+            filters.statusFilter !== 'all' ||
+            filters.listingTypeFilter !== 'all'
               ? 'Try changing filters.'
               : 'No property notes yet.'
           }
