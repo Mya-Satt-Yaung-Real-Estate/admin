@@ -6,6 +6,10 @@ const PropertyNoteAccessRequestListPage = lazy(
   () => import('@/pages/property-note-access-requests/PropertyNoteAccessRequestListPage')
 );
 
+const PropertyNoteAccessRequestDetailPage = lazy(
+  () => import('@/pages/property-note-access-requests/PropertyNoteAccessRequestDetailPage')
+);
+
 const PropertyNoteAccessGrantPage = lazy(
   () => import('@/pages/property-note-access-requests/PropertyNoteAccessGrantPage')
 );
@@ -17,6 +21,16 @@ export const propertyNoteAccessRequestRoutes = [
       <ProtectedRoute>
         <Suspense fallback={<PageLoader />}>
           <PropertyNoteAccessRequestListPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/property-note-access-requests/:id',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <PropertyNoteAccessRequestDetailPage />
         </Suspense>
       </ProtectedRoute>
     ),

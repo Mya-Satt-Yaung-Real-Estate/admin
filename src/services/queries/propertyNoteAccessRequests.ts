@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { propertyNoteAccessRequestsAPI } from '../api/propertyNoteAccessRequests';
 import type {
+  PropertyNoteAccessAddDevicesPayload,
   PropertyNoteAccessGrantPayload,
   PropertyNoteAccessRequestFilters,
 } from '../../types/propertyNoteAccess';
@@ -28,6 +29,15 @@ export const usePropertyNoteAccessRequests = (params?: PropertyNoteAccessRequest
      * so typing does not flash a full-page loader.
      */
     placeholderData: keepPreviousData,
+  });
+};
+
+export const usePropertyNoteAccessRequest = (id: number) => {
+  return useQuery({
+    queryKey: propertyNoteAccessKeys.detail(id),
+    queryFn: () => propertyNoteAccessRequestsAPI.get(id),
+    enabled: id > 0,
+    staleTime: 30 * 1000,
   });
 };
 
@@ -72,8 +82,9 @@ export const useApprovePropertyNoteAccessRequest = () => {
 
   return useMutation({
     mutationFn: (id: number) => propertyNoteAccessRequestsAPI.approve(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.detail(id) });
     },
   });
 };
@@ -84,8 +95,9 @@ export const useRejectPropertyNoteAccessRequest = () => {
   return useMutation({
     mutationFn: ({ id, rejectReason }: { id: number; rejectReason?: string }) =>
       propertyNoteAccessRequestsAPI.reject(id, rejectReason),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.detail(vars.id) });
     },
   });
 };
@@ -97,6 +109,38 @@ export const useRevokePropertyNoteAccessRequest = () => {
     mutationFn: (id: number) => propertyNoteAccessRequestsAPI.revoke(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.details() });
+    },
+  });
+};
+
+export const useAddPropertyNoteAccessDevices = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: PropertyNoteAccessAddDevicesPayload;
+    }) => propertyNoteAccessRequestsAPI.addDevices(id, payload),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.detail(vars.id) });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.grantOptions() });
+    },
+  });
+};
+
+export const useUpdatePropertyNoteVisibleUsers = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, visibleUserIds }: { id: number; visibleUserIds: number[] }) =>
+      propertyNoteAccessRequestsAPI.updateVisibleUsers(id, visibleUserIds),
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.detail(vars.id) });
     },
   });
 };

@@ -98,6 +98,27 @@ export interface PropertyNoteAccessGrantResult {
   device_ids?: string[];
 }
 
+export interface PropertyNoteAccessVisibleUser {
+  id: number;
+  name: string;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface PropertyNoteAccessDetail {
+  access: PropertyNoteAccessRequest;
+  related_grants: PropertyNoteAccessRequest[];
+  registered_devices: PropertyNoteAccessGrantDevice[];
+  visible_users: PropertyNoteAccessVisibleUser[];
+}
+
+export interface PropertyNoteAccessAddDevicesPayload {
+  device_ids: string[];
+  charge_points?: boolean;
+  apply_expiry?: boolean;
+  require_approver?: boolean;
+}
+
 export interface PropertyNoteAccessStatistics {
   total: number;
   pending: number;

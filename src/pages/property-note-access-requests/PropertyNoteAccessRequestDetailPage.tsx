@@ -1,0 +1,885 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  Grid,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography,
+  createFilterOptions,
+} from '@mui/material';
+import {
+  ArrowBack as ArrowBackIcon,
+  Block as RevokeIcon,
+  Cancel as RejectIcon,
+  CheckCircle as ApproveIcon,
+  Save as SaveIcon,
+} from '@mui/icons-material';
+import { useNavigate, useParams } from 'react-router-dom';
+import PageHeader from '../../components/layout/PageHeader';
+import {
+  ActionAlert,
+  ConfirmationDialog,
+  PageErrorState,
+  PageLoadingState,
+  StatusChip,
+} from '../../components/ui';
+import { useAlertSystem } from '../../hooks';
+import {
+  useAddPropertyNoteAccessDevices,
+  useApprovePropertyNoteAccessRequest,
+  usePropertyNoteAccessRequest,
+  useRejectPropertyNoteAccessRequest,
+  useRevokePropertyNoteAccessRequest,
+  useUpdatePropertyNoteVisibleUsers,
+} from '../../services/queries/propertyNoteAccessRequests';
+import { useUsers } from '../../services/queries/users';
+import type {
+  PropertyNoteAccessGrantDevice,
+  PropertyNoteAccessRequest,
+} from '../../types/propertyNoteAccess';
+import { RegularUser, getRegularUserDisplayName } from '../../types/user';
+
+const getUserSelectLabel = (user: RegularUser): string => {
+  const name = getRegularUserDisplayName(user);
+  const phone = user.phone?.trim() || '—';
+  return `${name} - ${phone}`;
+};
+
+const getDeviceSelectLabel = (device: PropertyNoteAccessGrantDevice): string => {
+  const name = device.device_name?.trim() || device.device_model?.trim() || device.device_id;
+  return `${name} (${device.platform})`;
+};
+
+const filterActiveUsers = createFilterOptions<RegularUser>({
+  stringify: (user) =>
+    `${getRegularUserDisplayName(user)} ${user.name} ${user.phone ?? ''} ${user.email ?? ''}`,
+});
+
+const filterDevices = createFilterOptions<PropertyNoteAccessGrantDevice>({
+  stringify: (device) =>
+    `${device.device_name ?? ''} ${device.device_model ?? ''} ${device.device_id} ${device.platform}`,
+});
+
+/**
+ * List label for grant device scope.
+ */
+const formatDeviceLabel = (deviceId: string | null | undefined): string => {
+  if (!deviceId) return 'Any device';
+  return deviceId;
+};
+
+/**
+ * Short device id for table/summary (full id in tooltip).
+ */
+const truncateDeviceId = (deviceId: string | null | undefined): string => {
+  if (!deviceId) return 'Any device';
+  if (deviceId.length <= 16) return deviceId;
+  return `${deviceId.slice(0, 8)}…${deviceId.slice(-4)}`;
+};
+
+/**
+ * Resolve registered device name (or model) for a grant device_id.
+ */
+const resolveDeviceName = (
+  deviceId: string | null | undefined,
+  devicesById: Map<string, PropertyNoteAccessGrantDevice>
+): string => {
+  if (!deviceId) return 'Any device';
+  const device = devicesById.get(deviceId);
+  const name = device?.device_name?.trim() || device?.device_model?.trim();
+  return name || 'Unknown device';
+};
+
+/**
+ * True when expires_at is set and already in the past.
+ */
+const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
+  if (!expiresAt) return false;
+  const parsed = new Date(expiresAt.replace(' ', 'T'));
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now();
+};
+
+/**
+ * Small label + value block for summary fields.
+ */
+const SummaryField: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <Box sx={{ mb: 1.5 }}>
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      display="block"
+      sx={{ mb: 0.25, textTransform: 'uppercase', letterSpacing: 0.4 }}
+    >
+      {label}
+    </Typography>
+    {children}
+  </Box>
+);
+
+const PropertyNoteAccessRequestDetailPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const accessId = Number(id);
+  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+
+  const { data: detailResponse, isLoading, error, refetch } =
+    usePropertyNoteAccessRequest(accessId);
+  const detail = detailResponse?.data;
+  const access = detail?.access;
+  const relatedGrants = detail?.related_grants ?? [];
+  const registeredDevices = detail?.registered_devices ?? [];
+  const visibleUsersFromApi = detail?.visible_users ?? [];
+
+  const devicesById = useMemo(() => {
+    const map = new Map<string, PropertyNoteAccessGrantDevice>();
+    for (const device of registeredDevices) {
+      map.set(device.device_id, device);
+    }
+    return map;
+  }, [registeredDevices]);
+
+  const approveMutation = useApprovePropertyNoteAccessRequest();
+  const rejectMutation = useRejectPropertyNoteAccessRequest();
+  const revokeMutation = useRevokePropertyNoteAccessRequest();
+  const addDevicesMutation = useAddPropertyNoteAccessDevices();
+  const updateVisibleMutation = useUpdatePropertyNoteVisibleUsers();
+
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    type: 'approve' | 'reject' | 'revoke';
+    targetId: number | null;
+  }>({ open: false, type: 'approve', targetId: null });
+
+  const [selectedDevices, setSelectedDevices] = useState<PropertyNoteAccessGrantDevice[]>([]);
+  const [deviceSearch, setDeviceSearch] = useState('');
+  const [seeOthersUsers, setSeeOthersUsers] = useState<RegularUser[]>([]);
+  const [seeOthersSearch, setSeeOthersSearch] = useState('');
+  const [deviceError, setDeviceError] = useState<string | null>(null);
+
+  const { data: usersResponse, isLoading: usersLoading } = useUsers({
+    status: 'active',
+  });
+
+  const allActiveUsers = useMemo(() => {
+    const rawUsers: RegularUser[] = Array.isArray((usersResponse as { data?: RegularUser[] })?.data)
+      ? ((usersResponse as { data: RegularUser[] }).data)
+      : Array.isArray(usersResponse)
+        ? (usersResponse as RegularUser[])
+        : [];
+
+    return rawUsers.filter(
+      (user) => user.user_type === 'individual' || user.user_type === 'company'
+    );
+  }, [usersResponse]);
+
+  /**
+   * Prefill see-others from detail API when data loads / refreshes.
+   */
+  useEffect(() => {
+    if (!access?.user) {
+      setSeeOthersUsers([]);
+      return;
+    }
+
+    const byId = new Map(allActiveUsers.map((u) => [u.id, u]));
+    const mapped: RegularUser[] = visibleUsersFromApi.map((vu) => {
+      const existing = byId.get(vu.id);
+      if (existing) {
+        return existing;
+      }
+      return {
+        id: vu.id,
+        name: vu.name,
+        slug: String(vu.id),
+        email: vu.email ?? '',
+        phone: vu.phone ?? undefined,
+        user_type: 'individual',
+        member_level: 'basic',
+        is_active: true,
+        created_at: '',
+        updated_at: '',
+        property_count: 0,
+        point_balance: 0,
+        total_points_allocated: 0,
+        total_points_consumed: 0,
+        point_packages_count: 0,
+      };
+    });
+    setSeeOthersUsers(mapped);
+  }, [access?.user, allActiveUsers, visibleUsersFromApi]);
+
+  const seeOthersOptions = useMemo(() => {
+    if (!access?.user) return allActiveUsers;
+    return allActiveUsers.filter((user) => user.id !== access.user?.id);
+  }, [allActiveUsers, access?.user]);
+
+  /**
+   * Devices not already covered by an approved grant for this user.
+   * API only accepts device_ids registered in user_devices.
+   */
+  const addableDevices = useMemo(() => {
+    const usableDeviceIds = new Set(
+      relatedGrants
+        .filter((g) => g.status === 'approved')
+        .map((g) => g.device_id)
+        .filter((d): d is string => !!d)
+    );
+    const hasUserOnly = relatedGrants.some(
+      (g) => g.status === 'approved' && g.device_id === null
+    );
+    if (hasUserOnly) {
+      return [];
+    }
+    return registeredDevices.filter((d) => !usableDeviceIds.has(d.device_id));
+  }, [registeredDevices, relatedGrants]);
+
+  const hasUserOnlyApproved = useMemo(
+    () =>
+      relatedGrants.some((g) => g.status === 'approved' && g.device_id === null),
+    [relatedGrants]
+  );
+
+  const approvedDeviceGrantCount = useMemo(
+    () =>
+      relatedGrants.filter((g) => g.status === 'approved' && g.device_id !== null)
+        .length,
+    [relatedGrants]
+  );
+
+  const addDeviceBlockedReason = useMemo(() => {
+    if (addableDevices.length > 0) return null;
+    if (hasUserOnlyApproved) {
+      return 'This user already has Any-device (user-only) approved access. Revoke that grant first, then add specific devices.';
+    }
+    if (registeredDevices.length === 0) {
+      return 'No registered devices for this user. They must log in from the mobile app once so the device appears in user_devices.';
+    }
+    if (approvedDeviceGrantCount >= registeredDevices.length) {
+      return `All ${registeredDevices.length} registered device(s) already have an Approved grant. Revoke one first, or register another device via mobile login.`;
+    }
+    return 'No devices available to add.';
+  }, [
+    addableDevices.length,
+    approvedDeviceGrantCount,
+    hasUserOnlyApproved,
+    registeredDevices.length,
+  ]);
+
+  const busy =
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    revokeMutation.isPending ||
+    addDevicesMutation.isPending ||
+    updateVisibleMutation.isPending;
+
+  const handleBack = () => {
+    navigate('/property-note-access-requests');
+  };
+
+  const handleConfirm = async (reason?: string) => {
+    if (!confirmState.targetId) return;
+    try {
+      if (confirmState.type === 'approve') {
+        await approveMutation.mutateAsync(confirmState.targetId);
+        showSuccess('Request approved. Mobile approvers notified.');
+      } else if (confirmState.type === 'reject') {
+        await rejectMutation.mutateAsync({
+          id: confirmState.targetId,
+          rejectReason: reason?.trim() || undefined,
+        });
+        showSuccess('Request rejected.');
+      } else {
+        await revokeMutation.mutateAsync(confirmState.targetId);
+        showSuccess('Access revoked. Points are not refunded.');
+      }
+      setConfirmState({ open: false, type: 'approve', targetId: null });
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : `Failed to ${confirmState.type}.`;
+      showError(message);
+    }
+  };
+
+  const handleAddDevices = async () => {
+    if (selectedDevices.length === 0) {
+      setDeviceError('Select at least one device.');
+      return;
+    }
+    setDeviceError(null);
+    try {
+      await addDevicesMutation.mutateAsync({
+        id: accessId,
+        payload: {
+          device_ids: selectedDevices.map((d) => d.device_id),
+          charge_points: false,
+          require_approver: false,
+        },
+      });
+      setSelectedDevices([]);
+      setDeviceSearch('');
+      showSuccess('Device access granted.');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : 'Failed to add device access.';
+      showError(message);
+    }
+  };
+
+  const handleSaveSeeOthers = async () => {
+    try {
+      await updateVisibleMutation.mutateAsync({
+        id: accessId,
+        visibleUserIds: seeOthersUsers.map((u) => u.id),
+      });
+      showSuccess('See-others list saved.');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
+          ? err.message
+          : 'Failed to save see-others users.';
+      showError(message);
+    }
+  };
+
+  if (isLoading) {
+    return <PageLoadingState title="Loading Access Detail" />;
+  }
+
+  if (error || !access) {
+    return (
+      <PageErrorState
+        error={error ?? new Error('Access request not found')}
+        title="Error Loading Access Detail"
+        message={
+          error instanceof Error ? error.message : 'Access request not found.'
+        }
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
+  const canApprove = access.status === 'pending';
+  const canReject = access.status === 'pending';
+  const canRevoke = access.status === 'approved';
+
+  const statusHint =
+    access.status === 'pending'
+      ? 'Waiting for Admin approve or reject.'
+      : access.status === 'admin_approved'
+        ? 'Waiting for Approver. Admin cannot approve/reject/revoke here.'
+        : access.status === 'approved'
+          ? 'Access is active. You can revoke this grant or manage devices below.'
+          : access.status === 'revoked'
+            ? 'Access was revoked. Re-grant via Grant Access or Add devices.'
+            : access.status === 'rejected'
+              ? 'Request was rejected.'
+              : null;
+
+  const deviceName = resolveDeviceName(access.device_id, devicesById);
+  const deviceIdFull = formatDeviceLabel(access.device_id);
+
+  return (
+    <Box>
+      <PageHeader
+        title={access.user?.name || `Access #${access.id}`}
+        subtitle={`Grant #${access.id} · manage devices and who they can see`}
+        breadcrumbs="Dashboard / Property Note / Access List / Detail"
+        actionButton={{
+          text: 'Back to Access List',
+          icon: <ArrowBackIcon />,
+          onClick: handleBack,
+        }}
+      />
+
+      <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
+
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={5}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                This grant
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                One access row for this user (device scope + status).
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                <StatusChip status={access.status} />
+                <Chip label={`#${access.id}`} size="small" variant="outlined" />
+              </Box>
+              {statusHint && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {statusHint}
+                </Typography>
+              )}
+
+              <SummaryField label="User">
+                <Typography variant="body1" fontWeight={600}>
+                  {access.user?.name || '—'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {access.user?.phone || access.user?.email || '—'}
+                </Typography>
+              </SummaryField>
+
+              <SummaryField label="Device name">
+                <Typography variant="body1" fontWeight={600}>
+                  {deviceName}
+                </Typography>
+              </SummaryField>
+
+              <SummaryField label="Device id">
+                <Tooltip title={deviceIdFull}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: 'monospace', cursor: 'default' }}
+                  >
+                    {truncateDeviceId(access.device_id)}
+                  </Typography>
+                </Tooltip>
+              </SummaryField>
+
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <SummaryField label="Points">
+                    <Typography variant="body1">{access.points_amount}</Typography>
+                  </SummaryField>
+                </Grid>
+                <Grid item xs={6}>
+                  <SummaryField label="Source">
+                    <Typography variant="body1">{access.source || '—'}</Typography>
+                  </SummaryField>
+                </Grid>
+              </Grid>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                sx={{ mb: 1, textTransform: 'uppercase', letterSpacing: 0.4 }}
+              >
+                Timeline
+              </Typography>
+              <Grid container spacing={1.5} sx={{ mb: 1 }}>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Requested
+                  </Typography>
+                  <Typography variant="body2">{access.created_at || '—'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Admin at
+                  </Typography>
+                  <Typography variant="body2">{access.admin_approved_at || '—'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Approver at
+                  </Typography>
+                  <Typography variant="body2">{access.approved_at || '—'}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Expires
+                  </Typography>
+                  <Typography variant="body2">{access.expires_at || 'No expiry'}</Typography>
+                </Grid>
+              </Grid>
+
+              {access.reject_reason && (
+                <SummaryField label="Reject reason">
+                  <Typography variant="body2">{access.reject_reason}</Typography>
+                </SummaryField>
+              )}
+
+              <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+                <Tooltip
+                  title={
+                    canApprove
+                      ? 'Approve (send to mobile approvers)'
+                      : access.status === 'admin_approved'
+                        ? 'Waiting for mobile Approver'
+                        : 'Only pending requests can be approved'
+                  }
+                >
+                  <span>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      startIcon={<ApproveIcon />}
+                      disabled={!canApprove || busy}
+                      onClick={() =>
+                        setConfirmState({ open: true, type: 'approve', targetId: access.id })
+                      }
+                    >
+                      Approve
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Tooltip
+                  title={
+                    canReject
+                      ? 'Reject'
+                      : access.status === 'admin_approved'
+                        ? 'Waiting for mobile Approver — Admin cannot reject'
+                        : 'Only pending requests can be rejected'
+                  }
+                >
+                  <span>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<RejectIcon />}
+                      disabled={!canReject || busy}
+                      onClick={() =>
+                        setConfirmState({ open: true, type: 'reject', targetId: access.id })
+                      }
+                    >
+                      Reject
+                    </Button>
+                  </span>
+                </Tooltip>
+                <Tooltip
+                  title={
+                    canRevoke
+                      ? 'Revoke Access (no point refund)'
+                      : 'Only approved access can be revoked'
+                  }
+                >
+                  <span>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      startIcon={<RevokeIcon />}
+                      disabled={!canRevoke || busy}
+                      onClick={() =>
+                        setConfirmState({ open: true, type: 'revoke', targetId: access.id })
+                      }
+                    >
+                      Revoke
+                    </Button>
+                  </span>
+                </Tooltip>
+              </Box>            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={7}>
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                All device grants for this user
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Name first · click a row to open that grant · revoke only when Approved
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Grant</TableCell>
+                    <TableCell>Device name</TableCell>
+                    <TableCell>Device id</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Expires at</TableCell>
+                    <TableCell align="right">Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {relatedGrants.map((row: PropertyNoteAccessRequest) => {
+                    const isCurrent = row.id === access.id;
+                    const rowName = resolveDeviceName(row.device_id, devicesById);
+                    const rowIdFull = formatDeviceLabel(row.device_id);
+                    return (
+                      <TableRow
+                        key={row.id}
+                        selected={isCurrent}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          if (!isCurrent) {
+                            navigate(`/property-note-access-requests/${row.id}`);
+                          }
+                        }}
+                      >
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <Typography variant="body2">#{row.id}</Typography>
+                            {isCurrent && (
+                              <Chip label="Open" size="small" color="primary" variant="outlined" />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {rowName}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title={rowIdFull}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ fontFamily: 'monospace' }}
+                            >
+                              {truncateDeviceId(row.device_id)}
+                            </Typography>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <StatusChip status={row.status} size="small" />
+                        </TableCell>
+                        <TableCell>
+                          {row.expires_at ? (
+                            <Typography
+                              variant="body2"
+                              sx={
+                                isExpiresAtPast(row.expires_at)
+                                  ? { color: 'error.main', fontWeight: 600 }
+                                  : undefined
+                              }
+                            >
+                              {row.expires_at}
+                            </Typography>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No expiry
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                          {row.status === 'approved' ? (
+                            <Tooltip title="Revoke Access (no point refund)">
+                              <span>
+                                <IconButton
+                                  size="small"
+                                  color="warning"
+                                  disabled={busy}
+                                  onClick={() =>
+                                    setConfirmState({
+                                      open: true,
+                                      type: 'revoke',
+                                      targetId: row.id,
+                                    })
+                                  }
+                                >
+                                  <RevokeIcon fontSize="small" />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          ) : (
+                            <Typography variant="caption" color="text.secondary">
+                              —
+                            </Typography>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {relatedGrants.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          No grants found.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+
+              <Divider sx={{ my: 3 }} />
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Add another device
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Only devices in the user&apos;s registered list that do not already have an
+                Approved grant.
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
+                Registered: {registeredDevices.length} · Approved device grants:{' '}
+                {approvedDeviceGrantCount} · Available to add: {addableDevices.length}
+              </Typography>
+              {addDeviceBlockedReason && (
+                <Typography
+                  variant="body2"
+                  color="warning.main"
+                  sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
+                >
+                  {addDeviceBlockedReason}
+                </Typography>
+              )}
+              <Autocomplete
+                multiple
+                options={addableDevices}
+                value={selectedDevices}
+                onChange={(_e, value) => {
+                  setSelectedDevices(value);
+                  if (value.length > 0) setDeviceError(null);
+                }}
+                inputValue={deviceSearch}
+                onInputChange={(_e, value, reason) => {
+                  if (reason === 'input' || reason === 'clear') {
+                    setDeviceSearch(value);
+                  }
+                }}
+                filterOptions={filterDevices}
+                getOptionLabel={getDeviceSelectLabel}
+                isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                disabled={busy || addableDevices.length === 0}
+                openOnFocus
+                disableCloseOnSelect
+                ListboxProps={{
+                  style: { maxHeight: 280 },
+                }}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.device_id}>
+                    {getDeviceSelectLabel(option)}
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Devices to grant"
+                    placeholder={
+                      addableDevices.length === 0
+                        ? 'No devices available to add'
+                        : 'Search or pick devices…'
+                    }
+                    error={!!deviceError}
+                    helperText={
+                      deviceError ||
+                      (addableDevices.length > 0
+                        ? 'Pick from the list — selected devices show as chips inside this box.'
+                        : undefined)
+                    }
+                    FormHelperTextProps={
+                      deviceError
+                        ? { sx: { color: 'error.main', mx: 0 } }
+                        : undefined
+                    }
+                  />
+                )}
+              />
+              <Button
+                sx={{ mt: 1.5 }}
+                variant="contained"
+                disabled={busy || selectedDevices.length === 0}
+                onClick={() => void handleAddDevices()}
+              >
+                Add devices
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                See-others (map visibility)
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Other users whose notes/pins this person may see. Not tied to a device.
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Autocomplete
+                multiple
+                options={seeOthersOptions}
+                value={seeOthersUsers}
+                onChange={(_e, value) => setSeeOthersUsers(value)}
+                inputValue={seeOthersSearch}
+                onInputChange={(_e, value) => setSeeOthersSearch(value)}
+                filterOptions={filterActiveUsers}
+                loading={usersLoading}
+                getOptionLabel={getUserSelectLabel}
+                isOptionEqualToValue={(a, b) => a.id === b.id}
+                disabled={busy}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Visible users"
+                    placeholder="Search name or phone…"
+                  />
+                )}
+              />
+              <Button
+                sx={{ mt: 1.5 }}
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={busy}
+                onClick={() => void handleSaveSeeOthers()}
+              >
+                Save see-others
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <ConfirmationDialog
+        open={confirmState.open}
+        onClose={() => setConfirmState({ open: false, type: 'approve', targetId: null })}
+        onConfirm={handleConfirm}
+        title={
+          confirmState.type === 'approve'
+            ? 'Approve access request?'
+            : confirmState.type === 'reject'
+              ? 'Reject access request?'
+              : 'Revoke Property Note access?'
+        }
+        message={
+          confirmState.type === 'approve'
+            ? 'Approve this unlock request? Mobile approvers will be notified.'
+            : confirmState.type === 'reject'
+              ? 'Reject this unlock request?'
+              : 'Revoke this approved access? Points are not refunded. Login stays active.'
+        }
+        action={
+          confirmState.type === 'approve'
+            ? 'approve'
+            : confirmState.type === 'reject'
+              ? 'reject'
+              : 'custom'
+        }
+        actionLabel={
+          confirmState.type === 'approve'
+            ? 'Approve'
+            : confirmState.type === 'reject'
+              ? 'Reject'
+              : 'Revoke Access'
+        }
+        actionColor={confirmState.type === 'approve' ? 'success' : 'error'}
+        requireReason={false}
+        isLoading={busy}
+      />
+    </Box>
+  );
+};
+
+export default PropertyNoteAccessRequestDetailPage;

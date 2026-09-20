@@ -1,5 +1,7 @@
 import { apiV2Request, QueryParams } from './base';
 import type {
+  PropertyNoteAccessAddDevicesPayload,
+  PropertyNoteAccessDetail,
   PropertyNoteAccessGrantDevice,
   PropertyNoteAccessGrantOptions,
   PropertyNoteAccessGrantPayload,
@@ -7,6 +9,7 @@ import type {
   PropertyNoteAccessRequest,
   PropertyNoteAccessRequestFilters,
   PropertyNoteAccessRequestsListResponse,
+  PropertyNoteAccessVisibleUser,
 } from '../../types/propertyNoteAccess';
 
 function buildQueryString(params?: PropertyNoteAccessRequestFilters): string {
@@ -54,7 +57,7 @@ export const propertyNoteAccessRequestsAPI = {
   },
 
   get: (id: number) =>
-    apiV2Request<PropertyNoteAccessRequest>(`/property-note-access-requests/${id}`),
+    apiV2Request<PropertyNoteAccessDetail>(`/property-note-access-requests/${id}`),
 
   getGrantOptions: () =>
     apiV2Request<PropertyNoteAccessGrantOptions>('/property-note-access-requests/grant-options'),
@@ -99,5 +102,32 @@ export const propertyNoteAccessRequestsAPI = {
   revoke: (id: number) =>
     apiV2Request<PropertyNoteAccessRequest>(`/property-note-access-requests/${id}/revoke`, {
       method: 'POST',
+    }),
+
+  addDevices: (id: number, payload: PropertyNoteAccessAddDevicesPayload) =>
+    apiV2Request<{
+      access: PropertyNoteAccessRequest | null;
+      awaiting_approver: boolean;
+      points_consumed: number;
+      device_ids: string[];
+    }>(`/property-note-access-requests/${id}/devices`, {
+      method: 'POST',
+      body: JSON.stringify({
+        device_ids: payload.device_ids,
+        charge_points: payload.charge_points ?? false,
+        apply_expiry: payload.apply_expiry ?? false,
+        require_approver: payload.require_approver ?? false,
+      }),
+    }),
+
+  updateVisibleUsers: (id: number, visibleUserIds: number[]) =>
+    apiV2Request<{
+      visible_user_ids: number[];
+      visible_users: PropertyNoteAccessVisibleUser[];
+    }>(`/property-note-access-requests/${id}/visible-users`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        visible_user_ids: visibleUserIds,
+      }),
     }),
 };

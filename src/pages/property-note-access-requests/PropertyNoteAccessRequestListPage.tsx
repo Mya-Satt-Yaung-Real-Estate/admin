@@ -16,7 +16,9 @@ import {
   VerifiedUser as ApprovedIcon,
   Block as RevokeIcon,
   Devices as DevicesIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
 import { StandardFilters, FilterField } from '../../components/common/StandardFilters';
@@ -98,6 +100,7 @@ const FILTER_FIELDS: FilterField[] = [
 const PropertyNoteAccessRequestListPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const navigate = useNavigate();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   const approveMutation = useApprovePropertyNoteAccessRequest();
   const rejectMutation = useRejectPropertyNoteAccessRequest();
@@ -375,6 +378,15 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+              <Tooltip title="View detail">
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => navigate(`/property-note-access-requests/${row.id}`)}
+                >
+                  <ViewIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               <Tooltip title={approveTitle}>
                 <span>
                   <IconButton
@@ -422,6 +434,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
       handleRejectClick,
       handleRevokeClick,
       isMobile,
+      navigate,
       rejectMutation.isPending,
       revokeMutation.isPending,
     ]
@@ -433,6 +446,13 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
     const waitingApprover = request.status === 'admin_approved';
 
     return [
+      {
+        icon: <ViewIcon />,
+        tooltip: 'View detail',
+        color: 'primary' as const,
+        onClick: () => navigate(`/property-note-access-requests/${request.id}`),
+        disabled: false,
+      },
       {
         icon: <ApproveIcon />,
         tooltip: canAct
