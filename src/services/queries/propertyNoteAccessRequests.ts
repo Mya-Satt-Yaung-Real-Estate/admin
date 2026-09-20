@@ -13,6 +13,8 @@ export const propertyNoteAccessKeys = {
   details: () => [...propertyNoteAccessKeys.all, 'detail'] as const,
   detail: (id: number) => [...propertyNoteAccessKeys.details(), id] as const,
   grantOptions: () => [...propertyNoteAccessKeys.all, 'grant-options'] as const,
+  userDevices: (userId: number) =>
+    [...propertyNoteAccessKeys.all, 'user-devices', userId] as const,
 };
 
 export const usePropertyNoteAccessRequests = (params?: PropertyNoteAccessRequestFilters) => {
@@ -37,6 +39,18 @@ export const usePropertyNoteAccessGrantOptions = () => {
       return response.data;
     },
     staleTime: 60 * 1000,
+  });
+};
+
+export const usePropertyNoteAccessUserDevices = (userId: number | null) => {
+  return useQuery({
+    queryKey: propertyNoteAccessKeys.userDevices(userId ?? 0),
+    queryFn: async () => {
+      const response = await propertyNoteAccessRequestsAPI.getUserDevices(userId as number);
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: userId !== null && userId > 0,
+    staleTime: 30 * 1000,
   });
 };
 
@@ -70,6 +84,17 @@ export const useRejectPropertyNoteAccessRequest = () => {
   return useMutation({
     mutationFn: ({ id, rejectReason }: { id: number; rejectReason?: string }) =>
       propertyNoteAccessRequestsAPI.reject(id, rejectReason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+    },
+  });
+};
+
+export const useRevokePropertyNoteAccessRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => propertyNoteAccessRequestsAPI.revoke(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
     },

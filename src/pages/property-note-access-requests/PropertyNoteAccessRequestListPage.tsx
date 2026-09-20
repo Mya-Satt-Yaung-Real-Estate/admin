@@ -14,6 +14,8 @@ import {
   HourglassEmpty as PendingIcon,
   Person as PersonIcon,
   VerifiedUser as ApprovedIcon,
+  Block as RevokeIcon,
+  Devices as DevicesIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/layout/PageHeader';
 import { StandardTable, TableColumn } from '../../components/common/StandardTable';
@@ -33,6 +35,7 @@ import {
   useApprovePropertyNoteAccessRequest,
   usePropertyNoteAccessRequests,
   useRejectPropertyNoteAccessRequest,
+  useRevokePropertyNoteAccessRequest,
 } from '../../services/queries/propertyNoteAccessRequests';
 import { FilterState } from '../../constants/filters';
 import type {
@@ -58,6 +61,14 @@ const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
   return parsed.getTime() < Date.now();
 };
 
+/**
+ * List label for grant device scope.
+ */
+const formatDeviceLabel = (deviceId: string | null | undefined): string => {
+  if (!deviceId) return 'Any device';
+  return deviceId;
+};
+
 const FILTER_FIELDS: FilterField[] = [
   {
     key: 'searchTerm',
@@ -79,6 +90,7 @@ const FILTER_FIELDS: FilterField[] = [
       { value: 'admin_approved', label: 'Admin Approved' },
       { value: 'approved', label: 'Approved' },
       { value: 'rejected', label: 'Rejected' },
+      { value: 'revoked', label: 'Revoked' },
     ],
   },
 ];
@@ -89,10 +101,11 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   const approveMutation = useApprovePropertyNoteAccessRequest();
   const rejectMutation = useRejectPropertyNoteAccessRequest();
+  const revokeMutation = useRevokePropertyNoteAccessRequest();
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
-    type: 'approve' | 'reject';
+    type: 'approve' | 'reject' | 'revoke';
     request: PropertyNoteAccessRequest | null;
   }>({ open: false, type: 'approve', request: null });
 
@@ -172,6 +185,12 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         color: 'error',
         icon: <RejectIcon />,
       },
+      {
+        title: 'Revoked',
+        value: statistics?.revoked ?? 0,
+        color: 'secondary',
+        icon: <RevokeIcon />,
+      },
     ],
     [statistics]
   );
@@ -182,6 +201,10 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
 
   const handleRejectClick = useCallback((request: PropertyNoteAccessRequest) => {
     setConfirmState({ open: true, type: 'reject', request });
+  }, []);
+
+  const handleRevokeClick = useCallback((request: PropertyNoteAccessRequest) => {
+    setConfirmState({ open: true, type: 'revoke', request });
   }, []);
 
   const handleConfirmClose = useCallback(() => {
@@ -196,12 +219,15 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         if (confirmState.type === 'approve') {
           await approveMutation.mutateAsync(confirmState.request.id);
           showSuccess('Request approved. Mobile approvers notified.');
-        } else {
+        } else if (confirmState.type === 'reject') {
           await rejectMutation.mutateAsync({
             id: confirmState.request.id,
             rejectReason: reason?.trim() || undefined,
           });
           showSuccess('Request rejected.');
+        } else {
+          await revokeMutation.mutateAsync(confirmState.request.id);
+          showSuccess('Access revoked. Points are not refunded.');
         }
         handleConfirmClose();
       } catch (err: unknown) {
@@ -218,6 +244,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
       confirmState.type,
       handleConfirmClose,
       rejectMutation,
+      revokeMutation,
       showError,
       showSuccess,
     ]
@@ -241,6 +268,26 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
             </Box>
           );
         },
+      },
+      {
+        id: 'device',
+        label: 'Device',
+        render: (_value, row) => (
+          <Typography
+            variant="body2"
+            sx={{
+              maxWidth: 160,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: row?.device_id ? 'text.primary' : 'text.secondary',
+            }}
+            title={formatDeviceLabel(row?.device_id)}
+          >
+            {formatDeviceLabel(row?.device_id)}
+          </Typography>
+        ),
+        hidden: isMobile,
       },
       {
         id: 'points',
@@ -309,7 +356,9 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         render: (_value, row) => {
           if (!row) return null;
           const canAct = row.status === 'pending';
-          const busy = approveMutation.isPending || rejectMutation.isPending;
+          const canRevoke = row.status === 'approved';
+          const busy =
+            approveMutation.isPending || rejectMutation.isPending || revokeMutation.isPending;
           const approveTitle = canAct
             ? 'Approve (send to mobile approvers)'
             : row.status === 'admin_approved'
@@ -320,6 +369,9 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
             : row.status === 'admin_approved'
               ? 'Waiting for mobile Approver — Admin cannot reject'
               : 'Only pending requests can be rejected';
+          const revokeTitle = canRevoke
+            ? 'Revoke Access (no point refund)'
+            : 'Only approved access can be revoked';
 
           return (
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
@@ -347,6 +399,18 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
                   </IconButton>
                 </span>
               </Tooltip>
+              <Tooltip title={revokeTitle}>
+                <span>
+                  <IconButton
+                    size="small"
+                    color="warning"
+                    onClick={() => handleRevokeClick(row)}
+                    disabled={!canRevoke || busy}
+                  >
+                    <RevokeIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Box>
           );
         },
@@ -356,13 +420,16 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
       approveMutation.isPending,
       handleApproveClick,
       handleRejectClick,
+      handleRevokeClick,
       isMobile,
       rejectMutation.isPending,
+      revokeMutation.isPending,
     ]
   );
 
   const createMobileActions = (request: PropertyNoteAccessRequest): MobileCardAction[] => {
     const canAct = request.status === 'pending';
+    const canRevoke = request.status === 'approved';
     const waitingApprover = request.status === 'admin_approved';
 
     return [
@@ -396,6 +463,19 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         },
         disabled: !canAct,
       },
+      {
+        icon: <RevokeIcon />,
+        tooltip: canRevoke
+          ? 'Revoke Access (no point refund)'
+          : 'Only approved access can be revoked',
+        color: 'warning' as const,
+        onClick: () => {
+          if (canRevoke) {
+            handleRevokeClick(request);
+          }
+        },
+        disabled: !canRevoke,
+      },
     ];
   };
 
@@ -414,17 +494,40 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
     );
   }
 
+  const confirmTitle =
+    confirmState.type === 'approve'
+      ? 'Approve access request?'
+      : confirmState.type === 'reject'
+        ? 'Reject access request?'
+        : 'Revoke Property Note access?';
+
+  const confirmMessage = (() => {
+    const name = confirmState.request?.user?.name;
+    const deviceLabel = formatDeviceLabel(confirmState.request?.device_id);
+    if (confirmState.type === 'approve') {
+      return name
+        ? `Approve unlock for ${name}? Mobile approvers will be notified.`
+        : 'Approve this unlock request?';
+    }
+    if (confirmState.type === 'reject') {
+      return name ? `Reject unlock for ${name}?` : 'Reject this unlock request?';
+    }
+    return name
+      ? `Revoke access for ${name} (${deviceLabel})? Points are not refunded. Login stays active.`
+      : 'Revoke this approved access? Points are not refunded.';
+  })();
+
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title="Access Requests"
         breadcrumbs="Dashboard / Property Note / Access Requests"
-        subtitle="Approve or reject Property Note unlock requests (admin step)"
+        subtitle="Approve, reject, or revoke Property Note access (admin step)"
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
-      <StatisticsCards cards={statsCards} columns={{ xs: 12, sm: 6, md: 4, lg: 2.4 }} />
+      <StatisticsCards cards={statsCards} columns={{ xs: 12, sm: 6, md: 4, lg: 2 }} />
 
       <StandardFilters
         filters={filters}
@@ -461,10 +564,10 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
               subtitle={request.user?.phone || request.user?.email || '—'}
               description={
                 isExpiresAtPast(request.expires_at)
-                  ? `Points: ${request.points_amount} · Expires: ${request.expires_at} (expired)`
-                  : `Points: ${request.points_amount} · Expires: ${request.expires_at || '—'}`
+                  ? `Device: ${formatDeviceLabel(request.device_id)} · Points: ${request.points_amount} · Expires: ${request.expires_at} (expired)`
+                  : `Device: ${formatDeviceLabel(request.device_id)} · Points: ${request.points_amount} · Expires: ${request.expires_at || '—'}`
               }
-              avatar={<PersonIcon />}
+              avatar={request.device_id ? <DevicesIcon /> : <PersonIcon />}
               status={{
                 label: request.status.replace('_', ' '),
                 color:
@@ -472,7 +575,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
                     ? ('warning' as const)
                     : request.status === 'approved'
                       ? ('success' as const)
-                      : request.status === 'rejected'
+                      : request.status === 'rejected' || request.status === 'revoked'
                         ? ('error' as const)
                         : ('info' as const),
               }}
@@ -499,27 +602,29 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         open={confirmState.open}
         onClose={handleConfirmClose}
         onConfirm={handleConfirm}
-        title={
+        title={confirmTitle}
+        message={confirmMessage}
+        action={
           confirmState.type === 'approve'
-            ? 'Approve access request?'
-            : 'Reject access request?'
+            ? 'approve'
+            : confirmState.type === 'reject'
+              ? 'reject'
+              : 'custom'
         }
-        message={
-          confirmState.request?.user
-            ? confirmState.type === 'approve'
-              ? `Approve unlock for ${confirmState.request.user.name}? Mobile approvers will be notified.`
-              : `Reject unlock for ${confirmState.request.user.name}?`
-            : confirmState.type === 'approve'
-              ? 'Approve this unlock request?'
-              : 'Reject this unlock request?'
+        actionLabel={
+          confirmState.type === 'approve'
+            ? 'Approve'
+            : confirmState.type === 'reject'
+              ? 'Reject'
+              : 'Revoke Access'
         }
-        action={confirmState.type === 'approve' ? 'approve' : 'reject'}
-        actionLabel={confirmState.type === 'approve' ? 'Approve' : 'Reject'}
         actionColor={confirmState.type === 'approve' ? 'success' : 'error'}
         requireReason={false}
         reasonLabel="Reject reason (optional)"
         reasonPlaceholder="Reason shown to the user..."
-        isLoading={approveMutation.isPending || rejectMutation.isPending}
+        isLoading={
+          approveMutation.isPending || rejectMutation.isPending || revokeMutation.isPending
+        }
       />
     </Box>
   );

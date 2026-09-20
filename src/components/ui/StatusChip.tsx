@@ -57,6 +57,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         approved: 'Approved',
         admin_approved: 'Admin Approved',
         under_review: 'Under Review',
+        revoked: 'Revoked',
         // Booking statuses
         accepted: 'Accepted',
         rescheduled: 'Rescheduled',
@@ -209,6 +210,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           border: '#DC2626',
           hoverBg: '#FEF2F2',
           hoverBorder: '#B91C1C',
+        },
+        revoked: {
+          text: '#7C3AED', // Purple — access closed, not account
+          border: '#7C3AED',
+          hoverBg: '#F5F3FF',
+          hoverBorder: '#5B21B6',
         },
         deleted: {
           text: '#DC2626', // Red

@@ -3,8 +3,12 @@ import {
   Autocomplete,
   Box,
   Button,
+  FormControl,
   FormControlLabel,
+  FormLabel,
   Paper,
+  Radio,
+  RadioGroup,
   Switch,
   TextField,
   Typography,
@@ -22,14 +26,21 @@ import { useAlertSystem } from '../../hooks';
 import {
   useGrantPropertyNoteAccess,
   usePropertyNoteAccessGrantOptions,
+  usePropertyNoteAccessUserDevices,
 } from '../../services/queries/propertyNoteAccessRequests';
 import { useUsers } from '../../services/queries/users';
+import type { PropertyNoteAccessGrantDevice } from '../../types/propertyNoteAccess';
 import { RegularUser, getRegularUserDisplayName } from '../../types/user';
 
 const getUserSelectLabel = (user: RegularUser): string => {
   const name = getRegularUserDisplayName(user);
   const phone = user.phone?.trim() || '—';
   return `${name} - ${phone}`;
+};
+
+const getDeviceSelectLabel = (device: PropertyNoteAccessGrantDevice): string => {
+  const name = device.device_name?.trim() || device.device_model?.trim() || device.device_id;
+  return `${name} (${device.platform})`;
 };
 
 /**
@@ -54,10 +65,13 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   const [seeOthersSearch, setSeeOthersSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<RegularUser | null>(null);
   const [seeOthersUsers, setSeeOthersUsers] = useState<RegularUser[]>([]);
+  const [grantScope, setGrantScope] = useState<'user' | 'user_device'>('user');
+  const [selectedDevices, setSelectedDevices] = useState<PropertyNoteAccessGrantDevice[]>([]);
   const [chargePoints, setChargePoints] = useState(true);
   const [applyExpiry, setApplyExpiry] = useState(true);
   const [requireApprover, setRequireApprover] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
+  const [deviceError, setDeviceError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   /**
@@ -66,6 +80,10 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   const { data: usersResponse, isLoading: usersLoading } = useUsers({
     status: 'active',
   });
+
+  const { data: userDevices = [], isLoading: devicesLoading } = usePropertyNoteAccessUserDevices(
+    selectedUser?.id ?? null
+  );
 
   const allActiveUsers = useMemo(() => {
     const rawUsers: RegularUser[] = Array.isArray((usersResponse as { data?: RegularUser[] })?.data)
@@ -105,13 +123,24 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     seeOthersUsers.length === 0
       ? 'Own data only'
       : seeOthersUsers.map((user) => getRegularUserDisplayName(user)).join(', ');
+  const previewScope =
+    grantScope === 'user'
+      ? 'User only (any device)'
+      : selectedDevices.length === 0
+        ? 'User + Device (pick devices)'
+        : `User + Device: ${selectedDevices.map(getDeviceSelectLabel).join(', ')}`;
 
   const handleGrantClick = () => {
     if (!selectedUser) {
       setUserError('Select a user to grant access.');
       return;
     }
+    if (grantScope === 'user_device' && selectedDevices.length === 0) {
+      setDeviceError('Select at least one device for User + Device grant.');
+      return;
+    }
     setUserError(null);
+    setDeviceError(null);
     setConfirmOpen(true);
   };
 
@@ -125,6 +154,8 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
         apply_expiry: applyExpiry,
         require_approver: requireApprover,
         visible_user_ids: seeOthersUsers.map((user) => user.id),
+        device_ids:
+          grantScope === 'user_device' ? selectedDevices.map((device) => device.device_id) : [],
       });
 
       const result = response.data;
@@ -140,6 +171,8 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
       setUserSearch('');
       setSeeOthersUsers([]);
       setSeeOthersSearch('');
+      setGrantScope('user');
+      setSelectedDevices([]);
       setChargePoints(true);
       setApplyExpiry(true);
       setRequireApprover(true);
@@ -176,7 +209,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Grant Property Note Access"
-        subtitle="Path A — Admin enable with optional points, expiry, approver, and see-others"
+        subtitle="Path A — Admin enable with optional points, expiry, approver, see-others, and device scope"
         breadcrumbs="Dashboard / Property Note / Grant Access"
       />
 
@@ -193,6 +226,8 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
           value={selectedUser}
           onChange={(_event, value) => {
             setSelectedUser(value);
+            setSelectedDevices([]);
+            setDeviceError(null);
             if (value) {
               setUserError(null);
               setUserSearch(getUserSelectLabel(value));
@@ -231,11 +266,77 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
               error={Boolean(userError)}
               helperText={
                 userError ??
-                `Eligible active users only (${users.length}). Already granted / awaiting approver hidden.`
+                `Eligible active users only (${users.length}). User-only granted / awaiting approver hidden.`
               }
             />
           )}
         />
+
+        <FormControl sx={{ mt: 3, display: 'block' }}>
+          <FormLabel>Access scope</FormLabel>
+          <RadioGroup
+            row
+            value={grantScope}
+            onChange={(e) => {
+              const next = e.target.value === 'user_device' ? 'user_device' : 'user';
+              setGrantScope(next);
+              setSelectedDevices([]);
+              setDeviceError(null);
+            }}
+          >
+            <FormControlLabel value="user" control={<Radio />} label="User only (any device)" />
+            <FormControlLabel value="user_device" control={<Radio />} label="User + Device" />
+          </RadioGroup>
+        </FormControl>
+
+        {grantScope === 'user_device' && (
+          <>
+            <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+              Devices
+            </Typography>
+            <Autocomplete
+              multiple
+              options={userDevices}
+              loading={devicesLoading}
+              disabled={!selectedUser}
+              value={selectedDevices}
+              onChange={(_event, value) => {
+                setSelectedDevices(value);
+                if (value.length > 0) {
+                  setDeviceError(null);
+                }
+              }}
+              getOptionLabel={(device) => getDeviceSelectLabel(device)}
+              isOptionEqualToValue={(option, value) => option.device_id === value.device_id}
+              openOnFocus
+              disableCloseOnSelect
+              ListboxProps={{
+                style: { maxHeight: 280 },
+              }}
+              renderOption={(props, option) => (
+                <li {...props} key={option.device_id}>
+                  {getDeviceSelectLabel(option)}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Devices"
+                  placeholder={selectedUser ? 'Select one or more devices...' : 'Select a user first'}
+                  error={Boolean(deviceError)}
+                  helperText={
+                    deviceError ??
+                    (selectedUser
+                      ? userDevices.length === 0
+                        ? 'No registered devices for this user.'
+                        : 'Each selected device gets its own access row.'
+                      : 'Pick a user to load devices.')
+                  }
+                />
+              )}
+            />
+          </>
+        )}
 
         <Typography variant="subtitle1" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
           See others (optional)
@@ -323,6 +424,9 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
           }}
         >
           <Typography variant="body2">
+            Preview — scope: <strong>{previewScope}</strong>
+          </Typography>
+          <Typography variant="body2">
             Preview — points: <strong>{previewPoints}</strong>
           </Typography>
           <Typography variant="body2">
@@ -355,7 +459,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
         title="Grant Property Note Access?"
         message={
           selectedUser
-            ? `Grant access to ${getRegularUserDisplayName(selectedUser)}? Points: ${previewPoints}. Expiry: ${previewExpiry}. Flow: ${previewStatus}. See others: ${previewSeeOthers}.`
+            ? `Grant access to ${getRegularUserDisplayName(selectedUser)}? Scope: ${previewScope}. Points: ${previewPoints}. Expiry: ${previewExpiry}. Flow: ${previewStatus}. See others: ${previewSeeOthers}.`
             : 'Select a user first.'
         }
         action="custom"

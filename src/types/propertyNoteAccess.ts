@@ -6,7 +6,8 @@ export type PropertyNoteAccessStatus =
   | 'pending'
   | 'admin_approved'
   | 'approved'
-  | 'rejected';
+  | 'rejected'
+  | 'revoked';
 
 export interface PropertyNoteAccessUser {
   id: number;
@@ -56,6 +57,22 @@ export interface PropertyNoteAccessGrantPayload {
    * Users whose notes/pins the grantee may see on the map.
    */
   visible_user_ids?: number[];
+  /**
+   * Empty = user-only (any device). Non-empty = grant each device_id.
+   */
+  device_ids?: string[];
+}
+
+export interface PropertyNoteAccessGrantDevice {
+  id: number;
+  device_id: string;
+  device_name?: string | null;
+  device_model?: string | null;
+  platform: string;
+  os_version?: string | null;
+  app_version?: string | null;
+  last_seen_at?: string | null;
+  created_at: string;
 }
 
 export interface PropertyNoteAccessGrantOptions {
@@ -67,17 +84,18 @@ export interface PropertyNoteAccessGrantOptions {
     require_approver: boolean;
   };
   /**
-   * Users who already have usable access or a pending / admin_approved request.
+   * Users with user-only usable access or a pending / admin_approved request.
    */
   blocked_user_ids: number[];
 }
 
 export interface PropertyNoteAccessGrantResult {
-  access: PropertyNoteAccessRequest;
+  access: PropertyNoteAccessRequest | null;
   awaiting_approver: boolean;
   points_consumed: number;
   remaining_balance: number;
   visible_user_ids?: number[];
+  device_ids?: string[];
 }
 
 export interface PropertyNoteAccessStatistics {
@@ -86,6 +104,7 @@ export interface PropertyNoteAccessStatistics {
   admin_approved: number;
   approved: number;
   rejected: number;
+  revoked: number;
 }
 
 export interface PropertyNoteAccessRequestFilters {

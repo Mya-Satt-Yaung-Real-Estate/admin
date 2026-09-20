@@ -1,5 +1,6 @@
 import { apiV2Request, QueryParams } from './base';
 import type {
+  PropertyNoteAccessGrantDevice,
   PropertyNoteAccessGrantOptions,
   PropertyNoteAccessGrantPayload,
   PropertyNoteAccessGrantResult,
@@ -46,6 +47,7 @@ export const propertyNoteAccessRequestsAPI = {
         admin_approved: 0,
         approved: 0,
         rejected: 0,
+        revoked: 0,
       },
       pagination: raw.pagination,
     };
@@ -56,6 +58,11 @@ export const propertyNoteAccessRequestsAPI = {
 
   getGrantOptions: () =>
     apiV2Request<PropertyNoteAccessGrantOptions>('/property-note-access-requests/grant-options'),
+
+  getUserDevices: (userId: number) =>
+    apiV2Request<PropertyNoteAccessGrantDevice[]>(
+      `/property-note-access-requests/user-devices?user_id=${userId}`
+    ),
 
   /**
    * Path A: Admin grants access with optional points / expiry / approver flags.
@@ -69,6 +76,7 @@ export const propertyNoteAccessRequestsAPI = {
         apply_expiry: payload.apply_expiry ?? true,
         require_approver: payload.require_approver ?? true,
         visible_user_ids: payload.visible_user_ids ?? [],
+        device_ids: payload.device_ids ?? [],
       }),
     }),
 
@@ -83,5 +91,13 @@ export const propertyNoteAccessRequestsAPI = {
       body: JSON.stringify({
         reject_reason: rejectReason ?? null,
       }),
+    }),
+
+  /**
+   * Revoke approved access only. Does not refund points or revoke the user account.
+   */
+  revoke: (id: number) =>
+    apiV2Request<PropertyNoteAccessRequest>(`/property-note-access-requests/${id}/revoke`, {
+      method: 'POST',
     }),
 };
