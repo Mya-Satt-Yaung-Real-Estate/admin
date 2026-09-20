@@ -9,9 +9,11 @@ import {
   Divider,
   Grid,
   IconButton,
+  LinearProgress,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -138,10 +140,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const accessId = Number(id);
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
 
-  const { data: detailResponse, isLoading, error, refetch } =
+  const { data: detailResponse, isLoading, isFetching, isPlaceholderData, error, refetch } =
     usePropertyNoteAccessRequest(accessId);
   const detail = detailResponse?.data;
   const access = detail?.access;
+  /** True while URL grant id differs from on-screen placeholder data. */
+  const isSwitchingGrant = isPlaceholderData || (access != null && access.id !== accessId);
   const relatedGrants = detail?.related_grants ?? [];
   const registeredDevices = detail?.registered_devices ?? [];
   const visibleUsersFromApi = detail?.visible_users ?? [];
@@ -282,6 +286,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   ]);
 
   const busy =
+    isSwitchingGrant ||
     approveMutation.isPending ||
     rejectMutation.isPending ||
     revokeMutation.isPending ||
@@ -361,11 +366,25 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  /**
+   * Enable Save only when the selected user set differs from the API list.
+   */
+  const hasSeeOthersChanges = useMemo(() => {
+    const currentIds = seeOthersUsers.map((u) => u.id).sort((a, b) => a - b);
+    const savedIds = visibleUsersFromApi.map((u) => u.id).sort((a, b) => a - b);
+    if (currentIds.length !== savedIds.length) return true;
+    return currentIds.some((id, index) => id !== savedIds[index]);
+  }, [seeOthersUsers, visibleUsersFromApi]);
+
+  /**
+   * Full-page loader only on first open (no cached/placeholder data).
+   * Row switches keep the previous grant visible via keepPreviousData.
+   */
+  if (isLoading && !detail) {
     return <PageLoadingState title="Loading Access Detail" />;
   }
 
-  if (error || !access) {
+  if ((error && !detail) || !access) {
     return (
       <PageErrorState
         error={error ?? new Error('Access request not found')}
@@ -388,9 +407,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       : access.status === 'admin_approved'
         ? 'Waiting for Approver. Admin cannot approve/reject/revoke here.'
         : access.status === 'approved'
-          ? 'Access is active. You can revoke this grant or manage devices below.'
+          ? 'Access is active. Manage devices and see-others on the right.'
           : access.status === 'revoked'
-            ? 'Access was revoked. Re-grant via Grant Access or Add devices.'
+            ? 'Access was revoked. Re-grant via Add on Access List, or Add devices.'
             : access.status === 'rejected'
               ? 'Request was rejected.'
               : null;
@@ -400,9 +419,14 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
   return (
     <Box>
+      {isFetching && (
+        <LinearProgress
+          sx={{ position: 'sticky', top: 0, zIndex: 2, mb: 1, borderRadius: 1 }}
+        />
+      )}
       <PageHeader
-        title={access.user?.name || `Access #${access.id}`}
-        subtitle={`Grant #${access.id} · manage devices and who they can see`}
+        title={access.user?.name || `Access #${accessId}`}
+        subtitle={`Grant #${accessId} · manage devices and who they can see`}
         breadcrumbs="Dashboard / Property Note / Access List / Detail"
         actionButton={{
           text: 'Back to Access List',
@@ -427,7 +451,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                 <StatusChip status={access.status} />
-                <Chip label={`#${access.id}`} size="small" variant="outlined" />
+                <Chip label={`#${accessId}`} size="small" variant="outlined" />
               </Box>
               {statusHint && (
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -464,8 +488,18 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <SummaryField label="Points">
-                    <Typography variant="body1">{access.points_amount}</Typography>
+                  <SummaryField label="Expires">
+                    <Typography
+                      variant="body1"
+                      fontWeight={600}
+                      sx={
+                        access.expires_at && isExpiresAtPast(access.expires_at)
+                          ? { color: 'error.main' }
+                          : undefined
+                      }
+                    >
+                      {access.expires_at || 'No expiry'}
+                    </Typography>
                   </SummaryField>
                 </Grid>
                 <Grid item xs={6}>
@@ -484,29 +518,23 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 Timeline
               </Typography>
               <Grid container spacing={1.5} sx={{ mb: 1 }}>
-                <Grid item xs={6}>
+                <Grid item xs={4}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     Requested
                   </Typography>
                   <Typography variant="body2">{access.created_at || '—'}</Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={4}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     Admin at
                   </Typography>
                   <Typography variant="body2">{access.admin_approved_at || '—'}</Typography>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={4}>
                   <Typography variant="caption" color="text.secondary" display="block">
                     Approver at
                   </Typography>
                   <Typography variant="body2">{access.approved_at || '—'}</Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Expires
-                  </Typography>
-                  <Typography variant="body2">{access.expires_at || 'No expiry'}</Typography>
                 </Grid>
               </Grid>
 
@@ -587,145 +615,28 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     </Button>
                   </span>
                 </Tooltip>
-              </Box>            </CardContent>
+              </Box>
+            </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={7}>
-          <Card sx={{ mb: 3 }}>
+          <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                All device grants for this user
+                Manage access
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Name first · click a row to open that grant · revoke only when Approved
+                Add devices or change see-others — no need to scroll past the grants list.
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Grant</TableCell>
-                    <TableCell>Device name</TableCell>
-                    <TableCell>Device id</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Expires at</TableCell>
-                    <TableCell align="right">Action</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {relatedGrants.map((row: PropertyNoteAccessRequest) => {
-                    const isCurrent = row.id === access.id;
-                    const rowName = resolveDeviceName(row.device_id, devicesById);
-                    const rowIdFull = formatDeviceLabel(row.device_id);
-                    return (
-                      <TableRow
-                        key={row.id}
-                        selected={isCurrent}
-                        hover
-                        sx={{ cursor: 'pointer' }}
-                        onClick={() => {
-                          if (!isCurrent) {
-                            navigate(`/property-note-access-requests/${row.id}`);
-                          }
-                        }}
-                      >
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <Typography variant="body2">#{row.id}</Typography>
-                            {isCurrent && (
-                              <Chip label="Open" size="small" color="primary" variant="outlined" />
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {rowName}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title={rowIdFull}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ fontFamily: 'monospace' }}
-                            >
-                              {truncateDeviceId(row.device_id)}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                        <TableCell>
-                          <StatusChip status={row.status} size="small" />
-                        </TableCell>
-                        <TableCell>
-                          {row.expires_at ? (
-                            <Typography
-                              variant="body2"
-                              sx={
-                                isExpiresAtPast(row.expires_at)
-                                  ? { color: 'error.main', fontWeight: 600 }
-                                  : undefined
-                              }
-                            >
-                              {row.expires_at}
-                            </Typography>
-                          ) : (
-                            <Typography variant="body2" color="text.secondary">
-                              No expiry
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                          {row.status === 'approved' ? (
-                            <Tooltip title="Revoke Access (no point refund)">
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  color="warning"
-                                  disabled={busy}
-                                  onClick={() =>
-                                    setConfirmState({
-                                      open: true,
-                                      type: 'revoke',
-                                      targetId: row.id,
-                                    })
-                                  }
-                                >
-                                  <RevokeIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          ) : (
-                            <Typography variant="caption" color="text.secondary">
-                              —
-                            </Typography>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {relatedGrants.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6}>
-                        <Typography variant="body2" color="text.secondary">
-                          No grants found.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
 
-              <Divider sx={{ my: 3 }} />
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 Add another device
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Only devices in the user&apos;s registered list that do not already have an
-                Approved grant.
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5 }}>
-                Registered: {registeredDevices.length} · Approved device grants:{' '}
-                {approvedDeviceGrantCount} · Available to add: {addableDevices.length}
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                Registered: {registeredDevices.length} · Approved:{' '}
+                {approvedDeviceGrantCount} · Available: {addableDevices.length}
               </Typography>
               {addDeviceBlockedReason && (
                 <Typography
@@ -757,7 +668,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 openOnFocus
                 disableCloseOnSelect
                 ListboxProps={{
-                  style: { maxHeight: 280 },
+                  style: { maxHeight: 220 },
                 }}
                 renderOption={(props, option) => (
                   <li {...props} key={option.device_id}>
@@ -767,6 +678,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 renderInput={(params) => (
                   <TextField
                     {...params}
+                    size="small"
                     label="Devices to grant"
                     placeholder={
                       addableDevices.length === 0
@@ -774,12 +686,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         : 'Search or pick devices…'
                     }
                     error={!!deviceError}
-                    helperText={
-                      deviceError ||
-                      (addableDevices.length > 0
-                        ? 'Pick from the list — selected devices show as chips inside this box.'
-                        : undefined)
-                    }
+                    helperText={deviceError || undefined}
                     FormHelperTextProps={
                       deviceError
                         ? { sx: { color: 'error.main', mx: 0 } }
@@ -789,25 +696,22 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 )}
               />
               <Button
-                sx={{ mt: 1.5 }}
+                sx={{ mt: 1.5, mb: 2 }}
                 variant="contained"
                 disabled={busy || selectedDevices.length === 0}
                 onClick={() => void handleAddDevices()}
               >
                 Add devices
               </Button>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Divider sx={{ my: 2 }} />
+
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 See-others (map visibility)
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                 Other users whose notes/pins this person may see. Not tied to a device.
               </Typography>
-              <Divider sx={{ mb: 2 }} />
               <Autocomplete
                 multiple
                 options={seeOthersOptions}
@@ -820,9 +724,15 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 getOptionLabel={getUserSelectLabel}
                 isOptionEqualToValue={(a, b) => a.id === b.id}
                 disabled={busy}
+                openOnFocus
+                disableCloseOnSelect
+                ListboxProps={{
+                  style: { maxHeight: 220 },
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
+                    size="small"
                     label="Visible users"
                     placeholder="Search name or phone…"
                   />
@@ -832,11 +742,145 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 sx={{ mt: 1.5 }}
                 variant="contained"
                 startIcon={<SaveIcon />}
-                disabled={busy}
+                disabled={busy || !hasSeeOthersChanges}
                 onClick={() => void handleSaveSeeOthers()}
               >
                 Save see-others
               </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                All device grants for this user
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Scroll inside this list · click a row to open that grant · revoke when Approved
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <TableContainer sx={{ maxHeight: 360 }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Grant</TableCell>
+                      <TableCell>Device name</TableCell>
+                      <TableCell>Device id</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Expires at</TableCell>
+                      <TableCell align="right">Action</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {relatedGrants.map((row: PropertyNoteAccessRequest) => {
+                      const isCurrent = row.id === accessId;
+                      const rowName = resolveDeviceName(row.device_id, devicesById);
+                      const rowIdFull = formatDeviceLabel(row.device_id);
+                      return (
+                        <TableRow
+                          key={row.id}
+                          selected={isCurrent}
+                          hover
+                          sx={{ cursor: 'pointer' }}
+                          onClick={() => {
+                            if (!isCurrent) {
+                              navigate(`/property-note-access-requests/${row.id}`);
+                            }
+                          }}
+                        >
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                              <Typography variant="body2">#{row.id}</Typography>
+                              {isCurrent && (
+                                <Chip
+                                  label="Open"
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={600}>
+                              {rowName}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Tooltip title={rowIdFull}>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ fontFamily: 'monospace' }}
+                              >
+                                {truncateDeviceId(row.device_id)}
+                              </Typography>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell>
+                            <StatusChip status={row.status} size="small" />
+                          </TableCell>
+                          <TableCell>
+                            {row.expires_at ? (
+                              <Typography
+                                variant="body2"
+                                sx={
+                                  isExpiresAtPast(row.expires_at)
+                                    ? { color: 'error.main', fontWeight: 600 }
+                                    : undefined
+                                }
+                              >
+                                {row.expires_at}
+                              </Typography>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                No expiry
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                            {row.status === 'approved' ? (
+                              <Tooltip title="Revoke Access (no point refund)">
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="warning"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      setConfirmState({
+                                        open: true,
+                                        type: 'revoke',
+                                        targetId: row.id,
+                                      })
+                                    }
+                                  >
+                                    <RevokeIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <Typography variant="caption" color="text.secondary">
+                                —
+                              </Typography>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {relatedGrants.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6}>
+                          <Typography variant="body2" color="text.secondary">
+                            No grants found.
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </CardContent>
           </Card>
         </Grid>

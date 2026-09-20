@@ -6,6 +6,7 @@ import {
   FormControl,
   FormControlLabel,
   FormLabel,
+  Grid,
   Paper,
   Radio,
   RadioGroup,
@@ -215,62 +216,109 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
-      <Paper sx={{ p: { xs: 2, md: 3 }, maxWidth: 720 }}>
-        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-          Select user
-        </Typography>
+      <Paper sx={{ p: { xs: 2, md: 3 }, maxWidth: 960 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              Select user
+            </Typography>
 
-        <Autocomplete
-          options={users}
-          loading={usersLoading}
-          value={selectedUser}
-          onChange={(_event, value) => {
-            setSelectedUser(value);
-            setSelectedDevices([]);
-            setDeviceError(null);
-            if (value) {
-              setUserError(null);
-              setUserSearch(getUserSelectLabel(value));
-              setSeeOthersUsers((prev) => prev.filter((user) => user.id !== value.id));
-            } else {
-              setUserSearch('');
-            }
-          }}
-          inputValue={userSearch}
-          onInputChange={(_event, value, reason) => {
-            /**
-             * Keep typing + selection in sync.
-             * "reset" runs after pick — without it the field keeps the search text (e.g. 4221).
-             */
-            if (reason === 'input' || reason === 'clear' || reason === 'reset') {
-              setUserSearch(value);
-            }
-          }}
-          getOptionLabel={(user) => getUserSelectLabel(user)}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          filterOptions={filterActiveUsers}
-          openOnFocus
-          ListboxProps={{
-            style: { maxHeight: 280 },
-          }}
-          renderOption={(props, option) => (
-            <li {...props} key={option.id}>
-              {getUserSelectLabel(option)}
-            </li>
-          )}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="User"
-              placeholder="Type name or phone to filter..."
-              error={Boolean(userError)}
-              helperText={
-                userError ??
-                `Eligible active users only (${users.length}). User-only granted / awaiting approver hidden.`
-              }
+            <Autocomplete
+              options={users}
+              loading={usersLoading}
+              value={selectedUser}
+              onChange={(_event, value) => {
+                setSelectedUser(value);
+                setSelectedDevices([]);
+                setDeviceError(null);
+                if (value) {
+                  setUserError(null);
+                  setUserSearch(getUserSelectLabel(value));
+                  setSeeOthersUsers((prev) => prev.filter((user) => user.id !== value.id));
+                } else {
+                  setUserSearch('');
+                }
+              }}
+              inputValue={userSearch}
+              onInputChange={(_event, value, reason) => {
+                /**
+                 * Keep typing + selection in sync.
+                 * "reset" runs after pick — without it the field keeps the search text (e.g. 4221).
+                 */
+                if (reason === 'input' || reason === 'clear' || reason === 'reset') {
+                  setUserSearch(value);
+                }
+              }}
+              getOptionLabel={(user) => getUserSelectLabel(user)}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={filterActiveUsers}
+              openOnFocus
+              ListboxProps={{
+                style: { maxHeight: 280 },
+              }}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  {getUserSelectLabel(option)}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="User"
+                  placeholder="Type name or phone to filter..."
+                  error={Boolean(userError)}
+                  helperText={
+                    userError ??
+                    `Eligible active users only (${users.length}). Already granted / awaiting approver hidden.`
+                  }
+                />
+              )}
             />
-          )}
-        />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+              See others (optional)
+            </Typography>
+
+            <Autocomplete
+              multiple
+              options={seeOthersOptions}
+              loading={usersLoading}
+              value={seeOthersUsers}
+              onChange={(_event, value) => {
+                setSeeOthersUsers(value);
+              }}
+              inputValue={seeOthersSearch}
+              onInputChange={(_event, value, reason) => {
+                if (reason === 'input' || reason === 'clear') {
+                  setSeeOthersSearch(value);
+                }
+              }}
+              getOptionLabel={(user) => getUserSelectLabel(user)}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={filterActiveUsers}
+              openOnFocus
+              disableCloseOnSelect
+              ListboxProps={{
+                style: { maxHeight: 280 },
+              }}
+              renderOption={(props, option) => (
+                <li {...props} key={option.id}>
+                  {getUserSelectLabel(option)}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="See others"
+                  placeholder="Pick users whose notes/pins this user may see..."
+                  helperText="Optional. Empty = own map data only. Grantee is excluded."
+                />
+              )}
+            />
+          </Grid>
+        </Grid>
 
         <FormControl sx={{ mt: 3, display: 'block' }}>
           <FormLabel>Access scope</FormLabel>
@@ -337,47 +385,6 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
             />
           </>
         )}
-
-        <Typography variant="subtitle1" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
-          See others (optional)
-        </Typography>
-
-        <Autocomplete
-          multiple
-          options={seeOthersOptions}
-          loading={usersLoading}
-          value={seeOthersUsers}
-          onChange={(_event, value) => {
-            setSeeOthersUsers(value);
-          }}
-          inputValue={seeOthersSearch}
-          onInputChange={(_event, value, reason) => {
-            if (reason === 'input' || reason === 'clear') {
-              setSeeOthersSearch(value);
-            }
-          }}
-          getOptionLabel={(user) => getUserSelectLabel(user)}
-          isOptionEqualToValue={(option, value) => option.id === value.id}
-          filterOptions={filterActiveUsers}
-          openOnFocus
-          disableCloseOnSelect
-          ListboxProps={{
-            style: { maxHeight: 280 },
-          }}
-          renderOption={(props, option) => (
-            <li {...props} key={option.id}>
-              {getUserSelectLabel(option)}
-            </li>
-          )}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="See others"
-              placeholder="Pick users whose notes/pins this user may see..."
-              helperText="Optional. Empty = own map data only. Grantee is excluded."
-            />
-          )}
-        />
 
         <Typography variant="subtitle1" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
           Flags (default on)

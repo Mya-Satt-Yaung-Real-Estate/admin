@@ -9,6 +9,7 @@ import {
   useTheme,
 } from '@mui/material';
 import {
+  Add as AddIcon,
   Cancel as RejectIcon,
   CheckCircle as ApproveIcon,
   HourglassEmpty as PendingIcon,
@@ -543,6 +544,11 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         title="Access Requests"
         breadcrumbs="Dashboard / Property Note / Access Requests"
         subtitle="Approve, reject, or revoke Property Note access (admin step)"
+        actionButton={{
+          text: 'Add',
+          icon: <AddIcon />,
+          onClick: () => navigate('/property-note-access-grant'),
+        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />

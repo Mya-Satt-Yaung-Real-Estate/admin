@@ -193,11 +193,6 @@ export const MENU_ITEMS = [
         iconName: 'RequestQuote',
         path: '/property-note-access-requests',
       },
-      {
-        text: 'Grant Access',
-        iconName: 'Key',
-        path: '/property-note-access-grant',
-      },
     ],
   },  {
     text: 'Announcements',

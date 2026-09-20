@@ -38,6 +38,11 @@ export const usePropertyNoteAccessRequest = (id: number) => {
     queryFn: () => propertyNoteAccessRequestsAPI.get(id),
     enabled: id > 0,
     staleTime: 30 * 1000,
+    /**
+     * Keep the previous grant on screen when switching table rows so the
+     * first click on a new grant id does not flash a full-page loader.
+     */
+    placeholderData: keepPreviousData,
   });
 };
 
