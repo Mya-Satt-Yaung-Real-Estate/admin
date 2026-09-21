@@ -169,11 +169,16 @@ export const MENU_ITEMS = [
         iconName: 'PersonAdd',
         path: '/users',
       },
-      {
-        text: 'Map Access Users',
-        iconName: 'LocationOn',
-        path: '/map-access-users',
-      },
+      /**
+       * Temporarily hidden — Map Access Users was added by mistake for this release.
+       * Route/page kept at /map-access-users; uncomment to restore menu.
+       *
+       * {
+       *   text: 'Map Access Users',
+       *   iconName: 'LocationOn',
+       *   path: '/map-access-users',
+       * },
+       */
     ],
   },
   /**
