@@ -15,7 +15,8 @@ import {
   Typography,
   createFilterOptions,
 } from '@mui/material';
-import { VpnKey as GrantIcon } from '@mui/icons-material';
+import { VpnKey as GrantIcon, ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/layout/PageHeader';
 import {
   ActionAlert,
@@ -53,6 +54,7 @@ const filterActiveUsers = createFilterOptions<RegularUser>({
 });
 
 const PropertyNoteAccessGrantPage: React.FC = () => {
+  const navigate = useNavigate();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
   const grantMutation = useGrantPropertyNoteAccess();
   const {
@@ -210,8 +212,13 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Grant Property Note Access"
-        subtitle="Path A — Admin enable with optional points, expiry, approver, see-others, and device scope"
+        subtitle="Admin enable with optional points, expiry, approver, see-others, and device scope"
         breadcrumbs="Dashboard / Property Note / Grant Access"
+        actionButton={{
+          text: 'Back to Access List',
+          icon: <ArrowBackIcon />,
+          onClick: () => navigate('/property-note-access-requests'),
+        }}
       />
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
@@ -398,7 +405,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
               color="primary"
             />
           }
-          label={`Charge points (${unlockCost} pts from System Config)`}
+          label="Charge points"
         />
         <FormControlLabel
           control={
@@ -408,7 +415,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
               color="primary"
             />
           }
-          label={`Apply expiry (${accessDays} days from System Config)`}
+          label="Apply expiry"
         />
         <FormControlLabel
           control={

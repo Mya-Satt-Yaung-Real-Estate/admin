@@ -65,11 +65,17 @@ const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
 };
 
 /**
- * List label for grant device scope.
+ * List label for grant device scope — prefer registered device name.
  */
-const formatDeviceLabel = (deviceId: string | null | undefined): string => {
+const formatDeviceLabel = (
+  deviceId: string | null | undefined,
+  deviceName?: string | null
+): string => {
   if (!deviceId) return 'Any device';
-  return deviceId;
+  const name = deviceName?.trim();
+  if (name) return name;
+  if (deviceId.length <= 16) return deviceId;
+  return `${deviceId.slice(0, 8)}…${deviceId.slice(-4)}`;
 };
 
 const FILTER_FIELDS: FilterField[] = [
@@ -276,29 +282,28 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
       {
         id: 'device',
         label: 'Device',
-        render: (_value, row) => (
-          <Typography
-            variant="body2"
-            sx={{
-              maxWidth: 160,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              color: row?.device_id ? 'text.primary' : 'text.secondary',
-            }}
-            title={formatDeviceLabel(row?.device_id)}
-          >
-            {formatDeviceLabel(row?.device_id)}
-          </Typography>
-        ),
-        hidden: isMobile,
-      },
-      {
-        id: 'points',
-        label: 'Points',
-        render: (_value, row) => (
-          <Typography variant="body2">{row?.points_amount ?? 0}</Typography>
-        ),
+        render: (_value, row) => {
+          const label = formatDeviceLabel(row?.device_id, row?.device_name);
+          const tooltip =
+            row?.device_id && row?.device_name
+              ? `${row.device_name} (${row.device_id})`
+              : label;
+          return (
+            <Typography
+              variant="body2"
+              sx={{
+                maxWidth: 180,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                color: row?.device_id ? 'text.primary' : 'text.secondary',
+              }}
+              title={tooltip}
+            >
+              {label}
+            </Typography>
+          );
+        },
         hidden: isMobile,
       },
       {
@@ -317,6 +322,10 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         ),
         hidden: isMobile,
       },
+      /**
+       * Access List: Admin At / Approver At hidden — uncomment to show again.
+       */
+      /*
       {
         id: 'admin_approved_at',
         label: 'Admin At',
@@ -333,6 +342,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         ),
         hidden: isMobile,
       },
+      */
       {
         id: 'expires_at',
         label: 'Expires At',
@@ -524,7 +534,10 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
 
   const confirmMessage = (() => {
     const name = confirmState.request?.user?.name;
-    const deviceLabel = formatDeviceLabel(confirmState.request?.device_id);
+    const deviceLabel = formatDeviceLabel(
+      confirmState.request?.device_id,
+      confirmState.request?.device_name
+    );
     if (confirmState.type === 'approve') {
       return name
         ? `Approve unlock for ${name}? Mobile approvers will be notified.`
@@ -547,7 +560,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         actionButton={{
           text: 'Add',
           icon: <AddIcon />,
-          onClick: () => navigate('/property-note-access-grant'),
+          onClick: () => navigate('/property-note-access-requests/grant'),
         }}
       />
 
@@ -590,8 +603,8 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
               subtitle={request.user?.phone || request.user?.email || '—'}
               description={
                 isExpiresAtPast(request.expires_at)
-                  ? `Device: ${formatDeviceLabel(request.device_id)} · Points: ${request.points_amount} · Expires: ${request.expires_at} (expired)`
-                  : `Device: ${formatDeviceLabel(request.device_id)} · Points: ${request.points_amount} · Expires: ${request.expires_at || '—'}`
+                  ? `Device: ${formatDeviceLabel(request.device_id, request.device_name)} · Expires: ${request.expires_at} (expired)`
+                  : `Device: ${formatDeviceLabel(request.device_id, request.device_name)} · Expires: ${request.expires_at || '—'}`
               }
               avatar={request.device_id ? <DevicesIcon /> : <PersonIcon />}
               status={{

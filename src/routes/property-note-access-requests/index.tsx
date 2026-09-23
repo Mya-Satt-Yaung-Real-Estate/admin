@@ -25,6 +25,19 @@ export const propertyNoteAccessRequestRoutes = [
       </ProtectedRoute>
     ),
   },
+  /**
+   * Nested under Access List so sidebar stays open/active (must be before :id).
+   */
+  {
+    path: '/property-note-access-requests/grant',
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<PageLoader />}>
+          <PropertyNoteAccessGrantPage />
+        </Suspense>
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/property-note-access-requests/:id',
     element: (
@@ -35,6 +48,9 @@ export const propertyNoteAccessRequestRoutes = [
       </ProtectedRoute>
     ),
   },
+  /**
+   * Legacy grant URL — same page (bookmarks / old links).
+   */
   {
     path: '/property-note-access-grant',
     element: (

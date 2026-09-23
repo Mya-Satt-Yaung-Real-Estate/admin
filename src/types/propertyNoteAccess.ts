@@ -37,6 +37,10 @@ export interface PropertyNoteAccessRequest {
   points_amount: number;
   apply_expiry: boolean;
   device_id: string | null;
+  /**
+   * From user_devices (name or model). Null for Any-device / unknown.
+   */
+  device_name?: string | null;
   reject_reason: string | null;
   created_at: string | null;
   admin_approved_at: string | null;
