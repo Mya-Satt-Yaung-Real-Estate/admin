@@ -41,6 +41,7 @@ import { useAlertSystem } from '../../hooks';
 import {
   useAddPropertyNoteAccessDevices,
   useApprovePropertyNoteAccessRequest,
+  useChangePropertyNoteAccessScope,
   usePropertyNoteAccessRequest,
   useRejectPropertyNoteAccessRequest,
   useRevokePropertyNoteAccessRequest,
@@ -162,11 +163,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const rejectMutation = useRejectPropertyNoteAccessRequest();
   const revokeMutation = useRevokePropertyNoteAccessRequest();
   const addDevicesMutation = useAddPropertyNoteAccessDevices();
+  const changeScopeMutation = useChangePropertyNoteAccessScope();
   const updateVisibleMutation = useUpdatePropertyNoteVisibleUsers();
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
-    type: 'approve' | 'reject' | 'revoke';
+    type: 'approve' | 'reject' | 'revoke' | 'switch_devices' | 'convert_any';
     targetId: number | null;
   }>({ open: false, type: 'approve', targetId: null });
 
@@ -269,7 +271,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const addDeviceBlockedReason = useMemo(() => {
     if (addableDevices.length > 0) return null;
     if (hasUserOnlyApproved) {
-      return 'This user already has Any-device (user-only) approved access. Revoke that grant first, then add specific devices.';
+      return null;
     }
     if (registeredDevices.length === 0) {
       return 'No registered devices for this user. They must log in from the mobile app once so the device appears in user_devices.';
@@ -285,12 +287,16 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     registeredDevices.length,
   ]);
 
+  const canConvertToAny =
+    !hasUserOnlyApproved && approvedDeviceGrantCount > 0;
+
   const busy =
     isSwitchingGrant ||
     approveMutation.isPending ||
     rejectMutation.isPending ||
     revokeMutation.isPending ||
     addDevicesMutation.isPending ||
+    changeScopeMutation.isPending ||
     updateVisibleMutation.isPending;
 
   const handleBack = () => {
@@ -303,17 +309,50 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       if (confirmState.type === 'approve') {
         await approveMutation.mutateAsync(confirmState.targetId);
         showSuccess('Request approved. Mobile approvers notified.');
+        setConfirmState({ open: false, type: 'approve', targetId: null });
       } else if (confirmState.type === 'reject') {
         await rejectMutation.mutateAsync({
           id: confirmState.targetId,
           rejectReason: reason?.trim() || undefined,
         });
         showSuccess('Request rejected.');
-      } else {
+        setConfirmState({ open: false, type: 'approve', targetId: null });
+      } else if (confirmState.type === 'revoke') {
         await revokeMutation.mutateAsync(confirmState.targetId);
         showSuccess('Access revoked. Points are not refunded.');
+        setConfirmState({ open: false, type: 'approve', targetId: null });
+      } else if (confirmState.type === 'switch_devices') {
+        if (selectedDevices.length === 0) {
+          setDeviceError('Select at least one device.');
+          return;
+        }
+        const response = await changeScopeMutation.mutateAsync({
+          id: confirmState.targetId,
+          payload: {
+            scope: 'devices',
+            device_ids: selectedDevices.map((d) => d.device_id),
+          },
+        });
+        setSelectedDevices([]);
+        setDeviceSearch('');
+        setConfirmState({ open: false, type: 'approve', targetId: null });
+        showSuccess('Scope changed to selected devices.');
+        const nextId = response.data?.access?.id;
+        if (nextId && nextId !== accessId) {
+          navigate(`/property-note-access-requests/${nextId}`);
+        }
+      } else if (confirmState.type === 'convert_any') {
+        const response = await changeScopeMutation.mutateAsync({
+          id: confirmState.targetId,
+          payload: { scope: 'user_only' },
+        });
+        setConfirmState({ open: false, type: 'approve', targetId: null });
+        showSuccess('Scope changed to Any device.');
+        const nextId = response.data?.access?.id;
+        if (nextId && nextId !== accessId) {
+          navigate(`/property-note-access-requests/${nextId}`);
+        }
       }
-      setConfirmState({ open: false, type: 'approve', targetId: null });
     } catch (err: unknown) {
       const message =
         err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
@@ -627,82 +666,194 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 Manage access
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Add devices or change see-others — no need to scroll past the grants list.
+                Change scope, add devices, or edit see-others — no need to scroll past the grants
+                list.
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                Add another device
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                Registered: {registeredDevices.length} · Approved:{' '}
-                {approvedDeviceGrantCount} · Available: {addableDevices.length}
-              </Typography>
-              {addDeviceBlockedReason && (
-                <Typography
-                  variant="body2"
-                  color="warning.main"
-                  sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
-                >
-                  {addDeviceBlockedReason}
-                </Typography>
-              )}
-              <Autocomplete
-                multiple
-                options={addableDevices}
-                value={selectedDevices}
-                onChange={(_e, value) => {
-                  setSelectedDevices(value);
-                  if (value.length > 0) setDeviceError(null);
-                }}
-                inputValue={deviceSearch}
-                onInputChange={(_e, value, reason) => {
-                  if (reason === 'input' || reason === 'clear') {
-                    setDeviceSearch(value);
-                  }
-                }}
-                filterOptions={filterDevices}
-                getOptionLabel={getDeviceSelectLabel}
-                isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
-                disabled={busy || addableDevices.length === 0}
-                openOnFocus
-                disableCloseOnSelect
-                ListboxProps={{
-                  style: { maxHeight: 220 },
-                }}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.device_id}>
-                    {getDeviceSelectLabel(option)}
-                  </li>
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    label="Devices to grant"
-                    placeholder={
-                      addableDevices.length === 0
-                        ? 'No devices available to add'
-                        : 'Search or pick devices…'
-                    }
-                    error={!!deviceError}
-                    helperText={deviceError || undefined}
-                    FormHelperTextProps={
-                      deviceError
-                        ? { sx: { color: 'error.main', mx: 0 } }
-                        : undefined
-                    }
+              {hasUserOnlyApproved ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Switch to selected devices
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Revokes Any-device and grants only the devices you pick. Unselected phones lose
+                    access. No points charged.
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                    Registered: {registeredDevices.length}
+                  </Typography>
+                  {registeredDevices.length === 0 ? (
+                    <Typography
+                      variant="body2"
+                      color="warning.main"
+                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
+                    >
+                      No registered devices. User must log in from mobile once so devices appear in
+                      user_devices.
+                    </Typography>
+                  ) : (
+                    <>
+                      <Autocomplete
+                        multiple
+                        options={registeredDevices}
+                        value={selectedDevices}
+                        onChange={(_e, value) => {
+                          setSelectedDevices(value);
+                          if (value.length > 0) setDeviceError(null);
+                        }}
+                        inputValue={deviceSearch}
+                        onInputChange={(_e, value, reason) => {
+                          if (reason === 'input' || reason === 'clear') {
+                            setDeviceSearch(value);
+                          }
+                        }}
+                        filterOptions={filterDevices}
+                        getOptionLabel={getDeviceSelectLabel}
+                        isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                        disabled={busy}
+                        openOnFocus
+                        disableCloseOnSelect
+                        ListboxProps={{
+                          style: { maxHeight: 220 },
+                        }}
+                        renderOption={(props, option) => (
+                          <li {...props} key={option.device_id}>
+                            {getDeviceSelectLabel(option)}
+                          </li>
+                        )}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Devices to keep"
+                            placeholder="Search or pick devices…"
+                            error={!!deviceError}
+                            helperText={deviceError || undefined}
+                            FormHelperTextProps={
+                              deviceError
+                                ? { sx: { color: 'error.main', mx: 0 } }
+                                : undefined
+                            }
+                          />
+                        )}
+                      />
+                      <Button
+                        sx={{ mt: 1.5, mb: 2 }}
+                        variant="contained"
+                        color="warning"
+                        disabled={busy || selectedDevices.length === 0}
+                        onClick={() => {
+                          if (selectedDevices.length === 0) {
+                            setDeviceError('Select at least one device.');
+                            return;
+                          }
+                          setDeviceError(null);
+                          setConfirmState({
+                            open: true,
+                            type: 'switch_devices',
+                            targetId: accessId,
+                          });
+                        }}
+                      >
+                        Switch to selected devices
+                      </Button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Add another device
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                    Registered: {registeredDevices.length} · Approved:{' '}
+                    {approvedDeviceGrantCount} · Available: {addableDevices.length}
+                  </Typography>
+                  {addDeviceBlockedReason && (
+                    <Typography
+                      variant="body2"
+                      color="warning.main"
+                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
+                    >
+                      {addDeviceBlockedReason}
+                    </Typography>
+                  )}
+                  <Autocomplete
+                    multiple
+                    options={addableDevices}
+                    value={selectedDevices}
+                    onChange={(_e, value) => {
+                      setSelectedDevices(value);
+                      if (value.length > 0) setDeviceError(null);
+                    }}
+                    inputValue={deviceSearch}
+                    onInputChange={(_e, value, reason) => {
+                      if (reason === 'input' || reason === 'clear') {
+                        setDeviceSearch(value);
+                      }
+                    }}
+                    filterOptions={filterDevices}
+                    getOptionLabel={getDeviceSelectLabel}
+                    isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                    disabled={busy || addableDevices.length === 0}
+                    openOnFocus
+                    disableCloseOnSelect
+                    ListboxProps={{
+                      style: { maxHeight: 220 },
+                    }}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.device_id}>
+                        {getDeviceSelectLabel(option)}
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        label="Devices to grant"
+                        placeholder={
+                          addableDevices.length === 0
+                            ? 'No devices available to add'
+                            : 'Search or pick devices…'
+                        }
+                        error={!!deviceError}
+                        helperText={deviceError || undefined}
+                        FormHelperTextProps={
+                          deviceError
+                            ? { sx: { color: 'error.main', mx: 0 } }
+                            : undefined
+                        }
+                      />
+                    )}
                   />
-                )}
-              />
-              <Button
-                sx={{ mt: 1.5, mb: 2 }}
-                variant="contained"
-                disabled={busy || selectedDevices.length === 0}
-                onClick={() => void handleAddDevices()}
-              >
-                Add devices
-              </Button>
+                  <Button
+                    sx={{ mt: 1.5, mb: canConvertToAny ? 1.5 : 2 }}
+                    variant="contained"
+                    disabled={busy || selectedDevices.length === 0}
+                    onClick={() => void handleAddDevices()}
+                  >
+                    Add devices
+                  </Button>
+                  {canConvertToAny && (
+                    <Button
+                      sx={{ mb: 2, display: 'block' }}
+                      variant="outlined"
+                      color="warning"
+                      disabled={busy}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          type: 'convert_any',
+                          targetId: accessId,
+                        })
+                      }
+                    >
+                      Convert to Any device
+                    </Button>
+                  )}
+                </>
+              )}
 
               <Divider sx={{ my: 2 }} />
 
@@ -895,14 +1046,22 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
             ? 'Approve access request?'
             : confirmState.type === 'reject'
               ? 'Reject access request?'
-              : 'Revoke Property Note access?'
+              : confirmState.type === 'switch_devices'
+                ? 'Switch to selected devices?'
+                : confirmState.type === 'convert_any'
+                  ? 'Convert to Any device?'
+                  : 'Revoke Property Note access?'
         }
         message={
           confirmState.type === 'approve'
             ? 'Approve this unlock request? Mobile approvers will be notified.'
             : confirmState.type === 'reject'
               ? 'Reject this unlock request?'
-              : 'Revoke this approved access? Points are not refunded. Login stays active.'
+              : confirmState.type === 'switch_devices'
+                ? `Revoke Any-device and grant only ${selectedDevices.length} selected device(s)? Unselected phones lose access. Points are not charged.`
+                : confirmState.type === 'convert_any'
+                  ? 'Revoke all device-specific grants and create one Any-device grant? All phones unlock. Points are not charged.'
+                  : 'Revoke this approved access? Points are not refunded. Login stays active.'
         }
         action={
           confirmState.type === 'approve'
@@ -916,7 +1075,11 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
             ? 'Approve'
             : confirmState.type === 'reject'
               ? 'Reject'
-              : 'Revoke Access'
+              : confirmState.type === 'switch_devices'
+                ? 'Switch scope'
+                : confirmState.type === 'convert_any'
+                  ? 'Convert to Any'
+                  : 'Revoke Access'
         }
         actionColor={confirmState.type === 'approve' ? 'success' : 'error'}
         requireReason={false}

@@ -1,6 +1,8 @@
 import { apiV2Request, QueryParams } from './base';
 import type {
   PropertyNoteAccessAddDevicesPayload,
+  PropertyNoteAccessChangeScopePayload,
+  PropertyNoteAccessChangeScopeResult,
   PropertyNoteAccessDetail,
   PropertyNoteAccessGrantDevice,
   PropertyNoteAccessGrantOptions,
@@ -119,6 +121,23 @@ export const propertyNoteAccessRequestsAPI = {
         require_approver: payload.require_approver ?? false,
       }),
     }),
+
+  /**
+   * Switch Any-device ↔ selected devices (no point charge).
+   */
+  changeScope: (id: number, payload: PropertyNoteAccessChangeScopePayload) =>
+    apiV2Request<PropertyNoteAccessChangeScopeResult>(
+      `/property-note-access-requests/${id}/change-scope`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          scope: payload.scope,
+          ...(payload.scope === 'devices'
+            ? { device_ids: payload.device_ids ?? [] }
+            : {}),
+        }),
+      }
+    ),
 
   updateVisibleUsers: (id: number, visibleUserIds: number[]) =>
     apiV2Request<{

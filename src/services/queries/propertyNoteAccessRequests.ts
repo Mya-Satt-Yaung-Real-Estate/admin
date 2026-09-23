@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tansta
 import { propertyNoteAccessRequestsAPI } from '../api/propertyNoteAccessRequests';
 import type {
   PropertyNoteAccessAddDevicesPayload,
+  PropertyNoteAccessChangeScopePayload,
   PropertyNoteAccessGrantPayload,
   PropertyNoteAccessRequestFilters,
 } from '../../types/propertyNoteAccess';
@@ -133,6 +134,25 @@ export const useAddPropertyNoteAccessDevices = () => {
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.detail(vars.id) });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.grantOptions() });
+    },
+  });
+};
+
+export const useChangePropertyNoteAccessScope = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: PropertyNoteAccessChangeScopePayload;
+    }) => propertyNoteAccessRequestsAPI.changeScope(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.details() });
       queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.grantOptions() });
     },
   });

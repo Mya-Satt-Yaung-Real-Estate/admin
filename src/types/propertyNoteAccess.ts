@@ -119,6 +119,22 @@ export interface PropertyNoteAccessAddDevicesPayload {
   require_approver?: boolean;
 }
 
+/**
+ * Admin switch: Any-device ↔ selected devices.
+ */
+export interface PropertyNoteAccessChangeScopePayload {
+  scope: 'user_only' | 'devices';
+  device_ids?: string[];
+}
+
+export interface PropertyNoteAccessChangeScopeResult {
+  access: PropertyNoteAccessRequest | null;
+  scope: 'user_only' | 'devices';
+  revoked_ids: number[];
+  created_ids: number[];
+  device_ids: string[];
+}
+
 export interface PropertyNoteAccessStatistics {
   total: number;
   pending: number;
