@@ -6,6 +6,9 @@ import {
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -26,6 +29,7 @@ import {
   Block as RevokeIcon,
   Cancel as RejectIcon,
   CheckCircle as ApproveIcon,
+  Close as CloseIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -177,6 +181,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const [seeOthersUsers, setSeeOthersUsers] = useState<RegularUser[]>([]);
   const [seeOthersSearch, setSeeOthersSearch] = useState('');
   const [deviceError, setDeviceError] = useState<string | null>(null);
+  /**
+   * Grant detail + manage UI opens in a modal when a table row is clicked.
+   */
+  const [grantModalOpen, setGrantModalOpen] = useState(false);
 
   const { data: usersResponse, isLoading: usersLoading } = useUsers({
     status: 'active',
@@ -465,7 +473,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       )}
       <PageHeader
         title={access.user?.name || `Access #${accessId}`}
-        subtitle={`Grant #${accessId} · manage devices and who they can see`}
+        subtitle="Manage access below · click a grant row for grant details"
         breadcrumbs="Dashboard / Property Note / Access List / Detail"
         actionButton={{
           text: 'Back to Access List',
@@ -476,10 +484,472 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={5}>
-          <Card>
-            <CardContent>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            Manage access
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ mb: 1.5, color: 'primary.dark', fontWeight: 500 }}
+          >
+            Change scope, add devices, or edit see-others for the selected grant (Open row).
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+
+          <Grid container spacing={2} columnSpacing={{ xs: 2, md: 6 }}>
+            <Grid item xs={12} md={6}>
+              {hasUserOnlyApproved ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Switch to selected devices
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}
+                  >
+                    Revokes Any-device and grants only the devices you pick. Unselected phones lose
+                    access. No points charged.
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    display="block"
+                    sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}
+                  >
+                    Registered: {registeredDevices.length}
+                  </Typography>
+                  {registeredDevices.length === 0 ? (
+                    <Typography
+                      variant="body2"
+                      color="warning.main"
+                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
+                    >
+                      No registered devices. User must log in from mobile once so devices appear in
+                      user_devices.
+                    </Typography>
+                  ) : (
+                    <>
+                      <Autocomplete
+                        multiple
+                        options={registeredDevices}
+                        value={selectedDevices}
+                        onChange={(_e, value) => {
+                          setSelectedDevices(value);
+                          if (value.length > 0) setDeviceError(null);
+                        }}
+                        inputValue={deviceSearch}
+                        onInputChange={(_e, value, reason) => {
+                          if (reason === 'input' || reason === 'clear') {
+                            setDeviceSearch(value);
+                          }
+                        }}
+                        filterOptions={filterDevices}
+                        getOptionLabel={getDeviceSelectLabel}
+                        isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                        disabled={busy}
+                        openOnFocus
+                        disableCloseOnSelect
+                        ListboxProps={{
+                          style: { maxHeight: 220 },
+                        }}
+                        renderOption={(props, option) => (
+                          <li {...props} key={option.device_id}>
+                            {getDeviceSelectLabel(option)}
+                          </li>
+                        )}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Devices to keep"
+                            placeholder="Search or pick devices…"
+                            error={!!deviceError}
+                            helperText={deviceError || undefined}
+                            FormHelperTextProps={
+                              deviceError
+                                ? { sx: { color: 'error.main', mx: 0 } }
+                                : undefined
+                            }
+                          />
+                        )}
+                      />
+                      <Button
+                        sx={{ mt: 1.5 }}
+                        variant="contained"
+                        color="warning"
+                        disabled={busy || selectedDevices.length === 0}
+                        onClick={() => {
+                          if (selectedDevices.length === 0) {
+                            setDeviceError('Select at least one device.');
+                            return;
+                          }
+                          setDeviceError(null);
+                          setConfirmState({
+                            open: true,
+                            type: 'switch_devices',
+                            targetId: accessId,
+                          });
+                        }}
+                      >
+                        Switch to selected devices
+                      </Button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Add another device
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    display="block"
+                    sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}
+                  >
+                    Registered: {registeredDevices.length} · Approved:{' '}
+                    {approvedDeviceGrantCount} · Available: {addableDevices.length}
+                  </Typography>
+                  {addDeviceBlockedReason && (
+                    <Typography
+                      variant="body2"
+                      color="warning.main"
+                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
+                    >
+                      {addDeviceBlockedReason}
+                    </Typography>
+                  )}
+                  <Autocomplete
+                    multiple
+                    options={addableDevices}
+                    value={selectedDevices}
+                    onChange={(_e, value) => {
+                      setSelectedDevices(value);
+                      if (value.length > 0) setDeviceError(null);
+                    }}
+                    inputValue={deviceSearch}
+                    onInputChange={(_e, value, reason) => {
+                      if (reason === 'input' || reason === 'clear') {
+                        setDeviceSearch(value);
+                      }
+                    }}
+                    filterOptions={filterDevices}
+                    getOptionLabel={getDeviceSelectLabel}
+                    isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                    disabled={busy || addableDevices.length === 0}
+                    openOnFocus
+                    disableCloseOnSelect
+                    ListboxProps={{
+                      style: { maxHeight: 220 },
+                    }}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.device_id}>
+                        {getDeviceSelectLabel(option)}
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        label="Devices to grant"
+                        placeholder={
+                          addableDevices.length === 0
+                            ? 'No devices available to add'
+                            : 'Search or pick devices…'
+                        }
+                        error={!!deviceError}
+                        helperText={deviceError || undefined}
+                        FormHelperTextProps={
+                          deviceError
+                            ? { sx: { color: 'error.main', mx: 0 } }
+                            : undefined
+                        }
+                      />
+                    )}
+                  />
+                  <Button
+                    sx={{ mt: 1.5, mb: canConvertToAny ? 1.5 : 0 }}
+                    variant="contained"
+                    disabled={busy || selectedDevices.length === 0}
+                    onClick={() => void handleAddDevices()}
+                  >
+                    Add devices
+                  </Button>
+                  {canConvertToAny && (
+                    <Button
+                      sx={{ display: 'block' }}
+                      variant="outlined"
+                      color="warning"
+                      disabled={busy}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          type: 'convert_any',
+                          targetId: accessId,
+                        })
+                      }
+                    >
+                      Convert to Any device
+                    </Button>
+                  )}
+                </>
+              )}
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                See-others (map visibility)
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
+              >
+                Other users whose notes/pins this person may see. Not tied to a device.
+              </Typography>
+              <Autocomplete
+                multiple
+                options={seeOthersOptions}
+                value={seeOthersUsers}
+                onChange={(_e, value) => setSeeOthersUsers(value)}
+                inputValue={seeOthersSearch}
+                onInputChange={(_e, value) => setSeeOthersSearch(value)}
+                filterOptions={filterActiveUsers}
+                loading={usersLoading}
+                getOptionLabel={getUserSelectLabel}
+                isOptionEqualToValue={(a, b) => a.id === b.id}
+                disabled={busy}
+                openOnFocus
+                disableCloseOnSelect
+                ListboxProps={{
+                  style: { maxHeight: 220 },
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Visible users"
+                    placeholder="Search name or phone…"
+                  />
+                )}
+              />
+              <Button
+                sx={{ mt: 1.5 }}
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={busy || !hasSeeOthersChanges}
+                onClick={() => void handleSaveSeeOthers()}
+              >
+                Save see-others
+              </Button>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <Typography variant="h6" gutterBottom>
+            All device grants for this user
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Click a row to open grant details and manage access in a popup.
+          </Typography>
+          <Divider sx={{ mb: 2 }} />
+          <TableContainer sx={{ maxHeight: { xs: 480, md: 640 } }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Grant</TableCell>
+                  <TableCell>Device name</TableCell>
+                  <TableCell>Device id</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Expires at</TableCell>
+                  <TableCell align="right">Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {relatedGrants.map((row: PropertyNoteAccessRequest) => {
+                  const isCurrent = row.id === accessId;
+                  const rowName = resolveDeviceName(row.device_id, devicesById);
+                  const rowIdFull = formatDeviceLabel(row.device_id);
+                  return (
+                    <TableRow
+                      key={row.id}
+                      selected={isCurrent && grantModalOpen}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setGrantModalOpen(true);
+                        if (!isCurrent) {
+                          navigate(`/property-note-access-requests/${row.id}`);
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                          <Typography variant="body2">#{row.id}</Typography>
+                          {isCurrent && grantModalOpen && (
+                            <Chip
+                              label="Open"
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {rowName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title={rowIdFull}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontFamily: 'monospace' }}
+                          >
+                            {truncateDeviceId(row.device_id)}
+                          </Typography>
+                        </Tooltip>
+                      </TableCell>
+                      <TableCell>
+                        <StatusChip status={row.status} size="small" />
+                      </TableCell>
+                      <TableCell>
+                        {row.expires_at ? (
+                          <Typography
+                            variant="body2"
+                            sx={
+                              isExpiresAtPast(row.expires_at)
+                                ? { color: 'error.main', fontWeight: 600 }
+                                : undefined
+                            }
+                          >
+                            {row.expires_at}
+                          </Typography>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            No expiry
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        {(() => {
+                          const canApproveRow = row.status === 'pending';
+                          const canRejectRow = row.status === 'pending';
+                          const canRevokeRow = row.status === 'approved';
+                          const approveTitle = canApproveRow
+                            ? 'Approve (send to mobile approvers)'
+                            : row.status === 'admin_approved'
+                              ? 'Waiting for mobile Approver'
+                              : 'Only pending requests can be approved';
+                          const rejectTitle = canRejectRow
+                            ? 'Reject'
+                            : row.status === 'admin_approved'
+                              ? 'Waiting for mobile Approver — Admin cannot reject'
+                              : 'Only pending requests can be rejected';
+                          const revokeTitle = canRevokeRow
+                            ? 'Revoke Access (no point refund)'
+                            : 'Only approved access can be revoked';
+
+                          return (
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.25 }}>
+                              <Tooltip title={approveTitle}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    disabled={!canApproveRow || busy}
+                                    onClick={() =>
+                                      setConfirmState({
+                                        open: true,
+                                        type: 'approve',
+                                        targetId: row.id,
+                                      })
+                                    }
+                                  >
+                                    <ApproveIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip title={rejectTitle}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    disabled={!canRejectRow || busy}
+                                    onClick={() =>
+                                      setConfirmState({
+                                        open: true,
+                                        type: 'reject',
+                                        targetId: row.id,
+                                      })
+                                    }
+                                  >
+                                    <RejectIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip title={revokeTitle}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    color="warning"
+                                    disabled={!canRevokeRow || busy}
+                                    onClick={() =>
+                                      setConfirmState({
+                                        open: true,
+                                        type: 'revoke',
+                                        targetId: row.id,
+                                      })
+                                    }
+                                  >
+                                    <RevokeIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            </Box>
+                          );
+                        })()}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {relatedGrants.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <Typography variant="body2" color="text.secondary">
+                        No grants found.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={grantModalOpen}
+        onClose={() => setGrantModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        scroll="paper"
+      >
+        <DialogTitle sx={{ pr: 6 }}>
+          Grant #{accessId}
+          <IconButton
+            aria-label="Close"
+            onClick={() => setGrantModalOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               <Typography variant="h6" gutterBottom>
                 This grant
               </Typography>
@@ -655,387 +1125,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   </span>
                 </Tooltip>
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        <Grid item xs={12} md={7}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Manage access
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Change scope, add devices, or edit see-others — no need to scroll past the grants
-                list.
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-
-              {hasUserOnlyApproved ? (
-                <>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                    Switch to selected devices
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Revokes Any-device and grants only the devices you pick. Unselected phones lose
-                    access. No points charged.
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                    Registered: {registeredDevices.length}
-                  </Typography>
-                  {registeredDevices.length === 0 ? (
-                    <Typography
-                      variant="body2"
-                      color="warning.main"
-                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
-                    >
-                      No registered devices. User must log in from mobile once so devices appear in
-                      user_devices.
-                    </Typography>
-                  ) : (
-                    <>
-                      <Autocomplete
-                        multiple
-                        options={registeredDevices}
-                        value={selectedDevices}
-                        onChange={(_e, value) => {
-                          setSelectedDevices(value);
-                          if (value.length > 0) setDeviceError(null);
-                        }}
-                        inputValue={deviceSearch}
-                        onInputChange={(_e, value, reason) => {
-                          if (reason === 'input' || reason === 'clear') {
-                            setDeviceSearch(value);
-                          }
-                        }}
-                        filterOptions={filterDevices}
-                        getOptionLabel={getDeviceSelectLabel}
-                        isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
-                        disabled={busy}
-                        openOnFocus
-                        disableCloseOnSelect
-                        ListboxProps={{
-                          style: { maxHeight: 220 },
-                        }}
-                        renderOption={(props, option) => (
-                          <li {...props} key={option.device_id}>
-                            {getDeviceSelectLabel(option)}
-                          </li>
-                        )}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            size="small"
-                            label="Devices to keep"
-                            placeholder="Search or pick devices…"
-                            error={!!deviceError}
-                            helperText={deviceError || undefined}
-                            FormHelperTextProps={
-                              deviceError
-                                ? { sx: { color: 'error.main', mx: 0 } }
-                                : undefined
-                            }
-                          />
-                        )}
-                      />
-                      <Button
-                        sx={{ mt: 1.5, mb: 2 }}
-                        variant="contained"
-                        color="warning"
-                        disabled={busy || selectedDevices.length === 0}
-                        onClick={() => {
-                          if (selectedDevices.length === 0) {
-                            setDeviceError('Select at least one device.');
-                            return;
-                          }
-                          setDeviceError(null);
-                          setConfirmState({
-                            open: true,
-                            type: 'switch_devices',
-                            targetId: accessId,
-                          });
-                        }}
-                      >
-                        Switch to selected devices
-                      </Button>
-                    </>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                    Add another device
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                    Registered: {registeredDevices.length} · Approved:{' '}
-                    {approvedDeviceGrantCount} · Available: {addableDevices.length}
-                  </Typography>
-                  {addDeviceBlockedReason && (
-                    <Typography
-                      variant="body2"
-                      color="warning.main"
-                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
-                    >
-                      {addDeviceBlockedReason}
-                    </Typography>
-                  )}
-                  <Autocomplete
-                    multiple
-                    options={addableDevices}
-                    value={selectedDevices}
-                    onChange={(_e, value) => {
-                      setSelectedDevices(value);
-                      if (value.length > 0) setDeviceError(null);
-                    }}
-                    inputValue={deviceSearch}
-                    onInputChange={(_e, value, reason) => {
-                      if (reason === 'input' || reason === 'clear') {
-                        setDeviceSearch(value);
-                      }
-                    }}
-                    filterOptions={filterDevices}
-                    getOptionLabel={getDeviceSelectLabel}
-                    isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
-                    disabled={busy || addableDevices.length === 0}
-                    openOnFocus
-                    disableCloseOnSelect
-                    ListboxProps={{
-                      style: { maxHeight: 220 },
-                    }}
-                    renderOption={(props, option) => (
-                      <li {...props} key={option.device_id}>
-                        {getDeviceSelectLabel(option)}
-                      </li>
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        label="Devices to grant"
-                        placeholder={
-                          addableDevices.length === 0
-                            ? 'No devices available to add'
-                            : 'Search or pick devices…'
-                        }
-                        error={!!deviceError}
-                        helperText={deviceError || undefined}
-                        FormHelperTextProps={
-                          deviceError
-                            ? { sx: { color: 'error.main', mx: 0 } }
-                            : undefined
-                        }
-                      />
-                    )}
-                  />
-                  <Button
-                    sx={{ mt: 1.5, mb: canConvertToAny ? 1.5 : 2 }}
-                    variant="contained"
-                    disabled={busy || selectedDevices.length === 0}
-                    onClick={() => void handleAddDevices()}
-                  >
-                    Add devices
-                  </Button>
-                  {canConvertToAny && (
-                    <Button
-                      sx={{ mb: 2, display: 'block' }}
-                      variant="outlined"
-                      color="warning"
-                      disabled={busy}
-                      onClick={() =>
-                        setConfirmState({
-                          open: true,
-                          type: 'convert_any',
-                          targetId: accessId,
-                        })
-                      }
-                    >
-                      Convert to Any device
-                    </Button>
-                  )}
-                </>
-              )}
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                See-others (map visibility)
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Other users whose notes/pins this person may see. Not tied to a device.
-              </Typography>
-              <Autocomplete
-                multiple
-                options={seeOthersOptions}
-                value={seeOthersUsers}
-                onChange={(_e, value) => setSeeOthersUsers(value)}
-                inputValue={seeOthersSearch}
-                onInputChange={(_e, value) => setSeeOthersSearch(value)}
-                filterOptions={filterActiveUsers}
-                loading={usersLoading}
-                getOptionLabel={getUserSelectLabel}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                disabled={busy}
-                openOnFocus
-                disableCloseOnSelect
-                ListboxProps={{
-                  style: { maxHeight: 220 },
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    label="Visible users"
-                    placeholder="Search name or phone…"
-                  />
-                )}
-              />
-              <Button
-                sx={{ mt: 1.5 }}
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled={busy || !hasSeeOthersChanges}
-                onClick={() => void handleSaveSeeOthers()}
-              >
-                Save see-others
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                All device grants for this user
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                Scroll inside this list · click a row to open that grant · revoke when Approved
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              <TableContainer sx={{ maxHeight: 360 }}>
-                <Table size="small" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Grant</TableCell>
-                      <TableCell>Device name</TableCell>
-                      <TableCell>Device id</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Expires at</TableCell>
-                      <TableCell align="right">Action</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {relatedGrants.map((row: PropertyNoteAccessRequest) => {
-                      const isCurrent = row.id === accessId;
-                      const rowName = resolveDeviceName(row.device_id, devicesById);
-                      const rowIdFull = formatDeviceLabel(row.device_id);
-                      return (
-                        <TableRow
-                          key={row.id}
-                          selected={isCurrent}
-                          hover
-                          sx={{ cursor: 'pointer' }}
-                          onClick={() => {
-                            if (!isCurrent) {
-                              navigate(`/property-note-access-requests/${row.id}`);
-                            }
-                          }}
-                        >
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                              <Typography variant="body2">#{row.id}</Typography>
-                              {isCurrent && (
-                                <Chip
-                                  label="Open"
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              )}
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" fontWeight={600}>
-                              {rowName}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Tooltip title={rowIdFull}>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ fontFamily: 'monospace' }}
-                              >
-                                {truncateDeviceId(row.device_id)}
-                              </Typography>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell>
-                            <StatusChip status={row.status} size="small" />
-                          </TableCell>
-                          <TableCell>
-                            {row.expires_at ? (
-                              <Typography
-                                variant="body2"
-                                sx={
-                                  isExpiresAtPast(row.expires_at)
-                                    ? { color: 'error.main', fontWeight: 600 }
-                                    : undefined
-                                }
-                              >
-                                {row.expires_at}
-                              </Typography>
-                            ) : (
-                              <Typography variant="body2" color="text.secondary">
-                                No expiry
-                              </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                            {row.status === 'approved' ? (
-                              <Tooltip title="Revoke Access (no point refund)">
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    color="warning"
-                                    disabled={busy}
-                                    onClick={() =>
-                                      setConfirmState({
-                                        open: true,
-                                        type: 'revoke',
-                                        targetId: row.id,
-                                      })
-                                    }
-                                  >
-                                    <RevokeIcon fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                            ) : (
-                              <Typography variant="caption" color="text.secondary">
-                                —
-                              </Typography>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {relatedGrants.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6}>
-                          <Typography variant="body2" color="text.secondary">
-                            No grants found.
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+          </Box>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         open={confirmState.open}

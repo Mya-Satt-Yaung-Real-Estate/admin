@@ -52,6 +52,32 @@ export interface PropertyNoteAccessRequest {
   approver: PropertyNoteAccessApprover | null;
 }
 
+/**
+ * Access List row — one unique user with grant summary (API grouped).
+ */
+export interface PropertyNoteAccessUserSummary {
+  user_id: number;
+  user: PropertyNoteAccessUser | null;
+  primary_status: PropertyNoteAccessStatus;
+  grants_count: number;
+  counts: {
+    pending: number;
+    admin_approved: number;
+    approved: number;
+    rejected: number;
+    revoked: number;
+  };
+  scope_label: string;
+  has_any_device: boolean;
+  approved_device_count: number;
+  /**
+   * Grant id to open on Detail (most actionable).
+   */
+  detail_access_id: number;
+  expires_at: string | null;
+  last_requested_at: string | null;
+}
+
 export interface PropertyNoteAccessGrantPayload {
   user_id: number;
   charge_points?: boolean;
@@ -159,7 +185,7 @@ export interface PropertyNoteAccessRequestFilters {
 export interface PropertyNoteAccessRequestsListResponse {
   success: boolean;
   message: string;
-  data: PropertyNoteAccessRequest[];
+  data: PropertyNoteAccessUserSummary[];
   statistics: PropertyNoteAccessStatistics;
   pagination?: {
     current_page: number;

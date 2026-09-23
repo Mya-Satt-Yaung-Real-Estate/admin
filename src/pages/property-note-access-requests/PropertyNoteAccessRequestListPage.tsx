@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   Box,
   IconButton,
@@ -27,23 +27,17 @@ import { StatisticsCards, StatCard } from '../../components/common/StatisticsCar
 import { MobileCard, MobileCardAction } from '../../components/common/MobileCard';
 import {
   ActionAlert,
-  ConfirmationDialog,
   PageEmptyState,
   PageErrorState,
   PageLoadingState,
   StatusChip,
 } from '../../components/ui';
 import { useAlertSystem, useDebouncedValue, useFilters, usePagination } from '../../hooks';
-import {
-  useApprovePropertyNoteAccessRequest,
-  usePropertyNoteAccessRequests,
-  useRejectPropertyNoteAccessRequest,
-  useRevokePropertyNoteAccessRequest,
-} from '../../services/queries/propertyNoteAccessRequests';
+import { usePropertyNoteAccessRequests } from '../../services/queries/propertyNoteAccessRequests';
 import { FilterState } from '../../constants/filters';
 import type {
-  PropertyNoteAccessRequest,
   PropertyNoteAccessStatus,
+  PropertyNoteAccessUserSummary,
 } from '../../types/propertyNoteAccess';
 
 interface AccessRequestFilters extends FilterState {
@@ -65,17 +59,20 @@ const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
 };
 
 /**
- * List label for grant device scope — prefer registered device name.
+ * Short summary of grant counts for list/mobile.
  */
-const formatDeviceLabel = (
-  deviceId: string | null | undefined,
-  deviceName?: string | null
-): string => {
-  if (!deviceId) return 'Any device';
-  const name = deviceName?.trim();
-  if (name) return name;
-  if (deviceId.length <= 16) return deviceId;
-  return `${deviceId.slice(0, 8)}…${deviceId.slice(-4)}`;
+const formatGrantsSummary = (row: PropertyNoteAccessUserSummary): string => {
+  const parts: string[] = [`${row.grants_count} grant${row.grants_count === 1 ? '' : 's'}`];
+  if (row.counts.approved > 0) {
+    parts.push(`${row.counts.approved} active`);
+  }
+  if (row.counts.pending > 0) {
+    parts.push(`${row.counts.pending} pending`);
+  }
+  if (row.counts.admin_approved > 0) {
+    parts.push(`${row.counts.admin_approved} awaiting approver`);
+  }
+  return parts.join(' · ');
 };
 
 const FILTER_FIELDS: FilterField[] = [
@@ -108,16 +105,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
-  const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
-  const approveMutation = useApprovePropertyNoteAccessRequest();
-  const rejectMutation = useRejectPropertyNoteAccessRequest();
-  const revokeMutation = useRevokePropertyNoteAccessRequest();
-
-  const [confirmState, setConfirmState] = useState<{
-    open: boolean;
-    type: 'approve' | 'reject' | 'revoke';
-    request: PropertyNoteAccessRequest | null;
-  }>({ open: false, type: 'approve', request: null });
+  const { alert, clearAlert } = useAlertSystem();
 
   const {
     page,
@@ -154,9 +142,9 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
   );
 
   const { data, isLoading, isFetching, error, refetch } = usePropertyNoteAccessRequests(listParams);
-  const requests = data?.data ?? [];
+  const users = data?.data ?? [];
   const statistics = data?.statistics;
-  const totalCount = data?.pagination?.total ?? requests.length;
+  const totalCount = data?.pagination?.total ?? users.length;
   /**
    * Full-page loader only on first visit. Search/filter shows LinearProgress only.
    */
@@ -205,62 +193,16 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
     [statistics]
   );
 
-  const handleApproveClick = useCallback((request: PropertyNoteAccessRequest) => {
-    setConfirmState({ open: true, type: 'approve', request });
-  }, []);
-
-  const handleRejectClick = useCallback((request: PropertyNoteAccessRequest) => {
-    setConfirmState({ open: true, type: 'reject', request });
-  }, []);
-
-  const handleRevokeClick = useCallback((request: PropertyNoteAccessRequest) => {
-    setConfirmState({ open: true, type: 'revoke', request });
-  }, []);
-
-  const handleConfirmClose = useCallback(() => {
-    setConfirmState({ open: false, type: 'approve', request: null });
-  }, []);
-
-  const handleConfirm = useCallback(
-    async (reason?: string) => {
-      if (!confirmState.request) return;
-
-      try {
-        if (confirmState.type === 'approve') {
-          await approveMutation.mutateAsync(confirmState.request.id);
-          showSuccess('Request approved. Mobile approvers notified.');
-        } else if (confirmState.type === 'reject') {
-          await rejectMutation.mutateAsync({
-            id: confirmState.request.id,
-            rejectReason: reason?.trim() || undefined,
-          });
-          showSuccess('Request rejected.');
-        } else {
-          await revokeMutation.mutateAsync(confirmState.request.id);
-          showSuccess('Access revoked. Points are not refunded.');
-        }
-        handleConfirmClose();
-      } catch (err: unknown) {
-        const message =
-          err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
-            ? err.message
-            : `Failed to ${confirmState.type} request.`;
-        showError(message);
+  const openDetail = useCallback(
+    (row: PropertyNoteAccessUserSummary) => {
+      if (row.detail_access_id > 0) {
+        navigate(`/property-note-access-requests/${row.detail_access_id}`);
       }
     },
-    [
-      approveMutation,
-      confirmState.request,
-      confirmState.type,
-      handleConfirmClose,
-      rejectMutation,
-      revokeMutation,
-      showError,
-      showSuccess,
-    ]
+    [navigate]
   );
 
-  const columns: TableColumn<PropertyNoteAccessRequest>[] = useMemo(
+  const columns: TableColumn<PropertyNoteAccessUserSummary>[] = useMemo(
     () => [
       {
         id: 'user',
@@ -280,27 +222,26 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         },
       },
       {
-        id: 'device',
-        label: 'Device',
+        id: 'scope',
+        label: 'Scope',
+        render: (_value, row) => (
+          <Typography variant="body2" color={row?.has_any_device ? 'text.secondary' : 'text.primary'}>
+            {row?.scope_label || '—'}
+          </Typography>
+        ),
+        hidden: isMobile,
+      },
+      {
+        id: 'grants',
+        label: 'Grants',
         render: (_value, row) => {
-          const label = formatDeviceLabel(row?.device_id, row?.device_name);
-          const tooltip =
-            row?.device_id && row?.device_name
-              ? `${row.device_name} (${row.device_id})`
-              : label;
+          if (!row) return null;
           return (
             <Typography
               variant="body2"
-              sx={{
-                maxWidth: 180,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: row?.device_id ? 'text.primary' : 'text.secondary',
-              }}
-              title={tooltip}
+              sx={{ color: 'primary.main', fontWeight: 600 }}
             >
-              {label}
+              {formatGrantsSummary(row)}
             </Typography>
           );
         },
@@ -311,38 +252,17 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         label: 'Status',
         render: (_value, row) => {
           if (!row) return null;
-          return <StatusChip status={row.status} size="small" />;
+          return <StatusChip status={row.primary_status} size="small" />;
         },
       },
       {
-        id: 'created_at',
-        label: 'Requested',
+        id: 'last_requested_at',
+        label: 'Last requested',
         render: (_value, row) => (
-          <Typography variant="body2">{row?.created_at || '—'}</Typography>
+          <Typography variant="body2">{row?.last_requested_at || '—'}</Typography>
         ),
         hidden: isMobile,
       },
-      /**
-       * Access List: Admin At / Approver At hidden — uncomment to show again.
-       */
-      /*
-      {
-        id: 'admin_approved_at',
-        label: 'Admin At',
-        render: (_value, row) => (
-          <Typography variant="body2">{row?.admin_approved_at || '—'}</Typography>
-        ),
-        hidden: isMobile,
-      },
-      {
-        id: 'approved_at',
-        label: 'Approver At',
-        render: (_value, row) => (
-          <Typography variant="body2">{row?.approved_at || '—'}</Typography>
-        ),
-        hidden: isMobile,
-      },
-      */
       {
         id: 'expires_at',
         label: 'Expires At',
@@ -369,146 +289,35 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         align: 'center',
         render: (_value, row) => {
           if (!row) return null;
-          const canAct = row.status === 'pending';
-          const canRevoke = row.status === 'approved';
-          const busy =
-            approveMutation.isPending || rejectMutation.isPending || revokeMutation.isPending;
-          const approveTitle = canAct
-            ? 'Approve (send to mobile approvers)'
-            : row.status === 'admin_approved'
-              ? 'Waiting for mobile Approver'
-              : 'Only pending requests can be approved';
-          const rejectTitle = canAct
-            ? 'Reject'
-            : row.status === 'admin_approved'
-              ? 'Waiting for mobile Approver — Admin cannot reject'
-              : 'Only pending requests can be rejected';
-          const revokeTitle = canRevoke
-            ? 'Revoke Access (no point refund)'
-            : 'Only approved access can be revoked';
-
           return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
-              <Tooltip title="View detail">
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Tooltip title="View detail — approve / reject / revoke there">
                 <IconButton
                   size="small"
                   color="primary"
-                  onClick={() => navigate(`/property-note-access-requests/${row.id}`)}
+                  onClick={() => openDetail(row)}
+                  disabled={row.detail_access_id < 1}
                 >
                   <ViewIcon fontSize="small" />
                 </IconButton>
-              </Tooltip>
-              <Tooltip title={approveTitle}>
-                <span>
-                  <IconButton
-                    size="small"
-                    color="success"
-                    onClick={() => handleApproveClick(row)}
-                    disabled={!canAct || busy}
-                  >
-                    <ApproveIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title={rejectTitle}>
-                <span>
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleRejectClick(row)}
-                    disabled={!canAct || busy}
-                  >
-                    <RejectIcon fontSize="small" />
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title={revokeTitle}>
-                <span>
-                  <IconButton
-                    size="small"
-                    color="warning"
-                    onClick={() => handleRevokeClick(row)}
-                    disabled={!canRevoke || busy}
-                  >
-                    <RevokeIcon fontSize="small" />
-                  </IconButton>
-                </span>
               </Tooltip>
             </Box>
           );
         },
       },
     ],
-    [
-      approveMutation.isPending,
-      handleApproveClick,
-      handleRejectClick,
-      handleRevokeClick,
-      isMobile,
-      navigate,
-      rejectMutation.isPending,
-      revokeMutation.isPending,
-    ]
+    [isMobile, openDetail]
   );
 
-  const createMobileActions = (request: PropertyNoteAccessRequest): MobileCardAction[] => {
-    const canAct = request.status === 'pending';
-    const canRevoke = request.status === 'approved';
-    const waitingApprover = request.status === 'admin_approved';
-
-    return [
-      {
-        icon: <ViewIcon />,
-        tooltip: 'View detail',
-        color: 'primary' as const,
-        onClick: () => navigate(`/property-note-access-requests/${request.id}`),
-        disabled: false,
-      },
-      {
-        icon: <ApproveIcon />,
-        tooltip: canAct
-          ? 'Approve'
-          : waitingApprover
-            ? 'Waiting for mobile Approver'
-            : 'Only pending requests can be approved',
-        color: 'success' as const,
-        onClick: () => {
-          if (canAct) {
-            handleApproveClick(request);
-          }
-        },
-        disabled: !canAct,
-      },
-      {
-        icon: <RejectIcon />,
-        tooltip: canAct
-          ? 'Reject'
-          : waitingApprover
-            ? 'Waiting for mobile Approver — Admin cannot reject'
-            : 'Only pending requests can be rejected',
-        color: 'error' as const,
-        onClick: () => {
-          if (canAct) {
-            handleRejectClick(request);
-          }
-        },
-        disabled: !canAct,
-      },
-      {
-        icon: <RevokeIcon />,
-        tooltip: canRevoke
-          ? 'Revoke Access (no point refund)'
-          : 'Only approved access can be revoked',
-        color: 'warning' as const,
-        onClick: () => {
-          if (canRevoke) {
-            handleRevokeClick(request);
-          }
-        },
-        disabled: !canRevoke,
-      },
-    ];
-  };
+  const createMobileActions = (row: PropertyNoteAccessUserSummary): MobileCardAction[] => [
+    {
+      icon: <ViewIcon />,
+      tooltip: 'View detail',
+      color: 'primary' as const,
+      onClick: () => openDetail(row),
+      disabled: row.detail_access_id < 1,
+    },
+  ];
 
   if (isInitialLoading) {
     return <PageLoadingState title="Loading Access Requests" />;
@@ -525,38 +334,12 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
     );
   }
 
-  const confirmTitle =
-    confirmState.type === 'approve'
-      ? 'Approve access request?'
-      : confirmState.type === 'reject'
-        ? 'Reject access request?'
-        : 'Revoke Property Note access?';
-
-  const confirmMessage = (() => {
-    const name = confirmState.request?.user?.name;
-    const deviceLabel = formatDeviceLabel(
-      confirmState.request?.device_id,
-      confirmState.request?.device_name
-    );
-    if (confirmState.type === 'approve') {
-      return name
-        ? `Approve unlock for ${name}? Mobile approvers will be notified.`
-        : 'Approve this unlock request?';
-    }
-    if (confirmState.type === 'reject') {
-      return name ? `Reject unlock for ${name}?` : 'Reject this unlock request?';
-    }
-    return name
-      ? `Revoke access for ${name} (${deviceLabel})? Points are not refunded. Login stays active.`
-      : 'Revoke this approved access? Points are not refunded.';
-  })();
-
   return (
     <Box sx={{ marginLeft: 0, width: '100%' }}>
       <PageHeader
         title="Access Requests"
         breadcrumbs="Dashboard / Property Note / Access Requests"
-        subtitle="Approve, reject, or revoke Property Note access (admin step)"
+        subtitle="One row per user — open detail to approve, reject, or revoke grants"
         actionButton={{
           text: 'Add',
           icon: <AddIcon />,
@@ -583,9 +366,9 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         {isRefreshing ? <LinearProgress sx={{ height: 4, borderRadius: 1 }} /> : null}
       </Box>
 
-      {requests.length === 0 && (
+      {users.length === 0 && (
         <PageEmptyState
-          title="No access requests"
+          title="No access users"
           message={
             filters.searchTerm || filters.statusFilter !== 'all'
               ? 'Try changing filters.'
@@ -594,77 +377,48 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         />
       )}
 
-      {isMobile && requests.length > 0 ? (
+      {isMobile && users.length > 0 ? (
         <Box>
-          {requests.map((request) => (
+          {users.map((row) => (
             <MobileCard
-              key={request.id}
-              title={request.user?.name || `Request #${request.id}`}
-              subtitle={request.user?.phone || request.user?.email || '—'}
+              key={row.user_id}
+              title={row.user?.name || `User #${row.user_id}`}
+              subtitle={row.user?.phone || row.user?.email || '—'}
               description={
-                isExpiresAtPast(request.expires_at)
-                  ? `Device: ${formatDeviceLabel(request.device_id, request.device_name)} · Expires: ${request.expires_at} (expired)`
-                  : `Device: ${formatDeviceLabel(request.device_id, request.device_name)} · Expires: ${request.expires_at || '—'}`
+                isExpiresAtPast(row.expires_at)
+                  ? `${row.scope_label} · ${formatGrantsSummary(row)} · Expires: ${row.expires_at} (expired)`
+                  : `${row.scope_label} · ${formatGrantsSummary(row)} · Expires: ${row.expires_at || '—'}`
               }
-              avatar={request.device_id ? <DevicesIcon /> : <PersonIcon />}
+              avatar={row.has_any_device || row.approved_device_count === 0 ? <PersonIcon /> : <DevicesIcon />}
               status={{
-                label: request.status.replace('_', ' '),
+                label: row.primary_status.replace('_', ' '),
                 color:
-                  request.status === 'pending'
+                  row.primary_status === 'pending'
                     ? ('warning' as const)
-                    : request.status === 'approved'
+                    : row.primary_status === 'approved'
                       ? ('success' as const)
-                      : request.status === 'rejected' || request.status === 'revoked'
+                      : row.primary_status === 'rejected' || row.primary_status === 'revoked'
                         ? ('error' as const)
                         : ('info' as const),
               }}
-              actions={createMobileActions(request)}
+              actions={createMobileActions(row)}
             />
           ))}
         </Box>
       ) : (
-        requests.length > 0 && (
+        users.length > 0 && (
           <StandardTable
             columns={columns}
-            data={requests}
+            data={users}
             page={page}
             rowsPerPage={rowsPerPage}
             totalCount={totalCount}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            getRowKey={(row) => row.id}
+            getRowKey={(row) => row.user_id}
           />
         )
       )}
-
-      <ConfirmationDialog
-        open={confirmState.open}
-        onClose={handleConfirmClose}
-        onConfirm={handleConfirm}
-        title={confirmTitle}
-        message={confirmMessage}
-        action={
-          confirmState.type === 'approve'
-            ? 'approve'
-            : confirmState.type === 'reject'
-              ? 'reject'
-              : 'custom'
-        }
-        actionLabel={
-          confirmState.type === 'approve'
-            ? 'Approve'
-            : confirmState.type === 'reject'
-              ? 'Reject'
-              : 'Revoke Access'
-        }
-        actionColor={confirmState.type === 'approve' ? 'success' : 'error'}
-        requireReason={false}
-        reasonLabel="Reject reason (optional)"
-        reasonPlaceholder="Reason shown to the user..."
-        isLoading={
-          approveMutation.isPending || rejectMutation.isPending || revokeMutation.isPending
-        }
-      />
     </Box>
   );
 };

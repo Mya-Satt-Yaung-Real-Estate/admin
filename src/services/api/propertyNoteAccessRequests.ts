@@ -11,6 +11,7 @@ import type {
   PropertyNoteAccessRequest,
   PropertyNoteAccessRequestFilters,
   PropertyNoteAccessRequestsListResponse,
+  PropertyNoteAccessUserSummary,
   PropertyNoteAccessVisibleUser,
 } from '../../types/propertyNoteAccess';
 
@@ -38,7 +39,7 @@ export const propertyNoteAccessRequestsAPI = {
     params?: PropertyNoteAccessRequestFilters
   ): Promise<PropertyNoteAccessRequestsListResponse> => {
     const queryString = buildQueryString(params);
-    const response = await apiV2Request<PropertyNoteAccessRequest[]>(
+    const response = await apiV2Request<PropertyNoteAccessUserSummary[]>(
       `/property-note-access-requests${queryString}`
     );
     const raw = response as PropertyNoteAccessRequestsListResponse & QueryParams;
