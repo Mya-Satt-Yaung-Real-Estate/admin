@@ -10,6 +10,25 @@ export const MENU_ITEMS = [
     iconName: 'HomeWork',
     path: '/properties',
   },
+  /**
+   * Property Note sits under Properties in the sidebar order.
+   */
+  {
+    text: 'Property Note',
+    iconName: 'Map',
+    children: [
+      {
+        text: 'Property Notes',
+        iconName: 'List',
+        path: '/property-notes',
+      },
+      {
+        text: 'Access List',
+        iconName: 'RequestQuote',
+        path: '/property-note-access-requests',
+      },
+    ],
+  },
   { 
     text: 'Projects',
     iconName: 'Business',
@@ -181,25 +200,7 @@ export const MENU_ITEMS = [
        */
     ],
   },
-  /**
-   * Property Note: notes list + unlock access requests.
-   */
   {
-    text: 'Property Note',
-    iconName: 'Map',
-    children: [
-      {
-        text: 'Property Notes',
-        iconName: 'List',
-        path: '/property-notes',
-      },
-      {
-        text: 'Access List',
-        iconName: 'RequestQuote',
-        path: '/property-note-access-requests',
-      },
-    ],
-  },  {
     text: 'Announcements',
     iconName: 'Campaign',
     path: '/announcements',

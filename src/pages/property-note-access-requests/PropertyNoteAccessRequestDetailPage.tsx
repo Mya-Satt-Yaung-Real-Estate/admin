@@ -497,8 +497,16 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
           </Typography>
           <Divider sx={{ mb: 2 }} />
 
-          <Grid container spacing={2} columnSpacing={{ xs: 2, md: 6 }}>
-            <Grid item xs={12} md={6}>
+          <Grid container spacing={2} columnSpacing={{ xs: 2, md: 6 }} alignItems="stretch">
+            <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: '100%',
+                  flex: 1,
+                }}
+              >
               {hasUserOnlyApproved ? (
                 <>
                   <Typography variant="subtitle1" fontWeight={600} gutterBottom>
@@ -528,7 +536,15 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       user_devices.
                     </Typography>
                   ) : (
-                    <>
+                    <Box
+                      sx={{
+                        mt: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1.5,
+                        alignItems: 'flex-start',
+                      }}
+                    >
                       <Autocomplete
                         multiple
                         options={registeredDevices}
@@ -549,6 +565,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         disabled={busy}
                         openOnFocus
                         disableCloseOnSelect
+                        sx={{ width: '100%' }}
                         ListboxProps={{
                           style: { maxHeight: 220 },
                         }}
@@ -574,7 +591,6 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         )}
                       />
                       <Button
-                        sx={{ mt: 1.5 }}
                         variant="contained"
                         color="warning"
                         disabled={busy || selectedDevices.length === 0}
@@ -593,7 +609,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       >
                         Switch to selected devices
                       </Button>
-                    </>
+                    </Box>
                   )}
                 </>
               ) : (
@@ -618,62 +634,73 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       {addDeviceBlockedReason}
                     </Typography>
                   )}
-                  <Autocomplete
-                    multiple
-                    options={addableDevices}
-                    value={selectedDevices}
-                    onChange={(_e, value) => {
-                      setSelectedDevices(value);
-                      if (value.length > 0) setDeviceError(null);
+                  <Box
+                    sx={{
+                      mt: 'auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1.5,
+                      alignItems: 'flex-start',
+                      mb: canConvertToAny ? 1.5 : 0,
                     }}
-                    inputValue={deviceSearch}
-                    onInputChange={(_e, value, reason) => {
-                      if (reason === 'input' || reason === 'clear') {
-                        setDeviceSearch(value);
-                      }
-                    }}
-                    filterOptions={filterDevices}
-                    getOptionLabel={getDeviceSelectLabel}
-                    isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
-                    disabled={busy || addableDevices.length === 0}
-                    openOnFocus
-                    disableCloseOnSelect
-                    ListboxProps={{
-                      style: { maxHeight: 220 },
-                    }}
-                    renderOption={(props, option) => (
-                      <li {...props} key={option.device_id}>
-                        {getDeviceSelectLabel(option)}
-                      </li>
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        label="Devices to grant"
-                        placeholder={
-                          addableDevices.length === 0
-                            ? 'No devices available to add'
-                            : 'Search or pick devices…'
-                        }
-                        error={!!deviceError}
-                        helperText={deviceError || undefined}
-                        FormHelperTextProps={
-                          deviceError
-                            ? { sx: { color: 'error.main', mx: 0 } }
-                            : undefined
-                        }
-                      />
-                    )}
-                  />
-                  <Button
-                    sx={{ mt: 1.5, mb: canConvertToAny ? 1.5 : 0 }}
-                    variant="contained"
-                    disabled={busy || selectedDevices.length === 0}
-                    onClick={() => void handleAddDevices()}
                   >
-                    Add devices
-                  </Button>
+                    <Autocomplete
+                      multiple
+                      options={addableDevices}
+                      value={selectedDevices}
+                      onChange={(_e, value) => {
+                        setSelectedDevices(value);
+                        if (value.length > 0) setDeviceError(null);
+                      }}
+                      inputValue={deviceSearch}
+                      onInputChange={(_e, value, reason) => {
+                        if (reason === 'input' || reason === 'clear') {
+                          setDeviceSearch(value);
+                        }
+                      }}
+                      filterOptions={filterDevices}
+                      getOptionLabel={getDeviceSelectLabel}
+                      isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                      disabled={busy || addableDevices.length === 0}
+                      openOnFocus
+                      disableCloseOnSelect
+                      sx={{ width: '100%' }}
+                      ListboxProps={{
+                        style: { maxHeight: 220 },
+                      }}
+                      renderOption={(props, option) => (
+                        <li {...props} key={option.device_id}>
+                          {getDeviceSelectLabel(option)}
+                        </li>
+                      )}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          size="small"
+                          label="Devices to grant"
+                          placeholder={
+                            addableDevices.length === 0
+                              ? 'No devices available to add'
+                              : 'Search or pick devices…'
+                          }
+                          error={!!deviceError}
+                          helperText={deviceError || undefined}
+                          FormHelperTextProps={
+                            deviceError
+                              ? { sx: { color: 'error.main', mx: 0 } }
+                              : undefined
+                          }
+                        />
+                      )}
+                    />
+                    <Button
+                      variant="contained"
+                      disabled={busy || selectedDevices.length === 0}
+                      onClick={() => void handleAddDevices()}
+                    >
+                      Add devices
+                    </Button>
+                  </Box>
                   {canConvertToAny && (
                     <Button
                       sx={{ display: 'block' }}
@@ -693,9 +720,18 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   )}
                 </>
               )}
+              </Box>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: '100%',
+                  flex: 1,
+                }}
+              >
               <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                 See-others (map visibility)
               </Typography>
@@ -705,41 +741,52 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               >
                 Other users whose notes/pins this person may see. Not tied to a device.
               </Typography>
-              <Autocomplete
-                multiple
-                options={seeOthersOptions}
-                value={seeOthersUsers}
-                onChange={(_e, value) => setSeeOthersUsers(value)}
-                inputValue={seeOthersSearch}
-                onInputChange={(_e, value) => setSeeOthersSearch(value)}
-                filterOptions={filterActiveUsers}
-                loading={usersLoading}
-                getOptionLabel={getUserSelectLabel}
-                isOptionEqualToValue={(a, b) => a.id === b.id}
-                disabled={busy}
-                openOnFocus
-                disableCloseOnSelect
-                ListboxProps={{
-                  style: { maxHeight: 220 },
+              <Box
+                sx={{
+                  mt: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  alignItems: 'flex-start',
                 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    label="Visible users"
-                    placeholder="Search name or phone…"
-                  />
-                )}
-              />
-              <Button
-                sx={{ mt: 1.5 }}
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled={busy || !hasSeeOthersChanges}
-                onClick={() => void handleSaveSeeOthers()}
               >
-                Save see-others
-              </Button>
+                <Autocomplete
+                  multiple
+                  options={seeOthersOptions}
+                  value={seeOthersUsers}
+                  onChange={(_e, value) => setSeeOthersUsers(value)}
+                  inputValue={seeOthersSearch}
+                  onInputChange={(_e, value) => setSeeOthersSearch(value)}
+                  filterOptions={filterActiveUsers}
+                  loading={usersLoading}
+                  getOptionLabel={getUserSelectLabel}
+                  isOptionEqualToValue={(a, b) => a.id === b.id}
+                  disabled={busy}
+                  openOnFocus
+                  disableCloseOnSelect
+                  sx={{ width: '100%' }}
+                  ListboxProps={{
+                    style: { maxHeight: 220 },
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      size="small"
+                      label="Visible users"
+                      placeholder="Search name or phone…"
+                    />
+                  )}
+                />
+                <Button
+                  variant="contained"
+                  startIcon={<SaveIcon />}
+                  disabled={busy || !hasSeeOthersChanges}
+                  onClick={() => void handleSaveSeeOthers()}
+                >
+                  Save see-others
+                </Button>
+              </Box>
+              </Box>
             </Grid>
           </Grid>
         </CardContent>

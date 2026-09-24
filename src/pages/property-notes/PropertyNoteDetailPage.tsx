@@ -127,41 +127,36 @@ const PropertyNoteDetailPage: React.FC = () => {
               </Grid>
             </CardContent>
           </Card>
+        </Grid>
 
-          <Card sx={{ mt: 3 }}>
+        <Grid item xs={12} md={4}>
+          <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Location
+                Owner
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
-                <LocationIcon color="action" sx={{ mt: 0.3 }} />
-                <Typography variant="body1">
-                  {locationParts.length ? locationParts.join(', ') : '—'}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <PersonIcon color="action" />
+                <Typography variant="body1" fontWeight={600}>
+                  {note.user?.name || '—'}
                 </Typography>
               </Box>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Latitude
-                  </Typography>
-                  <Typography variant="body1">
-                    {note.latitude != null ? note.latitude : '—'}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" color="text.secondary">
-                    Longitude
-                  </Typography>
-                  <Typography variant="body1">
-                    {note.longitude != null ? note.longitude : '—'}
-                  </Typography>
-                </Grid>
-              </Grid>
+              <Typography variant="body2" color="text.secondary">
+                Phone: {note.user?.phone || '—'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Email: {note.user?.email || '—'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
+                Type: {note.user?.user_type || '—'}
+              </Typography>
             </CardContent>
           </Card>
+        </Grid>
 
-          <Card sx={{ mt: 3 }}>
+        <Grid item xs={12} md={8}>
+          <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Photos
@@ -210,24 +205,33 @@ const PropertyNoteDetailPage: React.FC = () => {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Owner
+                Location
               </Typography>
               <Divider sx={{ mb: 2 }} />
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <PersonIcon color="action" />
-                <Typography variant="body1" fontWeight={600}>
-                  {note.user?.name || '—'}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 2 }}>
+                <LocationIcon color="action" sx={{ mt: 0.3 }} />
+                <Typography variant="body1">
+                  {locationParts.length ? locationParts.join(', ') : '—'}
                 </Typography>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                Phone: {note.user?.phone || '—'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email: {note.user?.email || '—'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>
-                Type: {note.user?.user_type || '—'}
-              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Latitude
+                  </Typography>
+                  <Typography variant="body1">
+                    {note.latitude != null ? note.latitude : '—'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Longitude
+                  </Typography>
+                  <Typography variant="body1">
+                    {note.longitude != null ? note.longitude : '—'}
+                  </Typography>
+                </Grid>
+              </Grid>
             </CardContent>
           </Card>
         </Grid>
