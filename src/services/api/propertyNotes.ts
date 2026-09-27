@@ -39,6 +39,7 @@ export const propertyNotesAPI = {
         active: 0,
         sold: 0,
         rented: 0,
+        deleted: 0,
       },
       pagination: raw.pagination,
     };

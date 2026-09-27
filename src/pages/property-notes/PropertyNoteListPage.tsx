@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   IconButton,
   LinearProgress,
+  Tab,
+  Tabs,
   Tooltip,
   Typography,
   useMediaQuery,
@@ -49,6 +51,11 @@ const PropertyNoteListPage: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  /**
+   * 0 = Active (non-deleted) notes, 1 = Deleted notes — same pattern as Properties list.
+   */
+  const [activeTab, setActiveTab] = useState(0);
 
   const {
     page,
@@ -117,7 +124,7 @@ const PropertyNoteListPage: React.FC = () => {
 
   useEffect(() => {
     handleChangePage(null, 0);
-  }, [debouncedSearch, filters.statusFilter, filters.listingTypeFilter, handleChangePage]);
+  }, [debouncedSearch, filters.statusFilter, filters.listingTypeFilter, activeTab, handleChangePage]);
 
   const listParams = useMemo(
     () => ({
@@ -132,8 +139,9 @@ const PropertyNoteListPage: React.FC = () => {
         filters.listingTypeFilter !== 'all'
           ? Number(filters.listingTypeFilter)
           : undefined,
+      deleted: activeTab === 1 ? ('true' as const) : ('false' as const),
     }),
-    [page, rowsPerPage, debouncedSearch, filters.statusFilter, filters.listingTypeFilter]
+    [page, rowsPerPage, debouncedSearch, filters.statusFilter, filters.listingTypeFilter, activeTab]
   );
 
   const { data, isLoading, isFetching, error, refetch } = usePropertyNotes(listParams);
@@ -142,6 +150,7 @@ const PropertyNoteListPage: React.FC = () => {
   const totalCount = data?.pagination?.total ?? notes.length;
   const isInitialLoading = isLoading && !data;
   const isRefreshing = isFetching && !isInitialLoading;
+  const isDeletedTab = activeTab === 1;
 
   const statsCards: StatCard[] = useMemo(
     () => [
@@ -231,10 +240,12 @@ const PropertyNoteListPage: React.FC = () => {
         },
       },
       {
-        id: 'created_at',
-        label: 'Created',
+        id: isDeletedTab ? 'deleted_at' : 'created_at',
+        label: isDeletedTab ? 'Deleted' : 'Created',
         render: (_value, row) => (
-          <Typography variant="body2">{row?.created_at || '—'}</Typography>
+          <Typography variant="body2">
+            {(isDeletedTab ? row?.deleted_at : row?.created_at) || '—'}
+          </Typography>
         ),
         hidden: isMobile,
       },
@@ -258,8 +269,12 @@ const PropertyNoteListPage: React.FC = () => {
         },
       },
     ],
-    [isMobile, navigate]
+    [isMobile, isDeletedTab, navigate]
   );
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
 
   if (isInitialLoading) {
     return <PageLoadingState title="Loading Property Notes" />;
@@ -294,19 +309,40 @@ const PropertyNoteListPage: React.FC = () => {
         onClearFilters={resetFilters}
       />
 
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          aria-label="property note status tabs"
+        >
+          <Tab
+            label="Active Notes"
+            id="property-note-tab-0"
+            aria-controls="property-note-tabpanel-0"
+          />
+          <Tab
+            label="Deleted Notes"
+            id="property-note-tab-1"
+            aria-controls="property-note-tabpanel-1"
+          />
+        </Tabs>
+      </Box>
+
       <Box sx={{ height: 4, mb: 1 }}>
         {isRefreshing ? <LinearProgress sx={{ height: 4, borderRadius: 1 }} /> : null}
       </Box>
 
       {notes.length === 0 && (
         <PageEmptyState
-          title="No property notes"
+          title={isDeletedTab ? 'No deleted property notes' : 'No property notes'}
           message={
             filters.searchTerm ||
             filters.statusFilter !== 'all' ||
             filters.listingTypeFilter !== 'all'
               ? 'Try changing filters.'
-              : 'No property notes yet.'
+              : isDeletedTab
+                ? 'No soft-deleted property notes yet.'
+                : 'No property notes yet.'
           }
         />
       )}
@@ -327,7 +363,9 @@ const PropertyNoteListPage: React.FC = () => {
                 key={note.id}
                 title={note.note_code}
                 subtitle={note.user?.name || '—'}
-                description={`${note.listing_type?.name_en || '—'} · ${note.township?.name_en || '—'}`}
+                description={`${note.listing_type?.name_en || '—'} · ${note.township?.name_en || '—'}${
+                  isDeletedTab && note.deleted_at ? ` · Deleted ${note.deleted_at}` : ''
+                }`}
                 avatar={<PersonIcon />}
                 status={{
                   label: note.status,

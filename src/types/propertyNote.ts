@@ -43,6 +43,7 @@ export interface PropertyNote {
   created_at: string | null;
   updated_at: string | null;
   deleted_at: string | null;
+  is_deleted?: boolean;
   listing_type: PropertyNoteNamedRef | null;
   region: Omit<PropertyNoteNamedRef, 'slug'> | null;
   township: Omit<PropertyNoteNamedRef, 'slug'> | null;
@@ -57,6 +58,7 @@ export interface PropertyNoteStatistics {
   active: number;
   sold: number;
   rented: number;
+  deleted?: number;
 }
 
 export interface PropertyNoteListFilters {
@@ -68,6 +70,8 @@ export interface PropertyNoteListFilters {
   region_id?: number;
   township_id?: number;
   user_id?: number;
+  /** `true` = soft-deleted only; `false` = non-deleted (default). */
+  deleted?: 'true' | 'false';
 }
 
 export interface PropertyNotesListResponse {
