@@ -120,12 +120,20 @@ const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
 };
 
 /**
- * Web/mobile unlock (source=points) → System approved; else Approver name.
+ * Action By: System approved / Approver / Admin (reject or revoke).
  */
-const formatApprovedBy = (row: PropertyNoteAccessRequest): string => {
-  if (row.status !== 'approved') return '—';
-  if (row.source === 'points') return 'System approved';
-  return row.approver?.name?.trim() || '—';
+const formatActionBy = (row: PropertyNoteAccessRequest): string => {
+  if (row.status === 'approved') {
+    if (row.source === 'points') return 'System approved';
+    return row.approver?.name?.trim() || '—';
+  }
+  if (row.status === 'rejected') {
+    return row.approver?.name?.trim() || row.admin?.name?.trim() || '—';
+  }
+  if (row.status === 'revoked') {
+    return row.admin?.name?.trim() || '—';
+  }
+  return '—';
 };
 
 /**
@@ -818,7 +826,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   <TableCell>Device name</TableCell>
                   <TableCell>Device id</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Approved By</TableCell>
+                  <TableCell>Action By</TableCell>
                   <TableCell>Expires at</TableCell>
                   <TableCell align="right">Action</TableCell>
                 </TableRow>
@@ -874,7 +882,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         <StatusChip status={row.status} size="small" />
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2">{formatApprovedBy(row)}</Typography>
+                        <Typography variant="body2">{formatActionBy(row)}</Typography>
                       </TableCell>
                       <TableCell>
                         {row.expires_at ? (
@@ -1072,8 +1080,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   </SummaryField>
                 </Grid>
                 <Grid item xs={6}>
-                  <SummaryField label="Approved By">
-                    <Typography variant="body1">{formatApprovedBy(access)}</Typography>
+                  <SummaryField label="Action By">
+                    <Typography variant="body1">{formatActionBy(access)}</Typography>
                   </SummaryField>
                 </Grid>
                 <Grid item xs={6}>
