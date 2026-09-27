@@ -284,6 +284,14 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         hidden: isMobile,
       },
       {
+        id: 'approved_by',
+        label: 'Approved By',
+        render: (_value, row) => (
+          <Typography variant="body2">{row?.approved_by?.label || '—'}</Typography>
+        ),
+        hidden: isMobile,
+      },
+      {
         id: 'actions',
         label: 'Actions',
         align: 'center',
@@ -386,8 +394,8 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
               subtitle={row.user?.phone || row.user?.email || '—'}
               description={
                 isExpiresAtPast(row.expires_at)
-                  ? `${row.scope_label} · ${formatGrantsSummary(row)} · Expires: ${row.expires_at} (expired)`
-                  : `${row.scope_label} · ${formatGrantsSummary(row)} · Expires: ${row.expires_at || '—'}`
+                  ? `${row.scope_label} · ${formatGrantsSummary(row)} · ${row.approved_by?.label || '—'} · Expires: ${row.expires_at} (expired)`
+                  : `${row.scope_label} · ${formatGrantsSummary(row)} · ${row.approved_by?.label || '—'} · Expires: ${row.expires_at || '—'}`
               }
               avatar={row.has_any_device || row.approved_device_count === 0 ? <PersonIcon /> : <DevicesIcon />}
               status={{

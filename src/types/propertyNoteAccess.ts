@@ -55,6 +55,12 @@ export interface PropertyNoteAccessRequest {
 /**
  * Access List row — one unique user with grant summary (API grouped).
  */
+export interface PropertyNoteAccessApprovedBy {
+  type: 'system' | 'approver';
+  label: string;
+  approver: PropertyNoteAccessApprover | null;
+}
+
 export interface PropertyNoteAccessUserSummary {
   user_id: number;
   user: PropertyNoteAccessUser | null;
@@ -76,6 +82,10 @@ export interface PropertyNoteAccessUserSummary {
   detail_access_id: number;
   expires_at: string | null;
   last_requested_at: string | null;
+  /**
+   * points unlock → System approved; Admin path → Approver name.
+   */
+  approved_by: PropertyNoteAccessApprovedBy | null;
 }
 
 export interface PropertyNoteAccessGrantPayload {

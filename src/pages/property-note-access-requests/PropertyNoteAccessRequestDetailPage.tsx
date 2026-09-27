@@ -120,6 +120,15 @@ const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
 };
 
 /**
+ * Web/mobile unlock (source=points) → System approved; else Approver name.
+ */
+const formatApprovedBy = (row: PropertyNoteAccessRequest): string => {
+  if (row.status !== 'approved') return '—';
+  if (row.source === 'points') return 'System approved';
+  return row.approver?.name?.trim() || '—';
+};
+
+/**
  * Small label + value block for summary fields.
  */
 const SummaryField: React.FC<{ label: string; children: React.ReactNode }> = ({
@@ -809,6 +818,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   <TableCell>Device name</TableCell>
                   <TableCell>Device id</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell>Approved By</TableCell>
                   <TableCell>Expires at</TableCell>
                   <TableCell align="right">Action</TableCell>
                 </TableRow>
@@ -862,6 +872,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <StatusChip status={row.status} size="small" />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">{formatApprovedBy(row)}</Typography>
                       </TableCell>
                       <TableCell>
                         {row.expires_at ? (
@@ -1056,6 +1069,11 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     >
                       {access.expires_at || 'No expiry'}
                     </Typography>
+                  </SummaryField>
+                </Grid>
+                <Grid item xs={6}>
+                  <SummaryField label="Approved By">
+                    <Typography variant="body1">{formatApprovedBy(access)}</Typography>
                   </SummaryField>
                 </Grid>
                 <Grid item xs={6}>
