@@ -10,7 +10,6 @@ import {
   Paper,
   Radio,
   RadioGroup,
-  Switch,
   TextField,
   Typography,
   createFilterOptions,
@@ -70,9 +69,6 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   const [seeOthersUsers, setSeeOthersUsers] = useState<RegularUser[]>([]);
   const [grantScope, setGrantScope] = useState<'user' | 'user_device'>('user');
   const [selectedDevices, setSelectedDevices] = useState<PropertyNoteAccessGrantDevice[]>([]);
-  const [chargePoints, setChargePoints] = useState(true);
-  const [applyExpiry, setApplyExpiry] = useState(true);
-  const [requireApprover, setRequireApprover] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const [deviceError, setDeviceError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -119,9 +115,9 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   const unlockCost = grantOptions?.unlock_point_cost ?? 0;
   const accessDays = grantOptions?.access_days ?? 0;
 
-  const previewPoints = chargePoints ? unlockCost : 0;
-  const previewExpiry = applyExpiry ? `${accessDays} days` : 'Never expires';
-  const previewStatus = requireApprover ? 'admin_approved → Approver' : 'approved (immediate)';
+  const previewPoints = unlockCost;
+  const previewExpiry = `${accessDays} days`;
+  const previewStatus = 'admin_approved → Approver';
   const previewSeeOthers =
     seeOthersUsers.length === 0
       ? 'Own data only'
@@ -153,9 +149,9 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     try {
       const response = await grantMutation.mutateAsync({
         user_id: selectedUser.id,
-        charge_points: chargePoints,
-        apply_expiry: applyExpiry,
-        require_approver: requireApprover,
+        charge_points: true,
+        apply_expiry: true,
+        require_approver: true,
         visible_user_ids: seeOthersUsers.map((user) => user.id),
         device_ids:
           grantScope === 'user_device' ? selectedDevices.map((device) => device.device_id) : [],
@@ -176,9 +172,6 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
       setSeeOthersSearch('');
       setGrantScope('user');
       setSelectedDevices([]);
-      setChargePoints(true);
-      setApplyExpiry(true);
-      setRequireApprover(true);
     } catch (err: unknown) {
       const message =
         err && typeof err === 'object' && 'message' in err && typeof err.message === 'string'
@@ -212,7 +205,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Grant Property Note Access"
-        subtitle="Admin enable with optional points, expiry, approver, see-others, and device scope"
+        subtitle="Admin enable with see-others and device scope (always charges points, applies expiry, awaits Approver)"
         breadcrumbs="Dashboard / Property Note / Grant Access"
         actionButton={{
           text: 'Back to Access List',
@@ -393,40 +386,9 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
           </>
         )}
 
-        <Typography variant="subtitle1" sx={{ mt: 3, mb: 1, fontWeight: 600 }}>
-          Flags (default on)
-        </Typography>
-
-        <FormControlLabel
-          control={
-            <Switch
-              checked={chargePoints}
-              onChange={(e) => setChargePoints(e.target.checked)}
-              color="primary"
-            />
-          }
-          label="Charge points"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={applyExpiry}
-              onChange={(e) => setApplyExpiry(e.target.checked)}
-              color="primary"
-            />
-          }
-          label="Apply expiry"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={requireApprover}
-              onChange={(e) => setRequireApprover(e.target.checked)}
-              color="primary"
-            />
-          }
-          label="Require Approver"
-        />
+        {/**
+         * Flags UI removed — Grant always charges points and applies expiry.
+         */}
 
         <Box
           sx={{

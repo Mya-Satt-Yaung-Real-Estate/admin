@@ -207,6 +207,13 @@ const SystemConfigurationPage: React.FC = () => {
        */
       // if (config.config_key === 'property_note.unlock_mode') return true;
       if (config.config_key === 'property_note.unlock_mode') return false;
+      /**
+       * Hidden in UI for now (API config rows kept). Product no longer needs these toggles in Admin.
+       */
+      // if (config.config_key === 'property_note.require_admin_approval') return true;
+      // if (config.config_key === 'property_note.require_unlock_approval') return true;
+      if (config.config_key === 'property_note.require_admin_approval') return false;
+      if (config.config_key === 'property_note.require_unlock_approval') return false;
       return true;
     });
   };
