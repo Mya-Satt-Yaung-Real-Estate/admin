@@ -98,7 +98,7 @@ export interface PropertyNoteAccessGrantPayload {
   /**
    * Empty = user-only (any device). Non-empty = grant each device_id.
    */
-  device_ids?: string[];
+  device_ids?: string[]; 
 }
 
 export interface PropertyNoteAccessGrantDevice {
