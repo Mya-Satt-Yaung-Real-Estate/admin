@@ -83,15 +83,16 @@ const filterDevices = createFilterOptions<PropertyNoteAccessGrantDevice>({
  * List label for grant device scope.
  */
 const formatDeviceLabel = (deviceId: string | null | undefined): string => {
-  if (!deviceId) return 'Any device';
+  if (!deviceId) return '-';
   return deviceId;
 };
 
 /**
  * Short device id for table/summary (full id in tooltip).
+ * User-only grants (null device_id) show dash — name column already says Any device.
  */
 const truncateDeviceId = (deviceId: string | null | undefined): string => {
-  if (!deviceId) return 'Any device';
+  if (!deviceId) return '-';
   if (deviceId.length <= 16) return deviceId;
   return `${deviceId.slice(0, 8)}…${deviceId.slice(-4)}`;
 };
@@ -824,7 +825,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 <TableRow>
                   <TableCell>Grant</TableCell>
                   <TableCell>Device name</TableCell>
-                  <TableCell>Device id</TableCell>
+                  <TableCell>Device Id</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Action By</TableCell>
                   <TableCell>Expires at</TableCell>
