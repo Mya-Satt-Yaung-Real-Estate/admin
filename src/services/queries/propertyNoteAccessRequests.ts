@@ -120,6 +120,18 @@ export const useRevokePropertyNoteAccessRequest = () => {
   });
 };
 
+export const useReactivatePropertyNotePointUnlock = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => propertyNoteAccessRequestsAPI.reactivatePointUnlock(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: propertyNoteAccessKeys.details() });
+    },
+  });
+};
+
 export const useAddPropertyNoteAccessDevices = () => {
   const queryClient = useQueryClient();
 

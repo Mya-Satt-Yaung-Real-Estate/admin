@@ -107,6 +107,17 @@ export const propertyNoteAccessRequestsAPI = {
       method: 'POST',
     }),
 
+  /**
+   * After revoke: allow user point unlock again (does not grant Approved access).
+   */
+  reactivatePointUnlock: (id: number) =>
+    apiV2Request<{
+      point_unlock_blocked_by_revoke: boolean;
+      already_allowed: boolean;
+    }>(`/property-note-access-requests/${id}/reactivate-point-unlock`, {
+      method: 'POST',
+    }),
+
   addDevices: (id: number, payload: PropertyNoteAccessAddDevicesPayload) =>
     apiV2Request<{
       access: PropertyNoteAccessRequest | null;

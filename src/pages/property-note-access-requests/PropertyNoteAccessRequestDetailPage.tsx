@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Autocomplete,
   Box,
   Button,
@@ -47,6 +48,7 @@ import {
   useApprovePropertyNoteAccessRequest,
   useChangePropertyNoteAccessScope,
   usePropertyNoteAccessRequest,
+  useReactivatePropertyNotePointUnlock,
   useRejectPropertyNoteAccessRequest,
   useRevokePropertyNoteAccessRequest,
   useUpdatePropertyNoteVisibleUsers,
@@ -184,13 +186,20 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const approveMutation = useApprovePropertyNoteAccessRequest();
   const rejectMutation = useRejectPropertyNoteAccessRequest();
   const revokeMutation = useRevokePropertyNoteAccessRequest();
+  const reactivateMutation = useReactivatePropertyNotePointUnlock();
   const addDevicesMutation = useAddPropertyNoteAccessDevices();
   const changeScopeMutation = useChangePropertyNoteAccessScope();
   const updateVisibleMutation = useUpdatePropertyNoteVisibleUsers();
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
-    type: 'approve' | 'reject' | 'revoke' | 'switch_devices' | 'convert_any';
+    type:
+      | 'approve'
+      | 'reject'
+      | 'revoke'
+      | 'switch_devices'
+      | 'convert_any'
+      | 'reactivate_point_unlock';
     targetId: number | null;
   }>({ open: false, type: 'approve', targetId: null });
 
@@ -316,11 +325,26 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const canConvertToAny =
     !hasUserOnlyApproved && approvedDeviceGrantCount > 0;
 
+  /**
+   * No usable grant left but revoke history exists — show Re-active / waiting state.
+   */
+  const needsRestore = useMemo(() => {
+    const hasApproved = relatedGrants.some((g) => g.status === 'approved');
+    const hasRevoked = relatedGrants.some((g) => g.status === 'revoked');
+    return !hasApproved && hasRevoked;
+  }, [relatedGrants]);
+
+  /**
+   * True until Admin re-actives (Path B unlock allowed again; no Approved grant).
+   */
+  const pointUnlockBlockedByRevoke = detail?.point_unlock_blocked_by_revoke === true;
+
   const busy =
     isSwitchingGrant ||
     approveMutation.isPending ||
     rejectMutation.isPending ||
     revokeMutation.isPending ||
+    reactivateMutation.isPending ||
     addDevicesMutation.isPending ||
     changeScopeMutation.isPending ||
     updateVisibleMutation.isPending;
@@ -347,6 +371,14 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         await revokeMutation.mutateAsync(confirmState.targetId);
         showSuccess('Access revoked. Points are not refunded.');
         setConfirmState({ open: false, type: 'approve', targetId: null });
+      } else if (confirmState.type === 'reactivate_point_unlock') {
+        const response = await reactivateMutation.mutateAsync(confirmState.targetId);
+        setConfirmState({ open: false, type: 'approve', targetId: null });
+        showSuccess(
+          response.data?.already_allowed
+            ? 'Point unlock was already allowed.'
+            : 'Point unlock re-activated. User can unlock with points.'
+        );
       } else if (confirmState.type === 'switch_devices') {
         if (selectedDevices.length === 0) {
           setDeviceError('Select at least one device.');
@@ -373,7 +405,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
           payload: { scope: 'user_only' },
         });
         setConfirmState({ open: false, type: 'approve', targetId: null });
-        showSuccess('Scope changed to Any device.');
+        showSuccess('Changed to Any Device type.');
         const nextId = response.data?.access?.id;
         if (nextId && nextId !== accessId) {
           navigate(`/property-note-access-requests/${nextId}`);
@@ -474,7 +506,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         : access.status === 'approved'
           ? 'Access is active. Manage devices and see-others on the right.'
           : access.status === 'revoked'
-            ? 'Access was revoked. Re-grant via Add on Access List, or Add devices.'
+            ? pointUnlockBlockedByRevoke
+              ? 'Access revoked. Re-active below so the user can unlock with points again.'
+              : 'Access revoked. Point unlock is allowed — waiting for user to unlock with points.'
             : access.status === 'rejected'
               ? 'Request was rejected.'
               : null;
@@ -511,8 +545,24 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
             variant="body2"
             sx={{ mb: 1.5, color: 'primary.dark', fontWeight: 500 }}
           >
-            Change scope, add devices, or edit see-others for the selected grant (Open row).
+            {needsRestore
+              ? pointUnlockBlockedByRevoke
+                ? 'Re-active point unlock only — does not grant Approved access.'
+                : 'Point unlock already allowed. User must unlock with points for Approved access.'
+              : 'Change scope, add devices, or edit see-others for the selected grant (Open row).'}
           </Typography>
+          {needsRestore && pointUnlockBlockedByRevoke && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Access revoked. Re-active below so the user can unlock with points. This does not
+              approve access.
+            </Alert>
+          )}
+          {needsRestore && !pointUnlockBlockedByRevoke && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Point unlock is allowed. No Approved grant yet — waiting for the user to unlock with
+              points.
+            </Alert>
+          )}
           <Divider sx={{ mb: 2 }} />
 
           <Grid container spacing={2} columnSpacing={{ xs: 2, md: 6 }} alignItems="stretch">
@@ -630,6 +680,39 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     </Box>
                   )}
                 </>
+              ) : needsRestore ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Re-active point unlock
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
+                  >
+                    Clears the revoke block so the user can unlock with points again. Does not
+                    create Approved access.
+                  </Typography>
+                  {pointUnlockBlockedByRevoke ? (
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      disabled={busy}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          type: 'reactivate_point_unlock',
+                          targetId: accessId,
+                        })
+                      }
+                    >
+                      Re-active
+                    </Button>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Already re-activated. User can unlock with points from web or mobile.
+                    </Typography>
+                  )}
+                </>
               ) : (
                 <>
                   <Typography variant="subtitle1" fontWeight={600} gutterBottom>
@@ -733,7 +816,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         })
                       }
                     >
-                      Convert to Any device
+                      Change to Any Device type
                     </Button>
                   )}
                 </>
@@ -761,7 +844,6 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               </Typography>
               <Box
                 sx={{
-                  mt: 'auto',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 1.5,
@@ -1216,8 +1298,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               : confirmState.type === 'switch_devices'
                 ? 'Switch to selected devices?'
                 : confirmState.type === 'convert_any'
-                  ? 'Convert to Any device?'
-                  : 'Revoke Property Note access?'
+                  ? 'Change to Any Device type?'
+                  : confirmState.type === 'reactivate_point_unlock'
+                    ? 'Re-active point unlock?'
+                    : 'Revoke Property Note access?'
         }
         message={
           confirmState.type === 'approve'
@@ -1227,8 +1311,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               : confirmState.type === 'switch_devices'
                 ? `Revoke Any-device and grant only ${selectedDevices.length} selected device(s)? Unselected phones lose access. Points are not charged.`
                 : confirmState.type === 'convert_any'
-                  ? 'Revoke all device-specific grants and create one Any-device grant? All phones unlock. Points are not charged.'
-                  : 'Revoke this approved access? Points are not refunded. Login stays active.'
+                  ? 'Change to Any Device type? Device-specific grants will be revoked. All phones unlock. Points are not charged.'
+                  : confirmState.type === 'reactivate_point_unlock'
+                    ? 'Allow this user to unlock Property Note with points again? This does not grant Approved access.'
+                    : 'Revoke this approved access? Points are not refunded. Login stays active.'
         }
         action={
           confirmState.type === 'approve'
@@ -1245,8 +1331,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               : confirmState.type === 'switch_devices'
                 ? 'Switch scope'
                 : confirmState.type === 'convert_any'
-                  ? 'Convert to Any'
-                  : 'Revoke Access'
+                  ? 'Change to Any Device type'
+                  : confirmState.type === 'reactivate_point_unlock'
+                    ? 'Re-active'
+                    : 'Revoke Access'
         }
         actionColor={confirmState.type === 'approve' ? 'success' : 'error'}
         requireReason={false}

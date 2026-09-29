@@ -148,6 +148,10 @@ export interface PropertyNoteAccessDetail {
   related_grants: PropertyNoteAccessRequest[];
   registered_devices: PropertyNoteAccessGrantDevice[];
   visible_users: PropertyNoteAccessVisibleUser[];
+  /**
+   * True when revoke blocks Path B until Admin re-actives.
+   */
+  point_unlock_blocked_by_revoke?: boolean;
 }
 
 export interface PropertyNoteAccessAddDevicesPayload {
