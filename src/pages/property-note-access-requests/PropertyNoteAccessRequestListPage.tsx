@@ -12,7 +12,6 @@ import {
   Add as AddIcon,
   Cancel as RejectIcon,
   CheckCircle as ApproveIcon,
-  HourglassEmpty as PendingIcon,
   Person as PersonIcon,
   VerifiedUser as ApprovedIcon,
   Block as RevokeIcon,
@@ -66,9 +65,6 @@ const formatGrantsSummary = (row: PropertyNoteAccessUserSummary): string => {
   if (row.counts.approved > 0) {
     parts.push(`${row.counts.approved} active`);
   }
-  if (row.counts.pending > 0) {
-    parts.push(`${row.counts.pending} pending`);
-  }
   if (row.counts.admin_approved > 0) {
     parts.push(`${row.counts.admin_approved} awaiting approver`);
   }
@@ -92,7 +88,6 @@ const FILTER_FIELDS: FilterField[] = [
     label: 'Status',
     options: [
       { value: 'all', label: 'All Statuses' },
-      { value: 'pending', label: 'Pending' },
       { value: 'admin_approved', label: 'Admin Approved' },
       { value: 'approved', label: 'Approved' },
       { value: 'rejected', label: 'Rejected' },
@@ -158,12 +153,6 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         value: statistics?.total ?? 0,
         color: 'primary',
         icon: <PersonIcon />,
-      },
-      {
-        title: 'Pending',
-        value: statistics?.pending ?? 0,
-        color: 'warning',
-        icon: <PendingIcon />,
       },
       {
         title: 'Admin Approved',
