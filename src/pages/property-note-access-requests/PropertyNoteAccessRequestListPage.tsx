@@ -85,7 +85,7 @@ const FILTER_FIELDS: FilterField[] = [
   {
     key: 'statusFilter',
     type: 'select',
-    label: 'Status',
+    label: 'Current Status',
     options: [
       { value: 'all', label: 'All Statuses' },
       { value: 'admin_approved', label: 'Admin Approved' },
@@ -336,7 +336,7 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
       <PageHeader
         title="Access Requests"
         breadcrumbs="Dashboard / Property Note / Access Requests"
-        subtitle="One row per user — open detail to approve, reject, or revoke grants"
+        subtitle="One row per user — cards and Current Status use the same Status as the Status column"
         actionButton={{
           text: 'Add',
           icon: <AddIcon />,
