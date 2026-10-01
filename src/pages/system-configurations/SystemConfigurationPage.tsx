@@ -101,7 +101,7 @@ const CONFIG_CATEGORIES = {
    */
   property_note: {
     name: 'Property Note',
-    description: 'Unlock point cost, access days, approvers, and admin approval flag',
+    description: 'Unlock cost, access days, approvers, and web/mobile approval flags',
     icon: <MapIcon />,
     color: '#3B8880',
   },
@@ -207,13 +207,6 @@ const SystemConfigurationPage: React.FC = () => {
        */
       // if (config.config_key === 'property_note.unlock_mode') return true;
       if (config.config_key === 'property_note.unlock_mode') return false;
-      /**
-       * Hidden in UI for now (API config rows kept). Product no longer needs these toggles in Admin.
-       */
-      // if (config.config_key === 'property_note.require_admin_approval') return true;
-      // if (config.config_key === 'property_note.require_unlock_approval') return true;
-      if (config.config_key === 'property_note.require_admin_approval') return false;
-      if (config.config_key === 'property_note.require_unlock_approval') return false;
       return true;
     });
   };
@@ -282,6 +275,19 @@ const SystemConfigurationPage: React.FC = () => {
   };
 
   // Render form field based on configuration type
+  /**
+   * Web/mobile unlock independent flags: both OFF = instant unlock (current default).
+   */
+  const getConfigDescription = (config: SystemConfiguration): string | null => {
+    if (config.config_key === 'property_note.require_unlock_approval') {
+      return 'Web/mobile unlock: need Approver before access. Both this and Admin OFF = unlock now.';
+    }
+    if (config.config_key === 'property_note.require_admin_approval') {
+      return 'Web/mobile unlock: need Admin before access. Both this and Approver OFF = unlock now.';
+    }
+    return null;
+  };
+
   const renderFormField = (config: SystemConfiguration) => {
     const value = formData[config.config_key] || '';
 
@@ -562,9 +568,9 @@ const SystemConfigurationPage: React.FC = () => {
                           <Typography variant="h6" component="h3" fontWeight="500">
                             {config.config_label}
                           </Typography>
-                          {config.description && (
+                          {(getConfigDescription(config) || config.description) && (
                             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                              {config.description}
+                              {getConfigDescription(config) || config.description}
                             </Typography>
                           )}
                         </Box>
