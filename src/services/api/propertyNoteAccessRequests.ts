@@ -108,12 +108,15 @@ export const propertyNoteAccessRequestsAPI = {
     }),
 
   /**
-   * After revoke: allow user point unlock again (does not grant Approved access).
+   * After revoke: restore non-expired access, or allow point unlock if expired.
    */
   reactivatePointUnlock: (id: number) =>
     apiV2Request<{
       point_unlock_blocked_by_revoke: boolean;
       already_allowed: boolean;
+      restored?: boolean;
+      restored_count?: number;
+      point_unlock_only?: boolean;
     }>(`/property-note-access-requests/${id}/reactivate-point-unlock`, {
       method: 'POST',
     }),

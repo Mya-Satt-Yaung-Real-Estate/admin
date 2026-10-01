@@ -123,12 +123,20 @@ const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
 };
 
 /**
- * Action By: System approved / Approver / Admin (reject or revoke).
+ * Approved and still within paid period (null expires_at = no expiry).
+ */
+const isUsableApprovedGrant = (grant: PropertyNoteAccessRequest): boolean => {
+  if (grant.status !== 'approved') return false;
+  return !isExpiresAtPast(grant.expires_at);
+};
+
+/**
+ * Action By: System approved / Approver / Admin (grant, reject, revoke).
  */
 const formatActionBy = (row: PropertyNoteAccessRequest): string => {
   if (row.status === 'approved') {
     if (row.source === 'points') return 'System approved';
-    return row.approver?.name?.trim() || '—';
+    return row.approver?.name?.trim() || row.admin?.name?.trim() || '—';
   }
   if (row.status === 'rejected') {
     return row.approver?.name?.trim() || row.admin?.name?.trim() || '—';
@@ -277,12 +285,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const addableDevices = useMemo(() => {
     const usableDeviceIds = new Set(
       relatedGrants
-        .filter((g) => g.status === 'approved')
+        .filter((g) => isUsableApprovedGrant(g))
         .map((g) => g.device_id)
         .filter((d): d is string => !!d)
     );
     const hasUserOnly = relatedGrants.some(
-      (g) => g.status === 'approved' && g.device_id === null
+      (g) => isUsableApprovedGrant(g) && g.device_id === null
     );
     if (hasUserOnly) {
       return [];
@@ -292,13 +300,13 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
   const hasUserOnlyApproved = useMemo(
     () =>
-      relatedGrants.some((g) => g.status === 'approved' && g.device_id === null),
+      relatedGrants.some((g) => isUsableApprovedGrant(g) && g.device_id === null),
     [relatedGrants]
   );
 
   const approvedDeviceGrantCount = useMemo(
     () =>
-      relatedGrants.filter((g) => g.status === 'approved' && g.device_id !== null)
+      relatedGrants.filter((g) => isUsableApprovedGrant(g) && g.device_id !== null)
         .length,
     [relatedGrants]
   );
@@ -326,13 +334,28 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     !hasUserOnlyApproved && approvedDeviceGrantCount > 0;
 
   /**
-   * No usable grant left but revoke history exists — show Re-active / waiting state.
+   * At least one Approved grant still within paid period.
+   */
+  const hasUsableApproved = useMemo(
+    () => relatedGrants.some((g) => isUsableApprovedGrant(g)),
+    [relatedGrants]
+  );
+
+  /**
+   * No usable (non-expired) Approved grant left but revoke history exists — show Re-active.
    */
   const needsRestore = useMemo(() => {
-    const hasApproved = relatedGrants.some((g) => g.status === 'approved');
     const hasRevoked = relatedGrants.some((g) => g.status === 'revoked');
-    return !hasApproved && hasRevoked;
-  }, [relatedGrants]);
+    return !hasUsableApproved && hasRevoked;
+  }, [relatedGrants, hasUsableApproved]);
+
+  /**
+   * Approved status remains but paid period ended — revoke only (no device / see-others).
+   */
+  const isExpiredApprovedOnly = useMemo(() => {
+    if (hasUsableApproved) return false;
+    return relatedGrants.some((g) => g.status === 'approved' && isExpiresAtPast(g.expires_at));
+  }, [relatedGrants, hasUsableApproved]);
 
   /**
    * True until Admin re-actives (Path B unlock allowed again; no Approved grant).
@@ -374,11 +397,25 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       } else if (confirmState.type === 'reactivate_point_unlock') {
         const response = await reactivateMutation.mutateAsync(confirmState.targetId);
         setConfirmState({ open: false, type: 'approve', targetId: null });
-        showSuccess(
-          response.data?.already_allowed
-            ? 'Point unlock was already allowed.'
-            : 'Point unlock re-activated. User can unlock with points.'
-        );
+        if (response.data?.already_allowed) {
+          showSuccess(
+            response.data.point_unlock_only
+              ? 'Point unlock was already allowed.'
+              : 'User already has active access.'
+          );
+        } else if (response.data?.restored) {
+          showSuccess(
+            response.data.point_unlock_only
+              ? 'Status set to Approved. Paid period expired — user must unlock with points.'
+              : response.data.restored_count && response.data.restored_count > 1
+                ? `Access restored for ${response.data.restored_count} grants. No points charged.`
+                : 'Access restored (Approved). Previous paid period still valid — no points charged.'
+          );
+        } else {
+          showSuccess(
+            'Paid period expired. Point unlock re-activated — user must unlock with points.'
+          );
+        }
       } else if (confirmState.type === 'switch_devices') {
         if (selectedDevices.length === 0) {
           setDeviceError('Select at least one device.');
@@ -504,11 +541,13 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       : access.status === 'admin_approved'
         ? 'Waiting for Approver. Admin cannot approve/reject/revoke here.'
         : access.status === 'approved'
-          ? 'Access is active. Manage devices and see-others on the right.'
+          ? isExpiresAtPast(access.expires_at)
+            ? 'Paid period ended. Revoke is still allowed. Device and see-others stay locked until a new usable unlock.'
+            : 'Access is active. Manage devices and see-others on the right.'
           : access.status === 'revoked'
             ? pointUnlockBlockedByRevoke
-              ? 'Access revoked. Re-active below so the user can unlock with points again.'
-              : 'Access revoked. Point unlock is allowed — waiting for user to unlock with points.'
+              ? 'Access revoked (suspended). Re-active this grant — restore if paid period remains; if expired, point unlock only.'
+              : 'Access revoked. Point unlock is allowed — waiting for user to unlock with points (paid period ended).'
             : access.status === 'rejected'
               ? 'Request was rejected.'
               : null;
@@ -547,20 +586,29 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
           >
             {needsRestore
               ? pointUnlockBlockedByRevoke
-                ? 'Re-active point unlock only — does not grant Approved access.'
-                : 'Point unlock already allowed. User must unlock with points for Approved access.'
-              : 'Change scope, add devices, or edit see-others for the selected grant (Open row).'}
+                ? 'Re-active: this grant becomes Approved. If paid period remains, access works; if expired, unlock with points (older grants stay revoked).'
+                : 'Point unlock already allowed. User must unlock with points (previous period expired).'
+              : isExpiredApprovedOnly
+                ? 'Paid period ended. You can still Revoke. Device and see-others are locked until the user unlocks again with points.'
+                : 'Change scope, add devices, or edit see-others for the selected grant (Open row).'}
           </Typography>
           {needsRestore && pointUnlockBlockedByRevoke && (
             <Alert severity="warning" sx={{ mb: 2 }}>
-              Access revoked. Re-active below so the user can unlock with points. This does not
-              approve access.
+              Access revoked (suspended). Re-active applies to this grant: restore Approved when
+              expires_at is still valid (no points). If expired, allow point unlock only — older
+              grants are not revived.
             </Alert>
           )}
           {needsRestore && !pointUnlockBlockedByRevoke && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Point unlock is allowed. No Approved grant yet — waiting for the user to unlock with
-              points.
+              Point unlock is allowed. Previous paid period ended — waiting for the user to unlock
+              with points.
+            </Alert>
+          )}
+          {isExpiredApprovedOnly && !needsRestore && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Paid period ended. Revoke is still available on grants below. Adding devices and
+              editing see-others stay locked until there is usable access again.
             </Alert>
           )}
           <Divider sx={{ mb: 2 }} />
@@ -683,14 +731,14 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               ) : needsRestore ? (
                 <>
                   <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                    Re-active point unlock
+                    Re-active
                   </Typography>
                   <Typography
                     variant="body2"
                     sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
                   >
-                    Clears the revoke block so the user can unlock with points again. Does not
-                    create Approved access.
+                    If this grant’s paid period is still valid, restores it (and same-batch devices).
+                    If expired, allows unlock with points — does not revive older grants.
                   </Typography>
                   {pointUnlockBlockedByRevoke ? (
                     <Button
@@ -709,9 +757,23 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     </Button>
                   ) : (
                     <Typography variant="body2" color="text.secondary">
-                      Already re-activated. User can unlock with points from web or mobile.
+                      Already re-activated. If access is not Approved yet, user must unlock with
+                      points.
                     </Typography>
                   )}
+                </>
+              ) : !hasUsableApproved ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    Device management locked
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
+                  >
+                    Paid period ended. Use Revoke on a grant below if needed. User must unlock with
+                    points for a new period before devices can be managed again.
+                  </Typography>
                 </>
               ) : (
                 <>
@@ -840,7 +902,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 variant="body2"
                 sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
               >
-                Other users whose notes/pins this person may see. Not tied to a device.
+                {hasUsableApproved
+                  ? 'Other users whose notes/pins this person may see. Not tied to a device.'
+                  : 'Locked while paid period has ended. Revoke is still allowed on grants below.'}
               </Typography>
               <Box
                 sx={{
@@ -861,7 +925,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   loading={usersLoading}
                   getOptionLabel={getUserSelectLabel}
                   isOptionEqualToValue={(a, b) => a.id === b.id}
-                  disabled={busy}
+                  disabled={busy || !hasUsableApproved}
                   openOnFocus
                   disableCloseOnSelect
                   sx={{ width: '100%' }}
@@ -880,7 +944,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 <Button
                   variant="contained"
                   startIcon={<SaveIcon />}
-                  disabled={busy || !hasSeeOthersChanges}
+                  disabled={busy || !hasUsableApproved || !hasSeeOthersChanges}
                   onClick={() => void handleSaveSeeOthers()}
                 >
                   Save see-others
@@ -1300,7 +1364,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 : confirmState.type === 'convert_any'
                   ? 'Change to Any Device type?'
                   : confirmState.type === 'reactivate_point_unlock'
-                    ? 'Re-active point unlock?'
+                    ? 'Re-active?'
                     : 'Revoke Property Note access?'
         }
         message={
@@ -1313,8 +1377,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 : confirmState.type === 'convert_any'
                   ? 'Change to Any Device type? Device-specific grants will be revoked. All phones unlock. Points are not charged.'
                   : confirmState.type === 'reactivate_point_unlock'
-                    ? 'Allow this user to unlock Property Note with points again? This does not grant Approved access.'
-                    : 'Revoke this approved access? Points are not refunded. Login stays active.'
+                    ? 'Re-active this grant? If its paid period is still valid, restore Approved (same-batch devices too). If expired, allow point unlock only — do not revive older grants.'
+                    : 'Revoke this approved access? Points are not refunded. Login stays active. See-others is kept for Re-active.'
         }
         action={
           confirmState.type === 'approve'

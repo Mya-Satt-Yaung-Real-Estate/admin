@@ -11,6 +11,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
   status, 
   statusType = 'status',
   size = 'small',
+  sx,
   ...chipProps 
 }) => {
   // Convert boolean to string status
@@ -303,7 +304,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           outline: 'none',
           boxShadow: `0 0 0 2px ${colors.text}20`,
         },
-        ...chipProps.sx,
+        ...sx,
       }}
       {...chipProps}
     />
