@@ -112,10 +112,12 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     return allActiveUsers.filter((user) => user.id !== selectedUser.id);
   }, [allActiveUsers, selectedUser]);
 
-  const unlockCost = grantOptions?.unlock_point_cost ?? 0;
   const accessDays = grantOptions?.access_days ?? 0;
 
-  const previewPoints = unlockCost;
+  /**
+   * Admin Grant never charges points (Path B user unlock still uses unlock_point_cost).
+   */
+  const previewPoints = '0 (no charge)';
   const previewExpiry = `${accessDays} days`;
   const previewStatus = 'admin_approved → Approver';
   const previewSeeOthers =
@@ -149,7 +151,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     try {
       const response = await grantMutation.mutateAsync({
         user_id: selectedUser.id,
-        charge_points: true,
+        charge_points: false,
         apply_expiry: true,
         require_approver: true,
         visible_user_ids: seeOthersUsers.map((user) => user.id),
@@ -205,7 +207,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Grant Property Note Access"
-        subtitle="Admin enable with see-others and device scope (always charges points, applies expiry, awaits Approver)"
+        subtitle="Admin enable with see-others and device scope (no points charged; applies expiry; awaits Approver)"
         breadcrumbs="Dashboard / Property Note / Grant Access"
         actionButton={{
           text: 'Back to Access List',
@@ -387,7 +389,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
         )}
 
         {/**
-         * Flags UI removed — Grant always charges points and applies expiry.
+         * Flags UI removed — Grant: no points; always expiry + Approver.
          */}
 
         <Box
