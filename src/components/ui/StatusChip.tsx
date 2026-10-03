@@ -201,7 +201,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           hoverBorder: '#B45309',
         },
         admin_approved: {
-          text: '#0288D1', // Blue — waiting mobile approver
+          text: '#0288D1', // Blue — waiting approver
           border: '#0288D1',
           hoverBg: '#E1F5FE',
           hoverBorder: '#01579B',

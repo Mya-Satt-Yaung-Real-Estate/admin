@@ -321,10 +321,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       return null;
     }
     if (registeredDevices.length === 0) {
-      return 'No registered devices for this user. They must log in from the mobile app once so the device appears in user_devices.';
+      return 'No registered devices for this user. They must log in from the app once so the device appears in user_devices.';
     }
     if (approvedDeviceGrantCount >= registeredDevices.length) {
-      return `All ${registeredDevices.length} registered device(s) already have an Approved grant. Revoke one first, or register another device via mobile login.`;
+      return `All ${registeredDevices.length} registered device(s) already have an Approved grant. Revoke one first, or register another device via login.`;
     }
     return 'No devices available to add.';
   }, [
@@ -385,7 +385,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     try {
       if (confirmState.type === 'approve') {
         await approveMutation.mutateAsync(confirmState.targetId);
-        showSuccess('Request approved. Mobile approvers notified.');
+        showSuccess('Request approved. Approvers notified.');
         setConfirmState({ open: false, type: 'approve', targetId: null });
       } else if (confirmState.type === 'reject') {
         await rejectMutation.mutateAsync({
@@ -652,7 +652,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       color="warning.main"
                       sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
                     >
-                      No registered devices. User must log in from mobile once so devices appear in
+                      No registered devices. User must log in from the app once so devices appear in
                       user_devices.
                     </Typography>
                   ) : (
@@ -1059,14 +1059,14 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                           const canRejectRow = row.status === 'pending';
                           const canRevokeRow = row.status === 'approved';
                           const approveTitle = canApproveRow
-                            ? 'Approve (send to mobile approvers)'
+                            ? 'Approve (send to approvers)'
                             : row.status === 'admin_approved'
-                              ? 'Waiting for mobile Approver'
+                              ? 'Waiting for Approver'
                               : 'Only pending requests can be approved';
                           const rejectTitle = canRejectRow
                             ? 'Reject'
                             : row.status === 'admin_approved'
-                              ? 'Waiting for mobile Approver — Admin cannot reject'
+                              ? 'Waiting for Approver — Admin cannot reject'
                               : 'Only pending requests can be rejected';
                           const revokeTitle = canRevokeRow
                             ? 'Revoke Access (no point refund)'
@@ -1281,9 +1281,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 <Tooltip
                   title={
                     canApprove
-                      ? 'Approve (send to mobile approvers)'
+                      ? 'Approve (send to approvers)'
                       : access.status === 'admin_approved'
-                        ? 'Waiting for mobile Approver'
+                        ? 'Waiting for Approver'
                         : 'Only pending requests can be approved'
                   }
                 >
@@ -1307,7 +1307,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     canReject
                       ? 'Reject'
                       : access.status === 'admin_approved'
-                        ? 'Waiting for mobile Approver — Admin cannot reject'
+                        ? 'Waiting for Approver — Admin cannot reject'
                         : 'Only pending requests can be rejected'
                   }
                 >
@@ -1373,7 +1373,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         }
         message={
           confirmState.type === 'approve'
-            ? 'Approve this unlock request? Mobile approvers will be notified.'
+            ? 'Approve this unlock request? Approvers will be notified.'
             : confirmState.type === 'reject'
               ? 'Reject this unlock request?'
               : confirmState.type === 'switch_devices'

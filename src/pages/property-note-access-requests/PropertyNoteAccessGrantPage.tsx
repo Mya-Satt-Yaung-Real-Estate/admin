@@ -164,7 +164,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
       const message =
         response.message ||
         (result?.awaiting_approver
-          ? 'Granted. Waiting for mobile approver.'
+          ? 'Granted. Waiting for approver confirmation.'
           : 'Property Note access granted.');
 
       showSuccess(seeCount > 0 ? `${message} See-others: ${seeCount} user(s).` : message);
