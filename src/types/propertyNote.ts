@@ -29,6 +29,19 @@ export interface PropertyNotePrimaryImage {
 
 export type PropertyNoteStatus = 'active' | 'sold' | 'rented';
 
+/**
+ * GeoJSON Polygon from API (coordinates as [lng, lat]).
+ */
+export interface PropertyNoteBoundaryGeoJson {
+  type: 'Polygon';
+  coordinates: [number, number][][];
+}
+
+export interface PropertyNoteCentroid {
+  latitude: number;
+  longitude: number;
+}
+
 export interface PropertyNote {
   id: number;
   note_code: string;
@@ -40,6 +53,14 @@ export interface PropertyNote {
   width_ft: number | null;
   latitude: number | null;
   longitude: number | null;
+  /**
+   * Same numbers as lat/lng when present (mobile/web parity).
+   */
+  centroid?: PropertyNoteCentroid | null;
+  /**
+   * Drawn desired area — null/absent on older pin-only notes.
+   */
+  boundary?: PropertyNoteBoundaryGeoJson | null;
   created_at: string | null;
   updated_at: string | null;
   deleted_at: string | null;
