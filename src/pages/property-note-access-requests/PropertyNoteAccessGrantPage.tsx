@@ -10,6 +10,7 @@ import {
   Paper,
   Radio,
   RadioGroup,
+  Switch,
   TextField,
   Typography,
   createFilterOptions,
@@ -69,6 +70,11 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   const [seeOthersUsers, setSeeOthersUsers] = useState<RegularUser[]>([]);
   const [grantScope, setGrantScope] = useState<'user' | 'user_device'>('user');
   const [selectedDevices, setSelectedDevices] = useState<PropertyNoteAccessGrantDevice[]>([]);
+  /**
+   * Path A toggles — Approver is always required (no UI switch).
+   */
+  const [chargePoints, setChargePoints] = useState(true);
+  const [applyExpiry, setApplyExpiry] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
   const [deviceError, setDeviceError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -113,13 +119,16 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
   }, [allActiveUsers, selectedUser]);
 
   const accessDays = grantOptions?.access_days ?? 0;
+  const unlockPointCost = grantOptions?.unlock_point_cost ?? 0;
 
   /**
-   * Admin Grant never charges points (Path B user unlock still uses unlock_point_cost).
+   * With Approver always on, points deduct on Approver final approve (not at Grant click).
    */
-  const previewPoints = '0 (no charge)';
-  const previewExpiry = `${accessDays} days`;
-  const previewStatus = 'admin_approved → Approver';
+  const previewPoints = chargePoints
+    ? `${unlockPointCost} (charge on Approver approve)`
+    : '0 (no charge)';
+  const previewExpiry = applyExpiry ? `${accessDays} days` : 'No expiry';
+  const previewStatus = 'admin_approved → Approver → Approved';
   const previewSeeOthers =
     seeOthersUsers.length === 0
       ? 'Own data only'
@@ -151,8 +160,11 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     try {
       const response = await grantMutation.mutateAsync({
         user_id: selectedUser.id,
-        charge_points: false,
-        apply_expiry: true,
+        charge_points: chargePoints,
+        apply_expiry: applyExpiry,
+        /**
+         * Always await Approver — toggle not shown on this form.
+         */
         require_approver: true,
         visible_user_ids: seeOthersUsers.map((user) => user.id),
         device_ids:
@@ -207,7 +219,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
     <Box>
       <PageHeader
         title="Grant Property Note Access"
-        subtitle="Admin enable with see-others and device scope (no points charged; applies expiry; awaits Approver)"
+        subtitle="Admin grant with Charge / Expiry flags; always awaits Approver before access is active"
         breadcrumbs="Dashboard / Property Note / Grant Access"
         actionButton={{
           text: 'Back to Access List',
@@ -388,9 +400,42 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
           </>
         )}
 
-        {/**
-         * Flags UI removed — Grant: no points; always expiry + Approver.
-         */}
+        <Box sx={{ mt: 3 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+            Flags (default on)
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            Approver is always required after Grant — not shown as a toggle.
+          </Typography>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={chargePoints}
+                onChange={(e) => setChargePoints(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              chargePoints
+                ? `Charge points (${unlockPointCost} pts on Approver approve)`
+                : 'Charge points (off)'
+            }
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={applyExpiry}
+                onChange={(e) => setApplyExpiry(e.target.checked)}
+                color="primary"
+              />
+            }
+            label={
+              applyExpiry
+                ? `Apply expiry (${accessDays} days from final approve)`
+                : 'Apply expiry (off — no expiry)'
+            }
+          />
+        </Box>
 
         <Box
           sx={{
