@@ -283,7 +283,7 @@ const PropertyNoteAccessGrantPage: React.FC = () => {
                   error={Boolean(userError)}
                   helperText={
                     userError ??
-                    `Eligible active users only (${users.length}). Already granted / awaiting approver hidden.`
+                    `Eligible active users only (${users.length}). Hidden: granted, awaiting approver, or revoked (Re-active first).`
                   }
                 />
               )}

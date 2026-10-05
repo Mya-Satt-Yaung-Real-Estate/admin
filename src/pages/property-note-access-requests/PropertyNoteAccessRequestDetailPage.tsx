@@ -14,6 +14,7 @@ import {
   Grid,
   IconButton,
   LinearProgress,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -31,6 +32,7 @@ import {
   Cancel as RejectIcon,
   CheckCircle as ApproveIcon,
   Close as CloseIcon,
+  InfoOutlined as InfoIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -131,6 +133,34 @@ const isUsableApprovedGrant = (grant: PropertyNoteAccessRequest): boolean => {
 };
 
 /**
+ * Activity time for live-scope detection (revoke / scope switch touch).
+ */
+const grantActivityMs = (grant: PropertyNoteAccessRequest): number => {
+  if (grant.updated_at) {
+    const parsed = Date.parse(grant.updated_at);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  if (grant.created_at) {
+    const parsed = Date.parse(grant.created_at.replace(' ', 'T'));
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return grant.id;
+};
+
+/**
+ * True when `a` is more recently touched than `b` (updated_at, then id).
+ */
+const isNewerGrant = (
+  a: PropertyNoteAccessRequest,
+  b: PropertyNoteAccessRequest
+): boolean => {
+  const ta = grantActivityMs(a);
+  const tb = grantActivityMs(b);
+  if (ta !== tb) return ta > tb;
+  return a.id > b.id;
+};
+
+/**
  * Action By — only 3 kinds: Approver name | Super Admin | System approved.
  */
 const formatActionBy = (row: PropertyNoteAccessRequest): string => {
@@ -169,6 +199,33 @@ const SummaryField: React.FC<{ label: string; children: React.ReactNode }> = ({
     </Typography>
     {children}
   </Box>
+);
+
+/**
+ * Static live-scope dot — green = allowed, orange = restorable (no pulse).
+ */
+const ScopeDot: React.FC<{ tone: 'allowed' | 'restorable'; label: string }> = ({
+  tone,
+  label,
+}) => (
+  <Tooltip title={label}>
+    <Box
+      component="span"
+      aria-label={label}
+      sx={{
+        width: 9,
+        height: 9,
+        borderRadius: '50%',
+        flexShrink: 0,
+        display: 'inline-block',
+        bgcolor: tone === 'allowed' ? 'success.main' : 'warning.main',
+        boxShadow:
+          tone === 'allowed'
+            ? '0 0 0 3px rgba(46, 125, 50, 0.18)'
+            : '0 0 0 3px rgba(237, 108, 2, 0.18)',
+      }}
+    />
+  </Tooltip>
 );
 
 const PropertyNoteAccessRequestDetailPage: React.FC = () => {
@@ -283,8 +340,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   }, [allActiveUsers, access?.user]);
 
   /**
-   * Devices not already covered by an approved grant for this user.
-   * API only accepts device_ids registered in user_devices.
+   * Devices not usable, and not waiting for Re-active (revoked + paid period still valid).
    */
   const addableDevices = useMemo(() => {
     const usableDeviceIds = new Set(
@@ -293,14 +349,40 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         .map((g) => g.device_id)
         .filter((d): d is string => !!d)
     );
+    const restorableDeviceIds = new Set(
+      relatedGrants
+        .filter((g) => g.status === 'revoked' && !isExpiresAtPast(g.expires_at) && g.device_id)
+        .map((g) => g.device_id as string)
+    );
     const hasUserOnly = relatedGrants.some(
       (g) => isUsableApprovedGrant(g) && g.device_id === null
     );
     if (hasUserOnly) {
       return [];
     }
-    return registeredDevices.filter((d) => !usableDeviceIds.has(d.device_id));
+    return registeredDevices.filter(
+      (d) => !usableDeviceIds.has(d.device_id) && !restorableDeviceIds.has(d.device_id)
+    );
   }, [registeredDevices, relatedGrants]);
+
+  const restorableRevokedDeviceCount = useMemo(
+    () =>
+      relatedGrants.filter(
+        (g) => g.status === 'revoked' && !isExpiresAtPast(g.expires_at) && g.device_id
+      ).length,
+    [relatedGrants]
+  );
+
+  /**
+   * Drop Add selections that must use Re-active instead.
+   */
+  useEffect(() => {
+    setSelectedDevices((prev) =>
+      prev.filter((device) =>
+        addableDevices.some((option) => option.device_id === device.device_id)
+      )
+    );
+  }, [addableDevices]);
 
   const hasUserOnlyApproved = useMemo(
     () =>
@@ -315,6 +397,75 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     [relatedGrants]
   );
 
+  /**
+   * Most recently touched approved|revoked grant → latest mode when nothing is usable.
+   * After revoke Any-device, that row wins over older revoked device rows (by updated_at).
+   */
+  const latestScopeGrant = useMemo(() => {
+    let latest: PropertyNoteAccessRequest | null = null;
+    for (const grant of relatedGrants) {
+      if (grant.status !== 'approved' && grant.status !== 'revoked') continue;
+      if (!latest || isNewerGrant(grant, latest)) {
+        latest = grant;
+      }
+    }
+    return latest;
+  }, [relatedGrants]);
+
+  /**
+   * Live scope: usable Approved wins; else most recently touched approved|revoked grant.
+   */
+  const liveScope = useMemo((): 'any-device' | 'user-device' | 'none' => {
+    if (hasUserOnlyApproved) return 'any-device';
+    if (approvedDeviceGrantCount > 0) return 'user-device';
+    if (!latestScopeGrant) return 'none';
+    return latestScopeGrant.device_id === null ? 'any-device' : 'user-device';
+  }, [approvedDeviceGrantCount, hasUserOnlyApproved, latestScopeGrant]);
+
+  /**
+   * Single live Any-device row: usable Approved, else most recently touched Any-device.
+   */
+  const liveAnyDeviceGrantId = useMemo(() => {
+    let usable: PropertyNoteAccessRequest | null = null;
+    let latestAny: PropertyNoteAccessRequest | null = null;
+    for (const grant of relatedGrants) {
+      if (grant.device_id !== null) continue;
+      if (grant.status !== 'approved' && grant.status !== 'revoked') continue;
+      if (isUsableApprovedGrant(grant)) {
+        usable = grant;
+      }
+      if (!latestAny || isNewerGrant(grant, latestAny)) {
+        latestAny = grant;
+      }
+    }
+    return usable?.id ?? latestAny?.id ?? null;
+  }, [relatedGrants]);
+
+  /**
+   * Per device_id: usable Approved wins, else most recently touched approved|revoked id.
+   * Older duplicate device rows stay history-only (badge / action / Re-active off).
+   */
+  const liveDeviceFocusIdByDeviceId = useMemo(() => {
+    const latestGrant = new Map<string, PropertyNoteAccessRequest>();
+    const usableId = new Map<string, number>();
+    for (const grant of relatedGrants) {
+      if (!grant.device_id) continue;
+      if (grant.status !== 'approved' && grant.status !== 'revoked') continue;
+      const prev = latestGrant.get(grant.device_id);
+      if (!prev || isNewerGrant(grant, prev)) {
+        latestGrant.set(grant.device_id, grant);
+      }
+      if (isUsableApprovedGrant(grant)) {
+        usableId.set(grant.device_id, grant.id);
+      }
+    }
+    const result = new Map<string, number>();
+    latestGrant.forEach((grant, deviceId) => {
+      result.set(deviceId, usableId.get(deviceId) ?? grant.id);
+    });
+    return result;
+  }, [relatedGrants]);
+
   const addDeviceBlockedReason = useMemo(() => {
     if (addableDevices.length > 0) return null;
     if (hasUserOnlyApproved) {
@@ -322,6 +473,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     }
     if (registeredDevices.length === 0) {
       return 'No registered devices for this user. They must log in from the app once so the device appears in user_devices.';
+    }
+    if (restorableRevokedDeviceCount > 0) {
+      return `${restorableRevokedDeviceCount} revoked device(s) still have a valid paid period — open that Revoked row and use Re-active (not Add devices).`;
     }
     if (approvedDeviceGrantCount >= registeredDevices.length) {
       return `All ${registeredDevices.length} registered device(s) already have an Approved grant. Revoke one first, or register another device via login.`;
@@ -332,6 +486,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     approvedDeviceGrantCount,
     hasUserOnlyApproved,
     registeredDevices.length,
+    restorableRevokedDeviceCount,
   ]);
 
   const canConvertToAny =
@@ -366,6 +521,101 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
    */
   const pointUnlockBlockedByRevoke = detail?.point_unlock_blocked_by_revoke === true;
 
+  /**
+   * Open revoked row with valid paid period → Re-active this row only.
+   * Any-device live: only the live Any-device row (not older Any-device, not devices).
+   */
+  const openGrantRestorable = useMemo(() => {
+    if (!access || access.status !== 'revoked') return false;
+    if (isExpiresAtPast(access.expires_at)) return false;
+
+    const openIsAnyDevice = access.device_id === null;
+    if (liveScope === 'user-device' && openIsAnyDevice) {
+      return false;
+    }
+    if (liveScope === 'any-device' && !openIsAnyDevice) {
+      return false;
+    }
+
+    /**
+     * Any-device live: only the current live Any-device grant id.
+     */
+    if (liveScope === 'any-device' && access.id !== liveAnyDeviceGrantId) {
+      return false;
+    }
+
+    /**
+     * user+device live: only the live focus row for that device_id.
+     */
+    if (
+      liveScope === 'user-device' &&
+      !openIsAnyDevice &&
+      access.device_id &&
+      access.id !== liveDeviceFocusIdByDeviceId.get(access.device_id)
+    ) {
+      return false;
+    }
+
+    /**
+     * Live Any-device already Approved — this revoked Any-device is history only.
+     */
+    if (openIsAnyDevice && hasUserOnlyApproved) {
+      return false;
+    }
+
+    /**
+     * Same device already usable — do not restore a duplicate device row.
+     */
+    if (
+      !openIsAnyDevice &&
+      relatedGrants.some(
+        (g) => isUsableApprovedGrant(g) && g.device_id === access.device_id
+      )
+    ) {
+      return false;
+    }
+
+    return true;
+  }, [
+    access,
+    hasUserOnlyApproved,
+    liveAnyDeviceGrantId,
+    liveDeviceFocusIdByDeviceId,
+    liveScope,
+    relatedGrants,
+  ]);
+
+  /**
+   * Open row's scope slot already has usable Approved (Any-device or same device).
+   */
+  const openSlotAlreadyUsable = useMemo(() => {
+    if (!access) return false;
+    if (access.device_id === null) return hasUserOnlyApproved;
+    return relatedGrants.some(
+      (g) => isUsableApprovedGrant(g) && g.device_id === access.device_id
+    );
+  }, [access, hasUserOnlyApproved, relatedGrants]);
+
+  /**
+   * Open row is the live focus for its scope.
+   */
+  const openMatchesLiveScope = useMemo(() => {
+    if (!access) return false;
+    if (liveScope === 'none') return true;
+    if (liveScope === 'any-device') {
+      return access.device_id === null && access.id === liveAnyDeviceGrantId;
+    }
+    if (!access.device_id) return false;
+    return access.id === liveDeviceFocusIdByDeviceId.get(access.device_id);
+  }, [access, liveAnyDeviceGrantId, liveDeviceFocusIdByDeviceId, liveScope]);
+
+  const showReactivatePanel =
+    openGrantRestorable ||
+    (needsRestore &&
+      pointUnlockBlockedByRevoke &&
+      openMatchesLiveScope &&
+      !openSlotAlreadyUsable);
+
   const busy =
     isSwitchingGrant ||
     approveMutation.isPending ||
@@ -395,9 +645,13 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         showSuccess('Request rejected.');
         setConfirmState({ open: false, type: 'approve', targetId: null });
       } else if (confirmState.type === 'revoke') {
-        await revokeMutation.mutateAsync(confirmState.targetId);
-        showSuccess('Access revoked. Points are not refunded.');
+        const revokedId = confirmState.targetId;
+        await revokeMutation.mutateAsync(revokedId);
         setConfirmState({ open: false, type: 'approve', targetId: null });
+        showSuccess('Access revoked. Use Re-active on that Revoked row to restore (not Add devices).');
+        if (revokedId !== accessId) {
+          navigate(`/property-note-access-requests/${revokedId}`);
+        }
       } else if (confirmState.type === 'reactivate_point_unlock') {
         const response = await reactivateMutation.mutateAsync(confirmState.targetId);
         setConfirmState({ open: false, type: 'approve', targetId: null });
@@ -539,6 +793,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const canReject = access.status === 'pending';
   const canRevoke = access.status === 'approved';
 
+  const deviceName = resolveDeviceName(access.device_id, devicesById);
+  const deviceIdFull = formatDeviceLabel(access.device_id);
+
   const statusHint =
     access.status === 'pending'
       ? 'Waiting for Admin approve or reject.'
@@ -549,26 +806,32 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
             ? 'Paid period ended. Revoke is still allowed. Device and see-others stay locked until a new usable unlock.'
             : 'Access is active. Manage devices and see-others on the right.'
           : access.status === 'revoked'
-            ? pointUnlockBlockedByRevoke
-              ? 'Access revoked (suspended). Re-active this grant — restore if paid period remains; if expired, point unlock only.'
-              : 'Access revoked. Point unlock is allowed — waiting for user to unlock with points (paid period ended).'
+            ? openGrantRestorable
+              ? `Access revoked. Re-active restores only this row #${accessId} (${deviceName}).`
+              : openSlotAlreadyUsable
+                ? 'History row only. Live scope already has usable Approved — Re-active stays off (avoids duplicate Any-device / device).'
+              : !openMatchesLiveScope
+                ? 'History row only. Live scope is different — open a matching device or Any-device row to Re-active.'
+                : pointUnlockBlockedByRevoke
+                  ? 'Access revoked (suspended). Re-active — paid period ended; point unlock only.'
+                  : 'Access revoked. Paid period ended. Open an Approved row to Add devices, or wait for point unlock.'
             : access.status === 'rejected'
               ? 'Request was rejected.'
               : null;
 
-  const deviceName = resolveDeviceName(access.device_id, devicesById);
-  const deviceIdFull = formatDeviceLabel(access.device_id);
-
   return (
-    <Box>
-      {isFetching && (
-        <LinearProgress
-          sx={{ position: 'sticky', top: 0, zIndex: 2, mb: 1, borderRadius: 1 }}
-        />
-      )}
+    <Box sx={{ position: 'relative' }}>
+      {/**
+       * Fixed-height progress slot — avoids page jump when fetch starts/stops.
+       */}
+      <Box sx={{ height: 3, mb: 1 }}>
+        {isFetching && (
+          <LinearProgress sx={{ height: 3, borderRadius: 1 }} />
+        )}
+      </Box>
       <PageHeader
         title={access.user?.name || `Access #${accessId}`}
-        subtitle="Manage access below · click a grant row for grant details"
+        subtitle="Manage access below · click a grant row to switch · Info for details"
         breadcrumbs="Dashboard / Property Note / Access List / Detail"
         actionButton={{
           text: 'Back to Access List',
@@ -580,91 +843,151 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Manage access
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ mb: 1.5, color: 'primary.dark', fontWeight: 500 }}
+        <CardContent sx={{ pointerEvents: isSwitchingGrant ? 'none' : 'auto' }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
+            alignItems={{ xs: 'flex-start', sm: 'baseline' }}
+            justifyContent="space-between"
+            sx={{ mb: 1.5 }}
           >
-            {needsRestore
-              ? pointUnlockBlockedByRevoke
-                ? 'Re-active: this grant becomes Approved. If paid period remains, access works; if expired, unlock with points (older grants stay revoked).'
-                : 'Point unlock already allowed. User must unlock with points (previous period expired).'
-              : isExpiredApprovedOnly
-                ? 'Paid period ended. You can still Revoke. Device and see-others are locked until the user unlocks again with points.'
-                : 'Change scope, add devices, or edit see-others for the selected grant (Open row).'}
-          </Typography>
-          {needsRestore && pointUnlockBlockedByRevoke && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Access revoked (suspended). Re-active applies to this grant: restore Approved when
-              expires_at is still valid (no points). If expired, allow point unlock only — older
-              grants are not revived.
-            </Alert>
-          )}
-          {needsRestore && !pointUnlockBlockedByRevoke && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Point unlock is allowed. Previous paid period ended — waiting for the user to unlock
-              with points.
-            </Alert>
-          )}
-          {isExpiredApprovedOnly && !needsRestore && (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              Paid period ended. Revoke is still available on grants below. Adding devices and
-              editing see-others stay locked until there is usable access again.
-            </Alert>
-          )}
-          <Divider sx={{ mb: 2 }} />
+            <Typography variant="h6">Manage access</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 520 }}>
+              {showReactivatePanel
+                ? openGrantRestorable
+                  ? `Re-active restores only #${accessId} (${deviceName}) — same paid period.`
+                  : 'Full suspend Re-active. Paid period ended — unlock with points only.'
+                : !openMatchesLiveScope && access.status === 'revoked'
+                  ? 'History row — open a matching Current-scope row to Re-active.'
+                : openSlotAlreadyUsable && access.status === 'revoked'
+                  ? 'History row — Current scope already has Approved access.'
+                : isExpiredApprovedOnly
+                  ? 'Paid period ended. Revoke still works; device manage stays locked.'
+                  : 'Revoked row → Re-active. Approved row → Add devices or change scope.'}
+            </Typography>
+          </Stack>
 
-          <Grid container spacing={2} columnSpacing={{ xs: 2, md: 6 }} alignItems="stretch">
-            <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+          {(openGrantRestorable ||
+            (needsRestore && pointUnlockBlockedByRevoke && openMatchesLiveScope) ||
+            (!openMatchesLiveScope && access.status === 'revoked') ||
+            (openMatchesLiveScope && openSlotAlreadyUsable && access.status === 'revoked') ||
+            (needsRestore &&
+              !pointUnlockBlockedByRevoke &&
+              !openGrantRestorable &&
+              openMatchesLiveScope) ||
+            (isExpiredApprovedOnly && !needsRestore)) && (
+            <Box sx={{ mb: 1.5 }}>
+              {openGrantRestorable && (
+                <Alert severity="warning" sx={{ py: 0.5 }}>
+                  Revoked · Re-active restores only #{accessId} ({deviceName}) — no points.
+                </Alert>
+              )}
+              {!openGrantRestorable &&
+                needsRestore &&
+                pointUnlockBlockedByRevoke &&
+                openMatchesLiveScope && (
+                <Alert severity="warning" sx={{ py: 0.5 }}>
+                  Suspended · Re-active allows point unlock only (paid period ended).
+                </Alert>
+              )}
+              {!openMatchesLiveScope && access.status === 'revoked' && (
+                <Alert severity="info" sx={{ py: 0.5 }}>
+                  History row (current scope is{' '}
+                  {liveScope === 'user-device' ? 'user+device' : 'Any-device'}). Badge / Re-active
+                  stay off here.
+                </Alert>
+              )}
+              {openMatchesLiveScope &&
+                openSlotAlreadyUsable &&
+                access.status === 'revoked' && (
+                <Alert severity="info" sx={{ py: 0.5 }}>
+                  Current scope already Approved — this older revoked row is history only.
+                </Alert>
+              )}
+              {needsRestore &&
+                !pointUnlockBlockedByRevoke &&
+                !openGrantRestorable &&
+                openMatchesLiveScope && (
+                <Alert severity="info" sx={{ py: 0.5 }}>
+                  Point unlock is allowed. Waiting for the user to unlock with points.
+                </Alert>
+              )}
+              {isExpiredApprovedOnly && !needsRestore && (
+                <Alert severity="warning" sx={{ py: 0.5 }}>
+                  Paid period ended. Revoke still available; manage devices after a new unlock.
+                </Alert>
+              )}
+            </Box>
+          )}
+
+          <Grid container spacing={2} alignItems="stretch">
+            <Grid item xs={12} md={6}>
               <Box
                 sx={{
+                  height: '100%',
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
                   display: 'flex',
                   flexDirection: 'column',
-                  width: '100%',
-                  flex: 1,
+                  gap: 1.25,
                 }}
               >
-              {hasUserOnlyApproved ? (
+              {showReactivatePanel ? (
                 <>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Re-active · #{accessId}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {openGrantRestorable
+                      ? `Restore ${deviceName} with the same paid period. No points.`
+                      : `Paid period ended for #${accessId}. Unlock with points only.`}
+                  </Typography>
+                  {(openGrantRestorable || pointUnlockBlockedByRevoke) ? (
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      disabled={busy}
+                      sx={{ alignSelf: 'flex-start', mt: 0.5 }}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          type: 'reactivate_point_unlock',
+                          targetId: accessId,
+                        })
+                      }
+                    >
+                      Re-active
+                    </Button>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Already re-activated. If not Approved yet, user must unlock with points.
+                    </Typography>
+                  )}
+                </>
+              ) : hasUserOnlyApproved ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={700}>
                     Switch to selected devices
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}
-                  >
-                    Revokes Any-device and grants only the devices you pick. Unselected phones lose
-                    access. No points charged.
+                  <Typography variant="body2" color="text.secondary">
+                    Revokes Any-device. Only picked phones keep access. No points.
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    display="block"
-                    sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}
-                  >
-                    Registered: {registeredDevices.length}
-                  </Typography>
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={`Registered: ${registeredDevices.length}`}
+                    />
+                  </Stack>
                   {registeredDevices.length === 0 ? (
-                    <Typography
-                      variant="body2"
-                      color="warning.main"
-                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
-                    >
-                      No registered devices. User must log in from the app once so devices appear in
-                      user_devices.
-                    </Typography>
+                    <Alert severity="warning" sx={{ py: 0.5 }}>
+                      No registered devices. User must log in from the app once.
+                    </Alert>
                   ) : (
-                    <Box
-                      sx={{
-                        mt: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1.5,
-                        alignItems: 'flex-start',
-                      }}
-                    >
+                    <>
                       <Autocomplete
                         multiple
                         options={registeredDevices}
@@ -714,6 +1037,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         variant="contained"
                         color="warning"
                         disabled={busy || selectedDevices.length === 0}
+                        sx={{ alignSelf: 'flex-start' }}
                         onClick={() => {
                           if (selectedDevices.length === 0) {
                             setDeviceError('Select at least one device.');
@@ -729,137 +1053,104 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       >
                         Switch to selected devices
                       </Button>
-                    </Box>
-                  )}
-                </>
-              ) : needsRestore ? (
-                <>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-                    Re-active
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
-                  >
-                    If this grant’s paid period is still valid, restores it (and same-batch devices).
-                    If expired, allows unlock with points — does not revive older grants.
-                  </Typography>
-                  {pointUnlockBlockedByRevoke ? (
-                    <Button
-                      variant="contained"
-                      color="warning"
-                      disabled={busy}
-                      onClick={() =>
-                        setConfirmState({
-                          open: true,
-                          type: 'reactivate_point_unlock',
-                          targetId: accessId,
-                        })
-                      }
-                    >
-                      Re-active
-                    </Button>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      Already re-activated. If access is not Approved yet, user must unlock with
-                      points.
-                    </Typography>
+                    </>
                   )}
                 </>
               ) : !hasUsableApproved ? (
                 <>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700}>
                     Device management locked
                   </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
-                  >
-                    Paid period ended. Use Revoke on a grant below if needed. User must unlock with
-                    points for a new period before devices can be managed again.
+                  <Typography variant="body2" color="text.secondary">
+                    Paid period ended. User must unlock with points before devices can be managed
+                    again.
                   </Typography>
                 </>
               ) : (
                 <>
-                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700}>
                     Add another device
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    display="block"
-                    sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}
-                  >
-                    Registered: {registeredDevices.length} · Approved:{' '}
-                    {approvedDeviceGrantCount} · Available: {addableDevices.length}
-                  </Typography>
-                  {addDeviceBlockedReason && (
-                    <Typography
-                      variant="body2"
-                      color="warning.main"
-                      sx={{ mb: 1.5, p: 1.5, bgcolor: 'warning.50', borderRadius: 1 }}
-                    >
-                      {addDeviceBlockedReason}
-                    </Typography>
-                  )}
-                  <Box
-                    sx={{
-                      mt: 'auto',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1.5,
-                      alignItems: 'flex-start',
-                      mb: canConvertToAny ? 1.5 : 0,
-                    }}
-                  >
-                    <Autocomplete
-                      multiple
-                      options={addableDevices}
-                      value={selectedDevices}
-                      onChange={(_e, value) => {
-                        setSelectedDevices(value);
-                        if (value.length > 0) setDeviceError(null);
-                      }}
-                      inputValue={deviceSearch}
-                      onInputChange={(_e, value, reason) => {
-                        if (reason === 'input' || reason === 'clear') {
-                          setDeviceSearch(value);
-                        }
-                      }}
-                      filterOptions={filterDevices}
-                      getOptionLabel={getDeviceSelectLabel}
-                      isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
-                      disabled={busy || addableDevices.length === 0}
-                      openOnFocus
-                      disableCloseOnSelect
-                      sx={{ width: '100%' }}
-                      ListboxProps={{
-                        style: { maxHeight: 220 },
-                      }}
-                      renderOption={(props, option) => (
-                        <li {...props} key={option.device_id}>
-                          {getDeviceSelectLabel(option)}
-                        </li>
-                      )}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          size="small"
-                          label="Devices to grant"
-                          placeholder={
-                            addableDevices.length === 0
-                              ? 'No devices available to add'
-                              : 'Search or pick devices…'
-                          }
-                          error={!!deviceError}
-                          helperText={deviceError || undefined}
-                          FormHelperTextProps={
-                            deviceError
-                              ? { sx: { color: 'error.main', mx: 0 } }
-                              : undefined
-                          }
-                        />
-                      )}
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      label={`Registered: ${registeredDevices.length}`}
                     />
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      label={`Approved: ${approvedDeviceGrantCount}`}
+                    />
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={addableDevices.length > 0 ? 'primary' : 'default'}
+                      label={`Available: ${addableDevices.length}`}
+                    />
+                  </Stack>
+                  {addDeviceBlockedReason && (
+                    <Alert severity="warning" sx={{ py: 0.5 }}>
+                      {addDeviceBlockedReason}
+                    </Alert>
+                  )}
+                  <Autocomplete
+                    multiple
+                    options={addableDevices}
+                    value={selectedDevices}
+                    onChange={(_e, value) => {
+                      setSelectedDevices(value);
+                      if (value.length > 0) setDeviceError(null);
+                    }}
+                    inputValue={deviceSearch}
+                    onInputChange={(_e, value, reason) => {
+                      if (reason === 'input' || reason === 'clear') {
+                        setDeviceSearch(value);
+                      }
+                    }}
+                    filterOptions={filterDevices}
+                    getOptionLabel={getDeviceSelectLabel}
+                    isOptionEqualToValue={(a, b) => a.device_id === b.device_id}
+                    disabled={busy || addableDevices.length === 0}
+                    openOnFocus
+                    disableCloseOnSelect
+                    sx={{ width: '100%' }}
+                    ListboxProps={{
+                      style: { maxHeight: 220 },
+                    }}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.device_id}>
+                        {getDeviceSelectLabel(option)}
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        label="Devices to grant"
+                        placeholder={
+                          addableDevices.length === 0
+                            ? 'No devices available to add'
+                            : 'Search or pick devices…'
+                        }
+                        error={!!deviceError}
+                        helperText={deviceError || undefined}
+                        FormHelperTextProps={
+                          deviceError
+                            ? { sx: { color: 'error.main', mx: 0 } }
+                            : undefined
+                        }
+                      />
+                    )}
+                  />
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                    useFlexGap
+                    flexWrap="wrap"
+                    sx={{ mt: 0.25 }}
+                  >
                     <Button
                       variant="contained"
                       disabled={busy || selectedDevices.length === 0}
@@ -867,93 +1158,86 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     >
                       Add devices
                     </Button>
-                  </Box>
-                  {canConvertToAny && (
-                    <Button
-                      sx={{ display: 'block' }}
-                      variant="outlined"
-                      color="warning"
-                      disabled={busy}
-                      onClick={() =>
-                        setConfirmState({
-                          open: true,
-                          type: 'convert_any',
-                          targetId: accessId,
-                        })
-                      }
-                    >
-                      Change to Any Device type
-                    </Button>
-                  )}
+                    {canConvertToAny && (
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        disabled={busy}
+                        onClick={() =>
+                          setConfirmState({
+                            open: true,
+                            type: 'convert_any',
+                            targetId: accessId,
+                          })
+                        }
+                      >
+                        Change to Any Device type
+                      </Button>
+                    )}
+                  </Stack>
                 </>
               )}
               </Box>
             </Grid>
 
-            <Grid item xs={12} md={6} sx={{ display: 'flex' }}>
+            <Grid item xs={12} md={6}>
               <Box
                 sx={{
+                  height: '100%',
+                  p: 2,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
                   display: 'flex',
                   flexDirection: 'column',
-                  width: '100%',
-                  flex: 1,
+                  gap: 1.25,
                 }}
               >
-              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+              <Typography variant="subtitle1" fontWeight={700}>
                 See-others (map visibility)
               </Typography>
-              <Typography
-                variant="body2"
-                sx={{ mb: 1.5, color: 'primary.main', fontWeight: 600 }}
-              >
+              <Typography variant="body2" color="text.secondary">
                 {hasUsableApproved
                   ? 'Other users whose notes/pins this person may see. Not tied to a device.'
-                  : 'Locked while paid period has ended. Revoke is still allowed on grants below.'}
+                  : 'Locked while paid period has ended. Revoke is still allowed below.'}
               </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1.5,
-                  alignItems: 'flex-start',
+              <Autocomplete
+                multiple
+                options={seeOthersOptions}
+                value={seeOthersUsers}
+                onChange={(_e, value) => setSeeOthersUsers(value)}
+                inputValue={seeOthersSearch}
+                onInputChange={(_e, value) => setSeeOthersSearch(value)}
+                filterOptions={filterActiveUsers}
+                loading={usersLoading}
+                getOptionLabel={getUserSelectLabel}
+                isOptionEqualToValue={(a, b) => a.id === b.id}
+                disabled={busy || !hasUsableApproved}
+                openOnFocus
+                disableCloseOnSelect
+                sx={{ width: '100%' }}
+                ListboxProps={{
+                  style: { maxHeight: 220 },
                 }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Visible users"
+                    placeholder="Search name or phone…"
+                  />
+                )}
+              />
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={busy || !hasUsableApproved || !hasSeeOthersChanges}
+                sx={{ alignSelf: 'flex-start' }}
+                onClick={() => void handleSaveSeeOthers()}
               >
-                <Autocomplete
-                  multiple
-                  options={seeOthersOptions}
-                  value={seeOthersUsers}
-                  onChange={(_e, value) => setSeeOthersUsers(value)}
-                  inputValue={seeOthersSearch}
-                  onInputChange={(_e, value) => setSeeOthersSearch(value)}
-                  filterOptions={filterActiveUsers}
-                  loading={usersLoading}
-                  getOptionLabel={getUserSelectLabel}
-                  isOptionEqualToValue={(a, b) => a.id === b.id}
-                  disabled={busy || !hasUsableApproved}
-                  openOnFocus
-                  disableCloseOnSelect
-                  sx={{ width: '100%' }}
-                  ListboxProps={{
-                    style: { maxHeight: 220 },
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      size="small"
-                      label="Visible users"
-                      placeholder="Search name or phone…"
-                    />
-                  )}
-                />
-                <Button
-                  variant="contained"
-                  startIcon={<SaveIcon />}
-                  disabled={busy || !hasUsableApproved || !hasSeeOthersChanges}
-                  onClick={() => void handleSaveSeeOthers()}
-                >
-                  Save see-others
-                </Button>
-              </Box>
+                Save see-others
+              </Button>
               </Box>
             </Grid>
           </Grid>
@@ -962,12 +1246,79 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
       <Card>
         <CardContent>
-          <Typography variant="h6" gutterBottom>
-            All device grants for this user
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            Click a row to open grant details and manage access in a popup.
-          </Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            justifyContent="space-between"
+            sx={{ mb: 1.5 }}
+          >
+            <Typography variant="h6">All device grants for this user</Typography>
+            <Chip
+              size="small"
+              color={
+                liveScope === 'any-device'
+                  ? 'primary'
+                  : liveScope === 'user-device'
+                    ? 'secondary'
+                    : 'default'
+              }
+              variant="outlined"
+              label={
+                liveScope === 'any-device'
+                  ? 'Current scope: Any-device'
+                  : liveScope === 'user-device'
+                    ? 'Current scope: user+device'
+                    : 'Current scope: none'
+              }
+            />
+          </Stack>
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap="wrap"
+            alignItems="center"
+            sx={{ mb: 1.5 }}
+          >
+            <Chip
+              size="small"
+              variant="outlined"
+              icon={
+                <Box
+                  component="span"
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: 'success.main',
+                    ml: 0.75,
+                  }}
+                />
+              }
+              label="Allowed"
+            />
+            <Chip
+              size="small"
+              variant="outlined"
+              icon={
+                <Box
+                  component="span"
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: 'warning.main',
+                    ml: 0.75,
+                  }}
+                />
+              }
+              label="Re-active"
+            />
+            <Typography variant="caption" color="text.secondary">
+              Click a row to switch · Info for grant details
+            </Typography>
+          </Stack>
           <Divider sx={{ mb: 2 }} />
           <TableContainer sx={{ maxHeight: { xs: 480, md: 640 } }}>
             <Table size="small" stickyHeader>
@@ -985,38 +1336,139 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               <TableBody>
                 {relatedGrants.map((row: PropertyNoteAccessRequest) => {
                   const isCurrent = row.id === accessId;
+                  const isAllowed = isUsableApprovedGrant(row);
+                  const rowIsAnyDevice = row.device_id === null;
+                  /**
+                   * Restorable revoked = still in paid period → Re-active target.
+                   */
+                  const isRestorableRevoked =
+                    row.status === 'revoked' && !isExpiresAtPast(row.expires_at);
+                  /**
+                   * Any-device live → only the live Any-device row.
+                   * user+device live → only live focus row for that device_id.
+                   */
+                  const deviceFocusId = row.device_id
+                    ? liveDeviceFocusIdByDeviceId.get(row.device_id)
+                    : undefined;
+                  const matchesLiveScope =
+                    liveScope === 'any-device'
+                      ? row.id === liveAnyDeviceGrantId
+                      : liveScope === 'user-device'
+                        ? !rowIsAnyDevice && row.id === deviceFocusId
+                        : isCurrent;
+                  const sameSlotAlreadyUsable = rowIsAnyDevice
+                    ? hasUserOnlyApproved && row.id !== liveAnyDeviceGrantId
+                    : relatedGrants.some(
+                        (g) =>
+                          isUsableApprovedGrant(g) &&
+                          g.device_id === row.device_id &&
+                          g.id !== row.id
+                      );
+                  const showOnlineIcon =
+                    matchesLiveScope &&
+                    (isAllowed ||
+                      ((isCurrent || isRestorableRevoked) && !sameSlotAlreadyUsable));
+                  const badgeTone: 'allowed' | 'restorable' = isAllowed
+                    ? 'allowed'
+                    : 'restorable';
+                  const badgeLabel = isAllowed
+                    ? isCurrent
+                      ? 'Current open + allowed (live scope)'
+                      : 'Allowed grant (live scope)'
+                    : isRestorableRevoked
+                      ? isCurrent
+                        ? 'Current open + restorable revoked'
+                        : 'Restorable revoked (Re-active target)'
+                      : 'Current open (live scope)';
+                  /**
+                   * Approve / Reject / Revoke only on live focus rows.
+                   */
+                  const isActionableRow =
+                    liveScope === 'any-device'
+                      ? row.id === liveAnyDeviceGrantId
+                      : liveScope === 'user-device'
+                        ? !rowIsAnyDevice && row.id === deviceFocusId
+                        : true;
                   const rowName = resolveDeviceName(row.device_id, devicesById);
                   const rowIdFull = formatDeviceLabel(row.device_id);
                   return (
                     <TableRow
                       key={row.id}
-                      selected={isCurrent && grantModalOpen}
+                      selected={isCurrent}
                       hover
-                      sx={{ cursor: 'pointer' }}
+                      sx={{
+                        cursor: 'pointer',
+                        ...(isCurrent
+                          ? {
+                              borderLeft: 4,
+                              borderLeftColor: showOnlineIcon
+                                ? isAllowed
+                                  ? 'success.main'
+                                  : 'warning.main'
+                                : 'divider',
+                              bgcolor: 'action.selected',
+                            }
+                          : {
+                              borderLeft: 4,
+                              borderLeftColor: 'transparent',
+                            }),
+                      }}
                       onClick={() => {
-                        setGrantModalOpen(true);
                         if (!isCurrent) {
                           navigate(`/property-note-access-requests/${row.id}`);
                         }
                       }}
                     >
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                          <Typography variant="body2">#{row.id}</Typography>
-                          {isCurrent && grantModalOpen && (
-                            <Chip
-                              label="Open"
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                            />
-                          )}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.75,
+                            minHeight: 28,
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ minWidth: 28 }}>
+                            #{row.id}
+                          </Typography>
+                          <Chip
+                            label="Open"
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{
+                              height: 22,
+                              visibility: isCurrent ? 'visible' : 'hidden',
+                            }}
+                          />
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {rowName}
-                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            minHeight: 24,
+                          }}
+                        >
+                          <Typography variant="body2" fontWeight={600}>
+                            {rowName}
+                          </Typography>
+                          <Box
+                            sx={{
+                              width: 15,
+                              height: 15,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {showOnlineIcon ? (
+                              <ScopeDot tone={badgeTone} label={badgeLabel} />
+                            ) : null}
+                          </Box>
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Tooltip title={rowIdFull}>
@@ -1055,25 +1507,55 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       </TableCell>
                       <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                         {(() => {
-                          const canApproveRow = row.status === 'pending';
-                          const canRejectRow = row.status === 'pending';
-                          const canRevokeRow = row.status === 'approved';
-                          const approveTitle = canApproveRow
-                            ? 'Approve (send to approvers)'
-                            : row.status === 'admin_approved'
-                              ? 'Waiting for Approver'
-                              : 'Only pending requests can be approved';
-                          const rejectTitle = canRejectRow
-                            ? 'Reject'
-                            : row.status === 'admin_approved'
-                              ? 'Waiting for Approver — Admin cannot reject'
-                              : 'Only pending requests can be rejected';
-                          const revokeTitle = canRevokeRow
-                            ? 'Revoke Access (no point refund)'
-                            : 'Only approved access can be revoked';
+                          const canApproveRow =
+                            isActionableRow && row.status === 'pending';
+                          const canRejectRow =
+                            isActionableRow && row.status === 'pending';
+                          const canRevokeRow =
+                            isActionableRow && row.status === 'approved';
+                          const historyActionTitle =
+                            liveScope === 'any-device'
+                              ? 'History row — only the live Any-device grant can use this action'
+                              : 'History row — live scope does not match';
+                          const approveTitle = !isActionableRow
+                            ? historyActionTitle
+                            : canApproveRow
+                              ? 'Approve (send to approvers)'
+                              : row.status === 'admin_approved'
+                                ? 'Waiting for Approver'
+                                : 'Only pending requests can be approved';
+                          const rejectTitle = !isActionableRow
+                            ? historyActionTitle
+                            : canRejectRow
+                              ? 'Reject'
+                              : row.status === 'admin_approved'
+                                ? 'Waiting for Approver — Admin cannot reject'
+                                : 'Only pending requests can be rejected';
+                          const revokeTitle = !isActionableRow
+                            ? historyActionTitle
+                            : canRevokeRow
+                              ? 'Revoke Access (no point refund)'
+                              : 'Only approved access can be revoked';
 
                           return (
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.25 }}>
+                              <Tooltip title="Grant details">
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => {
+                                    setGrantModalOpen(true);
+                                    if (!isCurrent) {
+                                      navigate(
+                                        `/property-note-access-requests/${row.id}`
+                                      );
+                                    }
+                                  }}
+                                  aria-label="Grant details"
+                                >
+                                  <InfoIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
                               <Tooltip title={approveTitle}>
                                 <span>
                                   <IconButton
@@ -1381,7 +1863,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 : confirmState.type === 'convert_any'
                   ? 'Change to Any Device type? Device-specific grants will be revoked. All phones unlock. Points are not charged.'
                   : confirmState.type === 'reactivate_point_unlock'
-                    ? 'Re-active this grant? If its paid period is still valid, restore Approved (same-batch devices too). If expired, allow point unlock only — do not revive older grants.'
+                    ? 'Re-active this revoked row only? Restores Approved if paid period is still valid (no points). Other Approved devices stay unchanged. If expired and fully suspended, allow point unlock only.'
                     : 'Revoke this approved access? Points are not refunded. Login stays active. See-others is kept for Re-active.'
         }
         action={

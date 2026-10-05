@@ -43,6 +43,10 @@ export interface PropertyNoteAccessRequest {
   device_name?: string | null;
   reject_reason: string | null;
   created_at: string | null;
+  /**
+   * ISO timestamp — used to detect latest live scope after revoke / scope switch.
+   */
+  updated_at?: string | null;
   admin_approved_at: string | null;
   approved_at: string | null;
   unlocked_at: string | null;
