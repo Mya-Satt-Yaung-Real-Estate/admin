@@ -7,7 +7,8 @@ export type PropertyNoteAccessStatus =
   | 'admin_approved'
   | 'approved'
   | 'rejected'
-  | 'revoked';
+  | 'revoked'
+  | 'expired';
 
 export interface PropertyNoteAccessUser {
   id: number;
@@ -74,6 +75,7 @@ export interface PropertyNoteAccessUserSummary {
     approved: number;
     rejected: number;
     revoked: number;
+    expired: number;
   };
   scope_label: string;
   has_any_device: boolean;
@@ -188,6 +190,7 @@ export interface PropertyNoteAccessStatistics {
   approved: number;
   rejected: number;
   revoked: number;
+  expired: number;
 }
 
 export interface PropertyNoteAccessRequestFilters {

@@ -59,6 +59,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({
         admin_approved: 'Admin Approved',
         under_review: 'Under Review',
         revoked: 'Revoked',
+        expired: 'Expired',
         // Booking statuses
         accepted: 'Accepted',
         rescheduled: 'Rescheduled',
@@ -217,6 +218,12 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           border: '#7C3AED',
           hoverBg: '#F5F3FF',
           hoverBorder: '#5B21B6',
+        },
+        expired: {
+          text: '#6B7280', // Gray — paid period ended
+          border: '#6B7280',
+          hoverBg: '#F9FAFB',
+          hoverBorder: '#4B5563',
         },
         deleted: {
           text: '#DC2626', // Red

@@ -175,7 +175,7 @@ const formatActionBy = (row: PropertyNoteAccessRequest): string => {
     if (row.admin?.name?.trim()) return row.admin.name.trim();
     return '—';
   }
-  if (row.status === 'revoked') {
+  if (row.status === 'revoked' || row.status === 'expired') {
     return row.admin?.name?.trim() || '—';
   }
   return '—';
@@ -398,13 +398,23 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   );
 
   /**
-   * Most recently touched approved|revoked grant → latest mode when nothing is usable.
-   * After revoke Any-device, that row wins over older revoked device rows (by updated_at).
+   * Live-scope candidates only — never expired / past-approved (those are history).
+   * Restorable = revoked with null or future expires_at.
+   */
+  const isLiveScopeCandidate = (grant: PropertyNoteAccessRequest): boolean => {
+    if (isUsableApprovedGrant(grant)) return true;
+    if (grant.status !== 'revoked') return false;
+    return !isExpiresAtPast(grant.expires_at);
+  };
+
+  /**
+   * Most recently touched usable Approved or restorable Revoked → mode when nothing usable.
+   * Expired Any must never win Current scope (deadlock fix).
    */
   const latestScopeGrant = useMemo(() => {
     let latest: PropertyNoteAccessRequest | null = null;
     for (const grant of relatedGrants) {
-      if (grant.status !== 'approved' && grant.status !== 'revoked') continue;
+      if (!isLiveScopeCandidate(grant)) continue;
       if (!latest || isNewerGrant(grant, latest)) {
         latest = grant;
       }
@@ -413,7 +423,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   }, [relatedGrants]);
 
   /**
-   * Live scope: usable Approved wins; else most recently touched approved|revoked grant.
+   * Live scope: usable Approved wins; else most recent restorable Revoked; else none.
    */
   const liveScope = useMemo((): 'any-device' | 'user-device' | 'none' => {
     if (hasUserOnlyApproved) return 'any-device';
@@ -423,14 +433,14 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   }, [approvedDeviceGrantCount, hasUserOnlyApproved, latestScopeGrant]);
 
   /**
-   * Single live Any-device row: usable Approved, else most recently touched Any-device.
+   * Single live Any-device row: usable Approved, else most recent restorable revoked Any.
    */
   const liveAnyDeviceGrantId = useMemo(() => {
     let usable: PropertyNoteAccessRequest | null = null;
     let latestAny: PropertyNoteAccessRequest | null = null;
     for (const grant of relatedGrants) {
       if (grant.device_id !== null) continue;
-      if (grant.status !== 'approved' && grant.status !== 'revoked') continue;
+      if (!isLiveScopeCandidate(grant)) continue;
       if (isUsableApprovedGrant(grant)) {
         usable = grant;
       }
@@ -442,15 +452,15 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   }, [relatedGrants]);
 
   /**
-   * Per device_id: usable Approved wins, else most recently touched approved|revoked id.
-   * Older duplicate device rows stay history-only (badge / action / Re-active off).
+   * Per device_id: usable Approved wins, else most recent restorable revoked id.
+   * Expired / past rows stay history-only (badge / action / Re-active off).
    */
   const liveDeviceFocusIdByDeviceId = useMemo(() => {
     const latestGrant = new Map<string, PropertyNoteAccessRequest>();
     const usableId = new Map<string, number>();
     for (const grant of relatedGrants) {
       if (!grant.device_id) continue;
-      if (grant.status !== 'approved' && grant.status !== 'revoked') continue;
+      if (!isLiveScopeCandidate(grant)) continue;
       const prev = latestGrant.get(grant.device_id);
       if (!prev || isNewerGrant(grant, prev)) {
         latestGrant.set(grant.device_id, grant);
@@ -509,11 +519,15 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   }, [relatedGrants, hasUsableApproved]);
 
   /**
-   * Approved status remains but paid period ended — revoke only (no device / see-others).
+   * Approved status remains but paid period ended — or already stamped expired.
    */
   const isExpiredApprovedOnly = useMemo(() => {
     if (hasUsableApproved) return false;
-    return relatedGrants.some((g) => g.status === 'approved' && isExpiresAtPast(g.expires_at));
+    return relatedGrants.some(
+      (g) =>
+        g.status === 'expired' ||
+        (g.status === 'approved' && isExpiresAtPast(g.expires_at))
+    );
   }, [relatedGrants, hasUsableApproved]);
 
   /**
@@ -523,36 +537,52 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
   /**
    * Open revoked row with valid paid period → Re-active this row only.
-   * Any-device live: only the live Any-device row (not older Any-device, not devices).
+   * When revoke-suspended and no usable Approved, allow restorable Revoked rows even if
+   * Current scope badge is still catching up (deadlock escape).
    */
   const openGrantRestorable = useMemo(() => {
     if (!access || access.status !== 'revoked') return false;
     if (isExpiresAtPast(access.expires_at)) return false;
 
     const openIsAnyDevice = access.device_id === null;
-    if (liveScope === 'user-device' && openIsAnyDevice) {
-      return false;
-    }
-    if (liveScope === 'any-device' && !openIsAnyDevice) {
-      return false;
-    }
+    const suspendEscape =
+      pointUnlockBlockedByRevoke && !hasUsableApproved;
 
-    /**
-     * Any-device live: only the current live Any-device grant id.
-     */
-    if (liveScope === 'any-device' && access.id !== liveAnyDeviceGrantId) {
-      return false;
-    }
+    if (!suspendEscape) {
+      if (liveScope === 'user-device' && openIsAnyDevice) {
+        return false;
+      }
+      if (liveScope === 'any-device' && !openIsAnyDevice) {
+        return false;
+      }
 
-    /**
-     * user+device live: only the live focus row for that device_id.
-     */
-    if (
-      liveScope === 'user-device' &&
+      /**
+       * Any-device live: only the current live Any-device grant id.
+       */
+      if (liveScope === 'any-device' && access.id !== liveAnyDeviceGrantId) {
+        return false;
+      }
+
+      /**
+       * user+device live: only the live focus row for that device_id.
+       */
+      if (
+        liveScope === 'user-device' &&
+        !openIsAnyDevice &&
+        access.device_id &&
+        access.id !== liveDeviceFocusIdByDeviceId.get(access.device_id)
+      ) {
+        return false;
+      }
+    } else if (
       !openIsAnyDevice &&
       access.device_id &&
-      access.id !== liveDeviceFocusIdByDeviceId.get(access.device_id)
+      access.id !== liveDeviceFocusIdByDeviceId.get(access.device_id) &&
+      liveDeviceFocusIdByDeviceId.has(access.device_id)
     ) {
+      /**
+       * Still prefer live focus per device when multiple revoked rows exist.
+       */
       return false;
     }
 
@@ -578,10 +608,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     return true;
   }, [
     access,
+    hasUsableApproved,
     hasUserOnlyApproved,
     liveAnyDeviceGrantId,
     liveDeviceFocusIdByDeviceId,
     liveScope,
+    pointUnlockBlockedByRevoke,
     relatedGrants,
   ]);
 
@@ -609,9 +641,30 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     return access.id === liveDeviceFocusIdByDeviceId.get(access.device_id);
   }, [access, liveAnyDeviceGrantId, liveDeviceFocusIdByDeviceId, liveScope]);
 
+  /**
+   * Open grant is past paid period (stamped expired or approved+past).
+   */
+  const openIsExpired = useMemo(() => {
+    if (!access) return false;
+    if (access.status === 'expired') return true;
+    return access.status === 'approved' && isExpiresAtPast(access.expires_at);
+  }, [access]);
+
+  /**
+   * Expired open + revoke suspend → Re-active still allowed (API restores a revoked
+   * row with valid period, or clears Path B block when all periods ended).
+   */
+  const canReactivateFromExpiredOpen =
+    openIsExpired && pointUnlockBlockedByRevoke && !hasUsableApproved;
+
+  /**
+   * Never restore an expired row itself — but do show Re-active to unstick suspend.
+   */
   const showReactivatePanel =
     openGrantRestorable ||
-    (needsRestore &&
+    canReactivateFromExpiredOpen ||
+    (!openIsExpired &&
+      needsRestore &&
       pointUnlockBlockedByRevoke &&
       openMatchesLiveScope &&
       !openSlotAlreadyUsable);
@@ -791,7 +844,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
   const canApprove = access.status === 'pending';
   const canReject = access.status === 'pending';
-  const canRevoke = access.status === 'approved';
+  const canRevoke =
+    access.status === 'approved' && !isExpiresAtPast(access.expires_at);
 
   const deviceName = resolveDeviceName(access.device_id, devicesById);
   const deviceIdFull = formatDeviceLabel(access.device_id);
@@ -803,8 +857,10 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         ? 'Waiting for Approver. Admin cannot approve/reject/revoke here.'
         : access.status === 'approved'
           ? isExpiresAtPast(access.expires_at)
-            ? 'Paid period ended. Revoke is still allowed. Device and see-others stay locked until a new usable unlock.'
+            ? 'Paid period ended. This grant will show as Expired — no Revoke. User must unlock with points for a new period.'
             : 'Access is active. Manage devices and see-others on the right.'
+          : access.status === 'expired'
+            ? 'Expired. No actions on this row. User must unlock with points for a new period (new grant row).'
           : access.status === 'revoked'
             ? openGrantRestorable
               ? `Access revoked. Re-active restores only this row #${accessId} (${deviceName}).`
@@ -856,33 +912,50 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               {showReactivatePanel
                 ? openGrantRestorable
                   ? `Re-active restores only #${accessId} (${deviceName}) — same paid period.`
-                  : 'Full suspend Re-active. Paid period ended — unlock with points only.'
+                  : canReactivateFromExpiredOpen
+                    ? 'Suspended · Re-active restores a Revoked grant with remaining paid period, or allows point unlock.'
+                    : 'Full suspend Re-active. Paid period ended — unlock with points only.'
+                : openIsExpired
+                  ? 'Expired row — view-only for Revoke. Use Re-active if suspend is still on, or unlock with points.'
                 : !openMatchesLiveScope && access.status === 'revoked'
                   ? 'History row — open a matching Current-scope row to Re-active.'
                 : openSlotAlreadyUsable && access.status === 'revoked'
                   ? 'History row — Current scope already has Approved access.'
                 : isExpiredApprovedOnly
-                  ? 'Paid period ended. Revoke still works; device manage stays locked.'
+                  ? 'Paid period ended. Expired rows are view-only. User unlocks with points for a new period.'
                   : 'Revoked row → Re-active. Approved row → Add devices or change scope.'}
             </Typography>
           </Stack>
 
-          {(openGrantRestorable ||
-            (needsRestore && pointUnlockBlockedByRevoke && openMatchesLiveScope) ||
+          {(openIsExpired ||
+            openGrantRestorable ||
+            (needsRestore &&
+              pointUnlockBlockedByRevoke &&
+              openMatchesLiveScope &&
+              !openIsExpired) ||
             (!openMatchesLiveScope && access.status === 'revoked') ||
             (openMatchesLiveScope && openSlotAlreadyUsable && access.status === 'revoked') ||
             (needsRestore &&
               !pointUnlockBlockedByRevoke &&
               !openGrantRestorable &&
-              openMatchesLiveScope) ||
+              openMatchesLiveScope &&
+              !openIsExpired) ||
             (isExpiredApprovedOnly && !needsRestore)) && (
             <Box sx={{ mb: 1.5 }}>
-              {openGrantRestorable && (
+              {openIsExpired && (
+                <Alert severity="warning" sx={{ py: 0.5 }}>
+                  {canReactivateFromExpiredOpen
+                    ? 'Expired open + revoke suspend. Re-active below restores a Revoked grant still in paid period (or allows point unlock). This expired row stays view-only.'
+                    : 'Expired · view-only. No Revoke. User unlocks with points → new grant.'}
+                </Alert>
+              )}
+              {!openIsExpired && openGrantRestorable && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   Revoked · Re-active restores only #{accessId} ({deviceName}) — no points.
                 </Alert>
               )}
-              {!openGrantRestorable &&
+              {!openIsExpired &&
+                !openGrantRestorable &&
                 needsRestore &&
                 pointUnlockBlockedByRevoke &&
                 openMatchesLiveScope && (
@@ -904,7 +977,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   Current scope already Approved — this older revoked row is history only.
                 </Alert>
               )}
-              {needsRestore &&
+              {!openIsExpired &&
+                needsRestore &&
                 !pointUnlockBlockedByRevoke &&
                 !openGrantRestorable &&
                 openMatchesLiveScope && (
@@ -912,9 +986,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   Point unlock is allowed. Waiting for the user to unlock with points.
                 </Alert>
               )}
-              {isExpiredApprovedOnly && !needsRestore && (
+              {!openIsExpired && isExpiredApprovedOnly && !needsRestore && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
-                  Paid period ended. Revoke still available; manage devices after a new unlock.
+                  Paid period ended. Expired rows are view-only; manage devices after a new unlock.
                 </Alert>
               )}
             </Box>
@@ -943,9 +1017,13 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     {openGrantRestorable
                       ? `Restore ${deviceName} with the same paid period. No points.`
-                      : `Paid period ended for #${accessId}. Unlock with points only.`}
+                      : canReactivateFromExpiredOpen
+                        ? 'This open row is expired. Re-active restores another Revoked grant still in the paid period, or allows the user to unlock with points.'
+                        : `Paid period ended for #${accessId}. Unlock with points only.`}
                   </Typography>
-                  {(openGrantRestorable || pointUnlockBlockedByRevoke) ? (
+                  {(openGrantRestorable ||
+                    pointUnlockBlockedByRevoke ||
+                    canReactivateFromExpiredOpen) ? (
                     <Button
                       variant="contained"
                       color="warning"
@@ -967,13 +1045,24 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     </Typography>
                   )}
                 </>
+              ) : openIsExpired ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Expired · #{accessId}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    This grant is view-only. User unlocks with points for a new period (new
+                    grant). Open a matching Revoked row if Admin Re-active is needed first.
+                  </Typography>
+                </>
               ) : hasUserOnlyApproved ? (
                 <>
                   <Typography variant="subtitle1" fontWeight={700}>
                     Switch to selected devices
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Revokes Any-device. Only picked phones keep access. No points.
+                    Turns Any-device OFF (revoked). Only picked phones stay ON. One live
+                    scope. No points.
                   </Typography>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
                     <Chip
@@ -1062,8 +1151,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     Device management locked
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Paid period ended. User must unlock with points before devices can be managed
-                    again.
+                    Paid period ended. Expired grants are view-only. User unlocks with points
+                    before devices can be managed again.
                   </Typography>
                 </>
               ) : (
@@ -1174,6 +1263,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         Change to Any Device type
                       </Button>
                     )}
+                    {canConvertToAny && (
+                      <Typography variant="caption" color="text.secondary" sx={{ width: '100%' }}>
+                        Turns all phone grants OFF (revoked). Any-device becomes the only live
+                        scope.
+                      </Typography>
+                    )}
                   </Stack>
                 </>
               )}
@@ -1200,7 +1295,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 {hasUsableApproved
                   ? 'Other users whose notes/pins this person may see. Not tied to a device.'
-                  : 'Locked while paid period has ended. Revoke is still allowed below.'}
+                  : openIsExpired
+                    ? 'Locked while this grant is expired. Revoke is not available on expired rows.'
+                    : 'Locked while paid period has ended. Expired / ended grants are view-only.'}
               </Typography>
               <Autocomplete
                 multiple
@@ -1366,6 +1463,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       );
                   const showOnlineIcon =
                     matchesLiveScope &&
+                    row.status !== 'expired' &&
+                    !(row.status === 'approved' && isExpiresAtPast(row.expires_at)) &&
                     (isAllowed ||
                       ((isCurrent || isRestorableRevoked) && !sameSlotAlreadyUsable));
                   const badgeTone: 'allowed' | 'restorable' = isAllowed
@@ -1389,6 +1488,13 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       : liveScope === 'user-device'
                         ? !rowIsAnyDevice && row.id === deviceFocusId
                         : true;
+                  /**
+                   * Expired rows are view-only (no Approve / Reject / Revoke).
+                   */
+                  const canMutateRow =
+                    isActionableRow &&
+                    row.status !== 'expired' &&
+                    !(row.status === 'approved' && isExpiresAtPast(row.expires_at));
                   const rowName = resolveDeviceName(row.device_id, devicesById);
                   const rowIdFull = formatDeviceLabel(row.device_id);
                   return (
@@ -1508,34 +1614,37 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                         {(() => {
                           const canApproveRow =
-                            isActionableRow && row.status === 'pending';
+                            canMutateRow && row.status === 'pending';
                           const canRejectRow =
-                            isActionableRow && row.status === 'pending';
+                            canMutateRow && row.status === 'pending';
                           const canRevokeRow =
-                            isActionableRow && row.status === 'approved';
+                            canMutateRow && row.status === 'approved';
                           const historyActionTitle =
-                            liveScope === 'any-device'
+                            row.status === 'expired' ||
+                            (row.status === 'approved' && isExpiresAtPast(row.expires_at))
+                              ? 'Expired — no actions on this row'
+                              : liveScope === 'any-device'
                               ? 'History row — only the live Any-device grant can use this action'
                               : 'History row — live scope does not match';
-                          const approveTitle = !isActionableRow
+                          const approveTitle = !canMutateRow
                             ? historyActionTitle
                             : canApproveRow
                               ? 'Approve (send to approvers)'
                               : row.status === 'admin_approved'
                                 ? 'Waiting for Approver'
                                 : 'Only pending requests can be approved';
-                          const rejectTitle = !isActionableRow
+                          const rejectTitle = !canMutateRow
                             ? historyActionTitle
                             : canRejectRow
                               ? 'Reject'
                               : row.status === 'admin_approved'
                                 ? 'Waiting for Approver — Admin cannot reject'
                                 : 'Only pending requests can be rejected';
-                          const revokeTitle = !isActionableRow
+                          const revokeTitle = !canMutateRow
                             ? historyActionTitle
                             : canRevokeRow
                               ? 'Revoke Access (no point refund)'
-                              : 'Only approved access can be revoked';
+                              : 'Only usable approved access can be revoked';
 
                           return (
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.25 }}>
@@ -1812,7 +1921,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   title={
                     canRevoke
                       ? 'Revoke Access (no point refund)'
-                      : 'Only approved access can be revoked'
+                      : access.status === 'expired'
+                        ? 'Expired — no actions on this row'
+                        : 'Only usable approved access can be revoked'
                   }
                 >
                   <span>
@@ -1859,9 +1970,9 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
             : confirmState.type === 'reject'
               ? 'Reject this unlock request?'
               : confirmState.type === 'switch_devices'
-                ? `Revoke Any-device and grant only ${selectedDevices.length} selected device(s)? Unselected phones lose access. Points are not charged.`
+                ? `Turn Any-device OFF and keep only ${selectedDevices.length} selected phone(s) ON? Other phones are revoked. One live scope. No points.`
                 : confirmState.type === 'convert_any'
-                  ? 'Change to Any Device type? Device-specific grants will be revoked. All phones unlock. Points are not charged.'
+                  ? 'Turn all phone grants OFF (revoked) and turn Any-device ON? One live scope. No points.'
                   : confirmState.type === 'reactivate_point_unlock'
                     ? 'Re-active this revoked row only? Restores Approved if paid period is still valid (no points). Other Approved devices stay unchanged. If expired and fully suspended, allow point unlock only.'
                     : 'Revoke this approved access? Points are not refunded. Login stays active. See-others is kept for Re-active.'

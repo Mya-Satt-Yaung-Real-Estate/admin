@@ -92,6 +92,7 @@ const FILTER_FIELDS: FilterField[] = [
       { value: 'approved', label: 'Approved' },
       { value: 'rejected', label: 'Rejected' },
       { value: 'revoked', label: 'Revoked' },
+      { value: 'expired', label: 'Expired' },
     ],
   },
 ];
@@ -176,6 +177,12 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
         title: 'Revoked',
         value: statistics?.revoked ?? 0,
         color: 'secondary',
+        icon: <RevokeIcon />,
+      },
+      {
+        title: 'Expired',
+        value: statistics?.expired ?? 0,
+        color: 'warning',
         icon: <RevokeIcon />,
       },
     ],
@@ -394,9 +401,12 @@ const PropertyNoteAccessRequestListPage: React.FC = () => {
                     ? ('warning' as const)
                     : row.primary_status === 'approved'
                       ? ('success' as const)
-                      : row.primary_status === 'rejected' || row.primary_status === 'revoked'
-                        ? ('error' as const)
-                        : ('info' as const),
+                      : row.primary_status === 'expired'
+                        ? ('default' as const)
+                        : row.primary_status === 'rejected' ||
+                            row.primary_status === 'revoked'
+                          ? ('error' as const)
+                          : ('info' as const),
               }}
               actions={createMobileActions(row)}
             />
