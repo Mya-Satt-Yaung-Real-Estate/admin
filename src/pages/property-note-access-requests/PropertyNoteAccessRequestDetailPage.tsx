@@ -664,6 +664,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         await approveMutation.mutateAsync(confirmState.targetId);
         showSuccess('Request approved. Approvers notified.');
         setConfirmState({ open: false, type: 'approve', targetId: null });
+        setGrantModalOpen(false);
       } else if (confirmState.type === 'reject') {
         await rejectMutation.mutateAsync({
           id: confirmState.targetId,
@@ -671,10 +672,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         });
         showSuccess('Request rejected.');
         setConfirmState({ open: false, type: 'approve', targetId: null });
+        setGrantModalOpen(false);
       } else if (confirmState.type === 'revoke') {
         const revokedId = confirmState.targetId;
         await revokeMutation.mutateAsync(revokedId);
         setConfirmState({ open: false, type: 'approve', targetId: null });
+        setGrantModalOpen(false);
         showSuccess('Access revoked. Use Re-active on that Revoked row to restore (not Add devices).');
         if (revokedId !== accessId) {
           navigate(`/property-note-access-requests/${revokedId}`);
