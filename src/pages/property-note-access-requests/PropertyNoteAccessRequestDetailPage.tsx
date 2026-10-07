@@ -161,23 +161,12 @@ const isNewerGrant = (
 };
 
 /**
- * Action By — only 3 kinds: Approver name | Super Admin | System approved.
+ * Action By — status-agnostic: Approver → Admin → System approved.
  */
 const formatActionBy = (row: PropertyNoteAccessRequest): string => {
-  if (row.status === 'approved') {
-    if (row.approver?.name?.trim()) return row.approver.name.trim();
-    if (row.admin?.name?.trim()) return row.admin.name.trim();
-    if (row.source === 'points') return 'System approved';
-    return '—';
-  }
-  if (row.status === 'rejected') {
-    if (row.approver?.name?.trim()) return row.approver.name.trim();
-    if (row.admin?.name?.trim()) return row.admin.name.trim();
-    return '—';
-  }
-  if (row.status === 'revoked' || row.status === 'expired') {
-    return row.admin?.name?.trim() || '—';
-  }
+  if (row.approver?.name?.trim()) return row.approver.name.trim();
+  if (row.admin?.name?.trim()) return row.admin.name.trim();
+  if (row.source === 'points') return 'System approved';
   return '—';
 };
 
