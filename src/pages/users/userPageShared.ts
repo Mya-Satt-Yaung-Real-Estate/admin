@@ -180,7 +180,6 @@ export const DETAIL_ICON_SX = {
   location: { color: 'error.main' },
   description: { color: 'secondary.main' },
   home: { color: 'primary.main' },
-  map: { color: 'success.main' },
 } as const;
 
 export const detailListSx = {

@@ -408,20 +408,6 @@ const UserListPage: React.FC = () => {
       },
     },
     {
-      id: 'mapAccess',
-      label: 'Map',
-      render: (_value, user) => {
-        if (!user) return <Typography variant="body2">No data</Typography>;
-        const isEnabled = Boolean(user.map_pins_access);
-        return (
-          <Typography variant="body2" fontWeight={500} color={isEnabled ? 'success.main' : 'error.main'}>
-            {isEnabled ? 'Enabled' : 'Disabled'}
-          </Typography>
-        );
-      },
-      hidden: isMobile,
-    },
-    {
       id: 'verificationStatus',
       label: 'Verification Status',
       render: (_value, user) => {
@@ -654,10 +640,6 @@ const UserListPage: React.FC = () => {
                         : 'warning' as const,
                   }];
                 })(),
-                {
-                  label: user.map_pins_access ? 'Map: Enabled' : 'Map: Disabled',
-                  color: user.map_pins_access ? ('success' as const) : ('error' as const),
-                },
                 ...(user.user_type === 'company'
                   ? [{
                       label: user.company_profile?.show_on_homepage ? 'Homepage: Yes' : 'Homepage: No',

@@ -115,6 +115,28 @@ const resolveDeviceName = (
 };
 
 /**
+ * Resolve registered device model for a grant device_id.
+ */
+const resolveDeviceModel = (
+  deviceId: string | null | undefined,
+  devicesById: Map<string, PropertyNoteAccessGrantDevice>
+): string => {
+  if (!deviceId) return '-';
+  return devicesById.get(deviceId)?.device_model?.trim() || '-';
+};
+
+/**
+ * Resolve registered device platform for a grant device_id.
+ */
+const resolveDevicePlatform = (
+  deviceId: string | null | undefined,
+  devicesById: Map<string, PropertyNoteAccessGrantDevice>
+): string => {
+  if (!deviceId) return '-';
+  return devicesById.get(deviceId)?.platform?.trim() || '-';
+};
+
+/**
  * True when expires_at is set and already in the past.
  */
 const isExpiresAtPast = (expiresAt: string | null | undefined): boolean => {
@@ -800,6 +822,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
     access.status === 'approved' && !isExpiresAtPast(access.expires_at);
 
   const deviceName = resolveDeviceName(access.device_id, devicesById);
+  const deviceModel = resolveDeviceModel(access.device_id, devicesById);
+  const devicePlatform = resolveDevicePlatform(access.device_id, devicesById);
   const deviceIdFull = formatDeviceLabel(access.device_id);
 
   const statusHint =
@@ -1399,6 +1423,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                 <TableRow>
                   <TableCell>Grant</TableCell>
                   <TableCell>Device name</TableCell>
+                  <TableCell>Model</TableCell>
+                  <TableCell>Platform</TableCell>
                   <TableCell>Device Id</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Action By</TableCell>
@@ -1472,6 +1498,8 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                     row.status !== 'expired' &&
                     !(row.status === 'approved' && isExpiresAtPast(row.expires_at));
                   const rowName = resolveDeviceName(row.device_id, devicesById);
+                  const rowModel = resolveDeviceModel(row.device_id, devicesById);
+                  const rowPlatform = resolveDevicePlatform(row.device_id, devicesById);
                   const rowIdFull = formatDeviceLabel(row.device_id);
                   return (
                     <TableRow
@@ -1551,6 +1579,16 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                             ) : null}
                           </Box>
                         </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {rowModel}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
+                          {rowPlatform}
+                        </Typography>
                       </TableCell>
                       <TableCell>
                         <Tooltip title={rowIdFull}>
@@ -1768,6 +1806,19 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   {deviceName}
                 </Typography>
               </SummaryField>
+
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <SummaryField label="Model">
+                    <Typography variant="body1">{deviceModel}</Typography>
+                  </SummaryField>
+                </Grid>
+                <Grid item xs={6}>
+                  <SummaryField label="Platform">
+                    <Typography variant="body1">{devicePlatform}</Typography>
+                  </SummaryField>
+                </Grid>
+              </Grid>
 
               <SummaryField label="Device id">
                 <Tooltip title={deviceIdFull}>

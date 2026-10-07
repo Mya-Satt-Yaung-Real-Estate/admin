@@ -441,20 +441,6 @@ const UserCreatePage: React.FC = () => {
                     </FormControl>
                   </Grid>
                 </Grid>
-                <Box sx={{ mt: 3 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formik.values.map_pins_access}
-                        onChange={(_, checked) => formik.setFieldValue('map_pins_access', checked)}
-                      />
-                    }
-                    label="Map pins access (mobile property map)"
-                  />
-                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5, ml: 4.5 }}>
-                    When enabled, this user can open the mobile map and load property pins.
-                  </Typography>
-                </Box>
               </CardContent>
             </Card>
           </Grid>

@@ -538,20 +538,6 @@ const UserEditPage: React.FC = () => {
                     </Grid>
                   )}
                 </Grid>
-                <Box sx={{ mt: 3 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formik.values.map_pins_access}
-                        onChange={(_, checked) => formik.setFieldValue('map_pins_access', checked)}
-                      />
-                    }
-                    label="Map pins access (mobile property map)"
-                  />
-                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 0.5, ml: 4.5 }}>
-                    When enabled, this user can open the mobile map and load property pins.
-                  </Typography>
-                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -793,9 +779,6 @@ const UserEditPage: React.FC = () => {
                     )}
                     <Typography variant="body2" color="textSecondary">
                       Current Member Level: <strong>{user.member_level}</strong>
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                      Map Pins Access: <strong>{user.map_pins_access ? 'Enabled' : 'Disabled'}</strong>
                     </Typography>
                   </Box>
 

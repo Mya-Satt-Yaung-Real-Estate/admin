@@ -31,7 +31,6 @@ import {
   Star as StarIcon,
   Fingerprint as FingerprintIcon,
   Home as HomeIcon,
-  Map as MapIcon,
   Devices as DevicesIcon,
   Block as BlockIcon,
 } from '@mui/icons-material';
@@ -321,16 +320,6 @@ const UserDetailPage: React.FC = () => {
                   <ListItemText
                     primary="Member Level"
                     secondary={user.member_level}
-                  />
-                </ListItem>
-
-                <ListItem>
-                  <ListItemIcon>
-                    <MapIcon sx={DETAIL_ICON_SX.map} />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Map Pins Access"
-                    secondary={user.map_pins_access ? 'Enabled' : 'Disabled'}
                   />
                 </ListItem>
 
