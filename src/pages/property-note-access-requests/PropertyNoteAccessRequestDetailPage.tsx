@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -57,6 +57,7 @@ import {
 } from '../../services/queries/propertyNoteAccessRequests';
 import { useUsers } from '../../services/queries/users';
 import type {
+  PropertyNoteAccessDetail,
   PropertyNoteAccessGrantDevice,
   PropertyNoteAccessRequest,
 } from '../../types/propertyNoteAccess';
@@ -215,6 +216,9 @@ const SummaryField: React.FC<{ label: string; children: React.ReactNode }> = ({
 /**
  * Static live-scope dot — green = allowed, orange = restorable (no pulse).
  */
+/** Brief pause after fetch settles before swapping badges/status once. */
+const UI_SETTLE_MS = 40;
+
 const ScopeDot: React.FC<{ tone: 'allowed' | 'restorable'; label: string }> = ({
   tone,
   label,
@@ -234,6 +238,7 @@ const ScopeDot: React.FC<{ tone: 'allowed' | 'restorable'; label: string }> = ({
           tone === 'allowed'
             ? '0 0 0 3px rgba(46, 125, 50, 0.18)'
             : '0 0 0 3px rgba(237, 108, 2, 0.18)',
+        transition: 'background-color 0.28s ease, box-shadow 0.28s ease, opacity 0.28s ease',
       }}
     />
   </Tooltip>
@@ -247,21 +252,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
 
   const { data: detailResponse, isLoading, isFetching, isPlaceholderData, error, refetch } =
     usePropertyNoteAccessRequest(accessId);
-  const detail = detailResponse?.data;
-  const access = detail?.access;
-  /** True while URL grant id differs from on-screen placeholder data. */
-  const isSwitchingGrant = isPlaceholderData || (access != null && access.id !== accessId);
-  const relatedGrants = detail?.related_grants ?? [];
-  const registeredDevices = detail?.registered_devices ?? [];
-  const visibleUsersFromApi = detail?.visible_users ?? [];
-
-  const devicesById = useMemo(() => {
-    const map = new Map<string, PropertyNoteAccessGrantDevice>();
-    for (const device of registeredDevices) {
-      map.set(device.device_id, device);
-    }
-    return map;
-  }, [registeredDevices]);
+  const liveDetail = detailResponse?.data;
 
   const approveMutation = useApprovePropertyNoteAccessRequest();
   const rejectMutation = useRejectPropertyNoteAccessRequest();
@@ -270,6 +261,21 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   const addDevicesMutation = useAddPropertyNoteAccessDevices();
   const changeScopeMutation = useChangePropertyNoteAccessScope();
   const updateVisibleMutation = useUpdatePropertyNoteVisibleUsers();
+
+  const actionPending =
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    revokeMutation.isPending ||
+    reactivateMutation.isPending ||
+    addDevicesMutation.isPending ||
+    changeScopeMutation.isPending ||
+    updateVisibleMutation.isPending;
+
+  /**
+   * True while URL grant id differs from live (or placeholder) payload.
+   */
+  const isSwitchingGrant =
+    isPlaceholderData || (liveDetail != null && liveDetail.access.id !== accessId);
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
@@ -292,6 +298,111 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
    * Grant detail + manage UI opens in a modal when a table row is clicked.
    */
   const [grantModalOpen, setGrantModalOpen] = useState(false);
+  /**
+   * Frozen detail for badges/status — never paint mixed URL + stale grant.
+   * Swap only when live detail matches URL and fetch is idle.
+   */
+  const [viewDetail, setViewDetail] = useState<PropertyNoteAccessDetail | undefined>(
+    liveDetail
+  );
+  const [uiHolding, setUiHolding] = useState(false);
+
+  /**
+   * Hold UI synchronously before navigate so the first paint never mixes
+   * the new URL with the previous grant's green/yellow ScopeDots.
+   */
+  const switchToGrant = useCallback(
+    (nextId: number) => {
+      if (!Number.isFinite(nextId) || nextId <= 0) return;
+      if (viewDetail?.access.id === nextId && nextId === accessId && !uiHolding) {
+        return;
+      }
+      setUiHolding(true);
+      if (nextId !== accessId) {
+        navigate(`/property-note-access-requests/${nextId}`);
+      }
+    },
+    [accessId, navigate, uiHolding, viewDetail?.access.id]
+  );
+
+  useEffect(() => {
+    if (actionPending) {
+      setUiHolding(true);
+    }
+  }, [actionPending]);
+
+  useEffect(() => {
+    if (isSwitchingGrant) {
+      setUiHolding(true);
+    }
+  }, [isSwitchingGrant]);
+
+  useEffect(() => {
+    if (!liveDetail) return;
+
+    const liveMatchesUrl = liveDetail.access.id === accessId;
+    const ready =
+      liveMatchesUrl && !isPlaceholderData && !isFetching && !actionPending;
+
+    if (!ready) {
+      if (!liveMatchesUrl || isPlaceholderData) {
+        setUiHolding(true);
+      }
+      return;
+    }
+
+    /** First paint — no frozen view yet; show immediately (no flash risk). */
+    if (!viewDetail) {
+      setViewDetail(liveDetail);
+      setUiHolding(false);
+      return;
+    }
+
+    const alreadyShowing = viewDetail.access.id === liveDetail.access.id;
+    if (alreadyShowing && !uiHolding) {
+      setViewDetail(liveDetail);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setViewDetail(liveDetail);
+      setUiHolding(false);
+    }, UI_SETTLE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    liveDetail,
+    accessId,
+    isPlaceholderData,
+    isFetching,
+    actionPending,
+    uiHolding,
+    viewDetail,
+  ]);
+
+  const detail = viewDetail;
+  const access = detail?.access;
+  /**
+   * Badges/Open are stable only when frozen view matches the URL focus.
+   * Hide ScopeDots while holding so wrong green/yellow never flashes.
+   */
+  const uiStable =
+    !uiHolding &&
+    !actionPending &&
+    !isSwitchingGrant &&
+    access != null &&
+    access.id === accessId;
+  const relatedGrants = detail?.related_grants ?? [];
+  const registeredDevices = detail?.registered_devices ?? [];
+  const visibleUsersFromApi = detail?.visible_users ?? [];
+
+  const devicesById = useMemo(() => {
+    const map = new Map<string, PropertyNoteAccessGrantDevice>();
+    for (const device of registeredDevices) {
+      map.set(device.device_id, device);
+    }
+    return map;
+  }, [registeredDevices]);
 
   const { data: usersResponse, isLoading: usersLoading } = useUsers({
     status: 'active',
@@ -643,15 +754,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
   /** Wrong-scope history open — view only (no Re-active / manage). */
   const openIsHistoryOnly = !openMatchesLiveScope && !canReactivateFromExpiredOpen;
 
-  const busy =
-    isSwitchingGrant ||
-    approveMutation.isPending ||
-    rejectMutation.isPending ||
-    revokeMutation.isPending ||
-    reactivateMutation.isPending ||
-    addDevicesMutation.isPending ||
-    changeScopeMutation.isPending ||
-    updateVisibleMutation.isPending;
+  const busy = uiHolding || isSwitchingGrant || actionPending;
 
   const handleBack = () => {
     navigate('/property-note-access-requests');
@@ -680,7 +783,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         setGrantModalOpen(false);
         showSuccess('Access revoked. Use Re-active on that Revoked row to restore (not Add devices).');
         if (revokedId !== accessId) {
-          navigate(`/property-note-access-requests/${revokedId}`);
+          switchToGrant(revokedId);
         }
       } else if (confirmState.type === 'reactivate_point_unlock') {
         const response = await reactivateMutation.mutateAsync(confirmState.targetId);
@@ -722,7 +825,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         showSuccess('Scope changed to selected devices.');
         const nextId = response.data?.access?.id;
         if (nextId && nextId !== accessId) {
-          navigate(`/property-note-access-requests/${nextId}`);
+          switchToGrant(nextId);
         }
       } else if (confirmState.type === 'convert_any') {
         const response = await changeScopeMutation.mutateAsync({
@@ -733,7 +836,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
         showSuccess('Changed to Any Device type.');
         const nextId = response.data?.access?.id;
         if (nextId && nextId !== accessId) {
-          navigate(`/property-note-access-requests/${nextId}`);
+          switchToGrant(nextId);
         }
       }
     } catch (err: unknown) {
@@ -802,11 +905,11 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
    * Full-page loader only on first open (no cached/placeholder data).
    * Row switches keep the previous grant visible via keepPreviousData.
    */
-  if (isLoading && !detail) {
+  if ((isLoading || isFetching || uiHolding) && !viewDetail && !access) {
     return <PageLoadingState title="Loading Access Detail" />;
   }
 
-  if ((error && !detail) || !access) {
+  if (error && !liveDetail && !viewDetail) {
     return (
       <PageErrorState
         error={error ?? new Error('Access request not found')}
@@ -818,6 +921,15 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       />
     );
   }
+
+  if (!access) {
+    return <PageLoadingState title="Loading Access Detail" />;
+  }
+
+  /**
+   * Open / Current highlight follows settled view grant — not URL mid-switch.
+   */
+  const focusGrantId = access.id;
 
   const canApprove = access.status === 'pending';
   const canReject = access.status === 'pending';
@@ -859,10 +971,11 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       {/**
        * Fixed-height progress slot — avoids page jump when fetch starts/stops.
        */}
-      <Box sx={{ height: 3, mb: 1 }}>
-        {isFetching && (
-          <LinearProgress sx={{ height: 3, borderRadius: 1 }} />
-        )}
+      {/**
+       * Always reserve 3px so progress show/hide does not nudge the page.
+       */}
+      <Box sx={{ height: 3, mb: 1, visibility: !uiStable || isFetching || actionPending ? 'visible' : 'hidden' }}>
+        <LinearProgress sx={{ height: 3, borderRadius: 1 }} />
       </Box>
       <PageHeader
         title={access.user?.name || `Access #${accessId}`}
@@ -878,7 +991,11 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       <ActionAlert {...alert} sx={{ mb: 2 }} onClose={clearAlert} />
 
       <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ pointerEvents: isSwitchingGrant ? 'none' : 'auto' }}>
+        <CardContent
+          sx={{
+            pointerEvents: busy ? 'none' : 'auto',
+          }}
+        >
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
@@ -1345,7 +1462,11 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       </Card>
 
       <Card>
-        <CardContent>
+        <CardContent
+          sx={{
+            pointerEvents: busy ? 'none' : 'auto',
+          }}
+        >
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={1}
@@ -1437,7 +1558,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
               </TableHead>
               <TableBody>
                 {relatedGrants.map((row: PropertyNoteAccessRequest) => {
-                  const isCurrent = row.id === accessId;
+                  const isCurrent = row.id === focusGrantId;
                   const isAllowed = isUsableApprovedGrant(row);
                   const rowIsAnyDevice = row.device_id === null;
                   /**
@@ -1511,24 +1632,20 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                       hover
                       sx={{
                         cursor: 'pointer',
-                        ...(isCurrent
-                          ? {
-                              borderLeft: 4,
-                              borderLeftColor: showOnlineIcon
-                                ? isAllowed
-                                  ? 'success.main'
-                                  : 'warning.main'
-                                : 'divider',
-                              bgcolor: 'action.selected',
-                            }
-                          : {
-                              borderLeft: 4,
-                              borderLeftColor: 'transparent',
-                            }),
+                        borderLeft: 4,
+                        borderLeftColor: isCurrent
+                          ? isAllowed
+                            ? 'success.main'
+                            : isRestorableRevoked
+                              ? 'warning.main'
+                              : 'divider'
+                          : 'transparent',
+                        bgcolor: isCurrent ? 'action.selected' : 'transparent',
+                        transition: 'background-color 0.15s ease, border-left-color 0.15s ease',
                       }}
                       onClick={() => {
                         if (!isCurrent) {
-                          navigate(`/property-note-access-requests/${row.id}`);
+                          switchToGrant(row.id);
                         }
                       }}
                     >
@@ -1605,7 +1722,14 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         </Tooltip>
                       </TableCell>
                       <TableCell>
-                        <StatusChip status={row.status} size="small" />
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            transition: 'opacity 0.28s ease',
+                          }}
+                        >
+                          <StatusChip status={row.status} size="small" />
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">{formatActionBy(row)}</Typography>
@@ -1672,9 +1796,7 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                                   onClick={() => {
                                     setGrantModalOpen(true);
                                     if (!isCurrent) {
-                                      navigate(
-                                        `/property-note-access-requests/${row.id}`
-                                      );
+                                      switchToGrant(row.id);
                                     }
                                   }}
                                   aria-label="Grant details"
