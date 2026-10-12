@@ -184,12 +184,23 @@ const isNewerGrant = (
 };
 
 /**
- * Action By — status-agnostic: Approver → Admin → System approved.
+ * Unlock request still waiting on Admin / Approver.
+ */
+const isApprovalWorkflowStatus = (
+  status: PropertyNoteAccessRequest['status']
+): boolean => status === 'pending' || status === 'admin_approved';
+
+/**
+ * Action By — status-agnostic: Approver → Admin → System / points label.
  */
 const formatActionBy = (row: PropertyNoteAccessRequest): string => {
   if (row.approver?.name?.trim()) return row.approver.name.trim();
   if (row.admin?.name?.trim()) return row.admin.name.trim();
-  if (row.source === 'points') return 'System approved';
+  if (row.source === 'points') {
+    if (row.status === 'pending') return 'Points request';
+    if (row.status === 'admin_approved') return 'Awaiting Approver';
+    return 'System approved';
+  }
   return '—';
 };
 
@@ -751,8 +762,19 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
       pointUnlockBlockedByRevoke &&
       !openSlotAlreadyUsable);
 
+  /**
+   * Pending / admin_approved must stay actionable even when Current scope is none
+   * (first unlock request — no Approved live grant yet).
+   */
+  const openIsApprovalWorkflow = Boolean(
+    access && isApprovalWorkflowStatus(access.status)
+  );
+
   /** Wrong-scope history open — view only (no Re-active / manage). */
-  const openIsHistoryOnly = !openMatchesLiveScope && !canReactivateFromExpiredOpen;
+  const openIsHistoryOnly =
+    !openIsApprovalWorkflow &&
+    !openMatchesLiveScope &&
+    !canReactivateFromExpiredOpen;
 
   const busy = uiHolding || isSwitchingGrant || actionPending;
 
@@ -1111,7 +1133,57 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                   gap: 1.25,
                 }}
               >
-              {openIsHistoryOnly ? (
+              {openIsApprovalWorkflow && access.status === 'pending' ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Pending unlock · #{accessId}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Points unlock request. Approve to send to Approvers, or Reject. Current
+                    scope can stay none until this grant becomes Approved.
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      disabled={busy}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          type: 'approve',
+                          targetId: accessId,
+                        })
+                      }
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      disabled={busy}
+                      onClick={() =>
+                        setConfirmState({
+                          open: true,
+                          type: 'reject',
+                          targetId: accessId,
+                        })
+                      }
+                    >
+                      Reject
+                    </Button>
+                  </Stack>
+                </>
+              ) : openIsApprovalWorkflow && access.status === 'admin_approved' ? (
+                <>
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    Awaiting Approver · #{accessId}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Admin already approved. Waiting for Approver confirmation. No Admin
+                    Approve / Reject / Revoke here.
+                  </Typography>
+                </>
+              ) : openIsHistoryOnly ? (
                 <>
                   <Typography variant="subtitle1" fontWeight={700}>
                     History · #{accessId}
@@ -1606,10 +1678,12 @@ const PropertyNoteAccessRequestDetailPage: React.FC = () => {
                         : 'Restorable revoked (Re-active target)'
                       : 'Current open (live scope)';
                   /**
-                   * Approve / Reject / Revoke / Re-active target only on Current-scope rows.
+                   * Pending / admin_approved: always actionable on that row.
+                   * Else Approve / Reject / Revoke only on Current-scope rows.
                    */
-                  const isActionableRow =
-                    liveScope === 'any-device'
+                  const isActionableRow = isApprovalWorkflowStatus(row.status)
+                    ? true
+                    : liveScope === 'any-device'
                       ? row.id === liveAnyDeviceGrantId
                       : liveScope === 'user-device'
                         ? !rowIsAnyDevice && row.id === deviceFocusId
