@@ -232,6 +232,14 @@ const PropertyNoteListPage: React.FC = () => {
         hidden: isMobile,
       },
       {
+        id: 'price_display',
+        label: 'Price',
+        render: (_value, row) => (
+          <Typography variant="body2">{row?.price_display || '—'}</Typography>
+        ),
+        hidden: isMobile,
+      },
+      {
         id: 'status',
         label: 'Status',
         render: (_value, row) => {

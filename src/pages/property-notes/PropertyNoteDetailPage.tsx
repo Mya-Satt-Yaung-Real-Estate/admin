@@ -128,6 +128,29 @@ const PropertyNoteDetailPage: React.FC = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="caption" color="text.secondary">
+                    Area (acre)
+                  </Typography>
+                  <Typography variant="body1">
+                    {note.area_acre != null ? note.area_acre : '—'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Price
+                  </Typography>
+                  <Typography variant="body1">
+                    {note.price_display || '—'}
+                  </Typography>
+                  {note.price_amount != null && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {note.price_amount}
+                      {note.currency ? ` · ${note.currency}` : ''}
+                      {note.currency === 'MMK' ? ' (lakhs)' : ''}
+                    </Typography>
+                  )}
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="caption" color="text.secondary">
                     Created
                   </Typography>
                   <Typography variant="body1">{note.created_at || '—'}</Typography>

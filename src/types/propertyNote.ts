@@ -51,6 +51,10 @@ export interface PropertyNote {
   road: string | null;
   length_ft: number | null;
   width_ft: number | null;
+  area_acre: number | null;
+  price_amount: number | null;
+  currency: string | null;
+  price_display: string | null;
   latitude: number | null;
   longitude: number | null;
   /**
