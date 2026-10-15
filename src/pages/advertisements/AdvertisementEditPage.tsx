@@ -20,6 +20,7 @@ import MediaUpload from '../../components/ui/MediaUpload';
 import { usersAPI } from '../../services/api/users';
 import { locationsAPI } from '../../services/api/locations';
 import { useAdvertisement, useUpdateAdvertisement } from '../../services/queries/advertisements';
+import { useConfiguration } from '../../services/queries/systemConfiguration';
 import { useAlertSystem } from '../../hooks/useAlertSystem';
 import { AdvertisementFormData } from '../../types/advertisement';
 import { Media } from '../../types/media';
@@ -59,6 +60,9 @@ const AdvertisementEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { alert, showSuccess, showError, clearAlert } = useAlertSystem();
+  const { data: uploadCostConfig } = useConfiguration('point_system.advertisement_upload_cost');
+  const configuredUploadCost = Number(uploadCostConfig?.data?.config_value);
+  const uploadPointCost = Number.isFinite(configuredUploadCost) ? configuredUploadCost : undefined;
   
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
   const [existingMedia, setExistingMedia] = useState<Media[]>([]);
@@ -451,7 +455,7 @@ const AdvertisementEditPage: React.FC = () => {
 
                       <Alert severity="info">
                         <Typography variant="body2">
-                          Updating an advertisement on behalf of a user will deduct 10 points from their account when the advertisement is published.
+                          Setting this advertisement to Published deducts {uploadPointCost ?? '…'} points from the owner's account the first time it is published. Saving it as a draft does not deduct points.
                         </Typography>
                       </Alert>
                     </CardContent>

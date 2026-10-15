@@ -36,6 +36,7 @@ interface AdvertisementModeSectionProps {
   errors?: any;
   touched?: any;
   disabled?: boolean;
+  uploadPointCost?: number;
 }
 
 export const AdvertisementModeSection: React.FC<AdvertisementModeSectionProps> = ({
@@ -48,6 +49,7 @@ export const AdvertisementModeSection: React.FC<AdvertisementModeSectionProps> =
   errors = {},
   touched = {},
   disabled = false,
+  uploadPointCost,
 }) => {
   return (
     <FormSection title="Advertisement Mode">
@@ -171,7 +173,7 @@ export const AdvertisementModeSection: React.FC<AdvertisementModeSectionProps> =
               />
               <Alert severity="info" sx={{ mt: 2 }}>
                 <Typography variant="body2">
-                  Creating an advertisement on behalf of a user will deduct 10 points from their account when the advertisement is published.
+                  Publishing this advertisement deducts {uploadPointCost ?? '…'} points from the user's account the first time it is published. A draft does not deduct points.
                 </Typography>
               </Alert>
             </Box>

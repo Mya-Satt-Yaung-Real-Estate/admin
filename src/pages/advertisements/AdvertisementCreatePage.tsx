@@ -15,6 +15,7 @@ import PageHeader from '../../components/layout/PageHeader';
 import { LoadingSpinner, ActionAlert, MediaUpload } from '../../components/ui';
 import { useAlertSystem } from '../../hooks';
 import { useCreateAdvertisement } from '../../services/queries/advertisements';
+import { useConfiguration } from '../../services/queries/systemConfiguration';
 import { useUsers } from '../../services/queries/users';
 import { useRegions, useTownships } from '../../services/queries/locations';
 import { AdvertisementFormData } from '../../types/advertisement';
@@ -72,6 +73,9 @@ const AdvertisementCreatePage: React.FC = () => {
 
   // Create Advertisement Mutation
   const createAdvertisementMutation = useCreateAdvertisement();
+  const { data: uploadCostConfig } = useConfiguration('point_system.advertisement_upload_cost');
+  const configuredUploadCost = Number(uploadCostConfig?.data?.config_value);
+  const uploadPointCost = Number.isFinite(configuredUploadCost) ? configuredUploadCost : undefined;
 
   // Formik Form
   const formik = useFormik({
@@ -281,6 +285,7 @@ const AdvertisementCreatePage: React.FC = () => {
               usersLoading={usersLoading}
               errors={formik.errors}
               touched={formik.touched}
+              uploadPointCost={uploadPointCost}
             />
 
             {/* Basic Information Section */}
@@ -374,7 +379,7 @@ const AdvertisementCreatePage: React.FC = () => {
 
                   <Alert severity="info">
                     <Typography variant="body2">
-                      Creating an advertisement on behalf of a user will deduct 10 points from their account when the advertisement is published.
+                      Publishing this advertisement deducts {uploadPointCost ?? '…'} points from the user's account the first time it is published. A draft does not deduct points.
                     </Typography>
                   </Alert>
                 </CardContent>
