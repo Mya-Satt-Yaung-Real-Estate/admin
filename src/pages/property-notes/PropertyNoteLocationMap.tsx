@@ -1,19 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Polygon, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, IconButton, Typography } from '@mui/material';
+import { OpenInFull as ExpandMapIcon } from '@mui/icons-material';
+import { loadGoogleMaps } from '../../lib/googleMapsLoader';
 import type { PropertyNoteBoundaryGeoJson } from '../../types/propertyNote';
-
-/**
- * Leaflet default marker icons break under Vite bundling without this fix.
- */
-const defaultProto = L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown };
-delete defaultProto._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 interface PropertyNoteLocationMapProps {
   latitude: number;
@@ -25,14 +14,39 @@ interface PropertyNoteLocationMapProps {
    * Remount key when switching inline ↔ expanded dialog.
    */
   mapKey?: string;
+  /**
+   * When set, shows Maximize in the map toolbar (top-right with Map type).
+   */
+  onMaximize?: () => void;
 }
 
+/** Admin teal — match prior Leaflet polygon. */
+const POLY_STYLE = {
+  fillColor: '#3B8880',
+  fillOpacity: 0.25,
+  strokeColor: '#3B8880',
+  strokeOpacity: 1,
+  strokeWeight: 2,
+};
+
+type MapTypeId = 'roadmap' | 'hybrid';
+
+const toolSurfaceSx = {
+  height: 36,
+  borderRadius: 1,
+  border: '1px solid',
+  borderColor: 'divider',
+  bgcolor: 'background.paper',
+  boxShadow: 1,
+  '&:hover': { bgcolor: 'grey.50' },
+} as const;
+
 /**
- * GeoJSON [lng, lat] ring → Leaflet [lat, lng] positions.
+ * GeoJSON [lng, lat] ring → Google LatLngLiteral path.
  */
-function boundaryToPositions(
+function boundaryToPath(
   boundary: PropertyNoteBoundaryGeoJson | null | undefined
-): [number, number][] | null {
+): google.maps.LatLngLiteral[] | null {
   if (!boundary || boundary.type !== 'Polygon') {
     return null;
   }
@@ -40,39 +54,13 @@ function boundaryToPositions(
   if (!Array.isArray(ring) || ring.length < 4) {
     return null;
   }
-  return ring.map(([lng, lat]) => [lat, lng]);
+  return ring.map(([lng, lat]) => ({ lat, lng }));
 }
 
 /**
- * Fit map to polygon when present; otherwise center on pin.
- */
-function FitMapView({
-  pin,
-  positions,
-}: {
-  pin: [number, number];
-  positions: [number, number][] | null;
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      map.invalidateSize();
-      if (positions && positions.length >= 3) {
-        map.fitBounds(L.latLngBounds(positions), { padding: [28, 28], maxZoom: 17 });
-      } else {
-        map.setView(pin, map.getZoom());
-      }
-    }, 120);
-    return () => window.clearTimeout(timer);
-  }, [map, pin, positions]);
-
-  return null;
-}
-
-/**
- * Read-only Property Note location: pin always; drawn area when boundary exists.
- * No draw/edit/delete tools.
+ * Read-only Property Note location: Google Maps pin + optional drawn area.
+ * Toolbar (top-right): Maximize · Map/Satellite — same pattern as Jade web.
+ * Zoom sits bottom-left so it does not collide with the toolbar.
  */
 export const PropertyNoteLocationMap: React.FC<PropertyNoteLocationMapProps> = ({
   latitude,
@@ -81,47 +69,191 @@ export const PropertyNoteLocationMap: React.FC<PropertyNoteLocationMapProps> = (
   height = 220,
   zoom = 15,
   mapKey = 'note-location-map',
+  onMaximize,
 }) => {
-  const pin: [number, number] = useMemo(() => [latitude, longitude], [latitude, longitude]);
-  const positions = useMemo(() => boundaryToPositions(boundary), [boundary]);
+  const mapElRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const polygonRef = useRef<google.maps.Polygon | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [mapTypeId, setMapTypeId] = useState<MapTypeId>('roadmap');
+  const [mapReady, setMapReady] = useState(false);
+
   const mapHeight = typeof height === 'string' ? height : `${height}px`;
 
-  return (
-    <div style={{ height: mapHeight, width: '100%', borderRadius: 8, overflow: 'hidden' }}>
-      <MapContainer
-        key={mapKey}
-        center={pin}
-        zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom
-        doubleClickZoom
-        zoomControl
-        dragging
-        /**
-         * View only — block accidental draw-style interactions.
-         */
-        boxZoom={false}
-        keyboard={false}
+  useEffect(() => {
+    let cancelled = false;
+    setMapReady(false);
+    setMapTypeId('roadmap');
+
+    const boot = async () => {
+      if (!mapElRef.current) return;
+      try {
+        await loadGoogleMaps();
+        if (cancelled || !mapElRef.current) return;
+
+        const center = { lat: Number(latitude), lng: Number(longitude) };
+        const map = new google.maps.Map(mapElRef.current, {
+          center,
+          zoom,
+          mapTypeId: 'roadmap',
+          streetViewControl: false,
+          fullscreenControl: false,
+          mapTypeControl: false,
+          rotateControl: false,
+          scaleControl: false,
+          zoomControl: true,
+          zoomControlOptions: {
+            position: google.maps.ControlPosition.LEFT_BOTTOM,
+          },
+          gestureHandling: 'greedy',
+          clickableIcons: false,
+        });
+        mapRef.current = map;
+
+        markerRef.current = new google.maps.Marker({
+          map,
+          position: center,
+        });
+
+        const path = boundaryToPath(boundary);
+        if (path && path.length >= 3) {
+          polygonRef.current = new google.maps.Polygon({
+            map,
+            paths: path,
+            ...POLY_STYLE,
+            clickable: false,
+          });
+          const bounds = new google.maps.LatLngBounds();
+          path.forEach((p) => bounds.extend(p));
+          map.fitBounds(bounds, 28);
+        }
+
+        window.setTimeout(() => {
+          if (cancelled || !mapRef.current) return;
+          google.maps.event.trigger(mapRef.current, 'resize');
+          if (path && path.length >= 3) {
+            const bounds = new google.maps.LatLngBounds();
+            path.forEach((p) => bounds.extend(p));
+            mapRef.current.fitBounds(bounds, 28);
+          } else {
+            mapRef.current.setCenter(center);
+          }
+        }, 120);
+
+        if (!cancelled) setMapReady(true);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : 'Map failed to load');
+        }
+      }
+    };
+
+    void boot();
+
+    return () => {
+      cancelled = true;
+      polygonRef.current?.setMap(null);
+      polygonRef.current = null;
+      markerRef.current?.setMap(null);
+      markerRef.current = null;
+      mapRef.current = null;
+      setMapReady(false);
+    };
+  }, [latitude, longitude, boundary, zoom, mapKey]);
+
+  if (loadError) {
+    return (
+      <Box
+        sx={{
+          height: mapHeight,
+          width: '100%',
+          borderRadius: 1,
+          overflow: 'hidden',
+          bgcolor: 'action.hover',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: 2,
+        }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={pin} />
-        {positions ? (
-          <Polygon
-            positions={positions}
-            pathOptions={{
-              color: '#3B8880',
-              fillColor: '#3B8880',
-              fillOpacity: 0.25,
-              weight: 2,
+        <Typography variant="body2" color="text.secondary" align="center">
+          {loadError}
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      key={mapKey}
+      sx={{
+        position: 'relative',
+        height: mapHeight,
+        width: '100%',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }}
+    >
+      {mapReady ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            pointerEvents: 'auto',
+          }}
+        >
+          {onMaximize ? (
+            <IconButton
+              type="button"
+              aria-label="Maximize map"
+              size="small"
+              onClick={onMaximize}
+              sx={{
+                ...toolSurfaceSx,
+                width: 36,
+                p: 0,
+              }}
+            >
+              <ExpandMapIcon fontSize="small" />
+            </IconButton>
+          ) : null}
+          <Box
+            component="select"
+            aria-label="Map type"
+            value={mapTypeId}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              const next = e.target.value as MapTypeId;
+              setMapTypeId(next);
+              mapRef.current?.setMapTypeId(next);
             }}
-          />
-        ) : null}
-        <FitMapView pin={pin} positions={positions} />
-      </MapContainer>
-    </div>
+            sx={{
+              ...toolSurfaceSx,
+              minWidth: 108,
+              px: 1.25,
+              fontSize: 13,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              outline: 'none',
+            }}
+          >
+            <option value="roadmap">Map</option>
+            <option value="hybrid">Satellite</option>
+          </Box>
+        </Box>
+      ) : null}
+
+      <Box
+        ref={mapElRef}
+        sx={{ height: '100%', width: '100%' }}
+        aria-label="Location map"
+      />
+    </Box>
   );
 };
 

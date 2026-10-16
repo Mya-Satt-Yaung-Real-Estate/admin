@@ -11,13 +11,11 @@ import {
   DialogTitle,
   Divider,
   Grid,
-  IconButton,
   Typography,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   LocationOn as LocationIcon,
-  OpenInFull as ExpandMapIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -271,58 +269,40 @@ const PropertyNoteDetailPage: React.FC = () => {
               </Grid>
 
               {/**
-               * View-only Leaflet: pin always; polygon when boundary exists (legacy = pin only).
+               * View-only Google Maps: pin always; polygon when boundary exists (legacy = pin only).
+               * Map type: dropdown Map / Satellite (same as Jade web).
                */}
               {note.latitude != null && note.longitude != null ? (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                     {hasDrawnArea ? 'Map pin + drawn area (view only)' : 'Map pin (no drawn area)'}
                   </Typography>
-                  <Box sx={{ position: 'relative' }}>
-                    {!isMapExpanded ? (
-                      <PropertyNoteLocationMap
-                        mapKey={`inline-${note.id}`}
-                        latitude={note.latitude}
-                        longitude={note.longitude}
-                        boundary={note.boundary ?? null}
-                        height={220}
-                        zoom={15}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 220,
-                          borderRadius: 1,
-                          bgcolor: 'action.hover',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <Typography variant="body2" color="text.secondary">
-                          Expanded map is open…
-                        </Typography>
-                      </Box>
-                    )}
-                    <IconButton
-                      aria-label="Maximize map"
-                      size="small"
-                      onClick={() => setIsMapExpanded(true)}
+                  {!isMapExpanded ? (
+                    <PropertyNoteLocationMap
+                      mapKey={`inline-${note.id}`}
+                      latitude={note.latitude}
+                      longitude={note.longitude}
+                      boundary={note.boundary ?? null}
+                      height={220}
+                      zoom={15}
+                      onMaximize={() => setIsMapExpanded(true)}
+                    />
+                  ) : (
+                    <Box
                       sx={{
-                        position: 'absolute',
-                        right: 8,
-                        bottom: 8,
-                        zIndex: 1000,
-                        bgcolor: 'background.paper',
-                        boxShadow: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        '&:hover': { bgcolor: 'grey.100' },
+                        height: 220,
+                        borderRadius: 1,
+                        bgcolor: 'action.hover',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
-                      <ExpandMapIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Expanded map is open…
+                      </Typography>
+                    </Box>
+                  )}
                   <Typography
                     variant="caption"
                     color="text.secondary"
